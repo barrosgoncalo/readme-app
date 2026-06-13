@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 // Import your screens
 import LoginScreen from '../screens/Auth/LoginScreen';
-import RegisterScreen from '../screens/Auth/RegisterScreen';
+import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
 import AppTabs from '../components/app-tabs'; 
 
 const Stack = createNativeStackNavigator();
