@@ -21,15 +21,22 @@ export function AuthProvider({ children }) {
     }, [])
 
     async function initializeUser(user) {
-        if(user) {
-            setCurrentUser({ ...user });
-            setUserLoggedIn(true);
-        } else {
+    if (user) {
+        const isEmailUser = user.providerData.some(p => p.providerId === 'password');
+
+        if (isEmailUser && !user.emailVerified) {
             setCurrentUser(null);
             setUserLoggedIn(false);
+        } else {
+            setCurrentUser({ ...user });
+            setUserLoggedIn(true);
         }
-        setLoading(false);
+    } else {
+        setCurrentUser(null);
+        setUserLoggedIn(false);
     }
+    setLoading(false);
+}
 
     const value = {
         currentUser,
