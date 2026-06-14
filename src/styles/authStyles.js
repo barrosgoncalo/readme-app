@@ -32,8 +32,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         padding: Spacing.four,
         marginTop: -20,
     },
-    step2Image: {
-        width: '100%',
+    step2Image: { width: '100%',
         height: 220,
         marginVertical: 16,
         borderRadius: 12,
