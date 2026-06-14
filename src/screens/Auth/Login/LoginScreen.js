@@ -20,6 +20,7 @@ import {
 
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/theme';
+import { ROUTES } from '../../../constants/routes';
 import { buildStyles } from '../../../styles/authStyles';
 
 export default function LoginScreen({ navigation }) {
@@ -117,11 +118,12 @@ export default function LoginScreen({ navigation }) {
                     </View>
 
                     {/* Forgot Password */}
-                    <View style={styles.loginFooter}>
-                        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                            <Text style={styles.loginFooter}>Forgot Password?</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity 
+                        style={styles.forgotPasswordButton} 
+                        onPress={() => navigation.navigate(ROUTES.FORGOT_PASSWORD)}
+                    >
+                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                    </TouchableOpacity>
 
                     {/* Login Button */}
                     <TouchableOpacity 
@@ -155,7 +157,7 @@ export default function LoginScreen({ navigation }) {
                     {/* Footer Link to Registration */}
                     <View style={styles.loginFooter}>
                         <Text style={{ color: theme.secondary || '#888' }}>Don't have an account? </Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.REGISTER)}>
                             <Text style={styles.loginLink}>Sign Up</Text>
                         </TouchableOpacity>
                     </View>

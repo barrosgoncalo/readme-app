@@ -7,6 +7,7 @@ import { ROUTES } from '../constants/routes';
 
 // Import your screens
 import LoginScreen from '../screens/Auth/Login/LoginScreen';
+import ForgotPasswordScreen from '../screens/Auth/Login/ForgotPasswordScreen';
 import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
 import AppTabs from '../components/app-tabs'; 
 
@@ -35,6 +36,7 @@ export default function AppNavigator() {
                         <Stack.Screen name={ROUTES.SPLASH} component={SplashScreen} options={{ headerShown: false }} />
                         <Stack.Screen name={ROUTES.REGISTER} component={RegisterScreen} />
                         <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
+                        <Stack.Screen name={ROUTES.FORGOT_PASSWORD} component={ForgotPasswordScreen} />
                     </>
                 )}
             </Stack.Navigator>

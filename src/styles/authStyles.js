@@ -163,6 +163,17 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontSize: 15,
         color: theme.text,
     },
+    forgotPasswordButton: {
+        alignSelf: 'flex-end',
+        marginTop: 10,
+        marginBottom: 10,
+        paddingHorizontal: 4,
+    },
+    forgotPasswordText: {
+        color: theme.tertiary,
+        fontWeight: '600',
+        fontSize: 14,
+    },
     eyeButton: {
         paddingHorizontal: 12,
         justifyContent: 'center',
