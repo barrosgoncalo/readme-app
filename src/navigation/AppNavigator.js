@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ROUTES } from '../constants/routes';
 
 // Import your screens
-import LoginScreen from '../screens/Auth/LoginScreen';
+import LoginScreen from '../screens/Auth/Login/LoginScreen';
 import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
 import AppTabs from '../components/app-tabs'; 
 

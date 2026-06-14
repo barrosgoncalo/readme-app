@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { Spacing, Fonts } from '../../../constants/theme';
+import { Spacing, Fonts } from '../constants/theme';
 
 export const buildStyles = (theme) => StyleSheet.create({
     scrollContainer: {

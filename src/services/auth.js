@@ -8,7 +8,7 @@ import {
     sendEmailVerification,
     GoogleAuthProvider
 } from "firebase/auth"
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from "../constants/authConstants";
 
@@ -50,8 +50,30 @@ export const doCreateUserWithEmailAndPassword = async (email, password, profileD
     return userCredential;
 };
 
-export const doSignInWithEmailAndPassword = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
+export const doSignInWithEmailAndPassword = async (email, password) => {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+
+            if (userData.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
+                await auth.signOut(); // Force log them back out
+                throw new Error("Your account has been suspended. Please contact support.");
+            }
+
+            return { user, userData };
+        } else {
+            throw new Error("User profile not found.");
+        }
+    } catch (error) {
+        console.error("Login Error:", error);
+        throw error;
+    }
 };
 
 GoogleSignin.configure({
@@ -80,13 +102,19 @@ export const doGetGoogleTokenAndProfile = async () => {
 };
 
 export const doSignInWithGoogleCredential = async (idToken, profileData) => {
-  const credential = GoogleAuthProvider.credential(idToken);
-  const userCredential = await signInWithCredential(auth, credential);
-  
-  await saveUserData(userCredential.user.uid, profileData, 'google');
-  
-  return userCredential;
+    const credential = GoogleAuthProvider.credential(idToken);
+    const userCredential = await signInWithCredential(auth, credential);
+
+    const userDocRef = doc(db, "users", userCredential.user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if(!userDoc.exists()) {
+        await saveUserData(userCredential.user.uid, profileData, 'google');
+    }
+
+    return userCredential;
 };
+
 
 export const doSignOut = () => {
     return auth.signOut();

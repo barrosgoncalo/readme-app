@@ -12,7 +12,7 @@ import { Colors } from '../../../constants/theme';
 import { ROUTES } from '../../../constants/routes';
 
 // Separated Components
-import { buildStyles } from './registerStyles';
+import { buildStyles } from '../../../styles/authStyles';
 import { getPasswordDetails } from './registerUtils';
 import StepDots from './StepDots';
 import StepOneCredentials from './StepOneCredentials';

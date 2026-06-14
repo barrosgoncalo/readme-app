@@ -1,13 +1,61 @@
 rules_version = '2';
 
 service cloud.firestore {
-
   match /databases/{database}/documents {
 
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // ─── REUSABLE SECURITY FUNCTIONS ───
+    
+    // Checks if the person making the request is logged in
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Checks if the person making the request is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
-  }
+    // Fetches the user's own profile from the database to check their role/status
+    function getMyProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
 
+    // Checks if the logged-in user has the 'admin' role
+    function isAdmin() {
+      return isAuthenticated() && getMyProfile().role == 'admin';
+    }
+
+    // Checks if the logged-in user's account is currently active
+    function isActive() {
+      return isAuthenticated() && getMyProfile().accountStatus == 'active';
+    }
+
+    // ─── USER COLLECTION RULES ───
+    
+    match /users/{userId} {
+      
+      // READ: A user can read their own profile. Other logged-in, active users can read profiles too (for the community aspect).
+      allow read: if isOwner(userId) || (isAuthenticated() && isActive());
+
+      // CREATE (Registration): Enforces the "Zero Trust" principle.
+      // 1. Must be the owner creating their own profile.
+      // 2. MUST explicitly set their role to 'user' and status to 'active'.
+      allow create: if isOwner(userId)
+                    && request.resource.data.role == 'user'
+                    && request.resource.data.accountStatus == 'active';
+
+      // UPDATE (Editing Profile):
+      // A user can update their own profile IF they are active, BUT they cannot tamper with their role or status.
+      // An Admin can update ANY profile (including changing roles or suspending them).
+      allow update: if (isOwner(userId) 
+                        && isActive() 
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accountStatus']))
+                    || isAdmin();
+
+      // DELETE: Only admins can physically delete a user from the database.
+      allow delete: if isAdmin();
+    }
+    
+    // (You will add more match blocks here later for /books, /trades, etc.)
+  }
 }
