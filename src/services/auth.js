@@ -10,6 +10,7 @@ import {
 } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from "../constants/authConstants";
 
 export const saveUserData = async (uid, profileData, provider) => {
     await setDoc(doc(db, "users", uid), {
@@ -19,7 +20,11 @@ export const saveUserData = async (uid, profileData, provider) => {
         fullName: profileData.fullName,
         phoneNumber: profileData.phoneNumber,
         dob: profileData.dob,
-        profileVisibility: profileData.isPublic ? 'public' : 'private',
+        profileVisibility: profileData.isPublic 
+            ? ACCOUNT_VISIBILITY.PUBLIC 
+            : ACCOUNT_VISIBILITY.PRIVATE,
+        role: USER_ROLES.USER,
+        accountStatus: ACCOUNT_STATUS.ACTIVE,
         institutionalAddress: {
             addressLine1: profileData.addressLine1,
             addressLine2: profileData.addressLine2 || null,

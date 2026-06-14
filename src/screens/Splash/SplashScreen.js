@@ -4,7 +4,7 @@ import * as ExpoSplash from 'expo-splash-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { buildStyles } from './splashStyles';
 import { Colors } from '../../constants/theme';
-import { Routes } from '../../constants/routes';
+import { ROUTES } from '../../constants/routes';
 
 ExpoSplash.preventAutoHideAsync();
 
@@ -57,7 +57,7 @@ export default function SplashScreen({ navigation }) {
                                 if (currentIndex < MOTTO_WORDS.length) {
                                     animateWord(); // Loop to the next word
                                 } else {
-                                    navigation.replace(Routes.Register); 
+                                    navigation.replace(ROUTES.REGISTER); 
                                 }
                             });
                     }, 1000); 

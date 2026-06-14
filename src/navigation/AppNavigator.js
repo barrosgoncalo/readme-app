@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator } from 'react-native';
 import SplashScreen from '../screens/Splash/SplashScreen';
 import { useAuth } from '../contexts/AuthContext'; 
-import { Routes } from '../constants/routes';
+import { ROUTES } from '../constants/routes';
 
 // Import your screens
 import LoginScreen from '../screens/Auth/LoginScreen';
@@ -28,13 +28,13 @@ export default function AppNavigator() {
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {userLoggedIn ? (
                     // IF LOGGED IN -> Show the Main App
-                    <Stack.Screen name={Routes.Main} component={AppTabs} />
+                    <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
                 ) : (
                     // IF NOT LOGGED IN -> Show the Auth Flow
                     <>
-                        <Stack.Screen name={Routes.Splash} component={SplashScreen} options={{ headerShown: false }} />
-                        <Stack.Screen name={Routes.Register} component={RegisterScreen} />
-                        <Stack.Screen name={Routes.Login} component={LoginScreen} />
+                        <Stack.Screen name={ROUTES.SPLASH} component={SplashScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name={ROUTES.REGISTER} component={RegisterScreen} />
+                        <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
                     </>
                 )}
             </Stack.Navigator>

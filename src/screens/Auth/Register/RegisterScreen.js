@@ -9,7 +9,7 @@ import {
     doSignOut,
 } from '../../../services/auth';
 import { Colors } from '../../../constants/theme';
-import { Routes } from '../../../constants/routes';
+import { ROUTES } from '../../../constants/routes';
 
 // Separated Components
 import { buildStyles } from './registerStyles';
@@ -154,7 +154,7 @@ export default function RegisterScreen({ navigation }) {
                 await doSignInWithGoogleCredential(googleIdToken, profileData);
                 setIsRegistering(false);
                 Alert.alert('Success', 'Account created successfully!', [
-                    { text: 'OK', onPress: () => navigation.navigate(Routes.Main) },
+                    { text: 'OK', onPress: () => navigation.navigate(ROUTES.MAIN) },
                 ]);
             } else {
                 await doCreateUserWithEmailAndPassword(email.trim(), password, profileData);
@@ -162,7 +162,7 @@ export default function RegisterScreen({ navigation }) {
                 Alert.alert(
                     'Verify your Email',
                     "Account created! We've sent a verification link to your email. Please verify it before logging in.",
-                    [{ text: 'OK', onPress: () => navigation.navigate(Routes.Login) }]
+                    [{ text: 'OK', onPress: () => navigation.navigate(ROUTES.LOGIN) }]
                 );
             }
         } catch (error) {

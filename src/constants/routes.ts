@@ -1,6 +1,6 @@
-export const Routes = {
-    Splash: 'Splash',
-    Login: 'Login',
-    Register: 'Register',
-    Main: 'Main',
+export const ROUTES = {
+    SPLASH: 'Splash',
+    LOGIN: 'Login',
+    REGISTER: 'Register',
+    MAIN: 'Main',
 } as const;
