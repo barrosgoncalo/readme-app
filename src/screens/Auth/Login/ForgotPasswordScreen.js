@@ -11,24 +11,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 
-// Import your Auth logic
 import { doPasswordReset } from '../../../services/auth';
-
-// Import your themes and styles (Adjust paths as needed!)
 import { Colors } from '../../../constants/theme';
 import { buildStyles } from '../../../styles/authStyles';
 
 export default function ForgotPasswordScreen({ navigation }) {
-    // 1. Dynamic Theme Setup
+    // Dynamic Theme Setup
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
-    // 2. State Management
+    // State Management
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // 3. Reset Logic
+    // Reset Logic
     const handlePasswordReset = async () => {
         if (!email.trim()) {
             Alert.alert("Missing Input", "Please enter your email address.");
@@ -37,9 +34,8 @@ export default function ForgotPasswordScreen({ navigation }) {
 
         setIsLoading(true);
         try {
-            // Call your Firebase method from auth.js
             await doPasswordReset(email.trim());
-            
+
             Alert.alert(
                 "Email Sent", 
                 "Check your inbox for a link to reset your password.",
@@ -47,7 +43,6 @@ export default function ForgotPasswordScreen({ navigation }) {
             );
         } catch (error) {
             console.error("Reset Password Error:", error);
-            // Firebase throws specific errors, but we can provide a generic fallback
             Alert.alert("Error", error.message || "Failed to send reset email. Please try again.");
         } finally {
             setIsLoading(false);
@@ -57,7 +52,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
             <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-                
+
                 {/* ─── HEADER ─── */}
                 <View style={styles.header}>
                     <Text style={styles.eyebrow}>Recovery</Text>
@@ -66,7 +61,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 
                 {/* ─── BODY / INPUTS ─── */}
                 <View style={styles.body}>
-                    
+
                     <Text style={{ color: theme.text, fontSize: 15, marginBottom: 20, lineHeight: 22 }}>
                         Enter the email address associated with your account, and we will send you a link to reset your password.
                     </Text>
@@ -92,8 +87,8 @@ export default function ForgotPasswordScreen({ navigation }) {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Send Reset Link</Text>
-                        )}
+                                <Text style={styles.buttonText}>Send Reset Link</Text>
+                            )}
                     </TouchableOpacity>
 
                     {/* Footer Link to return to Login */}

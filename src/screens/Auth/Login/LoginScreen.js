@@ -78,7 +78,7 @@ export default function LoginScreen({ navigation }) {
                 {/* ─── HEADER ─── */}
                 <View style={styles.header}>
                     <Text style={styles.eyebrow}>Welcome Back</Text>
-                    <Text style={styles.title}>Log in to your account</Text>
+                    <Text style={styles.title}>Sign in to your account</Text>
                 </View>
 
                 {/* ─── BODY / INPUTS ─── */}
@@ -134,7 +134,7 @@ export default function LoginScreen({ navigation }) {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Log In</Text>
+                            <Text style={styles.buttonText}>Sign In</Text>
                         )}
                     </TouchableOpacity>
 

@@ -93,7 +93,7 @@ export default function StepOneCredentials({
             <View style={styles.loginFooter}>
                 <Text style={{ color: theme.textSecondary }}>Already have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.loginLink}>Log In</Text>
+                    <Text style={styles.loginLink}>Sign In</Text>
                 </TouchableOpacity>
             </View>
         </View>
