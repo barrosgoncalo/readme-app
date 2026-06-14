@@ -1,6 +1,8 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeFirestore, __getPlatform } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth'
+import { initializeAuth } from 'firebase/auth'
+import { getReactNativePersistence } from '@firebase/auth/dist/rn/index.js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -20,6 +22,8 @@ const db = initializeFirestore(app, {
     experimentalAutoDetectPersistence: true // Enables offline data support on mobile
 });
 
-const auth = getAuth(app)
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
 
 export { app, db, auth };

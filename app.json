@@ -2,6 +2,10 @@
   "expo": {
     "name": "BookCommunityApp",
     "slug": "BookCommunityApp",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "backgroundColor": "#F2F0EF"
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -30,11 +34,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
-          }
+          "backgroundColor": "#ffffff",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 250
         }
       ],
       [
