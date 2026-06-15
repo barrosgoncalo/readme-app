@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors } from '../../constants/theme';
 import { ROUTES } from '../../constants/routes';
@@ -11,6 +12,16 @@ export default function WelcomeScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme, colorScheme);
+
+    const completeWelcomeAndNavigate = async (targetRoute) => {
+        try {
+            await AsyncStorage.setItem('alreadyLaunched', 'true');
+        } catch(error) {
+            console.error('Error saving launch status:', error);
+        } finally {
+            navigation.navigate(targetRoute);
+        }
+    }
 
     return (
         <View style={styles.container}>
@@ -43,7 +54,7 @@ export default function WelcomeScreen({ navigation }) {
                     {/* Primary Button */}
                     <TouchableOpacity 
                         style={styles.primaryButton}
-                        onPress={() => navigation.navigate(ROUTES.REGISTER)}
+                        onPress={() => completeWelcomeAndNavigate(ROUTES.REGISTER)}
                     >
                         <Text style={styles.primaryButtonText}>Get Started</Text>
                         <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.arrowIcon} />
@@ -52,7 +63,7 @@ export default function WelcomeScreen({ navigation }) {
                     {/* Secondary Link */}
                     <TouchableOpacity 
                         style={styles.secondaryButton}
-                        onPress={() => navigation.navigate(ROUTES.LOGIN)}
+                        onPress={() => completeWelcomeAndNavigate(ROUTES.LOGIN)}
                     >
                         <Text style={styles.secondaryButtonText}>Already have an Account?</Text>
                     </TouchableOpacity>

@@ -12,7 +12,7 @@ ExpoSplash.preventAutoHideAsync();
 const MOTTO_WORDS = ["Connect.", "Trade.", "Read Together."];
 
 
-export default function SplashScreen({ navigation }) {
+export default function SplashScreen({ onFinish }) {
     const [index, setIndex] = useState(0);
 
     const slideAnim = useRef(new Animated.Value(30)).current; 
@@ -58,8 +58,7 @@ export default function SplashScreen({ navigation }) {
                                 if (currentIndex < MOTTO_WORDS.length) {
                                     animateWord();
                                 } else {
-                                    setHasSeenSplash();
-                                    navigation.replace(ROUTES.WELCOME); 
+                                    onFinish(); 
                                 }
                             });
                     }, 1000); 
@@ -78,7 +77,7 @@ export default function SplashScreen({ navigation }) {
         }
 
         return () => { isMounted = false; };
-    }, [isLogoLoaded, navigation, slideAnim, fadeAnim]);
+    }, [isLogoLoaded, onFinish, slideAnim, fadeAnim]);
 
     return (
         <View style={styles.container}>
