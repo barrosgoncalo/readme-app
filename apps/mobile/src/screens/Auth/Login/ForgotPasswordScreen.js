@@ -12,8 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 
-import { doPasswordReset } from '../../../services/auth';
-import { Colors } from '../../../constants/theme';
+import { doPasswordReset } from '@readme/shared/src/services/auth';
+import { Colors } from '@readme/shared/src/constants/theme';
 import { buildStyles } from '../../../styles/authStyles';
 
 export default function ForgotPasswordScreen({ navigation }) {

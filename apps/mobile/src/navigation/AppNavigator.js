@@ -5,8 +5,8 @@ import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import SplashScreen from '../screens/Splash/SplashScreen';
-import { useAuth } from '../contexts/AuthContext'; 
-import { ROUTES } from '../constants/routes';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Import screens
 import LoginScreen from '../screens/Auth/Login/LoginScreen';

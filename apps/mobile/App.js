@@ -1,6 +1,6 @@
 import React from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import { AuthProvider } from './src/contexts/AuthContext'; 
+import { AuthProvider } from '@readme/shared/src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';

@@ -16,11 +16,11 @@ import {
     doSignInWithEmailAndPassword, 
     doGetGoogleTokenAndProfile, 
     doSignInWithGoogleCredential
-} from '../../../services/auth';
+} from '@readme/shared/src/services/auth';
 
 import { useColorScheme } from 'react-native';
-import { Colors } from '../../../constants/theme';
-import { ROUTES } from '../../../constants/routes';
+import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../../styles/authStyles';
 
 export default function LoginScreen({ navigation }) {

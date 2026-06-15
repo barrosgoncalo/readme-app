@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Colors } from '../../constants/theme';
-import { ROUTES } from '../../constants/routes';
+import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../styles/welcomeStyles';
 
 export default function WelcomeScreen({ navigation }) {

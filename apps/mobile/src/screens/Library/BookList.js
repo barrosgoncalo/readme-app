@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Button } from 'react-native';
-import { doSignOut } from '../../services/auth'; // Import your sign-out function
+import { doSignOut } from '@readme/shared/src/services/auth'; // Import your sign-out function
 
 export default function BookList() {
   return (

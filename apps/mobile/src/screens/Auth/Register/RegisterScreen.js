@@ -14,10 +14,10 @@ import {
     doGetGoogleTokenAndProfile,
     doSignInWithGoogleCredential,
     doSignOut,
-} from '../../../services/auth';
+} from '@readme/shared/src/services/auth';
 
-import { Colors } from '../../../constants/theme';
-import { ROUTES } from '../../../constants/routes';
+import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Separated Components
 import { buildStyles } from '../../../styles/authStyles';
