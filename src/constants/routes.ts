@@ -3,5 +3,6 @@ export const ROUTES = {
     LOGIN: 'Login',
     REGISTER: 'Register',
     FORGOT_PASSWORD: 'ForgotPassword',
+    WELCOME: 'Welcome',
     MAIN: 'Main',
 } as const;

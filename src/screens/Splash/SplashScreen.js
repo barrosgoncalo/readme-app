@@ -5,6 +5,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { buildStyles } from './splashStyles';
 import { Colors } from '../../constants/theme';
 import { ROUTES } from '../../constants/routes';
+import { setHasSeenSplash } from '../../navigation/AppNavigator';
 
 ExpoSplash.preventAutoHideAsync();
 
@@ -57,7 +58,8 @@ export default function SplashScreen({ navigation }) {
                                 if (currentIndex < MOTTO_WORDS.length) {
                                     animateWord(); // Loop to the next word
                                 } else {
-                                    navigation.replace(ROUTES.REGISTER); 
+                                    setHasSeenSplash();
+                                    navigation.replace(ROUTES.WELCOME); 
                                 }
                             });
                     }, 1000); 

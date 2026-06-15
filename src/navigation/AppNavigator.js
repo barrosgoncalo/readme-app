@@ -9,9 +9,14 @@ import { ROUTES } from '../constants/routes';
 import LoginScreen from '../screens/Auth/Login/LoginScreen';
 import ForgotPasswordScreen from '../screens/Auth/Login/ForgotPasswordScreen';
 import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
+import WelcomeScreen from '../screens/Welcome/WelcomeScreen';
 import AppTabs from '../components/app-tabs'; 
 
 const Stack = createNativeStackNavigator();
+
+let hasSeenSplash = false;
+
+export const setHasSeenSplash = () => { hasSeenSplash = true; }
 
 export default function AppNavigator() {
     const { userLoggedIn, loading } = useAuth(); 
@@ -28,17 +33,21 @@ export default function AppNavigator() {
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {userLoggedIn ? (
-                    // IF LOGGED IN -> Show the Main App
                     <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
                 ) : (
-                    // IF NOT LOGGED IN -> Show the Auth Flow
-                    <>
-                        <Stack.Screen name={ROUTES.SPLASH} component={SplashScreen} options={{ headerShown: false }} />
-                        <Stack.Screen name={ROUTES.REGISTER} component={RegisterScreen} />
-                        <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
-                        <Stack.Screen name={ROUTES.FORGOT_PASSWORD} component={ForgotPasswordScreen} />
-                    </>
-                )}
+                        <>
+                            {!hasSeenSplash ? (
+                                <Stack.Screen
+                                    name={ROUTES.SPLASH}
+                                    component={SplashScreen}
+                                />
+                            ) : null}
+                            <Stack.Screen name={ROUTES.WELCOME} component={WelcomeScreen} />
+                            <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
+                            <Stack.Screen name={ROUTES.REGISTER} component={RegisterScreen} />
+                            <Stack.Screen name={ROUTES.FORGOT_PASSWORD} component={ForgotPasswordScreen} />
+                        </>
+                    )}
             </Stack.Navigator>
         </NavigationContainer>
     );
