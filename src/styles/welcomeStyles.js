@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { Fonts } from '../constants/theme';
 
 export const buildStyles = (theme, colorScheme) => StyleSheet.create({
     container: {
@@ -35,13 +36,13 @@ export const buildStyles = (theme, colorScheme) => StyleSheet.create({
         color: theme.text,
         lineHeight: 48,
         marginBottom: 20,
-        fontFamily: 'Playfair-Bold',
+        fontFamily: Fonts.playfair_bold,
     },
     subtitle: {
         fontSize: 16,
         color: colorScheme === 'dark' ? '#CCCCCC' : '#4A4A4A',
         lineHeight: 24,
-        fontFamily: 'Inter-Regular',
+        fontFamily: Fonts.inter_regular,
     },
 
     // ─── BUTTONS ───

@@ -47,7 +47,6 @@ export default function LoginScreen({ navigation }) {
             // Using the unified function that includes the Suspension Bouncer
             const { userData } = await doSignInWithEmailAndPassword(email, password);
             console.log("Logged in successfully as:", userData.role);
-            // TODO: Navigate to Main App
         } catch (error) {
             Alert.alert("Login Failed", error.message);
         } finally {

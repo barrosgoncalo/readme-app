@@ -48,15 +48,15 @@ export default function SplashScreen({ navigation }) {
 
                         // 4. Slide UP and Fade OUT
                         Animated.parallel([
-                            Animated.timing(slideAnim, { toValue: -30, duration: 200, useNativeDriver: true }),
-                            Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true })
+                            Animated.timing(slideAnim, { toValue: -30, duration: 180, useNativeDriver: true }),
+                            Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true })
                         ]).start(() => {
                                 if (!isMounted) return;
 
                                 currentIndex++;
 
                                 if (currentIndex < MOTTO_WORDS.length) {
-                                    animateWord(); // Loop to the next word
+                                    animateWord();
                                 } else {
                                     setHasSeenSplash();
                                     navigation.replace(ROUTES.WELCOME); 

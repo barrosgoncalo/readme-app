@@ -36,7 +36,7 @@ export default function AppNavigator() {
                     <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
                 ) : (
                         <>
-                            {!hasSeenSplash ? (
+                            { !hasSeenSplash ? (
                                 <Stack.Screen
                                     name={ROUTES.SPLASH}
                                     component={SplashScreen}

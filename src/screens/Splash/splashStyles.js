@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { Fonts } from '../../constants/theme';
 
 export const buildStyles = (theme) => StyleSheet.create({
     container: {
@@ -13,7 +14,7 @@ export const buildStyles = (theme) => StyleSheet.create({
     },
     mottoContainer: {
         position: 'absolute',
-        top: '65%',
+        top: '63%',
         height: 40,
         justifyContent: 'center',
         alignItems: 'center',
@@ -24,5 +25,6 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontWeight: '700',
         color: theme.text,
         letterSpacing: 0.5,
+        fontFamily: Fonts.inter_semi,
     },
 });
