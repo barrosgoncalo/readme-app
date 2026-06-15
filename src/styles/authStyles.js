@@ -175,6 +175,13 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontWeight: '600',
         fontSize: 14,
     },
+    forgotPasswordImage: { width: '100%',
+        height: 250,
+        marginVertical: 16,
+        borderRadius: 12,
+        marginTop: 0,
+        marginBottom: -2,
+    },
     eyeButton: {
         paddingHorizontal: 12,
         justifyContent: 'center',

@@ -4,8 +4,6 @@ import * as ExpoSplash from 'expo-splash-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { buildStyles } from './splashStyles';
 import { Colors } from '../../constants/theme';
-import { ROUTES } from '../../constants/routes';
-import { setHasSeenSplash } from '../../navigation/AppNavigator';
 
 ExpoSplash.preventAutoHideAsync();
 

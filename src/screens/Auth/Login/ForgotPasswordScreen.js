@@ -6,7 +6,8 @@ import {
     TouchableOpacity, 
     ActivityIndicator, 
     ScrollView, 
-    Alert 
+    Alert,
+    Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
@@ -58,7 +59,11 @@ export default function ForgotPasswordScreen({ navigation }) {
                     <Text style={styles.eyebrow}>Recovery</Text>
                     <Text style={styles.title}>Reset Password</Text>
                 </View>
-
+                <Image
+                    source={require('../../../../assets/images/ForgotPassword.png')}
+                    style={styles.forgotPasswordImage}
+                    resizeMode="contain"
+                />
                 {/* ─── BODY / INPUTS ─── */}
                 <View style={styles.body}>
 
