@@ -60,11 +60,12 @@ export const buildStyles = (theme) => StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: theme.backgroundSelected,
         padding: 12,
         marginVertical: 8,
         borderRadius: 8,
-        backgroundColor: '#fafafa',
+        backgroundColor: theme.backgroundElement,
+        color: theme.text,
         fontSize: 15,
     },
     strengthText: {
@@ -152,9 +153,9 @@ export const buildStyles = (theme) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: theme.backgroundSelected,
         borderRadius: 8,
-        backgroundColor: '#fafafa',
+        backgroundColor: theme.backgroundElement,
         marginVertical: 8,
     },
     passwordInput: {
