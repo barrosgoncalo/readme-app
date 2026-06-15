@@ -8,12 +8,14 @@ export const buildStyles = (theme, colorScheme) => StyleSheet.create({
     
     // ─── IMAGE SECTION ───
     imageContainer: {
-        flex: 1.2, // Takes up slightly more than half the screen
+        flex: 1.2,
         width: '100%',
+        overflow: 'hidden',
     },
     image: {
-        width: '100%',
+        width: '120%',
         height: '100%',
+        transform: [{ translateX: -55 }],
     },
 
     // ─── CONTENT SECTION ───
@@ -23,23 +25,23 @@ export const buildStyles = (theme, colorScheme) => StyleSheet.create({
         paddingHorizontal: 30,
         paddingTop: 40,
         paddingBottom: 20,
-        justifyContent: 'space-between', // Pushes text up and buttons down
+        justifyContent: 'space-between',
     },
     textWrapper: {
         marginBottom: 20,
     },
     title: {
         fontSize: 40,
-        fontWeight: 'bold',
         color: theme.text,
         lineHeight: 48,
         marginBottom: 20,
-        // fontFamily: 'Your-Serif-Font', // Uncomment this once you load your custom Figma font!
+        fontFamily: 'Playfair-Bold',
     },
     subtitle: {
         fontSize: 16,
         color: colorScheme === 'dark' ? '#CCCCCC' : '#4A4A4A',
         lineHeight: 24,
+        fontFamily: 'Inter-Regular',
     },
 
     // ─── BUTTONS ───
@@ -48,7 +50,7 @@ export const buildStyles = (theme, colorScheme) => StyleSheet.create({
         paddingBottom: 10,
     },
     primaryButton: {
-        backgroundColor: '#3B3561',
+        backgroundColor: theme.quaternary,
         borderRadius: 30,
         paddingVertical: 16,
         flexDirection: 'row',
@@ -69,7 +71,7 @@ export const buildStyles = (theme, colorScheme) => StyleSheet.create({
         alignItems: 'center',
     },
     secondaryButtonText: {
-        color: '#3B3561', // Use the same purple as the button background
+        color: theme.quaternary,
         fontSize: 15,
         fontWeight: '600',
     },
