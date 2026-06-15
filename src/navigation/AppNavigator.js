@@ -52,24 +52,36 @@ export default function AppNavigator() {
                 {userLoggedIn ? (
                     <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
                 ) : (
-                    <>
-                        {/* Use custom conditional layout trees rather than nested closures */}
-                        {showSplash ? (
-                            <Stack.Screen name={ROUTES.SPLASH}>
-                                {() => <SplashScreen onFinish={handleSplashFinish} />}
-                            </Stack.Screen>
-                        ) : (
-                            <>
-                                {isFirstLaunch && (
-                                    <Stack.Screen name={ROUTES.WELCOME} component={WelcomeScreen} />
+                        <>
+                            {/* Use custom conditional layout trees rather than nested closures */}
+                            {showSplash ? (
+                                <Stack.Screen name={ROUTES.SPLASH}>
+                                    {() => <SplashScreen onFinish={handleSplashFinish} />}
+                                </Stack.Screen>
+                            ) : (
+                                    <>
+                                        {isFirstLaunch && (
+                                            <Stack.Screen 
+                                                name={ROUTES.WELCOME}
+                                                component={WelcomeScreen}
+                                            />
+                                        )}
+                                        <Stack.Screen
+                                            name={ROUTES.LOGIN}
+                                            component={LoginScreen}
+                                        />
+                                        <Stack.Screen
+                                            name={ROUTES.REGISTER}
+                                            component={RegisterScreen}
+                                        />
+                                        <Stack.Screen
+                                            name={ROUTES.FORGOT_PASSWORD}
+                                            component={ForgotPasswordScreen}
+                                        />
+                                    </>
                                 )}
-                                <Stack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
-                                <Stack.Screen name={ROUTES.REGISTER} component={RegisterScreen} />
-                                <Stack.Screen name={ROUTES.FORGOT_PASSWORD} component={ForgotPasswordScreen} />
-                            </>
-                        )}
-                    </>
-                )}
+                        </>
+                    )}
             </Stack.Navigator>
         </NavigationContainer>
     );

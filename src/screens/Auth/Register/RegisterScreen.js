@@ -1,6 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, Alert, ScrollView, useColorScheme, Platform } from 'react-native';
+import { 
+    View,
+    Text,
+    Alert,
+    ScrollView,
+    useColorScheme,
+    Platform
+} from 'react-native';
 
 import {
     doCreateUserWithEmailAndPassword,
@@ -189,6 +196,7 @@ export default function RegisterScreen({ navigation }) {
 
     return (
         <ScrollView
+            style={{ backgroundColor: theme.background || '#fff' }}
             contentContainerStyle={styles.scrollContainer}
             keyboardShouldPersistTaps="handled"
             onScroll={() => setShowDatePicker(false)}
