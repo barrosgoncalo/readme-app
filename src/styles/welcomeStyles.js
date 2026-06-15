@@ -40,7 +40,7 @@ export const buildStyles = (theme, colorScheme) => StyleSheet.create({
     },
     subtitle: {
         fontSize: 16,
-        color: colorScheme === 'dark' ? '#CCCCCC' : '#4A4A4A',
+        color: theme.subtext,
         lineHeight: 24,
         fontFamily: Fonts.inter_regular,
     },

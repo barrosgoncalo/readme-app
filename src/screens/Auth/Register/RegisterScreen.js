@@ -15,6 +15,7 @@ import {
     doSignInWithGoogleCredential,
     doSignOut,
 } from '../../../services/auth';
+
 import { Colors } from '../../../constants/theme';
 import { ROUTES } from '../../../constants/routes';
 

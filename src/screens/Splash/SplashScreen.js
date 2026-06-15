@@ -80,7 +80,10 @@ export default function SplashScreen({ onFinish }) {
     return (
         <View style={styles.container}>
             <Image 
-                source={require('../../../assets/images/splash.png')} 
+                source={ colorScheme === 'dark' 
+                    ? require('../../../assets/images/splash-dark.png')
+                    : require('../../../assets/images/splash.png')
+                } 
                 style={styles.logo}
                 resizeMode="contain"
                 onLoad={() => setIsLogoLoaded(true)}
