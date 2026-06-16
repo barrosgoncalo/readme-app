@@ -1,25 +1,30 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, Button, useColorScheme } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, useColorScheme } from 'react-native';
+import { Dimensions } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { ROUTES } from '@readme/shared/src/constants/routes'
 import { buildStyles } from '../../styles/profileStyles';
 import { doSignOut } from '@readme/shared/src/services/auth';
 
-export default function ProfileScreen({navigation}) {
+export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme, colorScheme);
 
+    const { height } = Dimensions.get('window');
+
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
-        doSignOut();
+        await doSignOut();
     };
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.headerBackground }]}>
-            {/* --- HEADER SECTION --- */}
-            <View style={styles.header}>
+        // O container principal define a cor que fica "lá atrás"
+        <View style={[styles.container, { backgroundColor: theme.headerBackground, flex: 1 }]}>
+            
+            {/* --- HEADER SECTION(estático) --- */}
+            {/* Adicionámos position: 'absolute' e zIndex: 0 para ele ficar colado atrás */}
+            <View style={[styles.header, { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0, height: 320 }]}>
                 <Text style={styles.headerTitle}>Account</Text>
 
                 <View style={styles.avatarContainer}>
@@ -38,51 +43,84 @@ export default function ProfileScreen({navigation}) {
                 </View>
             </View>
 
-            {/* --- BODY SECTION --- */}
-            <View style={[styles.body, { backgroundColor: theme.background }]}>
+            {/* --- BODY SECTION(móvel) --- */}
+            <ScrollView 
+                style={{ flex: 1, zIndex: 1 }}
+                contentContainerStyle={{ 
+                    paddingTop: 300,
+                    paddingBottom: 0
+                }}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+                overScrollMode="never"
+            >
+                {/* O "Papel" que desliza por cima */}
+                <View style={[styles.body, { 
+                    backgroundColor: theme.background, 
+                    borderTopLeftRadius: 30,
+                    borderTopRightRadius: 30,
+                    minHeight: 500,
+                    padding: 20,
+                }]}>
 
-                {/* GROUP 1 */}
-                <MenuGroup styles={styles}>
-                    <MenuItem styles={styles} theme={theme} icon="lucide:book" label="My Books" />
-                </MenuGroup>
+                    {/* GROUP 1 */}
+                    <MenuGroup styles={styles} bgColor={theme.surface || '#FFFFFF'}>
+                        <MenuItem styles={styles} theme={theme} icon="lucide:book" label="My Books" />
+                    </MenuGroup>
 
-                {/* GROUP 2 */}
-                <MenuGroup styles={styles}>
-                    <MenuItem styles={styles} theme={theme} icon="lucide:edit" label="Edit Profile" />
-                    <MenuItem styles={styles} theme={theme} icon="lucide:user-x" label="View Blocked Users" />
-                    <MenuItem styles={styles} theme={theme} icon="lucide:activity" label="Activities" />
-                    <MenuItem styles={styles} theme={theme} icon="lucide:activity" label="Activities" />
-                </MenuGroup>
+                    {/* GROUP 2 */}
+                    <MenuGroup styles={styles} bgColor={theme.surface || '#FFFFFF'}>
+                        <MenuItem styles={styles} theme={theme} icon="lucide:edit" label="Edit Profile" />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:user-x" label="View Blocked Users" />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:activity" label="Activities" />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:activity" label="Activities" />
+                    </MenuGroup>
 
-                {/* GROUP 3 */}
-                <MenuGroup styles={styles}>
-                    <MenuItem styles={styles} theme={theme} icon="lucide:settings" label="Settings" />
-                    <MenuItem styles={styles} theme={theme} icon={null} label="Level" />
-                    <MenuItem styles={styles} theme={theme} icon="lucide:heart" label="Favorites" />
-                </MenuGroup>
+                    {/* GROUP 3 */}
+                    <MenuGroup styles={styles} bgColor={theme.surface || '#FFFFFF'}>
+                        <MenuItem styles={styles} theme={theme} icon="lucide:settings" label="Settings" />
+                        <MenuItem styles={styles} theme={theme} icon="solar:medal-star-circle-linear" label="Level" />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:heart" label="Favorites" />
+                    </MenuGroup>
 
-                {/* GROUP 4 (Sign Out) */}
-                <MenuGroup styles={styles} >
-                    <MenuItem 
-                        styles={styles}
-                        theme={theme}
-                        icon="lucide:log-out" 
-                        label="Sign Out" 
-                        textColor={Colors.password.red} 
-                        iconColor={Colors.password.red}
-                        onPress={handleSignOut}
-                    />
-                </MenuGroup>
+                    {/* GROUP 4 (Sign Out) */}
+                    <MenuGroup styles={styles} bgColor={theme.surface || '#FFFFFF'}>
+                        <MenuItem 
+                            styles={styles}
+                            theme={theme}
+                            icon="lucide:log-out" 
+                            label="Sign Out" 
+                            textColor={Colors.password.red} 
+                            iconColor={Colors.password.red}
+                            onPress={handleSignOut}
+                        />
+                    </MenuGroup>
 
-            </View>
-        </ScrollView>
+                </View>
+            </ScrollView>
+        </View>
     );
 }
 
 // --- SUB-COMPONENTES REUTILIZÁVEIS ---
 
-const MenuGroup = ({ children, styles }) => (
-    <View style={styles.menuGroup}>
+const MenuGroup = ({ children, styles, bgColor }) => (
+    <View style={[
+        styles.menuGroup, 
+        { 
+            backgroundColor: bgColor,
+            borderRadius: 16,
+            marginBottom: 20,
+            overflow: 'hidden',
+            
+            // Sombra suave
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2, 
+        }
+    ]}>
         {children}
     </View>
 );
@@ -90,7 +128,7 @@ const MenuGroup = ({ children, styles }) => (
 const MenuItem = ({ icon, label, textColor, iconColor, theme, styles, onPress }) => {
     return (
         <TouchableOpacity 
-            style={styles.menuItem}
+            style={[styles.menuItem, { paddingVertical: 16, paddingHorizontal: 20 }]}
             activeOpacity={0.7}
             onPress={onPress}
         >

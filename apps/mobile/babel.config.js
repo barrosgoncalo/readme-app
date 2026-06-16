@@ -5,7 +5,6 @@ module.exports = function (api) {
     presets: ['babel-preset-expo'],
     plugins: [
       [
-        // A magia estava aqui: mudou de /plugin para /babel
         'react-native-iconify/babel', 
         {
           icons: [
@@ -18,7 +17,7 @@ module.exports = function (api) {
             'lucide:heart',
             'lucide:log-out',
             'lucide:chevron-right',
-            'mdi:home',
+            'solar:medal-star-circle-linear',
           ],
         },
       ],
