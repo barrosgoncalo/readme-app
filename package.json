@@ -1,0 +1,15 @@
+{
+  "name": "readme-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "version": "1.0.0",
+  "scripts": {},
+  "dependencies": {
+    "expo": "~55.0.26",
+    "react": "19.2.0",
+    "react-native": "0.83.6"
+  }
+}
