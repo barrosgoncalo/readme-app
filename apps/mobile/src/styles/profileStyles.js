@@ -4,8 +4,15 @@ import { Spacing, Fonts, Colors } from '@readme/shared/src/constants/theme';
 export const buildStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: theme.headerBackground,
     },
     header: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 0,
+        height: 320,
         paddingTop: 60,
         paddingBottom: 40,
         alignItems: 'center',
@@ -52,25 +59,39 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontSize: 14,
         color: '#D6D3D1',
     },
+    scrollView: {
+        flex: 1,
+        zIndex: 1,
+    },
+    scrollContent: {
+        paddingTop: 300,
+        paddingBottom: 0,
+    },
     body: {
         flex: 1,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingHorizontal: 20,
-        paddingTop: 24,
-        paddingBottom: 40,
+        backgroundColor: theme.background,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        padding: 20,
         gap: 16,
     },
     menuGroup: {
-        backgroundColor: Colors.cardBackground,
         borderRadius: 16,
+        marginBottom: 15,     // <-- Extraído
         overflow: 'hidden',
+        // Sombras extraídas
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2, 
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
     },
     menuItemLeft: {
         flexDirection: 'row',

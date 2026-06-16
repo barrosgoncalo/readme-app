@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, useColorScheme } from 'react-native';
-import { Dimensions } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildStyles } from '../../styles/profileStyles';
@@ -9,9 +8,7 @@ import { doSignOut } from '@readme/shared/src/services/auth';
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildStyles(theme, colorScheme);
-
-    const { height } = Dimensions.get('window');
+    const styles = buildStyles(theme);
 
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
@@ -19,12 +16,10 @@ export default function ProfileScreen({ navigation }) {
     };
 
     return (
-        // O container principal define a cor que fica "lá atrás"
-        <View style={[styles.container, { backgroundColor: theme.headerBackground, flex: 1 }]}>
-            
+        <View style={styles.container}>
+
             {/* --- HEADER SECTION(estático) --- */}
-            {/* Adicionámos position: 'absolute' e zIndex: 0 para ele ficar colado atrás */}
-            <View style={[styles.header, { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0, height: 320 }]}>
+            <View style={styles.header}>
                 <Text style={styles.headerTitle}>Account</Text>
 
                 <View style={styles.avatarContainer}>
@@ -45,23 +40,14 @@ export default function ProfileScreen({ navigation }) {
 
             {/* --- BODY SECTION(móvel) --- */}
             <ScrollView 
-                style={{ flex: 1, zIndex: 1 }}
-                contentContainerStyle={{ 
-                    paddingTop: 300,
-                    paddingBottom: 0
-                }}
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 bounces={false}
                 overScrollMode="never"
             >
                 {/* O "Papel" que desliza por cima */}
-                <View style={[styles.body, { 
-                    backgroundColor: theme.background, 
-                    borderTopLeftRadius: 30,
-                    borderTopRightRadius: 30,
-                    minHeight: 500,
-                    padding: 20,
-                }]}>
+                <View style={styles.body}>
 
                     {/* GROUP 1 */}
                     <MenuGroup styles={styles} bgColor={theme.surface || '#FFFFFF'}>
@@ -105,22 +91,7 @@ export default function ProfileScreen({ navigation }) {
 // --- SUB-COMPONENTES REUTILIZÁVEIS ---
 
 const MenuGroup = ({ children, styles, bgColor }) => (
-    <View style={[
-        styles.menuGroup, 
-        { 
-            backgroundColor: bgColor,
-            borderRadius: 16,
-            marginBottom: 20,
-            overflow: 'hidden',
-            
-            // Sombra suave
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2, 
-        }
-    ]}>
+    <View style={[styles.menuGroup, { backgroundColor: bgColor }]}>
         {children}
     </View>
 );
@@ -128,7 +99,7 @@ const MenuGroup = ({ children, styles, bgColor }) => (
 const MenuItem = ({ icon, label, textColor, iconColor, theme, styles, onPress }) => {
     return (
         <TouchableOpacity 
-            style={[styles.menuItem, { paddingVertical: 16, paddingHorizontal: 20 }]}
+            style={styles.menuItem}
             activeOpacity={0.7}
             onPress={onPress}
         >
@@ -137,8 +108,8 @@ const MenuItem = ({ icon, label, textColor, iconColor, theme, styles, onPress })
                     {icon ? (
                         <Iconify icon={icon} size={18} color={iconColor || '#4A4A4A'} />
                     ) : (
-                        <View style={styles.emptyIconPlaceholder} />
-                    )}
+                            <View style={styles.emptyIconPlaceholder} />
+                        )}
                 </View>
                 <Text style={[styles.menuItemLabel, { color: textColor || theme.text }]}>
                     {label}
