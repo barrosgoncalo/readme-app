@@ -1,8 +1,14 @@
-// Web Firebase init — uses browserLocalPersistence and Vite env vars.
+// Web Firebase init — Vite env vars.
 // Mirrors packages/shared/src/services/firebase.js but for the DOM.
+//
+// Uses getAuth(), not initializeAuth(): initializeAuth() is for environments
+// without window (React Native, etc.) and needs an explicit
+// popupRedirectResolver to support signInWithPopup/signInWithRedirect.
+// getAuth() wires that up automatically and already defaults to
+// browserLocalPersistence in a browser context.
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeFirestore } from 'firebase/firestore';
-import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -20,8 +26,6 @@ const db = initializeFirestore(app, {
     experimentalAutoDetectPersistence: true,
 });
 
-const auth = initializeAuth(app, {
-    persistence: browserLocalPersistence,
-});
+const auth = getAuth(app);
 
 export { app, db, auth };
