@@ -12,5 +12,7 @@ Short, skim-friendly reference for the team. One topic per file, ~1 page each.
 | [06-LOCAL-SETUP.md](06-LOCAL-SETUP.md) | How to run mobile and web locally |
 | [07-CONVENTIONS.md](07-CONVENTIONS.md) | Branches, commits, constants, hard rules |
 | [08-WEB-ROADMAP.md](08-WEB-ROADMAP.md) | What's in the web app today, what's next |
+| [09-WEB-STRUCTURE.md](09-WEB-STRUCTURE.md) | `apps/web/src` folder-by-folder: what each module does |
+| [10-WEB-NEXT-STEPS.md](10-WEB-NEXT-STEPS.md) | Checklist for whoever picks up web development next |
 
 Editing these docs: keep them short. If a doc grows past two screens, split it.
