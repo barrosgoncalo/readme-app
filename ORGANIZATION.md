@@ -40,7 +40,7 @@
 - Adicionar o toggle dark/light mode ao Profile Screen (Gonçalo)
 - Desenhar todos os screens web no figma (Manuel/Campos)
 - Implementar a password strength na web (Manuel/Campos)
-- Retirar edição da foto da edição do perfil
+- Retirar a possibilidade de edição da foto da edição do perfil(Bernardo)
 
 ---
 
