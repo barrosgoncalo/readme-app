@@ -15,7 +15,7 @@ export default function Login() {
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const redirectTo = location.state?.from || '/home';
+    const redirectTo = location.state?.from || '/books';
 
     async function onSubmit(e) {
         e.preventDefault();
