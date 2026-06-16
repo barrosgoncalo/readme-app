@@ -1,16 +1,51 @@
-# React + Vite
+# `apps/web` — README web client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The web companion to `apps/mobile`. Same Firebase project, same `users/{uid}`
+schema, same auth contract.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+# from repo root, once: install all workspaces
+npm install
 
-## React Compiler
+# start the dev server
+cd apps/web
+npm run dev
+# → http://localhost:5173
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Env vars
 
-## Expanding the ESLint configuration
+Copy `.env.example` to `.env.local` and fill in real Firebase web config
+values (ask Gonçalo). `.env.local` is gitignored.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Stack
+
+- React 19 + Vite 8
+- `react-router-dom` v6
+- Firebase JS SDK (web) — `browserLocalPersistence`
+- Shared auth context from `@readme/shared`
+
+## Structure
+
+```
+src/
+├── routes/AppRouter.jsx     who-sees-what (mirrors mobile's AppNavigator)
+├── auth/RequireAuth.jsx     guard for protected routes
+├── pages/
+│   ├── Splash.jsx
+│   ├── Welcome.jsx          first launch only (localStorage flag)
+│   ├── Login.jsx
+│   ├── ForgotPassword.jsx
+│   ├── Register/            3-step flow (mirrors mobile)
+│   └── Home.jsx             post-login placeholder
+├── styles/
+│   ├── themeVars.css        CSS vars from packages/shared theme.ts
+│   └── global.css           font wiring + base styles
+├── App.jsx
+└── main.jsx
+```
+
+See [../../docs/](../../docs/) for project-wide architecture, auth flow,
+security rules, and conventions.
