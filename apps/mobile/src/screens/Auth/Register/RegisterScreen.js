@@ -21,7 +21,7 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Separated Components
 import { buildStyles } from '../../../styles/authStyles';
-import { getPasswordDetails } from './registerUtils';
+import { getPasswordDetails } from '@readme/shared/src/utils/registerUtils';
 import StepDots from './StepDots';
 import StepOneCredentials from './StepOneCredentials';
 import StepTwoPersonal from './StepTwoPersonal';
@@ -111,8 +111,7 @@ export default function RegisterScreen({ navigation }) {
             const missing = [];
             if (password.length < 6) missing.push('at least 6 characters');
             if (!/\d/.test(password)) missing.push('a number');
-            if (!/[a-z]/.test(password) || !/[A-Z]/.test(password))
-                missing.push('uppercase and lowercase letters');
+            if (!/[a-z]/.test(password) && !/[A-Z]/.test(password)) missing.push('uppercase and lowercase letters');
             Alert.alert('Weak Password', `Your password needs:\n\n• ${missing.join('\n• ')}`);
             return;
         }
