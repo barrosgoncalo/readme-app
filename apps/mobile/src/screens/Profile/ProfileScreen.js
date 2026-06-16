@@ -2,19 +2,18 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, Button, useColorScheme } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { ROUTES } from '@readme/shared/src/constants/'
+import { ROUTES } from '@readme/shared/src/constants/routes'
 import { buildStyles } from '../../styles/profileStyles';
 import { doSignOut } from '@readme/shared/src/services/auth';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({navigation}) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme, colorScheme);
 
-    const handleSignOut = () => {
+    const handleSignOut = async () => {
         console.log("A terminar sessão...");
         doSignOut();
-        navigation.navigate('Login');
     };
 
     return (
@@ -71,7 +70,7 @@ export default function ProfileScreen() {
                         label="Sign Out" 
                         textColor={Colors.password.red} 
                         iconColor={Colors.password.red}
-                        onPress={doSignOut}
+                        onPress={handleSignOut}
                     />
                 </MenuGroup>
 
