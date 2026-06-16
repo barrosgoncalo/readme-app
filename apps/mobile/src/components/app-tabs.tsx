@@ -1,28 +1,26 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useColorScheme } from 'react-native';
+import { Colors } from '@readme/shared/src/constants/theme';
 
-// Import your main app screens based on your file tree
 import BookList from '../screens/Library/BookList';
 import MapScreen from '../screens/Events/MapScreen';
-import EventChatScreen from '../screens/Chat/EventChatScreen';
+import ProfileScreen from '../screens/Profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
 export default function AppTabs() {
   const colorScheme = useColorScheme();
-  
-  // Set your app's primary color
   const activeColor = '#208AEF'; 
 
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: true, // Shows the top header with the screen name
+        headerShown: true, // Mantém globalmente, mas vamos sobrepor no perfil
         tabBarActiveTintColor: activeColor,
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
+          backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background,
         }
       }}
     >
@@ -37,9 +35,12 @@ export default function AppTabs() {
         options={{ tabBarLabel: 'Explore' }}
       />
       <Tab.Screen 
-        name="Chat" 
-        component={EventChatScreen} 
-        options={{ tabBarLabel: 'Community' }}
+        name="Profile" 
+        component={ProfileScreen} 
+        options={{ 
+          tabBarLabel: 'Profile',
+          headerShown: false,
+        }} 
       />
     </Tab.Navigator>
   );
