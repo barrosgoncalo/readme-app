@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { doSignOut } from '@readme/shared/src/services/auth.web';
 import { useTheme } from '../contexts/ThemeContext';
@@ -45,7 +46,7 @@ export default function AppShell() {
                     </span>
                     <div className={styles.footerActions}>
                         <button type="button" className={styles.iconBtn} onClick={toggle} title="Toggle theme">
-                            {theme === 'light' ? '🌙' : '☀️'}
+                            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                         </button>
                         <button type="button" className={styles.signOutBtn} onClick={onSignOut}>
                             Sign out
