@@ -13,8 +13,6 @@ export default function ProfileScreen({ navigation }) {
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
-    const [isDarkMode, setIsDarkMode] = useState(colorScheme === 'dark');
-
     const { currentUser } = useAuth();
     const [uploading, setUploading] = useState(false);
 
@@ -25,7 +23,7 @@ export default function ProfileScreen({ navigation }) {
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true, // Permite ao utilizador cortar a foto num quadrado
             aspect: [1, 1],
-            quality: 0.5, // 0.5 comprime a foto para não gastar muitos dados
+            quality: 1, // 0.5 comprime a foto para não gastar muitos dados
         });
 
         if (!result.canceled) {
@@ -62,18 +60,21 @@ export default function ProfileScreen({ navigation }) {
 
                 <View>
                     <TouchableOpacity onPress={pickImage} disabled={uploading}>
-                        <View>
+                        <View style={styles.avatarContainer}>
                             <Image 
-                                source={{ uri: currentUser?.photoURL || 'https://via.placeholder.com/100' }} 
-                                style={{ width: 100, height: 100, borderRadius: 50 }} 
+                                source={{ uri: `${currentUser?.photoURL}?t=${new Date().getTime()}` }} 
+                                style={styles.profilePicture} 
                             />
 
                             {uploading && (
                                 <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />
                             )}
+
                         </View>
                     </TouchableOpacity>
-                </View>                <View style={styles.userInfo}>
+                </View>
+
+                <View style={styles.userInfo}>
                     <View style={styles.userNameContainer}>
                         <Text
                             style={styles.userName}>
