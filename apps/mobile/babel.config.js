@@ -21,6 +21,7 @@ module.exports = function (api) {
             'lucide:calendar',
             'lucide:chevron-down',
             'solar:medal-star-circle-linear',
+            'solar:moon-outline',
             'fluent:presence-blocked-10-regular',
             'material-symbols:password',
           ],

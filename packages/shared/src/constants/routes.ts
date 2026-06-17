@@ -6,5 +6,5 @@ export const ROUTES = {
     WELCOME: 'Welcome',
     MAIN: 'Main',
     PROFILE: 'Profile',
-    EDIT_PROFILE: 'Edit Profile',
+    EDIT_PROFILE: 'EditProfile',
 } as const;

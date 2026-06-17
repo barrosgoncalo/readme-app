@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../styles/profileStyles';
 import { doSignOut } from '@readme/shared/src/services/auth';
 
@@ -72,6 +73,7 @@ export default function ProfileScreen({ navigation }) {
                             label="Edit Profile"
                             iconBgColor={theme.iconBg}
                             iconColor={theme.icon}
+                            onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)}
                         />
                         <MenuItem
                             styles={styles}

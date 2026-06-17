@@ -4,15 +4,16 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import SplashScreen from '../screens/Splash/SplashScreen';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Import screens
+import SplashScreen from '../screens/Splash/SplashScreen';
+import WelcomeScreen from '../screens/Welcome/WelcomeScreen';
+import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
 import LoginScreen from '../screens/Auth/Login/LoginScreen';
 import ForgotPasswordScreen from '../screens/Auth/Login/ForgotPasswordScreen';
-import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
-import WelcomeScreen from '../screens/Welcome/WelcomeScreen';
+import EditProfileScreen from '../screens/Profile/EditProfile/EditProfileScreen';
 import AppTabs from '../components/app-tabs'; 
 
 const Stack = createNativeStackNavigator();
@@ -50,7 +51,15 @@ export default function AppNavigator() {
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {userLoggedIn ? (
-                    <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
+                    <>
+                        <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
+
+                        <Stack.Screen 
+                            name="EditProfile" 
+                            component={EditProfileScreen} 
+                            options={{ headerShown: false }} // Ou true, se quiseres usar o header nativo em vez do teu customizado
+                        />
+                    </>
                 ) : (
                         <>
                             {/* Use custom conditional layout trees rather than nested closures */}
@@ -78,6 +87,7 @@ export default function AppNavigator() {
                                             name={ROUTES.FORGOT_PASSWORD}
                                             component={ForgotPasswordScreen}
                                         />
+
                                     </>
                                 )}
                         </>
