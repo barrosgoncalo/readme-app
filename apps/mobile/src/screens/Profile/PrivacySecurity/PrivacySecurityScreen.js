@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, SafeAreaView } from 'react-native';
+import { 
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    useColorScheme,
+    SafeAreaView
+} from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Ajusta este caminho para onde guardaste os teus MenuComponents
-import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
+import { MenuGroup, MenuItem, MenuSwitchItem } from '../../../components/ui/MenuComponents';
 
 export default function PrivacySecurityScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -16,7 +23,6 @@ export default function PrivacySecurityScreen({ navigation }) {
     const [isPrivate, setIsPrivate] = useState(false);
 
     const handleDeleteAccount = () => {
-        // Lógica de apagar conta aqui futuramente
         alert("Delete account flow initiated");
     };
 
@@ -61,9 +67,9 @@ export default function PrivacySecurityScreen({ navigation }) {
                         <MenuItem
                             styles={styles}
                             theme={theme}
-                            icon="material-symbols:password" // Este ícone já usavas no ProfileScreen!
+                            icon="material-symbols:password"
                             label="Change Password"
-                            onPress={() => navigation.navigate(ROUTES.CHANGE_PASSWORD)} // Rota a criar
+                            onPress={() => navigation.navigate(ROUTES.CHANGE_PASSWORD)}
                         />
                     </MenuGroup>
 
@@ -73,7 +79,7 @@ export default function PrivacySecurityScreen({ navigation }) {
                         <MenuItem
                             styles={styles}
                             theme={theme}
-                            icon="lucide:trash-2"
+                            icon="uiw:user-delete"
                             label="Delete Account"
                             textColor={Colors.password?.red || '#F13B2D'}
                             iconColor={Colors.password?.red || '#F13B2D'}

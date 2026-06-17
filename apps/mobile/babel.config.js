@@ -28,6 +28,7 @@ module.exports = function (api) {
             'solar:moon-outline',
             'fluent:presence-blocked-10-regular',
             'material-symbols:password',
+            'uiw:user-delete',
           ],
         },
       ],

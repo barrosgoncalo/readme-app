@@ -33,12 +33,16 @@ export const MenuItem = ({ icon, label, textColor, iconColor, iconBgColor = null
 };
 
 export const MenuSwitchItem = ({ icon, label, textColor, iconColor, iconBgColor, value, onValueChange, theme, styles }) => {
+
+    const dynamicIconBgColor = iconBgColor ? { backgroundColor: iconBgColor } : {};
+    const finalIconColor = iconColor || theme.icon;
+
     return (
         <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-                <View style={[styles.iconWrapper, iconBgColor && { backgroundColor: iconBgColor }]}>
+                <View style={[styles.iconWrapper, iconBgColor && { backgroundColor: dynamicIconBgColor }]}>
                     {icon ? (
-                        <Iconify icon={icon} size={20} color={iconColor} />
+                        <Iconify icon={icon} size={20} color={finalIconColor} />
                     ) : (
                             <View style={styles.emptyIconPlaceholder} />
                         )}
