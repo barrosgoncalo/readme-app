@@ -18,6 +18,7 @@ import { doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { auth } from '@readme/shared/src/services/firebase';
 import CountryPicker from 'react-native-country-picker-modal';
 import { buildStyles } from '../../../styles/editProfileStyles';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext'
 
 
 export default function EditProfileScreen({ navigation, route }) {
@@ -27,18 +28,20 @@ export default function EditProfileScreen({ navigation, route }) {
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
+    const { currentUser , refreshUser} = useAuth();
+
     // ─── Original values (never mutated) ─────────────────────────────────────
     const original = useMemo(() => ({
-        fullName:     existing.fullName ?? existing.fullName,
-        username:     existing.username ?? '',
-        phoneNumber:  existing.phoneNumber ?? '',
-        country:      existing.institutionalAddress?.country ?? '',
-        city:         existing.institutionalAddress?.city ?? '',
-        district:     existing.institutionalAddress?.district ?? '',
-        addressLine1: existing.institutionalAddress?.addressLine1 ?? '',
-        addressLine2: existing.institutionalAddress?.addressLine2 ?? '',
-        postalCode:   existing.institutionalAddress?.postalCode ?? '',
-        dob:          existing.dob ?? '',
+        fullName:     existing.fullName     ?? currentUser.fullName,
+        username:     existing.username     ?? currentUser.username,
+        phoneNumber:  existing.phoneNumber  ?? currentUser.phoneNumber,
+        country:      existing.institutionalAddress?.country    ?? currentUser.institutionalAddress?.country,
+        city:         existing.institutionalAddress?.city       ?? currentUser.institutionalAddress?.city,
+        district:     existing.institutionalAddress?.district   ?? currentUser.institutionalAddress?.district,
+        addressLine1: existing.institutionalAddress?.addressLine1 ?? currentUser.institutionalAddress?.addressLine1,
+        addressLine2: existing.institutionalAddress?.addressLine2 ?? currentUser.institutionalAddress?.addressLine2,
+        postalCode:   existing.institutionalAddress?.postalCode ?? currentUser.institutionalAddress?.postalCode,
+        dob:          existing.dob ?? currentUser.dob,
     }), []);
 
     // ─── Form state ───────────────────────────────────────────────────────────
@@ -126,6 +129,7 @@ export default function EditProfileScreen({ navigation, route }) {
                     country,
                 },
             });
+            await refreshUser();
 
             Alert.alert('Saved', 'Your profile has been updated.', [
                 { text: 'OK', onPress: () => navigation.goBack() },
