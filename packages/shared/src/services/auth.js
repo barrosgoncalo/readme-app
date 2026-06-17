@@ -4,9 +4,11 @@ import {
     signInWithEmailAndPassword, 
     sendPasswordResetEmail, 
     updatePassword ,
+    reauthenticateWithCredential,
     signInWithCredential,
     sendEmailVerification,
-    GoogleAuthProvider
+    GoogleAuthProvider,
+    EmailAuthProvider,
 } from "firebase/auth"
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -133,4 +135,34 @@ export const doPasswordChange = (password) => {
 
 export const doSendEmailVerification = () => {
     return sendEmailVerification(auth.currentUser);
+};
+
+export const doUpdateUserPassword = async (currentPassword, newPassword) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        throw new Error("No user is currently logged in.");
+    }
+
+    try {
+        const credential = EmailAuthProvider.credential(user.email, currentPassword);
+
+        await reauthenticateWithCredential(user, credential);
+
+        await updatePassword(user, newPassword);
+
+        return { success: true, message: "Password updated successfully!" };
+
+    } catch (error) {
+        console.error("Error updating password:", error);
+        
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            throw new Error("The current password you entered is incorrect.");
+        }
+        if (error.code === 'auth/weak-password') {
+            throw new Error("The new password is too weak. Please use at least 6 characters.");
+        }
+        
+        throw new Error("An error occurred while changing your password. Please try again.");
+    }
 };
