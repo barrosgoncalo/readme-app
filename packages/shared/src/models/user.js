@@ -29,8 +29,6 @@ export const createUserModel = (uid, profileData, provider) => {
 
         // default
 
-        myBooks: [], favoriteBooks: [],
-
         role: 'user',
 
         accountStatus: 'active',
