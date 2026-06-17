@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext'
 import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
@@ -12,6 +13,8 @@ export default function ProfileScreen({ navigation }) {
     const styles = buildStyles(theme);
 
     const [isDarkMode, setIsDarkMode] = useState(colorScheme === 'dark');
+
+    const { currentUser } = useAuth();
 
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
@@ -34,10 +37,14 @@ export default function ProfileScreen({ navigation }) {
 
                 <View style={styles.userInfo}>
                     <View style={styles.userNameContainer}>
-                        <Text style={styles.userName}>BookWorm</Text>
+                        <Text style={styles.userName}>
+                            { currentUser?.username || 'Username' }
+                        </Text>
                         <Iconify icon="material-symbols:verified" size={18} color="#F58B2E" />
                     </View>
-                    <Text style={styles.userEmail}>bookworm@gmail.com</Text>
+                    <Text style={styles.userEmail}>
+                        { currentUser?.email || 'Email' }
+                    </Text>
                 </View>
             </View>
 

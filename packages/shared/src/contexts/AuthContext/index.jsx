@@ -1,23 +1,25 @@
 import React, { useContext, useState, useEffect } from "react";
-import { auth } from "../../services/firebase";
+import { auth, db } from "../../services/firebase"; // 👈 Garante que importas o 'db' daqui
 import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";   // 👈 Precisas destes imports do Firestore
 import * as SplashScreen from 'expo-splash-screen'; 
 
-const AuthContext= React.createContext();
+const AuthContext = React.createContext();
 
 export function useAuth() {
     return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }) {
-    const[currentUser, setCurrentUser] = useState(null);
-    const[userLoggedIn, setUserLoggedIn] = useState(false);
-    const[loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [userLoggedIn, setUserLoggedIn] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Apenas um listener aqui, que chama a nossa função completa
         const unsubscribe = onAuthStateChanged(auth, initializeUser);
         return unsubscribe;
-    }, [])
+    }, []);
 
     async function initializeUser(user) {
         if (user) {
@@ -27,8 +29,25 @@ export function AuthProvider({ children }) {
                 setCurrentUser(null);
                 setUserLoggedIn(false);
             } else {
-                setCurrentUser({ ...user });
-                setUserLoggedIn(true);
+                // 👇 A MAGIA ACONTECE AQUI 👇
+                try {
+                    // Vai buscar os dados extra ao Firestore
+                    const docRef = doc(db, "users", user.uid);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        // Combina o Auth com o Firestore
+                        setCurrentUser({ ...user, ...docSnap.data() }); 
+                    } else {
+                        // Se por algum motivo não houver doc no Firestore, guarda só o Auth
+                        setCurrentUser({ ...user });
+                    }
+                    setUserLoggedIn(true);
+                } catch (error) {
+                    console.error("Erro a buscar dados do Firestore:", error);
+                    setCurrentUser({ ...user });
+                    setUserLoggedIn(true);
+                }
             }
         } else {
             setCurrentUser(null);
@@ -52,8 +71,6 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider value={value}>
-            {/* Because of this line below, your app won't actually render the navigation 
-                until loading is false, meaning the Splash Screen hides at the exact perfect moment! */}
             {!loading && children}
         </AuthContext.Provider>
     )
