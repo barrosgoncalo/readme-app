@@ -1,0 +1,84 @@
+.container {
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+    padding: var(--space-5) var(--space-4);
+}
+
+.title {
+    font-family: var(--font-serif);
+    color: var(--primary);
+    margin-bottom: 2rem;
+}
+
+.card {
+    /* CORRIGIDO: O vosso tema usa --bg-elem para o fundo dos cartões */
+    background-color: var(--bg-elem);
+    border-radius: var(--radius-lg, 16px);
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    /* CORRIGIDO: Vamos usar uma das vossas variáveis para a borda */
+    border-bottom: 1px solid var(--bg-selected);
+}
+
+.name {
+    color: var(--text);
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+}
+
+.subtext {
+    /* Usa a variável subtext correta do vosso tema */
+    color: var(--subtext);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.checkboxGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--bg); /* Fundo ligeiramente diferente para destacar */
+    border-radius: var(--radius);
+    margin-top: 0.5rem;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary); /* A checkbox fica com a cor castanha do tema! */
+    cursor: pointer;
+}
+
+.helpText {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--subtext);
+    padding-left: 1.8rem; /* Alinha o texto com a checkbox */
+}
