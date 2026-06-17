@@ -1,4 +1,5 @@
 import { Colors } from '@readme/shared/src/constants/theme'
+// merge
 
 export const getPasswordDetails = (password) => {
 
