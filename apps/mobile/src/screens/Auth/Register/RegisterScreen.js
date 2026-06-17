@@ -21,14 +21,7 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Separated Components
 import { buildStyles } from '../../../styles/authStyles';
-import {
-    getPasswordDetails,
-    hasLowerCase,
-    hasUpperCase,
-    hasMixedCase,
-    hasNumbers,
-    hasValidLength,
-} from '@readme/shared/src/utils/registerUtils';
+import { getPasswordDetails } from './registerUtils';
 import StepDots from './StepDots';
 import StepOneCredentials from './StepOneCredentials';
 import StepTwoPersonal from './StepTwoPersonal';
@@ -114,23 +107,15 @@ export default function RegisterScreen({ navigation }) {
             Alert.alert('Error', 'Please fill in all required fields.');
             return;
         }
-
-        if (passwordInfo.level !== 'strong') {
+        if (passwordInfo.level === 'weak' || passwordInfo.level === 'none') {
             const missing = [];
-            if ( hasValidLength(password) ) {
-                missing.push('At least 6 characters');
-            }
-            if (!hasNumbers(password)) {
-                missing.push('At least one number');
-            }
-            if (!hasLowerCase(password) || !hasUpperCase(password)) {
+            if (password.length < 6) missing.push('at least 6 characters');
+            if (!/\d/.test(password)) missing.push('a number');
+            if (!/[a-z]/.test(password) || !/[A-Z]/.test(password))
                 missing.push('uppercase and lowercase letters');
-            }
-
-            Alert.alert('Weak Password', `Your password needs:\n• ${missing.join('\n• ')}`);
-            return; // Blocks from going to step 2
+            Alert.alert('Weak Password', `Your password needs:\n\n• ${missing.join('\n• ')}`);
+            return;
         }
-
         setStep(2);
     };
 

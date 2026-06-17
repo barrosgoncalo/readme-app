@@ -38,6 +38,8 @@ export const Colors = {
     tertiaryInactive: '#C8DFF0',
     /** (Dark Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#3B3561',
+    cardBackground: '#E8E5E3',
+    headerBackground: '#241B15',
   },
   dark: {
     /** (Light Gray) - Main body copy, headings, and core readable text. */
@@ -66,6 +68,8 @@ export const Colors = {
     tertiaryInactive: '#2C4459', 
     /** (Muted Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#5E5496',       
+    cardBackground: '#E8E5E3',
+    headerBackground: '#241B15',
   },
     password: {
         gray: '#ccc',

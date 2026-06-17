@@ -8,7 +8,7 @@ import {
     sendEmailVerification,
     GoogleAuthProvider
 } from "firebase/auth"
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from "../constants/authConstants";
 
@@ -37,6 +37,30 @@ export const saveUserData = async (uid, profileData, provider) => {
         favoriteBooks: [],
         authProvider: provider
     });
+};
+
+
+/**
+ * Updates general user data in Firestore.
+ * @param {string} uid - The user's ID
+ * @param {object} dataToUpdate - An object containing only the fields you want to change
+ */
+export const doUpdateUserProfile = async (uid, dataToUpdate) => {
+    try {
+        const userDocRef = doc(db, "users", uid);
+
+        // updateDoc merges the new data with existing data,
+        // rather than overwriting the entire document like setDoc would.
+        await updateDoc(userDocRef, {
+            ...dataToUpdate,
+            updatedAt: new Date().toISOString() // Good practice to track edits
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Error updating profile in Firestore:", error);
+        throw error;
+    }
 };
 
 export const doCreateUserWithEmailAndPassword = async (email, password, profileData) => {
