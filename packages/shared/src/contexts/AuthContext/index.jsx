@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
-import { auth, db } from "../../services/firebase"; // 👈 Garante que importas o 'db' daqui
+import { auth, db } from "../../services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";   // 👈 Precisas destes imports do Firestore
+import { doc, getDoc } from "firebase/firestore";
 import * as SplashScreen from 'expo-splash-screen'; 
 
 const AuthContext = React.createContext();
@@ -29,9 +29,7 @@ export function AuthProvider({ children }) {
                 setCurrentUser(null);
                 setUserLoggedIn(false);
             } else {
-                // 👇 A MAGIA ACONTECE AQUI 👇
                 try {
-                    // Vai buscar os dados extra ao Firestore
                     const docRef = doc(db, "users", user.uid);
                     const docSnap = await getDoc(docRef);
 
@@ -39,7 +37,6 @@ export function AuthProvider({ children }) {
                         // Combina o Auth com o Firestore
                         setCurrentUser({ ...user, ...docSnap.data() }); 
                     } else {
-                        // Se por algum motivo não houver doc no Firestore, guarda só o Auth
                         setCurrentUser({ ...user });
                     }
                     setUserLoggedIn(true);
