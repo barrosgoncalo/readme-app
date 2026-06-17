@@ -53,7 +53,7 @@ service cloud.firestore {
 
       // users/{uid}/myBooks/{bookId}
       match /myBooks/{bookId} {
-        allow read: if isOwner(userId) && isActive();
+        allow read: if isAuthenticated() && isActive();
         allow write: if isOwner(userId) && isActive();
       }
     }
