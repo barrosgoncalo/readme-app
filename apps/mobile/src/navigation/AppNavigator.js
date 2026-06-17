@@ -14,6 +14,7 @@ import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
 import LoginScreen from '../screens/Auth/Login/LoginScreen';
 import ForgotPasswordScreen from '../screens/Auth/Login/ForgotPasswordScreen';
 import EditProfileScreen from '../screens/Profile/EditProfile/EditProfileScreen';
+import PrivacySecurityScreen from '../screens/Profile/PrivacySecurity'
 import AppTabs from '../components/app-tabs'; 
 
 const Stack = createNativeStackNavigator();
