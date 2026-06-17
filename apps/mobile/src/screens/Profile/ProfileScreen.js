@@ -202,7 +202,7 @@ const MenuSwitchItem = ({ icon, label, textColor, iconColor, iconBgColor,value, 
             <Switch
                 value={value}
                 onValueChange={onValueChange}
-                trackColor={{ true: theme.darkerSecondary }} 
+                trackColor={{ true: theme.darkerSecondary, false: '#D1CCC9' }} 
                 thumbColor={'#FFFFFF'}
             />
         </View>
