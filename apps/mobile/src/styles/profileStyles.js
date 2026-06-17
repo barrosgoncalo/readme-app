@@ -20,26 +20,28 @@ export const buildStyles = (theme) => StyleSheet.create({
     },
     headerTitle: {
         color: '#FFFFFF',
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: '600',
-        marginBottom: 24,
+        marginBottom: 18,
     },
     avatarContainer: {
-        width: 104,
-        height: 104,
-        borderRadius: 52,
+        width: 108,
+        height: 108,
+        borderRadius: 58,
         borderWidth: 4,
         borderColor: '#F58B2E',
         padding: 4,
-        marginBottom: 16,
+        marginTop: -5,
+        marginBottom: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    avatarImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 46,
-        backgroundColor: '#F58B2E',
+    profilePicture: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        marginBottom: 0,
+        resizeMode: 'cover',
     },
     userInfo: {
         alignItems: 'center',
@@ -52,7 +54,7 @@ export const buildStyles = (theme) => StyleSheet.create({
     },
     userName: {
         color: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: '600',
     },
     userEmail: {
