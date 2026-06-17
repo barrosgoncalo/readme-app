@@ -52,7 +52,7 @@ export const buildStyles = (theme) => StyleSheet.create({
     },
     userName: {
         color: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '600',
     },
     userEmail: {

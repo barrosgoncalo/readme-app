@@ -6,6 +6,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doSignOut } from '@readme/shared/src/services/auth';
 import { buildStyles } from '../../styles/profileStyles';
+import { uploadProfilePicture } from '@readme/shared/src/services/user';
 
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -15,6 +16,37 @@ export default function ProfileScreen({ navigation }) {
     const [isDarkMode, setIsDarkMode] = useState(colorScheme === 'dark');
 
     const { currentUser } = useAuth();
+    const [uploading, setUploading] = useState(false);
+
+    // Função para abrir a galeria
+    const pickImage = async () => {
+        // Pedir permissão e abrir a galeria
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true, // Permite ao utilizador cortar a foto num quadrado
+            aspect: [1, 1],
+            quality: 0.5, // 0.5 comprime a foto para não gastar muitos dados
+        });
+
+        if (!result.canceled) {
+            const imageUri = result.assets[0].uri;
+            handleUpload(imageUri);
+        }
+    };
+
+    // Função que chama o nosso serviço partilhado
+    const handleUpload = async (imageUri) => {
+        setUploading(true);
+        try {
+            await uploadProfilePicture(currentUser.uid, imageUri);
+            alert("Foto atualizada com sucesso!");
+            
+        } catch (error) {
+            alert("Erro ao atualizar a foto.");
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
@@ -28,19 +60,29 @@ export default function ProfileScreen({ navigation }) {
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Account</Text>
 
-                <View style={styles.avatarContainer}>
-                    <Image 
-                        source={{ uri: 'https://via.placeholder.com/100' }} 
-                        style={styles.avatarImage} 
-                    />
-                </View>
+                <View>
+                    <TouchableOpacity onPress={pickImage} disabled={uploading}>
+                        <View>
+                            <Image 
+                                source={{ uri: currentUser?.photoURL || 'https://via.placeholder.com/100' }} 
+                                style={{ width: 100, height: 100, borderRadius: 50 }} 
+                            />
 
-                <View style={styles.userInfo}>
+                            {uploading && (
+                                <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />
+                            )}
+                        </View>
+                    </TouchableOpacity>
+                </View>                <View style={styles.userInfo}>
                     <View style={styles.userNameContainer}>
-                        <Text style={styles.userName}>
+                        <Text
+                            style={styles.userName}>
                             { currentUser?.username || 'Username' }
                         </Text>
-                        <Iconify icon="material-symbols:verified" size={18} color="#F58B2E" />
+                        <Iconify 
+                            icon="material-symbols:verified"
+                            size={20}
+                            color="#F58B2E" />
                     </View>
                     <Text style={styles.userEmail}>
                         { currentUser?.email || 'Email' }
@@ -67,6 +109,18 @@ export default function ProfileScreen({ navigation }) {
                             icon="lucide:book"
                             label="My Books"
                         />
+                        <MenuItem
+                            styles={styles}
+                            theme={theme}
+                            icon="lucide:heart"
+                            label="Favorites"
+                        />
+                        <MenuItem
+                            styles={styles}
+                            theme={theme}
+                            icon="solar:medal-star-circle-linear"
+                            label="Level"
+                        />
                     </MenuGroup>
 
                     {/* GROUP 2 */}
@@ -90,39 +144,15 @@ export default function ProfileScreen({ navigation }) {
                             icon="material-symbols:password"
                             label="Privace & Security"
                         />
-                        <MenuSwitchItem 
-                            styles={styles} 
-                            theme={theme} 
-                            icon="solar:moon-outline" 
-                            label="Dark Mode" 
-                            value={isDarkMode}
-                            onValueChange={(newValue) => setIsDarkMode(newValue)}
-                        />
-                    </MenuGroup>
-
-                    {/* GROUP 3 */}
-                    <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem
                             styles={styles}
                             theme={theme}
                             icon="lucide:settings"
                             label="Settings"
                         />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="solar:medal-star-circle-linear"
-                            label="Level"
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="lucide:heart"
-                            label="Favorites"
-                        />
                     </MenuGroup>
 
-                    {/* GROUP 4 (Sign Out) */}
+                    {/* GROUP 3 (Sign Out) */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem 
                             styles={styles}
