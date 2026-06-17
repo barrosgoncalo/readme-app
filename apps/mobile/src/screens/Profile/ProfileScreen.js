@@ -3,8 +3,8 @@ import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { buildStyles } from '../../styles/profileStyles';
 import { doSignOut } from '@readme/shared/src/services/auth';
+import { buildStyles } from '../../styles/profileStyles';
 
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
