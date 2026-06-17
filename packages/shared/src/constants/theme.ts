@@ -67,6 +67,12 @@ export const Colors = {
     /** (Muted Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#5E5496',       
   },
+    password: {
+        gray: '#ccc',
+        red: '#D32F2F',
+        orange: '#F57C00',
+        green: '#388E3C',
+    }
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
