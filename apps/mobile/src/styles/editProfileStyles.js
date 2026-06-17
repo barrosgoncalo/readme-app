@@ -6,7 +6,6 @@ export const buildStyles = (theme) => StyleSheet.create({
         flex: 1,
     },
 
-    // Header
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -23,7 +22,6 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
     },
 
-    // Scroll
     scrollContent: {
         paddingHorizontal: 16,
         paddingTop: 8,
@@ -31,7 +29,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         gap: 12,
     },
 
-    // Field box — default (no focus)
+    // Field box — default
     field: {
         borderWidth: 1.5,
         borderColor: theme.backgroundSelected,
@@ -41,31 +39,27 @@ export const buildStyles = (theme) => StyleSheet.create({
         paddingBottom: 10,
         backgroundColor: theme.backgroundElement ?? theme.background,
     },
-    // Field box — focused
-    fieldFocused: {
-        borderColor: Colors.light.secondary,  // orange
+    // Field box — focused OR dirty
+    fieldHighlighted: {
+        borderColor: theme.secondary,
     },
 
-    // Label — default
     fieldLabel: {
         fontSize: 11,
         color: theme.subtext,
         marginBottom: 2,
         fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
     },
-    // Label — focused
-    fieldLabelFocused: {
+    fieldLabelHighlighted: {
         color: Colors.light.secondary,
     },
 
-    // Input text
     input: {
         fontSize: 15,
         paddingVertical: 0,
         fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
     },
 
-    // Row helpers
     rowBetween: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -75,11 +69,8 @@ export const buildStyles = (theme) => StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    flagBtn: {
-        marginRight: 4,
-    },
 
-    // Submit — active (isDirty)
+    // Submit — active
     submitBtn: {
         backgroundColor: Colors.light.primary,
         borderRadius: 10,
@@ -87,7 +78,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         alignItems: 'center',
         marginTop: 8,
     },
-    // Submit — disabled (nothing changed yet)
+    // Submit — disabled (nothing changed)
     submitBtnDisabled: {
         backgroundColor: theme.backgroundSelected,
     },
@@ -97,5 +88,8 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontSize: 14,
         letterSpacing: 1.2,
         fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
+    },
+    submitTextDisabled: {
+        color: theme.subtext,
     },
 });
