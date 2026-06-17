@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext'
 import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
@@ -12,6 +13,8 @@ export default function ProfileScreen({ navigation }) {
     const styles = buildStyles(theme);
 
     const [isDarkMode, setIsDarkMode] = useState(colorScheme === 'dark');
+
+    const { currentUser } = useAuth();
 
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
@@ -34,10 +37,14 @@ export default function ProfileScreen({ navigation }) {
 
                 <View style={styles.userInfo}>
                     <View style={styles.userNameContainer}>
-                        <Text style={styles.userName}>BookWorm</Text>
+                        <Text style={styles.userName}>
+                            { currentUser?.username || 'Username' }
+                        </Text>
                         <Iconify icon="material-symbols:verified" size={18} color="#F58B2E" />
                     </View>
-                    <Text style={styles.userEmail}>bookworm@gmail.com</Text>
+                    <Text style={styles.userEmail}>
+                        { currentUser?.email || 'Email' }
+                    </Text>
                 </View>
             </View>
 
@@ -59,8 +66,6 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="lucide:book"
                             label="My Books"
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                         />
                     </MenuGroup>
 
@@ -71,8 +76,6 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="lucide:edit"
                             label="Edit Profile"
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                             onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)}
                         />
                         <MenuItem
@@ -80,16 +83,12 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="fluent:presence-blocked-10-regular"
                             label="View Blocked Users"
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                         />
                         <MenuItem
                             styles={styles}
                             theme={theme}
                             icon="material-symbols:password"
                             label="Privace & Security"
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                         />
                         <MenuSwitchItem 
                             styles={styles} 
@@ -98,8 +97,6 @@ export default function ProfileScreen({ navigation }) {
                             label="Dark Mode" 
                             value={isDarkMode}
                             onValueChange={(newValue) => setIsDarkMode(newValue)}
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                         />
                     </MenuGroup>
 
@@ -110,24 +107,18 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="lucide:settings"
                             label="Settings"
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                         />
                         <MenuItem
                             styles={styles}
                             theme={theme}
                             icon="solar:medal-star-circle-linear"
                             label="Level"
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                         />
                         <MenuItem
                             styles={styles}
                             theme={theme}
                             icon="lucide:heart"
                             label="Favorites"
-                            iconBgColor={theme.iconBg}
-                            iconColor={theme.icon}
                         />
                     </MenuGroup>
 
@@ -159,18 +150,18 @@ const MenuGroup = ({ children, styles, bgColor }) => (
     </View>
 );
 
-const MenuItem = ({ icon, label, textColor, iconColor, iconBgColor, theme, styles, onPress }) => {
+const MenuItem = ({ icon, label, textColor, iconColor, iconBgColor = null, theme, styles, onPress }) =>
+{
+    
+    const dynamicIconBgColor = iconBgColor ? { backgroundColor: iconBgColor } : {};
+    const finalIconColor = iconColor || theme.icon;
+
     return (
-        <TouchableOpacity 
-            style={styles.menuItem}
-            activeOpacity={0.7}
-            onPress={onPress}
-        >
+        <TouchableOpacity style={styles.menuItem} onPress={onPress}>
             <View style={styles.menuItemLeft}>
-                {/* 3. APLICADA A LÓGICA DO ARRAY AQUI NO STYLE */}
-                <View style={[styles.iconWrapper, iconBgColor && { backgroundColor: iconBgColor }]}>
+                <View style={[styles.iconWrapper, dynamicIconBgColor]}>
                     {icon ? (
-                        <Iconify icon={icon} size={20} color={iconColor} />
+                        <Iconify icon={icon} size={24} color={finalIconColor} />
                     ) : (
                             <View style={styles.emptyIconPlaceholder} />
                         )}
@@ -184,7 +175,8 @@ const MenuItem = ({ icon, label, textColor, iconColor, iconBgColor, theme, style
     );
 };
 
-const MenuSwitchItem = ({ icon, label, textColor, iconColor, iconBgColor,value, onValueChange, theme, styles }) => {
+const MenuSwitchItem = ({ icon, label, textColor, iconColor, iconBgColor,value, onValueChange, theme, styles }) =>
+{
     return (
         <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
