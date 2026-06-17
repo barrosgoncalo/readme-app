@@ -1,5 +1,6 @@
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
+import ErrorAlert from '../../components/ErrorAlert.jsx';
 import { getPasswordDetails } from '@readme/shared/src/utils/registerUtils';
 
 export default function Step1Credentials({ data, set, onNext, error }) {
@@ -46,7 +47,7 @@ export default function Step1Credentials({ data, set, onNext, error }) {
             {data.confirmPassword && !passwordsMatch && (
                 <div style={{ color: '#D32F2F', fontSize: '0.85rem' }}>Passwords don't match.</div>
             )}
-            {error && <div role="alert" style={{ color: '#D32F2F', fontSize: '0.9rem' }}>{error}</div>}
+            <ErrorAlert>{error}</ErrorAlert>
             <Button type="submit" disabled={!canContinue}>Continue</Button>
         </form>
     );

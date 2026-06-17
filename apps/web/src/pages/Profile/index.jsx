@@ -11,6 +11,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
+import Spinner from '../../components/Spinner.jsx';
+import ErrorAlert from '../../components/ErrorAlert.jsx';
 import styles from './Profile.module.css';
 
 function initials(userData) {
@@ -69,7 +71,7 @@ export default function Profile() {
         }
     }
 
-    if (loading) return <p className={styles.loadingText}>Loading…</p>;
+    if (loading) return <Spinner center label="Loading profile" />;
 
     return (
         <div className={styles.page}>
@@ -113,7 +115,7 @@ export default function Profile() {
                             <span className={styles.visibilityLabel}>Public profile</span>
                             <Toggle checked={form.isPublic} onChange={v => setForm(f => ({ ...f, isPublic: v }))} />
                         </div>
-                        {saveError && <p className={styles.errorText}>{saveError}</p>}
+                        <ErrorAlert>{saveError}</ErrorAlert>
                         <div className={styles.editActions}>
                             <Button variant="ghost" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
                             <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>

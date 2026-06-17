@@ -1,0 +1,86 @@
+.card {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    align-items: stretch;
+}
+
+.cover {
+    width: 64px;
+    height: 96px;
+    border-radius: var(--radius);
+    background: var(--bg-selected);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--subtext);
+}
+
+.body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-1);
+}
+
+.title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.authors {
+    color: var(--subtext);
+    font-size: 0.85rem;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.iconBtn {
+    background: transparent;
+    border: none;
+    color: var(--subtext);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+}
+
+.iconBtn:hover:not(:disabled) {
+    background: var(--bg-selected);
+    color: var(--text);
+}
+
+.iconBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.favoriteActive {
+    color: var(--secondary);
+}
+
+.favoriteActive:hover:not(:disabled) {
+    color: var(--secondary);
+}

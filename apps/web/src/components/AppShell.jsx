@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, BookOpen, Map, MessagesSquare, User } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { doSignOut } from '@readme/shared/src/services/auth.web';
 import { useTheme } from '../contexts/ThemeContext';
@@ -7,10 +7,10 @@ import { WEB_ROUTES } from '../constants/webRoutes';
 import styles from './AppShell.module.css';
 
 const NAV_ITEMS = [
-    { to: WEB_ROUTES.BOOKS, label: 'My Books' },
-    { to: WEB_ROUTES.MAP, label: 'Explore' },
-    { to: WEB_ROUTES.CHAT, label: 'Community' },
-    { to: WEB_ROUTES.PROFILE, label: 'Profile' },
+    { to: WEB_ROUTES.BOOKS, label: 'My Books', Icon: BookOpen },
+    { to: WEB_ROUTES.MAP, label: 'Explore', Icon: Map },
+    { to: WEB_ROUTES.CHAT, label: 'Community', Icon: MessagesSquare },
+    { to: WEB_ROUTES.PROFILE, label: 'Profile', Icon: User },
 ];
 
 export default function AppShell() {
@@ -28,15 +28,16 @@ export default function AppShell() {
             <aside className={styles.sidebar}>
                 <h1 className={styles.wordmark}>README</h1>
                 <nav className={styles.nav}>
-                    {NAV_ITEMS.map((item) => (
+                    {NAV_ITEMS.map(({ to, label, Icon }) => (
                         <NavLink
-                            key={item.to}
-                            to={item.to}
+                            key={to}
+                            to={to}
                             className={({ isActive }) =>
                                 isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
                             }
                         >
-                            {item.label}
+                            <Icon size={18} aria-hidden />
+                            <span>{label}</span>
                         </NavLink>
                     ))}
                 </nav>

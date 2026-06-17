@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout.jsx';
 import Field from '../components/Field.jsx';
 import Button from '../components/Button.jsx';
+import ErrorAlert from '../components/ErrorAlert.jsx';
 import {
     doSignInWithEmailAndPassword,
     doSignInWithGoogle,
@@ -64,7 +65,7 @@ export default function Login() {
                     autoComplete="current-password"
                     required
                 />
-                {error && <div role="alert" style={{ color: '#D32F2F', fontSize: '0.9rem' }}>{error}</div>}
+                <ErrorAlert>{error}</ErrorAlert>
                 <Button type="submit" disabled={submitting}>
                     {submitting ? 'Signing in…' : 'Sign in'}
                 </Button>
