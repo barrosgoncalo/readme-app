@@ -144,6 +144,7 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="material-symbols:password"
                             label="Privace & Security"
+                            onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)}
                         />
                         <MenuItem
                             styles={styles}
