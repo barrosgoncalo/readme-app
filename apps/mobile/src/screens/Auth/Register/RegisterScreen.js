@@ -117,7 +117,7 @@ export default function RegisterScreen({ navigation }) {
 
         if (passwordInfo.level !== 'strong') {
             const missing = [];
-            if ( hasValidLength(password) ) {
+            if ( !hasValidLength(password) ) {
                 missing.push('At least 6 characters');
             }
             if (!hasNumbers(password)) {
