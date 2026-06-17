@@ -5,4 +5,6 @@ export const ROUTES = {
     FORGOT_PASSWORD: 'ForgotPassword',
     WELCOME: 'Welcome',
     MAIN: 'Main',
+    PROFILE: 'Profile',
+    EDIT_PROFILE: 'Edit Profile',
 } as const;
