@@ -11,32 +11,11 @@ import {
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from "../constants/authConstants";
+import { createUserModel } from '@readme/shared/src/models/user';
 
 export const saveUserData = async (uid, profileData, provider) => {
-    await setDoc(doc(db, "users", uid), {
-        uid: uid,
-        userId: profileData.email.trim().toLowerCase(),
-        username: profileData.username,
-        fullName: profileData.fullName,
-        phoneNumber: profileData.phoneNumber,
-        dob: profileData.dob,
-        profileVisibility: profileData.isPublic 
-            ? ACCOUNT_VISIBILITY.PUBLIC 
-            : ACCOUNT_VISIBILITY.PRIVATE,
-        role: USER_ROLES.USER,
-        accountStatus: ACCOUNT_STATUS.ACTIVE,
-        institutionalAddress: {
-            addressLine1: profileData.addressLine1,
-            addressLine2: profileData.addressLine2 || null,
-            city: profileData.city,
-            district: profileData.district,
-            postalCode: profileData.zipCode,
-            country: profileData.country
-        },
-        createdAt: new Date().toISOString(),
-        favoriteBooks: [],
-        authProvider: provider
-    });
+    const userData = createUserModel(uid, profileData, provider);
+    await setDoc(doc(db, "users", uid), userData);
 };
 
 
