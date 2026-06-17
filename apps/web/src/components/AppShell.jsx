@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Sun, Moon, BookOpen, ArrowLeftRight, Map, MessagesSquare, User } from 'lucide-react';
+import { Sun, Moon, BookOpen, ArrowLeftRight, CalendarDays, Map, User } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { doSignOut } from '@readme/shared/src/services/auth.web';
 import { useTheme } from '../contexts/ThemeContext';
@@ -9,8 +9,8 @@ import styles from './AppShell.module.css';
 const NAV_ITEMS = [
     { to: WEB_ROUTES.BOOKS, label: 'My Books', Icon: BookOpen },
     { to: WEB_ROUTES.TRADES, label: 'Trades', Icon: ArrowLeftRight },
+    { to: WEB_ROUTES.EVENTS, label: 'Events', Icon: CalendarDays },
     { to: WEB_ROUTES.MAP, label: 'Explore', Icon: Map },
-    { to: WEB_ROUTES.CHAT, label: 'Community', Icon: MessagesSquare },
     { to: WEB_ROUTES.PROFILE, label: 'Profile', Icon: User },
 ];
 

@@ -8,6 +8,7 @@ export const WEB_ROUTES = {
     BOOKS: '/books',
     BOOKS_SCAN: '/books/scan',
     TRADES: '/trades',
+    EVENTS: '/events',
     MAP: '/map',
     CHAT: '/chat',
     PROFILE: '/profile',
