@@ -4,58 +4,136 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ─── REUSABLE SECURITY FUNCTIONS ───
-    
-    // Checks if the person making the request is logged in
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Checks if the person making the request is the owner of the document
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Fetches the user's own profile from the database to check their role/status
     function getMyProfile() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Checks if the logged-in user has the 'admin' role
     function isAdmin() {
       return isAuthenticated() && getMyProfile().role == 'admin';
     }
 
-    // Checks if the logged-in user's account is currently active
+    function isBackOfficer() {
+      return isAuthenticated() && getMyProfile().role == 'back_officer';
+    }
+
     function isActive() {
       return isAuthenticated() && getMyProfile().accountStatus == 'active';
     }
 
-    // ─── USER COLLECTION RULES ───
-    
+    // ─── USERS ───
+
     match /users/{userId} {
-      
-      // READ: A user can read their own profile. Other logged-in, active users can read profiles too (for the community aspect).
       allow read: if isOwner(userId) || (isAuthenticated() && isActive());
 
-      // CREATE (Registration): Enforces the "Zero Trust" principle.
-      // 1. Must be the owner creating their own profile.
-      // 2. MUST explicitly set their role to 'user' and status to 'active'.
       allow create: if isOwner(userId)
                     && request.resource.data.role == 'user'
                     && request.resource.data.accountStatus == 'active';
 
-      // UPDATE (Editing Profile):
-      // A user can update their own profile IF they are active, BUT they cannot tamper with their role or status.
-      // An Admin can update ANY profile (including changing roles or suspending them).
-      allow update: if (isOwner(userId) 
-                        && isActive() 
+      allow update: if (isOwner(userId)
+                        && isActive()
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accountStatus']))
                     || isAdmin();
 
-      // DELETE: Only admins can physically delete a user from the database.
+      allow delete: if isAdmin();
+
+      // users/{uid}/favoriteBooks/{bookId}
+      match /favoriteBooks/{bookId} {
+        allow read: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive();
+      }
+
+      // users/{uid}/myBooks/{bookId}
+      match /myBooks/{bookId} {
+        allow read: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive();
+      }
+    }
+
+    // ─── BOOK CATALOG ───
+
+    match /books/{bookId} {
+      // Any active user can browse the catalog.
+      allow read: if isAuthenticated() && isActive();
+
+      // Any active user can add a book they first scanned/entered.
+      allow create: if isAuthenticated() && isActive()
+                    && request.resource.data.addedBy == request.auth.uid;
+
+      // Only the original adder or an admin/back-officer can edit metadata.
+      allow update: if (isAuthenticated() && isActive() && resource.data.addedBy == request.auth.uid
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['addedBy', 'createdAt']))
+                    || isAdmin() || isBackOfficer();
+
+      allow delete: if isAdmin() || isBackOfficer();
+    }
+
+    // ─── EVENTS ───
+
+    match /events/{eventId} {
+      allow read: if isAuthenticated() && isActive();
+
+      allow create: if isAuthenticated() && isActive()
+                    && request.resource.data.ownerId == request.auth.uid;
+
+      // Owner can edit their event (can't reassign ownerId/createdAt); admins/back-officers can edit anything.
+      allow update: if (isAuthenticated() && isActive()
+                        && resource.data.ownerId == request.auth.uid
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownerId', 'createdAt']))
+                    || isAdmin() || isBackOfficer();
+
+      allow delete: if isAdmin() || isBackOfficer();
+
+      // events/{eventId}/attendees/{uid}
+      match /attendees/{attendeeId} {
+        allow read: if isAuthenticated() && isActive();
+        // Users join/leave their own attendee doc only.
+        allow create: if isOwner(attendeeId) && isActive();
+        allow delete: if isOwner(attendeeId) || isAdmin() || isBackOfficer();
+      }
+
+      // events/{eventId}/messages/{msgId}
+      match /messages/{msgId} {
+        allow read: if isAuthenticated() && isActive();
+        // Sender must identify themselves correctly.
+        allow create: if isAuthenticated() && isActive()
+                      && request.resource.data.senderId == request.auth.uid;
+        // Only the sender or moderation roles can delete messages.
+        allow delete: if (isAuthenticated() && isActive() && resource.data.senderId == request.auth.uid)
+                      || isAdmin() || isBackOfficer();
+      }
+    }
+
+    // ─── BOOK TRADES ───
+
+    match /trades/{tradeId} {
+      // Only the two parties (offerer and target) or an admin can see a trade.
+      allow read: if isAuthenticated() && isActive()
+                  && (resource.data.offeredBy == request.auth.uid
+                      || resource.data.requestedFrom == request.auth.uid)
+                  || isAdmin();
+
+      // Any active user can initiate a trade; must identify as the offerer.
+      allow create: if isAuthenticated() && isActive()
+                    && request.resource.data.offeredBy == request.auth.uid;
+
+      // Either party can update status (accept / decline / complete).
+      // Immutable fields: bookId, offeredBy, requestedFrom, createdAt.
+      allow update: if isAuthenticated() && isActive()
+                    && (resource.data.offeredBy == request.auth.uid
+                        || resource.data.requestedFrom == request.auth.uid)
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['bookId', 'offeredBy', 'requestedFrom', 'createdAt']);
+
       allow delete: if isAdmin();
     }
-    
-    // (You will add more match blocks here later for /books, /trades, etc.)
   }
 }
