@@ -120,10 +120,10 @@ export default function RegisterScreen({ navigation }) {
             if ( !hasValidLength(password) ) {
                 missing.push('At least 6 characters');
             }
-            if (!hasNumbers(password)) {
+            if ( !hasNumbers(password) ) {
                 missing.push('At least one number');
             }
-            if (!hasLowerCase(password) || !hasUpperCase(password)) {
+            if ( !hasLowerCase(password) || !hasUpperCase(password) ) {
                 missing.push('uppercase and lowercase letters');
             }
 
