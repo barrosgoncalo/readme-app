@@ -1,0 +1,25 @@
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 0.85rem;
+    color: var(--subtext);
+    font-weight: 600;
+}
+
+.input {
+    padding: 10px 12px;
+    border: 1px solid var(--bg-selected);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color 0.15s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
