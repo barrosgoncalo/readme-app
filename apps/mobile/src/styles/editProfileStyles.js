@@ -1,5 +1,5 @@
-import {Platform, StyleSheet} from 'react-native';
-import { Spacing, Fonts, Colors } from '@readme/shared/src/constants/theme';
+import { Platform, StyleSheet } from 'react-native';
+import { Colors } from '@readme/shared/src/constants/theme';
 
 export const buildStyles = (theme) => StyleSheet.create({
     root: {
@@ -20,7 +20,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: theme.text,
-        fontFamily: Platform.select({ios: 'Inter-Bold', default: 'Inter-Bold'}),
+        fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
     },
 
     // Scroll
@@ -31,7 +31,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         gap: 12,
     },
 
-    // Field box
+    // Field box — default (no focus)
     field: {
         borderWidth: 1.5,
         borderColor: theme.backgroundSelected,
@@ -41,16 +41,20 @@ export const buildStyles = (theme) => StyleSheet.create({
         paddingBottom: 10,
         backgroundColor: theme.backgroundElement ?? theme.background,
     },
-    fieldActive: {
-        borderColor: Colors.light.secondary, // orange accent
+    // Field box — focused
+    fieldFocused: {
+        borderColor: Colors.light.secondary,  // orange
     },
+
+    // Label — default
     fieldLabel: {
         fontSize: 11,
         color: theme.subtext,
         marginBottom: 2,
-        fontFamily: Platform.select({ios: 'Inter-Regular', default: 'Inter-Regular'}),
+        fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
     },
-    fieldLabelActive: {
+    // Label — focused
+    fieldLabelFocused: {
         color: Colors.light.secondary,
     },
 
@@ -58,7 +62,7 @@ export const buildStyles = (theme) => StyleSheet.create({
     input: {
         fontSize: 15,
         paddingVertical: 0,
-        fontFamily: Platform.select({ios: 'Inter-Regular', default: 'Inter-Regular'}),
+        fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
     },
 
     // Row helpers
@@ -75,19 +79,23 @@ export const buildStyles = (theme) => StyleSheet.create({
         marginRight: 4,
     },
 
-    // Submit
-submitBtn: {
-        backgroundColor: Colors.light.primary, // dark brown #5C3D2E
+    // Submit — active (isDirty)
+    submitBtn: {
+        backgroundColor: Colors.light.primary,
         borderRadius: 10,
         paddingVertical: 16,
         alignItems: 'center',
         marginTop: 8,
     },
-submitText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-    letterSpacing: 1.2,
-    fontFamily: Platform.select({ios: 'Inter-Bold', default: 'Inter-Bold'}),
-},
+    // Submit — disabled (nothing changed yet)
+    submitBtnDisabled: {
+        backgroundColor: theme.backgroundSelected,
+    },
+    submitText: {
+        color: '#FFFFFF',
+        fontWeight: '700',
+        fontSize: 14,
+        letterSpacing: 1.2,
+        fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
+    },
 });

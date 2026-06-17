@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,7 +7,6 @@ import {
     ScrollView,
     useColorScheme,
     Platform,
-    StyleSheet,
     Alert,
     ActivityIndicator,
 } from 'react-native';
@@ -16,14 +15,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { auth } from '@readme/shared/src/services/firebase';
-
-// ─── Country Picker (lightweight inline dropdown) ─────────────────────────────
-// If you already have a country-picker library feel free to swap this out.
 import CountryPicker from 'react-native-country-picker-modal';
-import {buildStyles} from "../../../styles/editProfileStyles";
+import { buildStyles } from '../../../styles/editProfileStyles';
 
 export default function EditProfileScreen({ navigation, route }) {
-    // route.params can carry the current user data when navigating here
     const existing = route?.params?.userData ?? {};
 
     const colorScheme = useColorScheme() ?? 'light';
@@ -31,29 +26,36 @@ export default function EditProfileScreen({ navigation, route }) {
     const styles = buildStyles(theme);
 
     // ─── Form state ───────────────────────────────────────────────────────────
-    const [fullName, setFullName]           = useState(existing.fullName ?? '');
-    const [username, setUsername]           = useState(existing.username ?? '');
-    const [phoneNumber, setPhoneNumber]     = useState(existing.phoneNumber ?? '');
-    const [country, setCountry]             = useState(existing.institutionalAddress?.country ?? '');
-    const [countryCode, setCountryCode]     = useState('PT');
-    const [city, setCity]                   = useState(existing.institutionalAddress?.city ?? '');
-    const [district, setDistrict]           = useState(existing.institutionalAddress?.district ?? '');
-    const [addressLine1, setAddressLine1]   = useState(existing.institutionalAddress?.addressLine1 ?? '');
-    const [addressLine2, setAddressLine2]   = useState(existing.institutionalAddress?.addressLine2 ?? '');
-    const [postalCode, setPostalCode]       = useState(existing.institutionalAddress?.postalCode ?? '');
+    const [fullName, setFullName]         = useState(existing.fullName ?? '');
+    const [username, setUsername]         = useState(existing.username ?? '');
+    const [phoneNumber, setPhoneNumber]   = useState(existing.phoneNumber ?? '');
+    const [country, setCountry]           = useState(existing.institutionalAddress?.country ?? '');
+    const [countryCode, setCountryCode]   = useState('PT');
+    const [city, setCity]                 = useState(existing.institutionalAddress?.city ?? '');
+    const [district, setDistrict]         = useState(existing.institutionalAddress?.district ?? '');
+    const [addressLine1, setAddressLine1] = useState(existing.institutionalAddress?.addressLine1 ?? '');
+    const [addressLine2, setAddressLine2] = useState(existing.institutionalAddress?.addressLine2 ?? '');
+    const [postalCode, setPostalCode]     = useState(existing.institutionalAddress?.postalCode ?? '');
 
-    // Date of birth
     const parseDob = (dobStr) => {
         if (!dobStr) return new Date(2000, 0, 1);
         const [d, m, y] = dobStr.split('/');
         return new Date(Number(y), Number(m) - 1, Number(d));
     };
-    const [date, setDate]                   = useState(parseDob(existing.dob));
-    const [dob, setDob]                     = useState(existing.dob ?? '');
-    const [showDatePicker, setShowDatePicker] = useState(false);
-
-    // Country picker visibility
+    const [date, setDate]                           = useState(parseDob(existing.dob));
+    const [dob, setDob]                             = useState(existing.dob ?? '');
+    const [showDatePicker, setShowDatePicker]       = useState(false);
     const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+    // ─── Dirty & focus tracking ───────────────────────────────────────────────
+    const [isDirty, setIsDirty]           = useState(false);
+    const [focusedField, setFocusedField] = useState(null);
+
+    // Wrap every setter so we also mark the form dirty
+    const change = useCallback((setter) => (value) => {
+        setter(value);
+        setIsDirty(true);
+    }, []);
 
     const [isSaving, setIsSaving] = useState(false);
 
@@ -67,6 +69,7 @@ export default function EditProfileScreen({ navigation, route }) {
             const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
             const y = selectedDate.getFullYear();
             setDob(`${d}/${m}/${y}`);
+            setIsDirty(true);
         }
     };
 
@@ -74,9 +77,12 @@ export default function EditProfileScreen({ navigation, route }) {
         setCountryCode(c.cca2);
         setCountry(c.name);
         setShowCountryPicker(false);
+        setFocusedField(null);
+        setIsDirty(true);
     };
 
     const handleSave = async () => {
+        if (!isDirty) return;
         if (!fullName || !username || !phoneNumber || !dob || !country || !city || !district || !addressLine1 || !postalCode) {
             Alert.alert('Missing fields', 'Please fill in all required fields.');
             return;
@@ -101,6 +107,7 @@ export default function EditProfileScreen({ navigation, route }) {
                 },
             });
 
+            setIsDirty(false);
             Alert.alert('Saved', 'Your profile has been updated.', [
                 { text: 'OK', onPress: () => navigation.goBack() },
             ]);
@@ -121,7 +128,6 @@ export default function EditProfileScreen({ navigation, route }) {
                     <Iconify icon="lucide:arrow-left" size={22} color={theme.text} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Edit profile</Text>
-                {/* spacer to centre the title */}
                 <View style={{ width: 22 }} />
             </View>
 
@@ -130,22 +136,22 @@ export default function EditProfileScreen({ navigation, route }) {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                {/* ── Full Name ── */}
-                <Field label="Full Name" active>
+                <Field label="Full Name" focused={focusedField === 'fullName'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
                         value={fullName}
-                        onChangeText={setFullName}
+                        onChangeText={change(setFullName)}
+                        onFocus={() => setFocusedField('fullName')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="Full Name"
                         placeholderTextColor={theme.subtext}
                     />
                 </Field>
 
-                {/* ── Date of Birth ── */}
-                <Field label="Date of birth" active>
+                <Field label="Date of birth" focused={focusedField === 'dob'} styles={styles}>
                     <TouchableOpacity
                         style={styles.rowBetween}
-                        onPress={() => setShowDatePicker(true)}
+                        onPress={() => { setShowDatePicker(true); setFocusedField('dob'); }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.input, { color: dob ? theme.text : theme.subtext, flex: 1 }]}>
@@ -164,54 +170,37 @@ export default function EditProfileScreen({ navigation, route }) {
                     )}
                 </Field>
 
-                {/* ── Username ── */}
-                <Field label="Username">
+                <Field label="Username" focused={focusedField === 'username'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
                         value={username}
-                        onChangeText={setUsername}
+                        onChangeText={change(setUsername)}
+                        onFocus={() => setFocusedField('username')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="username"
                         placeholderTextColor={theme.subtext}
                         autoCapitalize="none"
                     />
                 </Field>
 
-                {/* ── Phone Number ── */}
-                <Field label="Phone number">
+                <Field label="Phone number" focused={focusedField === 'phone'} styles={styles}>
                     <View style={styles.rowStart}>
-                        <TouchableOpacity
-                            onPress={() => setShowCountryPicker(true)}
-                            style={styles.flagBtn}
-                            activeOpacity={0.7}
-                        >
-                            <CountryPicker
-                                countryCode={countryCode}
-                                withFlag
-                                withFilter={false}
-                                withCallingCode={false}
-                                withEmoji
-                                onSelect={handleCountrySelect}
-                                visible={showCountryPicker}
-                                onClose={() => setShowCountryPicker(false)}
-                                renderFlagButton={({ onOpen }) => (
-                                    <TouchableOpacity onPress={onOpen} activeOpacity={0.7}>
-                                        <CountryPicker
-                                            countryCode={countryCode}
-                                            withFlag
-                                            withEmoji
-                                            withCallingCode={false}
-                                            withFilter={false}
-                                            onSelect={handleCountrySelect}
-                                            visible={false}
-                                        />
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        </TouchableOpacity>
+                        <CountryPicker
+                            countryCode={countryCode}
+                            withFlag
+                            withEmoji
+                            withFilter={false}
+                            withCallingCode={false}
+                            onSelect={handleCountrySelect}
+                            visible={showCountryPicker}
+                            onClose={() => setShowCountryPicker(false)}
+                        />
                         <TextInput
                             style={[styles.input, { flex: 1, color: theme.text }]}
                             value={phoneNumber}
-                            onChangeText={setPhoneNumber}
+                            onChangeText={change(setPhoneNumber)}
+                            onFocus={() => setFocusedField('phone')}
+                            onBlur={() => setFocusedField(null)}
                             placeholder="000 000 000"
                             placeholderTextColor={theme.subtext}
                             keyboardType="phone-pad"
@@ -219,11 +208,10 @@ export default function EditProfileScreen({ navigation, route }) {
                     </View>
                 </Field>
 
-                {/* ── Country ── */}
-                <Field label="Country">
+                <Field label="Country" focused={focusedField === 'country'} styles={styles}>
                     <TouchableOpacity
                         style={styles.rowBetween}
-                        onPress={() => setShowCountryPicker(true)}
+                        onPress={() => { setShowCountryPicker(true); setFocusedField('country'); }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.input, { color: country ? theme.text : theme.subtext, flex: 1 }]}>
@@ -231,7 +219,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         </Text>
                         <Iconify icon="lucide:chevron-down" size={18} color={theme.subtext} />
                     </TouchableOpacity>
-                    {/* Hidden picker triggered above */}
                     <CountryPicker
                         countryCode={countryCode}
                         withFlag
@@ -240,61 +227,66 @@ export default function EditProfileScreen({ navigation, route }) {
                         withCallingCode={false}
                         onSelect={handleCountrySelect}
                         visible={showCountryPicker}
-                        onClose={() => setShowCountryPicker(false)}
+                        onClose={() => { setShowCountryPicker(false); setFocusedField(null); }}
                         renderFlagButton={() => null}
                     />
                 </Field>
 
-                {/* ── City ── */}
-                <Field label="City">
+                <Field label="City" focused={focusedField === 'city'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
                         value={city}
-                        onChangeText={setCity}
+                        onChangeText={change(setCity)}
+                        onFocus={() => setFocusedField('city')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="City"
                         placeholderTextColor={theme.subtext}
                     />
                 </Field>
 
-                {/* ── District ── */}
-                <Field label="District">
+                <Field label="District" focused={focusedField === 'district'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
                         value={district}
-                        onChangeText={setDistrict}
+                        onChangeText={change(setDistrict)}
+                        onFocus={() => setFocusedField('district')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="District"
                         placeholderTextColor={theme.subtext}
                     />
                 </Field>
 
-                {/* ── Address Line 1 ── */}
-                <Field label="Address Line 1" active>
+                <Field label="Address Line 1" focused={focusedField === 'addr1'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
                         value={addressLine1}
-                        onChangeText={setAddressLine1}
+                        onChangeText={change(setAddressLine1)}
+                        onFocus={() => setFocusedField('addr1')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="Street address"
                         placeholderTextColor={theme.subtext}
                     />
                 </Field>
 
-                {/* ── Address Line 2 ── */}
-                <Field label="Address Line 2">
+                <Field label="Address Line 2" focused={focusedField === 'addr2'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
                         value={addressLine2}
-                        onChangeText={setAddressLine2}
+                        onChangeText={change(setAddressLine2)}
+                        onFocus={() => setFocusedField('addr2')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="Apartment, suite, etc. (optional)"
                         placeholderTextColor={theme.subtext}
                     />
                 </Field>
 
-                {/* ── Postal Code ── */}
-                <Field label="Postal Code">
+                <Field label="Postal Code" focused={focusedField === 'postal'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
                         value={postalCode}
-                        onChangeText={setPostalCode}
+                        onChangeText={change(setPostalCode)}
+                        onFocus={() => setFocusedField('postal')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="0000-000"
                         placeholderTextColor={theme.subtext}
                         keyboardType="numbers-and-punctuation"
@@ -303,9 +295,13 @@ export default function EditProfileScreen({ navigation, route }) {
 
                 {/* ── Submit ── */}
                 <TouchableOpacity
-                    style={[styles.submitBtn, isSaving && { opacity: 0.7 }]}
+                    style={[
+                        styles.submitBtn,
+                        !isDirty && styles.submitBtnDisabled,
+                        isSaving && { opacity: 0.7 },
+                    ]}
                     onPress={handleSave}
-                    disabled={isSaving}
+                    disabled={!isDirty || isSaving}
                     activeOpacity={0.85}
                 >
                     {isSaving
@@ -320,18 +316,13 @@ export default function EditProfileScreen({ navigation, route }) {
 
 // ─── Field wrapper ────────────────────────────────────────────────────────────
 
-function Field({ label, children, active = false }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
-    const styles = buildStyles(theme);
-
+function Field({ label, focused, children, styles }) {
     return (
-        <View style={[styles.field, active && styles.fieldActive]}>
-            <Text style={[styles.fieldLabel, active && styles.fieldLabelActive]}>
+        <View style={[styles.field, focused && styles.fieldFocused]}>
+            <Text style={[styles.fieldLabel, focused && styles.fieldLabelFocused]}>
                 {label}
             </Text>
             {children}
         </View>
     );
 }
-
