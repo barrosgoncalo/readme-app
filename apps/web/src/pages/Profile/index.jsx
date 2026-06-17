@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import {
+    BookOpen, Pencil, Ban, Lock, Moon, Settings, Award, Heart, LogOut, ChevronRight
+} from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
 import { doSignOut } from '@readme/shared/src/services/auth.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
@@ -82,10 +85,10 @@ export default function Profile() {
             <div className={styles.group}>
                 <Link to={WEB_ROUTES.BOOKS} className={styles.item}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>📚</span>
+                        <span className={styles.iconBox}><BookOpen size={20} /></span>
                         <span className={styles.itemLabel}>My Books</span>
                     </span>
-                    <span className={styles.chevron}>›</span>
+                    <ChevronRight size={18} className={styles.chevron} />
                 </Link>
             </div>
 
@@ -95,10 +98,10 @@ export default function Profile() {
                 {/* Edit Profile — expands inline */}
                 <button className={styles.item} onClick={editing ? undefined : openEdit}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>✏️</span>
+                        <span className={styles.iconBox}><Pencil size={20} /></span>
                         <span className={styles.itemLabel}>Edit Profile</span>
                     </span>
-                    {!editing && <span className={styles.chevron}>›</span>}
+                    {!editing && <ChevronRight size={18} className={styles.chevron} />}
                 </button>
 
                 {editing && (
@@ -120,23 +123,23 @@ export default function Profile() {
 
                 <div className={`${styles.item} ${styles.disabled}`}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>🚫</span>
+                        <span className={styles.iconBox}><Ban size={20} /></span>
                         <span className={styles.itemLabel}>View Blocked Users</span>
                     </span>
-                    <span className={styles.chevron}>›</span>
+                    <ChevronRight size={18} className={styles.chevron} />
                 </div>
 
                 <div className={`${styles.item} ${styles.disabled}`}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>🔒</span>
+                        <span className={styles.iconBox}><Lock size={20} /></span>
                         <span className={styles.itemLabel}>Privacy &amp; Security</span>
                     </span>
-                    <span className={styles.chevron}>›</span>
+                    <ChevronRight size={18} className={styles.chevron} />
                 </div>
 
                 <div className={styles.item} onClick={toggle} style={{ cursor: 'pointer' }}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>🌙</span>
+                        <span className={styles.iconBox}><Moon size={20} /></span>
                         <span className={styles.itemLabel}>Dark Mode</span>
                     </span>
                     <Toggle checked={theme === 'dark'} onChange={toggle} />
@@ -148,24 +151,24 @@ export default function Profile() {
             <div className={styles.group}>
                 <div className={`${styles.item} ${styles.disabled}`}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>⚙️</span>
+                        <span className={styles.iconBox}><Settings size={20} /></span>
                         <span className={styles.itemLabel}>Settings</span>
                     </span>
-                    <span className={styles.chevron}>›</span>
+                    <ChevronRight size={18} className={styles.chevron} />
                 </div>
                 <div className={`${styles.item} ${styles.disabled}`}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>🏅</span>
+                        <span className={styles.iconBox}><Award size={20} /></span>
                         <span className={styles.itemLabel}>Level</span>
                     </span>
-                    <span className={styles.chevron}>›</span>
+                    <ChevronRight size={18} className={styles.chevron} />
                 </div>
                 <div className={`${styles.item} ${styles.disabled}`}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>❤️</span>
+                        <span className={styles.iconBox}><Heart size={20} /></span>
                         <span className={styles.itemLabel}>Favorites</span>
                     </span>
-                    <span className={styles.chevron}>›</span>
+                    <ChevronRight size={18} className={styles.chevron} />
                 </div>
             </div>
 
@@ -173,7 +176,7 @@ export default function Profile() {
             <div className={styles.group}>
                 <button className={`${styles.item} ${styles.danger}`} onClick={doSignOut}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}>🚪</span>
+                        <span className={styles.iconBox}><LogOut size={20} /></span>
                         <span className={styles.itemLabel}>Sign Out</span>
                     </span>
                 </button>
