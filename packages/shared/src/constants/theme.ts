@@ -40,6 +40,9 @@ export const Colors = {
     quaternary: '#3B3561',
     cardBackground: '#E8E5E3',
     headerBackground: '#241B15',
+    groupShadow: '#E4DFDC',
+    iconBg: '#C4BDB8',
+    icon: '#342F2C',
   },
   dark: {
     /** (Light Gray) - Main body copy, headings, and core readable text. */
@@ -58,6 +61,8 @@ export const Colors = {
     primaryText: '#EFECE9',
     /** (Light Bright Orange) - Secondary buttons, notification badges, and distinct interactive elements. */
     secondary: '#FF9B42',        
+    /** (Bright Orange) - Secondary buttons, notification badges, and distinct interactive elements. */
+    darkerSecondary: '#F58B2E',
     /** (Slate Gray) - Alternative text used for muted/disabled text. */
     textSecondary: '#60646C',
     /** (Soft Muted Blue) - Soft accent for informational alerts and standard links. */
@@ -70,6 +75,9 @@ export const Colors = {
     quaternary: '#5E5496',       
     cardBackground: '#E8E5E3',
     headerBackground: '#241B15',
+    groupShadow: '#242120',
+    iconBg: '#342F2C',
+    icon: '#C4BDB8',
   },
     password: {
         gray: '#ccc',
