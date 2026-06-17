@@ -1,22 +1,27 @@
-import { Colors } from '@readme/shared/src/constants/theme'
-// merge
+// Password strength colors — fixed values, not theme-dependent.
+const PASSWORD_COLORS = {
+    gray:   '#ccc',
+    red:    '#D32F2F',
+    orange: '#F57C00',
+    green:  '#388E3C',
+};
 
 export const getPasswordDetails = (password) => {
 
     // If empty, return none
     if ( isEmpty(password) ) {
-        return { level: 'none', color: Colors.password.gray, label: '' };
+        return { level: 'none', color: PASSWORD_COLORS.gray, label: '' };
     }
     // STRONG: Meets 100% of your exact security conditions
     if ( hasValidLength(password) && hasNumbers(password) && hasMixedCase(password) ) {
-        return { level: 'strong', color: Colors.password.green, label: 'Strong' };
+        return { level: 'strong', color: PASSWORD_COLORS.green, label: 'Strong' };
     }
     // MEDIUM: Has the 6+ characters, but is still missing a number or mixed case
     if ( hasValidLength(password) ) {
-        return { level: 'medium', color: Colors.password.orange, label: 'Medium' };
+        return { level: 'medium', color: PASSWORD_COLORS.orange, label: 'Medium' };
     }
     // WEAK: Fails the absolute baseline length requirement
-    return { level: 'weak', color: Colors.password.red, label: 'Weak' };
+    return { level: 'weak', color: PASSWORD_COLORS.red, label: 'Weak' };
 };
 
 export function isEmpty(password) {
