@@ -45,6 +45,7 @@ export const Colors = {
     groupShadow: '#E4DFDC',
     iconBg: '#C4BDB8',
     icon: '#342F2C',
+    verifiedColor: '#1C0E05',
   },
   dark: {
     /** (Light Gray) - Main body copy, headings, and core readable text. */
@@ -80,6 +81,7 @@ export const Colors = {
     groupShadow: '#242120',
     iconBg: '#342F2C',
     icon: '#C4BDB8',
+    verifiedColor: '#F58B2E',
   },
     password: {
         gray: '#ccc',
