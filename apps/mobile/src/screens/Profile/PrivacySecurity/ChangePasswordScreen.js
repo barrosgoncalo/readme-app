@@ -9,6 +9,7 @@ import {
     Platform,
     ScrollView,
     ActivityIndicator,
+    Alert,
     useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,12 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doUpdateUserPassword } from '@readme/shared/src/services/auth'
 import { buildPasswordStyles } from '../../../styles/passwordStyles'; 
+import {
+    getPasswordDetails,
+    hasMixedCase,
+    hasNumbers,
+    hasValidLength,
+} from '@readme/shared/src/utils/registerUtils';
 
 export default function ChangePasswordScreen({ navigation }) {
     const [oldPassword, setOldPassword] = useState('');
@@ -36,26 +43,54 @@ export default function ChangePasswordScreen({ navigation }) {
     const styles = buildPasswordStyles(theme);
 
     const isAnyEmpty = !oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim();
+    const passwordInfo = getPasswordDetails(newPassword);
+
+    const isValidPassword = (password) => {
+        if (passwordInfo.level !== 'strong') {
+            const missing = [];
+            if ( !hasValidLength(password) ) {
+                missing.push('At least 6 characters');
+            }
+            if ( !hasNumbers(password) ) {
+                missing.push('At least one number');
+            }
+            if ( !hasMixedCase(password) ) {
+                missing.push('uppercase and lowercase letters');
+            }
+
+            Alert.alert('Weak Password', `Your password needs:\n• ${missing.join('\n• ')}`);
+            return false;
+        }
+        return true;
+    };
 
     const handleSave = async () => {
+        
+        if (newPassword !== confirmPassword) {
+            Alert.alert("Error", "New passwords do not match!");
+            return;
+        }
+        
+        if (oldPassword !== newPassword) {
+            Alert.alert("Error", "Your new password cannot be the same as your old password.");
+            return;
+        }
 
-        if( newPassword !== confirmPassword ) {
-            alert("New passwords do not match!");
+        if (!isValidPassword(newPassword)) {
             return;
         }
 
         setIsSaving(true);
 
         try {
-        await doUpdateUserPassword(oldPassword, newPassword);
-        navigation.navigate(ROUTES.PASSWORD_SUCCESS); 
-    } catch (error) {
-        console.error("Update password error:", error);
-        alert(error.message || "Failed to update password. Please check your credentials.");
-    } finally {
-        setIsSaving(false);
-    }
-
+            await doUpdateUserPassword(oldPassword, newPassword);
+            navigation.navigate(ROUTES.PASSWORD_SUCCESS); 
+        } catch (error) {
+            console.log("Handled password update screen error:", error.message);
+            Alert.alert("Error", error.message);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -126,7 +161,13 @@ export default function ChangePasswordScreen({ navigation }) {
                         {/* New Password */}
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>New Password</Text>
-                            <View style={styles.passwordContainer}>
+                            <View style={[
+                                styles.passwordContainer,
+                                { 
+                                    borderBottomColor: passwordInfo.color, 
+                                    borderBottomWidth: passwordInfo.level === 'none' ? 1 : 2.5
+                                }
+                            ]}>
                                 <TextInput
                                     style={styles.passwordInput}
                                     value={newPassword}
@@ -145,6 +186,13 @@ export default function ChangePasswordScreen({ navigation }) {
                                     }
                                 </TouchableOpacity>
                             </View>
+
+                            {/* Cleaned up Text component */}
+                            {passwordInfo.label ? (
+                                <Text style={[styles.strengthText, { color: passwordInfo.color }]}>
+                                    {passwordInfo.label}
+                                </Text>
+                            ) : null}
                         </View>
 
                         {/* Confirm Password */}
@@ -172,17 +220,17 @@ export default function ChangePasswordScreen({ navigation }) {
                         </View>
 
                         {/* Submit Changed */}
-                        <TouchableOpacity
-                            style={[
-                                styles.submitBtn,
-                                isAnyEmpty && styles.submitBtnDisabled,
-                                isSaving && { opacity: 0.7 },
-                            ]}
-                            onPress={handleSave}
-                            disabled={isAnyEmpty || isSaving}
-                            activeOpacity={0.85}
-                        >
-                            {isSaving ? (
+                    <TouchableOpacity
+                        style={[
+                            styles.submitBtn,
+                            isAnyEmpty && styles.submitBtnDisabled,
+                            isSaving && { opacity: 0.7 },
+                        ]}
+                        onPress={handleSave}
+                        disabled={isAnyEmpty || isSaving}
+                        activeOpacity={0.85}
+                    >
+                        {isSaving ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
                                     <Text style={[styles.submitText, isAnyEmpty && styles.submitTextDisabled]}>

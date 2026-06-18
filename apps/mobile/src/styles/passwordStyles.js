@@ -102,6 +102,12 @@ export const buildPasswordStyles = (theme) => StyleSheet.create({
         alignItems: 'center',
         marginTop: 40,
     },
+    strengthText: {
+        fontSize: 12,
+        fontWeight: '600',
+        marginTop: 6,
+        alignSelf: 'flex-start',
+    },
     // Submit — disabled (nothing changed)
     submitBtnDisabled: {
         backgroundColor: theme.backgroundSelected,
