@@ -8,4 +8,5 @@ export const ROUTES = {
     PROFILE: 'Profile',
     EDIT_PROFILE: 'EditProfile',
     PRIVACY_SECURITY: 'PrivacySecurity',
+    CHANGE_PASSWORD: 'ChangePassword',
 } as const;

@@ -15,6 +15,7 @@ import LoginScreen from '../screens/Auth/Login/LoginScreen';
 import ForgotPasswordScreen from '../screens/Auth/Login/ForgotPasswordScreen';
 import EditProfileScreen from '../screens/Profile/EditProfile/EditProfileScreen';
 import PrivacySecurityScreen from '../screens/Profile/PrivacySecurity/PrivacySecurityScreen'
+import ChangePasswordScreen from '../screens/Profile/PrivacySecurity/ChangePasswordScreen'
 import AppTabs from '../components/app-tabs'; 
 
 const Stack = createNativeStackNavigator();
@@ -63,6 +64,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.PRIVACY_SECURITY} 
                             component={PrivacySecurityScreen} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.CHANGE_PASSWORD} 
+                            component={ChangePasswordScreen} 
                             options={{ headerShown: false }}
                         />
                     </>

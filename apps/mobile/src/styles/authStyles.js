@@ -151,21 +151,6 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 15,
     },
-    passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: theme.backgroundSelected,
-        borderRadius: 8,
-        backgroundColor: theme.backgroundElement,
-        marginVertical: 8,
-    },
-    passwordInput: {
-        flex: 1,
-        padding: 12,
-        fontSize: 15,
-        color: theme.text,
-    },
     forgotPasswordButton: {
         alignSelf: 'flex-end',
         marginTop: 10,
@@ -183,12 +168,6 @@ export const buildStyles = (theme) => StyleSheet.create({
         borderRadius: 12,
         marginTop: 0,
         marginBottom: -2,
-    },
-    eyeButton: {
-        paddingHorizontal: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        alignSelf: 'stretch',
     },
     dotsContainer: {
         flexDirection: 'row',

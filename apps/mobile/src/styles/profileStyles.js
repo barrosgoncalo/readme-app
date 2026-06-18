@@ -79,7 +79,7 @@ export const buildStyles = (theme) => StyleSheet.create({
     },
     menuGroup: {
         borderRadius: 16,
-        marginBottom: 15,     // <-- Extraído
+        marginBottom: 15,
         overflow: 'hidden',
         // Sombras extraídas
         shadowColor: '#000',
