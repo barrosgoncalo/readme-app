@@ -4,6 +4,7 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
+    Alert,
     useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +12,9 @@ import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
-// Ajusta este caminho para onde guardaste os teus MenuComponents
+import { useAuth } from '@readme/shared/src/contexts/AuthContext'; 
+import { doUpdateUserProfile } from '@readme/shared/src/services/auth';
+
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../../components/ui/MenuComponents';
 
 export default function PrivacySecurityScreen({ navigation }) {
@@ -19,8 +22,26 @@ export default function PrivacySecurityScreen({ navigation }) {
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
-    // Estado para controlar se a conta é pública (false) ou privada (true)
-    const [isPrivate, setIsPrivate] = useState(false);
+    const { currentUser, refreshUser } = useAuth();
+
+    const [isPrivate, setIsPrivate] = useState(currentUser?.profileVisibility === 'private');
+
+    const handlePrivacyToggle = async (newValue) => {
+        setIsPrivate(newValue);
+
+        try {
+            await doUpdateUserProfile(currentUser.uid, {
+                profileVisibility: newValue ? 'private' : 'public'
+            });
+
+            await refreshUser();
+
+        } catch (error) {
+            console.error("Error updating visibility:", error);
+            Alert.alert("Error", "Failed to update privacy settings. Please try again.");
+            setIsPrivate(!newValue);
+        }
+    };
 
     const handleDeleteAccount = () => {
         alert("Delete account flow initiated");
@@ -29,20 +50,19 @@ export default function PrivacySecurityScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
-                
+
                 {/* --- CUSTOM HEADER --- */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                         <Iconify icon="lucide:arrow-left" size={24} color={theme.text} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Privacy and Security</Text>
-                    {/* View vazia para manter o título perfeitamente centrado */}
                     <View style={{ width: 24 }} /> 
                 </View>
 
                 {/* --- CONTENT --- */}
                 <View style={styles.content}>
-                    
+
                     {/* SECTION 1: PRIVACY */}
                     <Text style={styles.sectionTitle}>Privacy</Text>
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
@@ -50,9 +70,9 @@ export default function PrivacySecurityScreen({ navigation }) {
                             styles={styles}
                             theme={theme}
                             icon={isPrivate ? "lucide:lock" : "lucide:globe"}
-                            label={isPrivate ? "Private" : "Public"}
+                            label={isPrivate ? "Private Account" : "Public Account"}
                             value={isPrivate}
-                            onValueChange={setIsPrivate}
+                            onValueChange={handlePrivacyToggle}
                         />
                     </MenuGroup>
                     <Text style={styles.helperText}>
@@ -93,7 +113,6 @@ export default function PrivacySecurityScreen({ navigation }) {
         </SafeAreaView>
     );
 }
-
 // --- ESTILOS DA PÁGINA ---
 const buildStyles = (theme) => StyleSheet.create({
     safeArea: {
@@ -137,7 +156,7 @@ const buildStyles = (theme) => StyleSheet.create({
         marginRight: 4,
         lineHeight: 18,
     },
-    
+
     // --- ESTILOS NECESSÁRIOS PARA OS COMPONENTES REUTILIZADOS ---
     // (Podes remover estes se o MenuComponents já importar o seu próprio stylesheet)
     menuGroup: {

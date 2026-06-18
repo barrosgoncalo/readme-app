@@ -12,7 +12,7 @@ import {
 } from "firebase/auth"
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from "../constants/authConstants";
+import { ACCOUNT_STATUS } from "../constants/authConstants";
 import { createUserModel } from '@readme/shared/src/models/user';
 
 export const saveUserData = async (uid, profileData, provider) => {
@@ -30,11 +30,9 @@ export const doUpdateUserProfile = async (uid, dataToUpdate) => {
     try {
         const userDocRef = doc(db, "users", uid);
 
-        // updateDoc merges the new data with existing data,
-        // rather than overwriting the entire document like setDoc would.
         await updateDoc(userDocRef, {
             ...dataToUpdate,
-            updatedAt: new Date().toISOString() // Good practice to track edits
+            updatedAt: new Date().toISOString()
         });
 
         return true;
@@ -101,7 +99,8 @@ export const doGetGoogleTokenAndProfile = async () => {
         profile: {
             email: googleUser?.email || '',
             fullName: googleUser?.name || googleUser?.displayName || '',
-            username: googleUser?.email ? googleUser.email.split('@')[0] : ''
+            username: googleUser?.email ? googleUser.email.split('@')[0] : '',
+            photoURL: googleUser?.photo || '',
         }
     };
 };
