@@ -11,6 +11,7 @@ export default function (api) {
                         'material-symbols:verified',
                         'lucide:book',
                         'lucide:edit',
+                        'lucide:user',
                         'lucide:user-x',
                         'lucide:activity',
                         'lucide:settings',

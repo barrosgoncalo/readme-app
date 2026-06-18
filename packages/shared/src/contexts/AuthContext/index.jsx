@@ -16,7 +16,6 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Apenas um listener aqui, que chama a nossa função completa
         const unsubscribe = onAuthStateChanged(auth, initializeUser);
         return unsubscribe;
     }, []);
@@ -34,8 +33,12 @@ export function AuthProvider({ children }) {
                     const docSnap = await getDoc(docRef);
 
                     if (docSnap.exists()) {
-                        // Combina o Auth com o Firestore
-                        setCurrentUser({ ...user, ...docSnap.data() }); 
+                        const firestoreData = docSnap.data();
+                        setCurrentUser({ 
+                            ...user, 
+                            ...firestoreData,
+                            photoURL: firestoreData.photoURL || user.photoURL || null 
+                        }); 
                     } else {
                         setCurrentUser({ ...user });
                     }
@@ -50,9 +53,9 @@ export function AuthProvider({ children }) {
             setCurrentUser(null);
             setUserLoggedIn(false);
         }
-        
+
         setLoading(false);
-        
+
         try {
             await SplashScreen.hideAsync();
         } catch (error) {
@@ -65,13 +68,13 @@ export function AuthProvider({ children }) {
             try {
                 const userDocRef = doc(db, "users", auth.currentUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
+                const firestoreData = userDocSnap.data();
 
                 if (userDocSnap.exists()) {
-                    // Atualiza o estado com os dados mais recentes do Firestore
                     setCurrentUser({
-                        uid: auth.currentUser.uid,
-                        email: auth.currentUser.email,
-                        ...userDocSnap.data()
+                        ...auth.currentUser,
+                        ...firestoreData,
+                        photoURL: firestoreData.photoURL || auth.currentUser.photoURL || null
                     });
                 }
             } catch (error) {
