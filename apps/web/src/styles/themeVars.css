@@ -30,9 +30,26 @@
     --radius: 10px;
     --radius-lg: 16px;
 }
+    /* O Dark Mode é ativado SE o sistema pedir, EXCEPTO se o utilizador forçar o Light Mode.
+   OU é ativado se o utilizador forçar o Dark Mode com o atributo data-theme. */
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            --bg: #181615;
+            --bg-elem: #242120;
+            --bg-selected: #363230;
+            --text: #D8D6D4;
+            --subtext: #CCCCCC;
+            --primary: #7E5540;
+            --primary-text: #EFECE9;
+            --secondary: #FF9B42;
+            --text-secondary: #60646C;
+            --tertiary: #76AED9;
+            --tertiary-vivid: #409EE0;
+            --tertiary-inactive: #2C4459;
+            --quaternary: #5E5496;
+        }
 
-@media (prefers-color-scheme: dark) {
-    :root {
+    :root[data-theme="dark"] {
         --bg: #181615;
         --bg-elem: #242120;
         --bg-selected: #363230;
