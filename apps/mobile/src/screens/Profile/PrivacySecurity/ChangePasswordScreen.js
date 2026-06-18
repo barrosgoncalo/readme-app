@@ -32,7 +32,7 @@ export default function ChangePasswordScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
 
-    const styles = { ...buildStyles(theme), ...buildPasswordStyles(theme) };
+    const styles = buildPasswordStyles(theme);
 
     const isAnyEmpty = !oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim();
 
@@ -159,11 +159,11 @@ export default function ChangePasswordScreen({ navigation }) {
                         <TouchableOpacity
                             style={[
                                 styles.submitBtn,
-                                isAnyEmpty && styles.submitBtnDisabled, // Disable styles if empty
+                                isAnyEmpty && styles.submitBtnDisabled,
                                 isSaving && { opacity: 0.7 },
                             ]}
                             onPress={handleSave}
-                            disabled={isAnyEmpty || isSaving} // Prevent clicks if empty OR currently saving
+                            disabled={isAnyEmpty || isSaving}
                             activeOpacity={0.85}
                         >
                             {isSaving ? (

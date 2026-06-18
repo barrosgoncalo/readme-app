@@ -1,4 +1,5 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import { Fonts } from '@readme/shared/src/constants/theme';
 
 export const buildPasswordStyles = (theme) => StyleSheet.create({
     safeArea: {
@@ -30,7 +31,7 @@ export const buildPasswordStyles = (theme) => StyleSheet.create({
     },
     textContainer: {
         marginTop: 24,
-        marginBottom: 20,
+        marginBottom: -20,
     },
     mainHeading: {
         fontSize: 18,
@@ -52,8 +53,8 @@ export const buildPasswordStyles = (theme) => StyleSheet.create({
         height: 200,
     },
     formContainer: {
-        marginTop: 10,
-        gap: 15,
+        marginTop: -20,
+        gap: 20,
     },
     inputGroup: {
         flexDirection: 'column',
@@ -92,5 +93,27 @@ export const buildPasswordStyles = (theme) => StyleSheet.create({
     eyeButton: {
         padding: 4,
         marginLeft: 8,
+    },
+    // Submit — active
+    submitBtn: {
+        backgroundColor: theme.primary,
+        borderRadius: 10,
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginTop: 40,
+    },
+    // Submit — disabled (nothing changed)
+    submitBtnDisabled: {
+        backgroundColor: theme.backgroundSelected,
+    },
+    submitText: {
+        color: '#FFFFFF',
+        fontWeight: '700',
+        fontSize: 14,
+        letterSpacing: 1.2,
+        fontFamily: Fonts.inter_bold,
+    },
+    submitTextDisabled: {
+        color: theme.subtext,
     },
 });
