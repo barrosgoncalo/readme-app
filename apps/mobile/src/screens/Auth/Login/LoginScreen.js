@@ -22,12 +22,14 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../../styles/authStyles';
+import { buildPasswordStyles } from '../../../styles/passwordStyles';
 
 export default function LoginScreen({ navigation }) {
 
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
+    const passwordStyles = buildPasswordStyles(theme);
 
     // State
     const [email, setEmail] = useState('');
@@ -96,13 +98,13 @@ export default function LoginScreen({ navigation }) {
                     />
 
                     {/* Password Input with Toggle */}
-                    <View style={styles.passwordContainer}>
+                    <View style={passwordStyles.passwordContainer}>
                         <TextInput
                             placeholder="Password"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword}
-                            style={styles.passwordInput}
+                            style={passwordStyles.passwordInput}
                             placeholderTextColor="#aaa"
                         />
                         <TouchableOpacity

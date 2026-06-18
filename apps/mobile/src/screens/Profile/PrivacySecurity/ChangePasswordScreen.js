@@ -13,9 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
-
 import { Colors } from '@readme/shared/src/constants/theme';
-import { buildStyles } from './changePasswordStyles'; 
+import { buildPasswordStyles } from '../../../styles/passwordStyles'; 
 
 export default function ChangePasswordScreen({ navigation }) {
     const [oldPassword, setOldPassword] = useState('');
@@ -30,7 +29,8 @@ export default function ChangePasswordScreen({ navigation }) {
     const theme = Colors[colorScheme];
 
     // Injeta o theme na função para gerar os estilos dinâmicos
-    const styles = buildStyles(theme);
+    
+    const styles = buildPasswordStyles(theme);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -46,7 +46,7 @@ export default function ChangePasswordScreen({ navigation }) {
                     {/* --- HEADER --- */}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                            <Iconify icon="lucide:arrow-left" size={24} color="#000000" />
+                            <Iconify icon="lucide:arrow-left" size={24} color={theme.text} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>Change Password</Text>
                         <View style={{ width: 24 }} />

@@ -39,7 +39,7 @@ export default function StepTwoPersonal({
                     />
                 </View>
             </TouchableOpacity>
-            
+
             {showDatePicker && (
                 <DateTimePicker
                     value={date}

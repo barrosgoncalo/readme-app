@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-export const buildStyles = (theme) => StyleSheet.create({
+export const buildPasswordStyles = (theme) => StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: theme.background,
