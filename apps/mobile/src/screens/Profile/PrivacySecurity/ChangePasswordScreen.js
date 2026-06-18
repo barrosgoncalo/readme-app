@@ -15,8 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes';
+import { doUpdateUserPassword } from '@readme/shared/src/services/auth'
 import { buildPasswordStyles } from '../../../styles/passwordStyles'; 
-import { buildStyles } from '../../../styles/editProfileStyles'; 
 
 export default function ChangePasswordScreen({ navigation }) {
     const [oldPassword, setOldPassword] = useState('');
@@ -37,9 +38,24 @@ export default function ChangePasswordScreen({ navigation }) {
     const isAnyEmpty = !oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim();
 
     const handleSave = async () => {
+
+        if( newPassword !== confirmPassword ) {
+            alert("New passwords do not match!");
+            return;
+        }
+
         setIsSaving(true);
-        // Add your save logic here...
-        // setIsSaving(false);
+
+        try {
+        await doUpdateUserPassword(oldPassword, newPassword);
+        navigation.navigate(ROUTES.PASSWORD_SUCCESS); 
+    } catch (error) {
+        console.error("Update password error:", error);
+        alert(error.message || "Failed to update password. Please check your credentials.");
+    } finally {
+        setIsSaving(false);
+    }
+
     };
 
     return (

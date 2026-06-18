@@ -9,4 +9,5 @@ export const ROUTES = {
     EDIT_PROFILE: 'EditProfile',
     PRIVACY_SECURITY: 'PrivacySecurity',
     CHANGE_PASSWORD: 'ChangePassword',
+    PASSWORD_SUCCESS: 'PasswordSuccess',
 } as const;
