@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronRight, KeyRound } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -125,6 +125,17 @@ export default function EditProfile() {
                             <Field label="Postal code" value={form.postalCode} onChange={v => set('postalCode', v)} />
                             <Field label="Country" value={form.country} onChange={v => set('country', v)} />
                         </div>
+                    </div>
+                </section>
+
+                <section className={styles.section}>
+                    <p className={styles.sectionLabel}>Security</p>
+                    <div className={styles.navCard} onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD)}>
+                        <span className={styles.navLeft}>
+                            <span className={styles.navIcon}><KeyRound size={18} /></span>
+                            <span className={styles.navLabel}>Change password</span>
+                        </span>
+                        <ChevronRight size={18} className={styles.navChevron} />
                     </div>
                 </section>
 
