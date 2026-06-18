@@ -10,17 +10,20 @@ import { uploadProfilePicture } from '@readme/shared/src/services/user';
 import { MenuGroup, MenuItem } from '../../components/ui/MenuComponents';
 
 export default function ProfileScreen({ navigation }) {
+
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
     const { currentUser, refreshUser } = useAuth(); 
     const [uploading, setUploading] = useState(false);
+
     const [focusKey, setFocusKey] = useState(0);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             setFocusKey(prev => prev + 1); 
+            
             if (refreshUser) {
                 refreshUser();
             }
