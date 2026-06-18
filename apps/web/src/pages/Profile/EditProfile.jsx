@@ -5,6 +5,8 @@ import { ArrowLeft, ChevronRight, KeyRound } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
+import { DEFAULT_COUNTRY, parseStoredPhone } from '../../components/PhoneField/countryCodes.js';
+import PhoneField from '../../components/PhoneField/index.jsx';
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
 import Spinner from '../../components/Spinner.jsx';
@@ -20,6 +22,7 @@ export default function EditProfile() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
+    const [phoneCountry, setPhoneCountry] = useState(DEFAULT_COUNTRY);
     const [form, setForm] = useState({
         fullName: '',
         dob: '',
@@ -39,11 +42,13 @@ export default function EditProfile() {
             if (!snap.exists()) return;
             const d = snap.data();
             const addr = d.institutionalAddress || {};
+            const { country, number } = parseStoredPhone(d.phoneNumber);
+            setPhoneCountry(country);
             setForm({
                 fullName: d.fullName || '',
                 dob: d.dob || '',
                 username: d.username || '',
-                phoneNumber: d.phoneNumber || '',
+                phoneNumber: number,
                 country: addr.country || '',
                 city: addr.city || '',
                 district: addr.district || '',
@@ -65,11 +70,14 @@ export default function EditProfile() {
         setSuccess(false);
         setSaving(true);
         try {
+            const fullPhone = form.phoneNumber.trim()
+                ? `${phoneCountry.dial} ${form.phoneNumber.trim()}`
+                : '';
             await updateDoc(doc(db, 'users', currentUser.uid), {
                 fullName: form.fullName.trim(),
                 dob: form.dob,
                 username: form.username.trim(),
-                phoneNumber: form.phoneNumber.trim(),
+                phoneNumber: fullPhone,
                 institutionalAddress: {
                     country: form.country.trim(),
                     city: form.city.trim(),
@@ -108,7 +116,12 @@ export default function EditProfile() {
                         <Field label="Full name" value={form.fullName} onChange={v => set('fullName', v)} required />
                         <Field label="Date of birth" type="date" value={form.dob} onChange={v => set('dob', v)} />
                         <Field label="Username" value={form.username} onChange={v => set('username', v)} required />
-                        <Field label="Phone number" type="tel" value={form.phoneNumber} onChange={v => set('phoneNumber', v)} />
+                        <PhoneField
+                            country={phoneCountry}
+                            onCountryChange={c => { setPhoneCountry(c); setSuccess(false); }}
+                            value={form.phoneNumber}
+                            onChange={v => set('phoneNumber', v)}
+                        />
                     </div>
                 </section>
 
