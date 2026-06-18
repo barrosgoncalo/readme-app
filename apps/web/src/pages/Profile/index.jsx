@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import {
     BookOpen, Pencil, Ban, Lock, Moon, Settings, Award, Heart, LogOut, ChevronRight,
-    Globe, Eye, EyeOff,
+    Globe, Eye, EyeOff, Camera,
 } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
 import { doSignOut, doUpdateUserPassword, doDeleteAccount } from '@readme/shared/src/services/auth.web';
+import { uploadProfilePicture } from '@readme/shared/src/services/user.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -24,10 +25,13 @@ export default function Profile() {
     const { currentUser } = useAuth();
     const { theme, toggle } = useTheme();
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
-
+    const [photoURL, setPhotoURL] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
 
     // Privacy & Security panel
     const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -42,7 +46,7 @@ export default function Profile() {
     const [showPw, setShowPw] = useState({ current: false, next: false, confirm: false });
 
     // Delete account
-    const [deleteStep, setDeleteStep] = useState(0); // 0=hidden, 1=confirm, 2=password
+    const [deleteStep, setDeleteStep] = useState(0);
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteError, setDeleteError] = useState('');
     const [deleting, setDeleting] = useState(false);
@@ -54,9 +58,27 @@ export default function Profile() {
                 const data = snap.data();
                 setUserData(data);
                 setIsPublic(data.profileVisibility === 'public');
+                setPhotoURL(data.photoURL || null);
             }
         }).finally(() => setLoading(false));
     }, [currentUser]);
+
+    async function handleAvatarFileChange(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadError('');
+        setUploading(true);
+        try {
+            const url = await uploadProfilePicture(currentUser.uid, file);
+            setPhotoURL(url);
+        } catch {
+            setUploadError('Upload failed. Please try again.');
+        } finally {
+            setUploading(false);
+            // Reset so the same file can be picked again if needed
+            e.target.value = '';
+        }
+    }
 
     async function handlePrivacyToggle(value) {
         setIsPublic(value);
@@ -67,7 +89,7 @@ export default function Profile() {
             });
             setUserData(prev => ({ ...prev, profileVisibility: value ? 'public' : 'private' }));
         } catch {
-            setIsPublic(!value); // revert
+            setIsPublic(!value);
         } finally {
             setPrivacySaving(false);
         }
@@ -77,14 +99,8 @@ export default function Profile() {
         e.preventDefault();
         setPwError('');
         setPwSuccess(false);
-        if (pwForm.next !== pwForm.confirm) {
-            setPwError('New passwords do not match.');
-            return;
-        }
-        if (pwForm.next.length < 6) {
-            setPwError('New password must be at least 6 characters.');
-            return;
-        }
+        if (pwForm.next !== pwForm.confirm) { setPwError('New passwords do not match.'); return; }
+        if (pwForm.next.length < 6) { setPwError('New password must be at least 6 characters.'); return; }
         setPwSaving(true);
         try {
             await doUpdateUserPassword(pwForm.current, pwForm.next);
@@ -117,7 +133,41 @@ export default function Profile() {
 
             {/* ── Header ── */}
             <div className={styles.header}>
-                <div className={styles.avatar}>{initials(userData)}</div>
+
+                {/* Avatar — clickable to change photo */}
+                <button
+                    className={styles.avatarBtn}
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    aria-label="Change profile picture"
+                >
+                    {photoURL ? (
+                        <img
+                            src={`${photoURL}?t=${Date.now()}`}
+                            alt="Profile"
+                            className={styles.avatarImg}
+                        />
+                    ) : (
+                        <div className={styles.avatar}>{initials(userData)}</div>
+                    )}
+                    <div className={styles.avatarOverlay}>
+                        {uploading
+                            ? <span className={styles.uploadingRing} />
+                            : <Camera size={20} color="#fff" />
+                        }
+                    </div>
+                </button>
+
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleAvatarFileChange}
+                />
+
+                {uploadError && <p className={styles.uploadError}>{uploadError}</p>}
+
                 <p className={styles.userName}>{userData?.username || currentUser?.email}</p>
                 <p className={styles.userEmail}>{currentUser?.email}</p>
             </div>
@@ -164,7 +214,6 @@ export default function Profile() {
                 {privacyOpen && (
                     <div className={styles.privacyPanel}>
 
-                        {/* ── Privacy ── */}
                         <p className={styles.panelSection}>Privacy</p>
                         <div className={styles.privacyRow}>
                             <span className={styles.itemLeft}>
@@ -181,48 +230,21 @@ export default function Profile() {
                             <Toggle checked={isPublic} onChange={handlePrivacyToggle} disabled={privacySaving} />
                         </div>
 
-                        {/* ── Change Password ── */}
                         <p className={styles.panelSection}>Security</p>
                         <form className={styles.pwForm} onSubmit={handleChangePassword}>
-                            <PasswordField
-                                label="Current password"
-                                value={pwForm.current}
-                                onChange={v => setPwForm(f => ({ ...f, current: v }))}
-                                show={showPw.current}
-                                onToggleShow={() => setShowPw(s => ({ ...s, current: !s.current }))}
-                            />
-                            <PasswordField
-                                label="New password"
-                                value={pwForm.next}
-                                onChange={v => { setPwForm(f => ({ ...f, next: v })); setPwSuccess(false); }}
-                                show={showPw.next}
-                                onToggleShow={() => setShowPw(s => ({ ...s, next: !s.next }))}
-                            />
-                            <PasswordField
-                                label="Confirm new password"
-                                value={pwForm.confirm}
-                                onChange={v => setPwForm(f => ({ ...f, confirm: v }))}
-                                show={showPw.confirm}
-                                onToggleShow={() => setShowPw(s => ({ ...s, confirm: !s.confirm }))}
-                            />
+                            <PasswordField label="Current password" value={pwForm.current} onChange={v => setPwForm(f => ({ ...f, current: v }))} show={showPw.current} onToggleShow={() => setShowPw(s => ({ ...s, current: !s.current }))} />
+                            <PasswordField label="New password" value={pwForm.next} onChange={v => { setPwForm(f => ({ ...f, next: v })); setPwSuccess(false); }} show={showPw.next} onToggleShow={() => setShowPw(s => ({ ...s, next: !s.next }))} />
+                            <PasswordField label="Confirm new password" value={pwForm.confirm} onChange={v => setPwForm(f => ({ ...f, confirm: v }))} show={showPw.confirm} onToggleShow={() => setShowPw(s => ({ ...s, confirm: !s.confirm }))} />
                             {pwSuccess && <p className={styles.pwSuccess}>Password changed successfully.</p>}
                             <ErrorAlert>{pwError}</ErrorAlert>
-                            <Button
-                                type="submit"
-                                disabled={!pwForm.current || !pwForm.next || !pwForm.confirm || pwSaving}
-                            >
+                            <Button type="submit" disabled={!pwForm.current || !pwForm.next || !pwForm.confirm || pwSaving}>
                                 {pwSaving ? 'Saving…' : 'Change password'}
                             </Button>
                         </form>
 
-                        {/* ── Delete Account ── */}
                         <p className={styles.panelSection}>Account Management</p>
                         {deleteStep === 0 && (
-                            <button
-                                type="button"
-                                className={`${styles.item} ${styles.danger}`}
-                                onClick={() => { setDeleteStep(1); setDeleteError(''); }}
-                            >
+                            <button type="button" className={`${styles.item} ${styles.danger}`} onClick={() => { setDeleteStep(1); setDeleteError(''); }}>
                                 <span className={styles.itemLeft}>
                                     <span className={styles.iconBox}><LogOut size={18} /></span>
                                     <span className={styles.itemLabel}>Delete Account</span>
@@ -241,21 +263,11 @@ export default function Profile() {
                         {deleteStep === 2 && (
                             <div className={styles.deleteConfirm}>
                                 <p className={styles.deleteWarning}>Enter your password to confirm deletion.</p>
-                                <PasswordField
-                                    label="Password"
-                                    value={deletePassword}
-                                    onChange={setDeletePassword}
-                                    show={showPw.delete}
-                                    onToggleShow={() => setShowPw(s => ({ ...s, delete: !s.delete }))}
-                                />
+                                <PasswordField label="Password" value={deletePassword} onChange={setDeletePassword} show={showPw.delete} onToggleShow={() => setShowPw(s => ({ ...s, delete: !s.delete }))} />
                                 <ErrorAlert>{deleteError}</ErrorAlert>
                                 <div className={styles.editActions}>
                                     <Button variant="ghost" onClick={() => { setDeleteStep(0); setDeletePassword(''); setDeleteError(''); }}>Cancel</Button>
-                                    <Button
-                                        onClick={handleDeleteAccount}
-                                        disabled={!deletePassword || deleting}
-                                        style={{ background: 'var(--error)', color: '#fff' }}
-                                    >
+                                    <Button onClick={handleDeleteAccount} disabled={!deletePassword || deleting} style={{ background: 'var(--error)', color: '#fff' }}>
                                         {deleting ? 'Deleting…' : 'Delete my account'}
                                     </Button>
                                 </div>

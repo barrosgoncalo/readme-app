@@ -17,6 +17,22 @@
     border-bottom: 1px solid var(--bg-selected);
 }
 
+.avatarBtn {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    background: none;
+    flex-shrink: 0;
+}
+
+.avatarBtn:disabled {
+    cursor: default;
+}
+
 .avatar {
     width: 80px;
     height: 80px;
@@ -29,6 +45,51 @@
     align-items: center;
     justify-content: center;
     font-family: var(--font-serif);
+}
+
+.avatarImg {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatarOverlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.avatarBtn:hover .avatarOverlay,
+.avatarBtn:focus-visible .avatarOverlay {
+    opacity: 1;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.uploadingRing {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: block;
+}
+
+.uploadError {
+    font-size: 0.8rem;
+    color: var(--error, #D32F2F);
+    margin: 0;
 }
 
 .userName {
