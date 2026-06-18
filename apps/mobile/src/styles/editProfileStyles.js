@@ -72,7 +72,7 @@ export const buildStyles = (theme) => StyleSheet.create({
 
     // Submit — active
     submitBtn: {
-        backgroundColor: Colors.light.primary,
+        backgroundColor: theme.primary,
         borderRadius: 10,
         paddingVertical: 16,
         alignItems: 'center',
