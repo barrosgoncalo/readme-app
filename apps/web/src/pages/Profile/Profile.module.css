@@ -204,3 +204,125 @@
     color: #D32F2F;
     font-size: 0.85rem;
 }
+
+/* ── Privacy & Security panel ── */
+.chevronOpen {
+    transform: rotate(90deg);
+}
+
+.privacyPanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-top: 1px solid var(--bg-selected);
+}
+
+.panelSection {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--subtext);
+    margin: 0;
+    padding-top: var(--space-2);
+}
+
+.panelSection:first-child {
+    padding-top: 0;
+}
+
+.privacyRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.privacyRow .itemLeft {
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.helperText {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--subtext);
+    margin-top: 2px;
+    max-width: 260px;
+}
+
+/* ── Password change form ── */
+.pwForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.pwFieldWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pwFieldWrap label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.pwInputRow {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    padding: 0 12px;
+}
+
+.pwInputRow input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+}
+
+.pwEyeBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--subtext);
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.pwEyeBtn:hover {
+    color: var(--text);
+}
+
+.pwSuccess {
+    font-size: 0.85rem;
+    color: #4CAF50;
+    margin: 0;
+}
+
+/* ── Delete account ── */
+.deleteConfirm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: rgba(211, 47, 47, 0.05);
+    border: 1px solid rgba(211, 47, 47, 0.2);
+    border-radius: var(--radius);
+}
+
+.deleteWarning {
+    font-size: 0.88rem;
+    color: var(--error);
+    margin: 0;
+}

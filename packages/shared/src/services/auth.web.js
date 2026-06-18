@@ -10,8 +10,11 @@ import {
     signInWithPopup,
     sendEmailVerification,
     GoogleAuthProvider,
+    EmailAuthProvider,
+    reauthenticateWithCredential,
+    deleteUser,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from '../constants/authConstants';
 
 // Same Firestore write as mobile's saveUserData — kept in sync deliberately.
@@ -112,3 +115,24 @@ export const doPasswordReset = (email) => sendPasswordResetEmail(auth, email);
 export const doPasswordChange = (password) => updatePassword(auth.currentUser, password);
 
 export const doSendEmailVerification = () => sendEmailVerification(auth.currentUser);
+
+export const doUpdateUserPassword = async (currentPassword, newPassword) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('No user is currently logged in.');
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+};
+
+export const doDeleteAccount = async (currentPassword) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('No user is currently logged in.');
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+
+    // Delete Firestore profile first, then the Auth account.
+    await deleteDoc(doc(db, 'users', user.uid));
+    await deleteUser(user);
+};
