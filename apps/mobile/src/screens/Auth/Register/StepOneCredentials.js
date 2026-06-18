@@ -44,7 +44,7 @@ export default function StepOneCredentials({
                 onFocus={() => setShowDatePicker(false)}
             />
 
-            {/* 2. Update to use passwordStyles.passwordContainer */}
+            {/* Update to use passwordStyles.passwordContainer */}
             <View style={[
                 passwordStyles.passwordContainer, 
                 { borderBottomColor: passwordInfo.color, borderBottomWidth: 2.5 },
@@ -54,12 +54,12 @@ export default function StepOneCredentials({
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
-                    style={passwordStyles.passwordInput} // <-- 3. Update to passwordStyles.passwordInput
+                    style={passwordStyles.passwordInput}
                     placeholderTextColor="#aaa"
                     onFocus={() => setShowDatePicker(false)}
                 />
                 <TouchableOpacity
-                    style={passwordStyles.eyeButton} // <-- 4. Update to passwordStyles.eyeButton
+                    style={passwordStyles.eyeButton}
                     onPress={() => setShowPassword(!showPassword)}
                 >
                     {showPassword
@@ -69,9 +69,8 @@ export default function StepOneCredentials({
                 </TouchableOpacity>
             </View>
 
-            {/* The rest remains the same, using the standard 'styles' */}
             {passwordInfo.label ? (
-                <Text style={[styles.strengthText, { color: passwordInfo.color }]}>
+                <Text style={[passwordStyles.strengthText, { color: passwordInfo.color }]}>
                     {passwordInfo.label}
                 </Text>
             ) : null}

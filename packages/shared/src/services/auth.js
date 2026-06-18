@@ -154,7 +154,7 @@ export const doUpdateUserPassword = async (currentPassword, newPassword) => {
         return { success: true, message: "Password updated successfully!" };
 
     } catch (error) {
-        console.error("Error updating password:", error);
+        console.log("Firebase password update failed:", error.code);
         
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
             throw new Error("The current password you entered is incorrect.");

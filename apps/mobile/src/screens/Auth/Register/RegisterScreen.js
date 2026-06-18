@@ -24,8 +24,6 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../../styles/authStyles';
 import {
     getPasswordDetails,
-    hasLowerCase,
-    hasUpperCase,
     hasMixedCase,
     hasNumbers,
     hasValidLength,
@@ -125,7 +123,7 @@ export default function RegisterScreen({ navigation }) {
             if ( !hasNumbers(password) ) {
                 missing.push('At least one number');
             }
-            if ( !hasLowerCase(password) || !hasUpperCase(password) ) {
+            if ( !hasMixedCase(password) ) {
                 missing.push('uppercase and lowercase letters');
             }
 
