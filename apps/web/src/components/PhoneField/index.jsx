@@ -1,6 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { COUNTRIES, countryFlag } from './countryCodes.js';
+import { COUNTRIES } from './countryCodes.js';
+
+const Flag = ({ code }) => (
+    <img
+        src={`https://flagcdn.com/w20/${code.toLowerCase()}.png`}
+        srcSet={`https://flagcdn.com/w40/${code.toLowerCase()}.png 2x`}
+        width="20"
+        height="15"
+        alt={code}
+        className={styles.flagImg}
+    />
+);
 import styles from './PhoneField.module.css';
 
 export default function PhoneField({ country, onCountryChange, value, onChange }) {
@@ -50,7 +61,7 @@ export default function PhoneField({ country, onCountryChange, value, onChange }
                         onClick={() => setOpen(o => !o)}
                         aria-label="Select country code"
                     >
-                        <span className={styles.flag}>{countryFlag(country.code)}</span>
+                        <Flag code={country.code} />
                         <span className={styles.dial}>{country.dial}</span>
                         <ChevronDown size={14} className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`} />
                     </button>
@@ -78,7 +89,7 @@ export default function PhoneField({ country, onCountryChange, value, onChange }
                                             className={`${styles.option} ${c.code === country.code ? styles.optionActive : ''}`}
                                             onClick={() => select(c)}
                                         >
-                                            <span className={styles.flag}>{countryFlag(c.code)}</span>
+                                            <Flag code={c.code} />
                                             <span className={styles.optionName}>{c.name}</span>
                                             <span className={styles.optionDial}>{c.dial}</span>
                                         </button>

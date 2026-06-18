@@ -43,9 +43,13 @@
     background: var(--bg-selected);
 }
 
-.flag {
-    font-size: 1.2rem;
-    line-height: 1;
+.flagImg {
+    display: block;
+    width: 20px;
+    height: 15px;
+    object-fit: cover;
+    border-radius: 2px;
+    flex-shrink: 0;
 }
 
 .dial {
