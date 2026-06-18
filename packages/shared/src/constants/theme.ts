@@ -46,6 +46,14 @@ export const Colors = {
     iconBg: '#C4BDB8',
     icon: '#342F2C',
     verifiedColor: '#1C0E05',
+    /** The pitch-black main bar */
+    tabBarBackground: '#000000',
+    /** The dark gray expanding pill */
+    tabBarPillActive: '#2C2C2E',
+    /** Pure white for active text and icons */
+    tabBarTextActive: '#FFFFFF',
+    /** A nice, legible neutral gray for unselected tabs */
+    tabBarIconInactive: '#A1A1AA',
   },
   dark: {
     /** (Light Gray) - Main body copy, headings, and core readable text. */
@@ -82,13 +90,21 @@ export const Colors = {
     iconBg: '#342F2C',
     icon: '#C4BDB8',
     verifiedColor: '#F58B2E',
+    /** Pitch black to anchor the floating bar and provide OLED-friendly contrast*/
+    tabBarBackground: '#000000',
+    /** Warm Medium-Dark Gray (matches your 'backgroundSelected' color) */
+    tabBarPillActive: '#363230',
+    /** Off-White (matches your 'primaryText' for perfect harmony) */
+    tabBarTextActive: '#EFECE9',
+    /** Slate Gray (matches your 'textSecondary' to keep unselected tabs muted but legible) */
+    tabBarIconInactive: '#60646C',
   },
     password: {
         gray: '#ccc',
         red: '#D32F2F',
         orange: '#F57C00',
         green: '#388E3C',
-    }
+    },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
