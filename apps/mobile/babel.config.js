@@ -25,6 +25,7 @@ export default function (api) {
                         'lucide:trash-2',
                         'lucide:image',
                         'lucide:camera',
+                        'lucide:map',
                         'mdi:home',
                         'lucide:lock',
                         'solar:medal-star-circle-linear',

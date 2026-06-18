@@ -71,7 +71,7 @@ export default function ChangePasswordScreen({ navigation }) {
             return;
         }
         
-        if (oldPassword !== newPassword) {
+        if (oldPassword === newPassword) {
             Alert.alert("Error", "Your new password cannot be the same as your old password.");
             return;
         }
