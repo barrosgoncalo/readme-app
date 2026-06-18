@@ -8,6 +8,7 @@ import {
     KeyboardAvoidingView, 
     Platform,
     ScrollView,
+    ActivityIndicator,
     useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import { Iconify } from 'react-native-iconify';
 import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildPasswordStyles } from '../../../styles/passwordStyles'; 
+import { buildStyles } from '../../../styles/editProfileStyles'; 
 
 export default function ChangePasswordScreen({ navigation }) {
     const [oldPassword, setOldPassword] = useState('');
@@ -25,12 +27,20 @@ export default function ChangePasswordScreen({ navigation }) {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    const [isSaving, setIsSaving] = useState(false);
+
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
 
-    // Injeta o theme na função para gerar os estilos dinâmicos
-    
-    const styles = buildPasswordStyles(theme);
+    const styles = { ...buildStyles(theme), ...buildPasswordStyles(theme) };
+
+    const isAnyEmpty = !oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim();
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        // Add your save logic here...
+        // setIsSaving(false);
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -144,6 +154,26 @@ export default function ChangePasswordScreen({ navigation }) {
                                 </TouchableOpacity>
                             </View>
                         </View>
+
+                        {/* Submit Changed */}
+                        <TouchableOpacity
+                            style={[
+                                styles.submitBtn,
+                                isAnyEmpty && styles.submitBtnDisabled, // Disable styles if empty
+                                isSaving && { opacity: 0.7 },
+                            ]}
+                            onPress={handleSave}
+                            disabled={isAnyEmpty || isSaving} // Prevent clicks if empty OR currently saving
+                            activeOpacity={0.85}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                    <Text style={[styles.submitText, isAnyEmpty && styles.submitTextDisabled]}>
+                                        SAVE CHANGES
+                                    </Text>
+                                )}
+                        </TouchableOpacity>
 
                     </View>
                 </ScrollView>
