@@ -51,7 +51,7 @@ export default function EditProfileScreen({ navigation, route }) {
         addressLine2: existing.institutionalAddress?.addressLine2 ?? currentUser.institutionalAddress?.addressLine2,
         postalCode:   existing.institutionalAddress?.postalCode ?? currentUser.institutionalAddress?.postalCode,
         dob:          existing.dob ?? currentUser.dob,
-    }), []);
+    }), [existing, currentUser]);
 
     // ─── Form state ───────────────────────────────────────────────────────────
     const [fullName, setFullName]         = useState(original.fullName);
@@ -241,7 +241,11 @@ export default function EditProfileScreen({ navigation, route }) {
                                             ? newImageUri 
                                             : `${currentUser.photoURL}?t=${new Date().getTime()}` 
                                     }} 
-                                    style={{ width: 100, height: 100, borderRadius: 50 }} 
+                                    style={[
+                                        { width: 100, height: 100, borderRadius: 50 },
+                                        // 👇 This is the magic line that adds the orange border if a new image is picked
+                                        newImageUri && { borderWidth: 3, borderColor: '#F58B2E' } 
+                                    ]} 
                                 />
                             ) : (
                                     <Iconify icon="lucide:user" size={45} color={theme.text} />
