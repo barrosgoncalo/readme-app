@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext'
-import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react'; // Added useRef
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme, ActivityIndicator } from 'react-native';
 import { Iconify } from 'react-native-iconify';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doSignOut } from '@readme/shared/src/services/auth';
@@ -9,16 +10,39 @@ import { buildStyles } from '../../styles/profileStyles';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
 import { MenuGroup, MenuItem } from '../../components/ui/MenuComponents';
 
-export default function ProfileScreen({ navigation }) {
+import { useTabBarVisibility } from '../../components/app-tabs'; 
 
+export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
     const { currentUser, refreshUser } = useAuth(); 
     const [uploading, setUploading] = useState(false);
-
     const [focusKey, setFocusKey] = useState(0);
+
+    // --- Tab Bar Visibility Logic ---
+    const { showTabBar, hideTabBar } = useTabBarVisibility();
+    const lastOffsetY = useRef(0);
+
+    const handleScroll = (event) => {
+        const currentOffset = event.nativeEvent.contentOffset.y;
+        const direction = currentOffset > lastOffsetY.current ? 'down' : 'up';
+
+        if (direction === 'down' && currentOffset > 20) {
+            hideTabBar();
+        } else if (direction === 'up') {
+            showTabBar();
+        }
+
+        // Safety check to ensure it always shows when at the very top
+        if (currentOffset <= 0) {
+            showTabBar();
+        }
+
+        lastOffsetY.current = currentOffset;
+    };
+    // --------------------------------
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -34,6 +58,7 @@ export default function ProfileScreen({ navigation }) {
 
     // Função para abrir a galeria
     const pickImage = async () => {
+        // Note: Make sure ImagePicker is imported at the top of your file!
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
@@ -48,12 +73,11 @@ export default function ProfileScreen({ navigation }) {
     };
 
     // Função que chama o nosso serviço partilhado
-    const handleUpload = async (imageUri) => {
+    const handleUpload = async (imageUri: string) => {
         setUploading(true);
         try {
             await uploadProfilePicture(currentUser.uid, imageUri);
             alert("Foto atualizada com sucesso!");
-
         } catch (error) {
             alert("Erro ao atualizar a foto.");
         } finally {
@@ -86,15 +110,13 @@ export default function ProfileScreen({ navigation }) {
                             {uploading && (
                                 <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />
                             )}
-
                         </View>
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.userInfo}>
                     <View style={styles.userNameContainer}>
-                        <Text
-                            style={styles.userName}>
+                        <Text style={styles.userName}>
                             { currentUser?.username || 'Username' }
                         </Text>
                         <Iconify 
@@ -115,6 +137,9 @@ export default function ProfileScreen({ navigation }) {
                 showsVerticalScrollIndicator={false}
                 bounces={false}
                 overScrollMode="never"
+                // --- CONNECT THE SCROLL LOGIC HERE ---
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
             >
                 {/* O "Papel" que desliza por cima */}
                 <View style={styles.body}>
@@ -160,7 +185,7 @@ export default function ProfileScreen({ navigation }) {
                             styles={styles}
                             theme={theme}
                             icon="material-symbols:password"
-                            label="Privace & Security"
+                            label="Privacy & Security"
                             onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)}
                         />
                         <MenuItem
@@ -190,4 +215,3 @@ export default function ProfileScreen({ navigation }) {
         </View>
     );
 }
-
