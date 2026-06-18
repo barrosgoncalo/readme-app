@@ -208,16 +208,6 @@ export default function EditProfileScreen({ navigation, route }) {
 
                 <Field label="Phone number" dirty={dirty.phoneNumber} focused={focusedField === 'phone'} styles={styles}>
                     <View style={styles.rowStart}>
-                        <CountryPicker
-                            countryCode={countryCode}
-                            withFlag
-                            withEmoji
-                            withFilter={false}
-                            withCallingCode={false}
-                            onSelect={handleCountrySelect}
-                            visible={showCountryPicker}
-                            onClose={() => setShowCountryPicker(false)}
-                        />
                         <TextInput
                             style={[styles.input, { flex: 1, color: theme.text }]}
                             value={phoneNumber}

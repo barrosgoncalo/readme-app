@@ -51,7 +51,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
     },
     fieldLabelHighlighted: {
-        color: Colors.light.secondary,
+        color: theme.secondary,
     },
 
     input: {
