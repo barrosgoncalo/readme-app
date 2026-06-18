@@ -9,6 +9,9 @@ import {
     Platform,
     Alert,
     ActivityIndicator,
+    Modal,
+    StyleSheet,
+    Image
 } from 'react-native';
 
 import { Iconify } from 'react-native-iconify';
@@ -18,8 +21,9 @@ import { doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { auth } from '@readme/shared/src/services/firebase';
 import CountryPicker from 'react-native-country-picker-modal';
 import { buildStyles } from '../../../styles/editProfileStyles';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext'
-
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadProfilePicture } from '@readme/shared/src/services/user';
 
 export default function EditProfileScreen({ navigation, route }) {
     const existing = route?.params?.userData ?? {};
@@ -28,7 +32,11 @@ export default function EditProfileScreen({ navigation, route }) {
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
-    const { currentUser , refreshUser} = useAuth();
+    const { currentUser, refreshUser } = useAuth();
+
+    // ─── Image Upload State ──────────────────────────────────────────────────
+    const [uploading, setUploading] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
 
     // ─── Original values (never mutated) ─────────────────────────────────────
     const original = useMemo(() => ({
@@ -84,8 +92,59 @@ export default function EditProfileScreen({ navigation, route }) {
 
     const isAnyDirty = Object.values(dirty).some(Boolean);
 
-    // ─── Handlers ─────────────────────────────────────────────────────────────
+    // ─── Image Handlers ───────────────────────────────────────────────────────
+    const pickImage = async () => {
+        setModalVisible(false);
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (permissionResult.granted === false) {
+            Alert.alert("Permissão necessária", "Precisamos de permissão para aceder à sua galeria.");
+            return;
+        }
 
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: 'images', // <--- FIX: Changed from ['images'] to 'images'
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+        
+        if (!result.canceled) {
+            handleUpload(result.assets[0].uri);
+        }
+    };
+
+    const takePhoto = async () => {
+        setModalVisible(false);
+        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!cameraPermission.granted) {
+            Alert.alert("Permissão necessária", "Precisamos de permissão para acessar a câmera.");
+            return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+            mediaTypes: 'images', // <--- FIX: Changed from ['images'] to 'images'
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+        if (!result.canceled) {
+            handleUpload(result.assets[0].uri);
+        }
+    };
+
+    const handleUpload = async (imageUri) => {
+        setUploading(true);
+        try {
+            await uploadProfilePicture(currentUser.uid, imageUri);
+            if (refreshUser) await refreshUser();
+            Alert.alert("Sucesso", "Foto atualizada com sucesso!");
+        } catch (error) {
+            Alert.alert("Erro", "Erro ao atualizar a foto.");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // ─── Form Handlers ────────────────────────────────────────────────────────
     const handleDateChange = (event, selectedDate) => {
         if (Platform.OS === 'android') setShowDatePicker(false);
         if (selectedDate) {
@@ -155,10 +214,44 @@ export default function EditProfileScreen({ navigation, route }) {
             </View>
 
             <ScrollView
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: 60 }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
+                {/* ── Avatar Edit Section ── */}
+                <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 30 }}>
+                    <TouchableOpacity 
+                        onPress={() => setModalVisible(true)} 
+                        disabled={uploading} 
+                        activeOpacity={0.8}
+                        style={{ position: 'relative' }}
+                    >
+                        <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: theme.iconBg || '#EAEAEA', justifyContent: 'center', alignItems: 'center' }}>
+                            {currentUser?.photoURL ? (
+                                <Image 
+                                    source={{ uri: `${currentUser.photoURL}?t=${new Date().getTime()}` }} 
+                                    style={{ width: 100, height: 100, borderRadius: 50 }} 
+                                />
+                            ) : (
+                                <Iconify icon="lucide:user" size={45} color={theme.text} />
+                            )}
+                        </View>
+
+                        <View style={localStyles.pencilButtonContainer}>
+                            <View style={localStyles.pencilMiddleLayer}>
+                                <Iconify icon="material-symbols:edit-rounded" size={15} color="#F58B2E" />
+                            </View>
+                        </View>
+
+                        {uploading && (
+                            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 50 }}>
+                                <ActivityIndicator size="large" color="#F58B2E" />
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </View>
+
+                {/* ── Form Fields ── */}
                 <Field label="Full Name" dirty={dirty.fullName} focused={focusedField === 'fullName'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
@@ -324,6 +417,27 @@ export default function EditProfileScreen({ navigation, route }) {
                     }
                 </TouchableOpacity>
             </ScrollView>
+
+            {/* --- EDIT PICTURE OPTIONS MODAL --- */}
+            <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
+                <TouchableOpacity style={localStyles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
+                    <View style={[localStyles.modalContent, { backgroundColor: theme.background || '#FFF' }]}>
+                        <View style={localStyles.modalHeaderIndicator} />
+                        <Text style={[localStyles.modalTitle, { color: theme.text || '#000' }]}>Alterar foto de perfil</Text>
+                        <TouchableOpacity style={localStyles.modalOption} onPress={pickImage}>
+                            <Iconify icon="lucide:image" size={22} color="#F58B2E" />
+                            <Text style={[localStyles.modalOptionText, { color: theme.text || '#000' }]}>Escolher da Galeria</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={localStyles.modalOption} onPress={takePhoto}>
+                            <Iconify icon="lucide:camera" size={22} color="#F58B2E" />
+                            <Text style={[localStyles.modalOptionText, { color: theme.text || '#000' }]}>Tirar Foto Nova</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[localStyles.modalOption, localStyles.cancelOption]} onPress={() => setModalVisible(false)}>
+                            <Text style={localStyles.cancelOptionText}>Cancelar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
@@ -331,7 +445,6 @@ export default function EditProfileScreen({ navigation, route }) {
 // ─── Field wrapper ────────────────────────────────────────────────────────────
 
 function Field({ label, dirty, focused, children, styles }) {
-    // Priority: dirty (orange) > focused (orange) > default (grey)
     const isHighlighted = dirty || focused;
     return (
         <View style={[styles.field, isHighlighted && styles.fieldHighlighted]}>
@@ -342,3 +455,81 @@ function Field({ label, dirty, focused, children, styles }) {
         </View>
     );
 }
+
+// ─── Modal & Pencil Styles ────────────────────────────────────────────────────
+const localStyles = StyleSheet.create({
+    pencilButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 4, 
+    },
+    pencilMiddleLayer: {
+        backgroundColor: '#F2F0EF',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 24,
+        paddingBottom: 40,
+        paddingTop: 14,
+    },
+    modalHeaderIndicator: {
+        width: 40,
+        height: 5,
+        backgroundColor: '#E0E0E0',
+        borderRadius: 3,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    modalOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#EAEAEA',
+    },
+    modalOptionText: {
+        fontSize: 16,
+        fontWeight: '500',
+        marginLeft: 14,
+    },
+    cancelOption: {
+        borderBottomWidth: 0,
+        justifyContent: 'center',
+        marginTop: 10,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 12,
+    },
+    cancelOptionText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#666',
+    }
+});
