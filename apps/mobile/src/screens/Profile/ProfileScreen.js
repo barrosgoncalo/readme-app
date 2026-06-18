@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext'
 import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme } from 'react-native';
 import { Iconify } from 'react-native-iconify';
@@ -14,8 +14,20 @@ export default function ProfileScreen({ navigation }) {
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
-    const { currentUser } = useAuth();
+    const { currentUser, refreshUser } = useAuth(); 
     const [uploading, setUploading] = useState(false);
+    const [focusKey, setFocusKey] = useState(0);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            setFocusKey(prev => prev + 1); 
+            if (refreshUser) {
+                refreshUser();
+            }
+        });
+
+        return unsubscribe;
+    }, [navigation, refreshUser]);
 
     // Função para abrir a galeria
     const pickImage = async () => {
@@ -62,7 +74,9 @@ export default function ProfileScreen({ navigation }) {
                     <TouchableOpacity onPress={pickImage} disabled={uploading}>
                         <View style={styles.avatarContainer}>
                             <Image 
-                                source={{ uri: `${currentUser?.photoURL}?t=${new Date().getTime()}` }} 
+                                source={{ 
+                                    uri: `${currentUser?.photoURL}?t=${focusKey}_${new Date().getTime()}` 
+                                }} 
                                 style={styles.profilePicture} 
                             />
 
