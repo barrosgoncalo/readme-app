@@ -133,19 +133,6 @@ export default function EditProfileScreen({ navigation, route }) {
         }
     };
 
-    const handleUpload = async (imageUri) => {
-        setUploading(true);
-        try {
-            await uploadProfilePicture(currentUser.uid, imageUri);
-            if (refreshUser) await refreshUser();
-            Alert.alert("Sucesso", "Foto atualizada com sucesso!");
-        } catch (error) {
-            Alert.alert("Erro", "Erro ao atualizar a foto.");
-        } finally {
-            setUploading(false);
-        }
-    };
-
     // ─── Form Handlers ────────────────────────────────────────────────────────
     const handleDateChange = (event, selectedDate) => {
         if (Platform.OS === 'android') setShowDatePicker(false);
@@ -243,7 +230,6 @@ export default function EditProfileScreen({ navigation, route }) {
                                     }} 
                                     style={[
                                         { width: 100, height: 100, borderRadius: 50 },
-                                        // 👇 This is the magic line that adds the orange border if a new image is picked
                                         newImageUri && { borderWidth: 3, borderColor: '#F58B2E' } 
                                     ]} 
                                 />
