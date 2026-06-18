@@ -29,6 +29,8 @@ export const createUserModel = (uid, profileData, provider) => {
 
         // default
 
+        photoURL: profileData.photoURL || null,
+
         role: 'user',
 
         accountStatus: 'active',

@@ -60,10 +60,31 @@ export function AuthProvider({ children }) {
         }
     }
 
+    const refreshUser = async () => {
+        if (auth.currentUser) {
+            try {
+                const userDocRef = doc(db, "users", auth.currentUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    // Atualiza o estado com os dados mais recentes do Firestore
+                    setCurrentUser({
+                        uid: auth.currentUser.uid,
+                        email: auth.currentUser.email,
+                        ...userDocSnap.data()
+                    });
+                }
+            } catch (error) {
+                console.error("Erro ao atualizar os dados do utilizador:", error);
+            }
+        }
+    };
+
     const value = {
         currentUser,
         userLoggedIn,
-        loading
+        loading,
+        refreshUser
     }
 
     return (

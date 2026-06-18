@@ -1,12 +1,11 @@
-import {Platform, StyleSheet} from 'react-native';
-import { Spacing, Fonts, Colors } from '@readme/shared/src/constants/theme';
+import { Platform, StyleSheet } from 'react-native';
+import { Colors } from '@readme/shared/src/constants/theme';
 
 export const buildStyles = (theme) => StyleSheet.create({
     root: {
         flex: 1,
     },
 
-    // Header
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -20,10 +19,9 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: theme.text,
-        fontFamily: Platform.select({ios: 'Inter-Bold', default: 'Inter-Bold'}),
+        fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
     },
 
-    // Scroll
     scrollContent: {
         paddingHorizontal: 16,
         paddingTop: 8,
@@ -31,7 +29,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         gap: 12,
     },
 
-    // Field box
+    // Field box — default
     field: {
         borderWidth: 1.5,
         borderColor: theme.backgroundSelected,
@@ -41,27 +39,27 @@ export const buildStyles = (theme) => StyleSheet.create({
         paddingBottom: 10,
         backgroundColor: theme.backgroundElement ?? theme.background,
     },
-    fieldActive: {
-        borderColor: Colors.light.secondary, // orange accent
+    // Field box — focused OR dirty
+    fieldHighlighted: {
+        borderColor: theme.secondary,
     },
+
     fieldLabel: {
         fontSize: 11,
         color: theme.subtext,
         marginBottom: 2,
-        fontFamily: Platform.select({ios: 'Inter-Regular', default: 'Inter-Regular'}),
+        fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
     },
-    fieldLabelActive: {
-        color: Colors.light.secondary,
+    fieldLabelHighlighted: {
+        color: theme.secondary,
     },
 
-    // Input text
     input: {
         fontSize: 15,
         paddingVertical: 0,
-        fontFamily: Platform.select({ios: 'Inter-Regular', default: 'Inter-Regular'}),
+        fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
     },
 
-    // Row helpers
     rowBetween: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -71,23 +69,27 @@ export const buildStyles = (theme) => StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    flagBtn: {
-        marginRight: 4,
-    },
 
-    // Submit
-submitBtn: {
-        backgroundColor: Colors.light.primary, // dark brown #5C3D2E
+    // Submit — active
+    submitBtn: {
+        backgroundColor: Colors.light.primary,
         borderRadius: 10,
         paddingVertical: 16,
         alignItems: 'center',
         marginTop: 8,
     },
-submitText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-    letterSpacing: 1.2,
-    fontFamily: Platform.select({ios: 'Inter-Bold', default: 'Inter-Bold'}),
-},
+    // Submit — disabled (nothing changed)
+    submitBtnDisabled: {
+        backgroundColor: theme.backgroundSelected,
+    },
+    submitText: {
+        color: '#FFFFFF',
+        fontWeight: '700',
+        fontSize: 14,
+        letterSpacing: 1.2,
+        fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
+    },
+    submitTextDisabled: {
+        color: theme.subtext,
+    },
 });

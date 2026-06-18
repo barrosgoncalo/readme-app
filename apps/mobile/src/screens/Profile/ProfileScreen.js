@@ -6,15 +6,45 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doSignOut } from '@readme/shared/src/services/auth';
 import { buildStyles } from '../../styles/profileStyles';
+import { uploadProfilePicture } from '@readme/shared/src/services/user';
+import { MenuGroup, MenuItem } from '../../components/ui/MenuComponents';
 
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
-    const [isDarkMode, setIsDarkMode] = useState(colorScheme === 'dark');
-
     const { currentUser } = useAuth();
+    const [uploading, setUploading] = useState(false);
+
+    // Função para abrir a galeria
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            const imageUri = result.assets[0].uri;
+            handleUpload(imageUri);
+        }
+    };
+
+    // Função que chama o nosso serviço partilhado
+    const handleUpload = async (imageUri) => {
+        setUploading(true);
+        try {
+            await uploadProfilePicture(currentUser.uid, imageUri);
+            alert("Foto atualizada com sucesso!");
+            
+        } catch (error) {
+            alert("Erro ao atualizar a foto.");
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
@@ -28,19 +58,32 @@ export default function ProfileScreen({ navigation }) {
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Account</Text>
 
-                <View style={styles.avatarContainer}>
-                    <Image 
-                        source={{ uri: 'https://via.placeholder.com/100' }} 
-                        style={styles.avatarImage} 
-                    />
+                <View>
+                    <TouchableOpacity onPress={pickImage} disabled={uploading}>
+                        <View style={styles.avatarContainer}>
+                            <Image 
+                                source={{ uri: `${currentUser?.photoURL}?t=${new Date().getTime()}` }} 
+                                style={styles.profilePicture} 
+                            />
+
+                            {uploading && (
+                                <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />
+                            )}
+
+                        </View>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.userInfo}>
                     <View style={styles.userNameContainer}>
-                        <Text style={styles.userName}>
+                        <Text
+                            style={styles.userName}>
                             { currentUser?.username || 'Username' }
                         </Text>
-                        <Iconify icon="material-symbols:verified" size={18} color="#F58B2E" />
+                        <Iconify 
+                            icon="material-symbols:verified"
+                            size={20}
+                            color="#F58B2E" />
                     </View>
                     <Text style={styles.userEmail}>
                         { currentUser?.email || 'Email' }
@@ -67,6 +110,18 @@ export default function ProfileScreen({ navigation }) {
                             icon="lucide:book"
                             label="My Books"
                         />
+                        <MenuItem
+                            styles={styles}
+                            theme={theme}
+                            icon="lucide:heart"
+                            label="Favorites"
+                        />
+                        <MenuItem
+                            styles={styles}
+                            theme={theme}
+                            icon="solar:medal-star-circle-linear"
+                            label="Level"
+                        />
                     </MenuGroup>
 
                     {/* GROUP 2 */}
@@ -89,40 +144,17 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="material-symbols:password"
                             label="Privace & Security"
+                            onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)}
                         />
-                        <MenuSwitchItem 
-                            styles={styles} 
-                            theme={theme} 
-                            icon="solar:moon-outline" 
-                            label="Dark Mode" 
-                            value={isDarkMode}
-                            onValueChange={(newValue) => setIsDarkMode(newValue)}
-                        />
-                    </MenuGroup>
-
-                    {/* GROUP 3 */}
-                    <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem
                             styles={styles}
                             theme={theme}
                             icon="lucide:settings"
                             label="Settings"
                         />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="solar:medal-star-circle-linear"
-                            label="Level"
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="lucide:heart"
-                            label="Favorites"
-                        />
                     </MenuGroup>
 
-                    {/* GROUP 4 (Sign Out) */}
+                    {/* GROUP 3 (Sign Out) */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem 
                             styles={styles}
@@ -141,64 +173,3 @@ export default function ProfileScreen({ navigation }) {
         </View>
     );
 }
-
-// --- SUB-COMPONENTES REUTILIZÁVEIS ---
-
-const MenuGroup = ({ children, styles, bgColor }) => (
-    <View style={[styles.menuGroup, { backgroundColor: bgColor }]}>
-        {children}
-    </View>
-);
-
-const MenuItem = ({ icon, label, textColor, iconColor, iconBgColor = null, theme, styles, onPress }) =>
-{
-    
-    const dynamicIconBgColor = iconBgColor ? { backgroundColor: iconBgColor } : {};
-    const finalIconColor = iconColor || theme.icon;
-
-    return (
-        <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-            <View style={styles.menuItemLeft}>
-                <View style={[styles.iconWrapper, dynamicIconBgColor]}>
-                    {icon ? (
-                        <Iconify icon={icon} size={24} color={finalIconColor} />
-                    ) : (
-                            <View style={styles.emptyIconPlaceholder} />
-                        )}
-                </View>
-                <Text style={[styles.menuItemLabel, { color: textColor || theme.text }]}>
-                    {label}
-                </Text>
-            </View>
-            <Iconify icon="lucide:chevron-right" size={20} color={theme.subtext} />
-        </TouchableOpacity>
-    );
-};
-
-const MenuSwitchItem = ({ icon, label, textColor, iconColor, iconBgColor,value, onValueChange, theme, styles }) =>
-{
-    return (
-        <View style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-                <View style={[styles.iconWrapper, iconBgColor && { backgroundColor: iconBgColor }]}>
-                    {icon ? (
-                        <Iconify icon={icon} size={20} color={iconColor} />
-                    ) : (
-                            <View style={styles.emptyIconPlaceholder} />
-                        )}
-                </View>
-                <Text style={[styles.menuItemLabel, { color: textColor || theme.text }]}>
-                    {label}
-                </Text>
-            </View>
-
-            {/* Aqui entra o Switch em vez do ícone de seta */}
-            <Switch
-                value={value}
-                onValueChange={onValueChange}
-                trackColor={{ true: theme.darkerSecondary, false: '#D1CCC9' }} 
-                thumbColor={'#FFFFFF'}
-            />
-        </View>
-    );
-};

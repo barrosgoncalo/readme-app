@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { buildPasswordStyles } from '../../../styles/passwordStyles';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
     View,
@@ -23,8 +24,6 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../../styles/authStyles';
 import {
     getPasswordDetails,
-    hasLowerCase,
-    hasUpperCase,
     hasMixedCase,
     hasNumbers,
     hasValidLength,
@@ -67,6 +66,7 @@ export default function RegisterScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
+    const passwordStyles = buildPasswordStyles(theme);
 
     const passwordInfo = getPasswordDetails(password);
 
@@ -123,7 +123,7 @@ export default function RegisterScreen({ navigation }) {
             if ( !hasNumbers(password) ) {
                 missing.push('At least one number');
             }
-            if ( !hasLowerCase(password) || !hasUpperCase(password) ) {
+            if ( !hasMixedCase(password) ) {
                 missing.push('uppercase and lowercase letters');
             }
 
@@ -233,7 +233,9 @@ export default function RegisterScreen({ navigation }) {
                         password={password} setPassword={setPassword}
                         showPassword={showPassword} setShowPassword={setShowPassword}
                         passwordInfo={passwordInfo} setShowDatePicker={setShowDatePicker}
-                        styles={styles} theme={theme}
+                        styles={styles} 
+                        passwordStyles={passwordStyles}
+                        theme={theme}
                         handleStep1Next={handleStep1Next}
                         handleGoogleSignIn={handleGoogleSignIn}
                         navigation={navigation}
