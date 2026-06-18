@@ -19,6 +19,7 @@ import MapPage from '../pages/Map/index.jsx';
 import EventDetails from '../pages/Events/Details.jsx';
 import Chat from '../pages/Chat/index.jsx';
 import Profile from '../pages/Profile/index.jsx';
+import EditProfile from '../pages/Profile/EditProfile.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
 import { WEB_ROUTES } from '../constants/webRoutes.js';
@@ -80,6 +81,7 @@ export default function AppRouter() {
                 <Route path="/events/:eventId" element={<EventDetails />} />
                 <Route path={WEB_ROUTES.CHAT} element={<Chat />} />
                 <Route path={WEB_ROUTES.PROFILE} element={<Profile />} />
+                <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile />} />
             </Route>
             <Route
                 path="*"

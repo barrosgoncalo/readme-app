@@ -12,5 +12,6 @@ export const WEB_ROUTES = {
     MAP: '/map',
     CHAT: '/chat',
     PROFILE: '/profile',
+    PROFILE_EDIT: '/profile/edit',
     eventDetails: (eventId) => `/events/${eventId}`,
 };

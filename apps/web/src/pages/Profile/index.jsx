@@ -10,7 +10,6 @@ import { doSignOut, doUpdateUserPassword, doDeleteAccount } from '@readme/shared
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
@@ -29,10 +28,6 @@ export default function Profile() {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({});
-    const [saving, setSaving] = useState(false);
-    const [saveError, setSaveError] = useState('');
 
     // Privacy & Security panel
     const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -115,38 +110,6 @@ export default function Profile() {
         }
     }
 
-    function openEdit() {
-        setForm({
-            fullName: userData?.fullName || '',
-            username: userData?.username || '',
-            phoneNumber: userData?.phoneNumber || '',
-            isPublic: userData?.profileVisibility === 'public',
-        });
-        setSaveError('');
-        setEditing(true);
-    }
-
-    async function handleSave(e) {
-        e.preventDefault();
-        setSaving(true);
-        setSaveError('');
-        try {
-            const update = {
-                fullName: form.fullName.trim(),
-                username: form.username.trim(),
-                phoneNumber: form.phoneNumber.trim(),
-                profileVisibility: form.isPublic ? 'public' : 'private',
-            };
-            await updateDoc(doc(db, 'users', currentUser.uid), update);
-            setUserData(prev => ({ ...prev, ...update }));
-            setEditing(false);
-        } catch {
-            setSaveError('Could not save changes. Please try again.');
-        } finally {
-            setSaving(false);
-        }
-    }
-
     if (loading) return <Spinner center label="Loading profile" />;
 
     return (
@@ -173,31 +136,13 @@ export default function Profile() {
             {/* ── Group 2: Account ── */}
             <div className={styles.group}>
 
-                {/* Edit Profile — expands inline */}
-                <button className={styles.item} onClick={editing ? undefined : openEdit}>
+                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_EDIT)}>
                     <span className={styles.itemLeft}>
                         <span className={styles.iconBox}><Pencil size={20} /></span>
                         <span className={styles.itemLabel}>Edit Profile</span>
                     </span>
-                    {!editing && <ChevronRight size={18} className={styles.chevron} />}
+                    <ChevronRight size={18} className={styles.chevron} />
                 </button>
-
-                {editing && (
-                    <form className={styles.editForm} onSubmit={handleSave}>
-                        <Field label="Full name" value={form.fullName} onChange={v => setForm(f => ({ ...f, fullName: v }))} required />
-                        <Field label="Username" value={form.username} onChange={v => setForm(f => ({ ...f, username: v }))} required />
-                        <Field label="Phone" type="tel" value={form.phoneNumber} onChange={v => setForm(f => ({ ...f, phoneNumber: v }))} />
-                        <div className={styles.visibilityRow}>
-                            <span className={styles.visibilityLabel}>Public profile</span>
-                            <Toggle checked={form.isPublic} onChange={v => setForm(f => ({ ...f, isPublic: v }))} />
-                        </div>
-                        <ErrorAlert>{saveError}</ErrorAlert>
-                        <div className={styles.editActions}>
-                            <Button variant="ghost" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
-                            <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
-                        </div>
-                    </form>
-                )}
 
                 <div className={`${styles.item} ${styles.disabled}`}>
                     <span className={styles.itemLeft}>
