@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { buildPasswordStyles } from '../../../styles/passwordStyles';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
     View,
@@ -67,6 +68,7 @@ export default function RegisterScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
+    const passwordStyles = buildPasswordStyles(theme);
 
     const passwordInfo = getPasswordDetails(password);
 
@@ -233,7 +235,9 @@ export default function RegisterScreen({ navigation }) {
                         password={password} setPassword={setPassword}
                         showPassword={showPassword} setShowPassword={setShowPassword}
                         passwordInfo={passwordInfo} setShowDatePicker={setShowDatePicker}
-                        styles={styles} theme={theme}
+                        styles={styles} 
+                        passwordStyles={passwordStyles}
+                        theme={theme}
                         handleStep1Next={handleStep1Next}
                         handleGoogleSignIn={handleGoogleSignIn}
                         navigation={navigation}

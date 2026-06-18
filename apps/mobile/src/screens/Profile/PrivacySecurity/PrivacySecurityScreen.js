@@ -5,8 +5,8 @@ import {
     StyleSheet,
     TouchableOpacity,
     useColorScheme,
-    SafeAreaView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
