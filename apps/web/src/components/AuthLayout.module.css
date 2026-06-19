@@ -9,7 +9,11 @@
 
 .shellHero {
     justify-items: start;
-    padding-left: 6%;
+    padding-left: 3%;
+}
+
+.shellHero .card {
+    max-width: 360px;
 }
 
 .card {
