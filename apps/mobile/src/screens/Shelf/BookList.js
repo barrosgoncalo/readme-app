@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { 
     View, 
     Text, 
@@ -6,55 +6,64 @@ import {
     TouchableOpacity, 
     Image,
     useColorScheme,
+    ActivityIndicator
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native'; // Added to refresh data when returning from scanner
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 import { buildShelfStyles } from '../../styles/shelfStyles';
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext'; // Import Auth
+import { myBooksService } from '@readme/shared/src/services/books'; // Import Service
 
-
-// 1. FLAT SOURCE DATA
-const SAMPLE_BOOKS_DATA = [
-    { 
-        id: '1', 
-        title: 'The Art of War', 
-        author: 'Sun Tzu', 
-        status: 'reading', 
-        progress: 35,
-        coverUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Art_of_War_cover.jpg/300px-Art_of_War_cover.jpg' 
-    },
-    { id: '2', title: 'Dune', author: 'Frank Herbert', status: 'finished', dateFinished: '2026-05-22', color: '#3A9FBF' },
-    { id: '3', title: '1984', author: 'George Orwell', status: 'finished', dateFinished: '2026-05-18', color: '#E58F24' },
-    { id: '4', title: 'The Hobbit', author: 'J.R.R. Tolkien', status: 'finished', dateFinished: '2026-05-07', color: '#24CBE5' },
-    { id: '5', title: 'Fahrenheit 451', author: 'Ray Bradbury', status: 'finished', dateFinished: '2026-04-30', color: '#666666' },
-    { id: '6', title: 'Brave New World', author: 'Aldous Huxley', status: 'finished', dateFinished: '2026-04-24', color: '#B51A1A' },
-    { id: '7', title: 'Project Hail Mary', author: 'Andy Weir', status: 'finished', dateFinished: '2026-03-15', color: '#3A9FBF' },
-    { id: '8', title: 'Atomic Habits', author: 'James Clear', status: 'finished', dateFinished: '2026-03-02', color: '#E58F24' },
-    { id: '9', title: 'Deep Work', author: 'Cal Newport', status: 'finished', dateFinished: '2026-02-28', color: '#24CBE5' },
-    { id: '10', title: 'Sapiens', author: 'Yuval Noah Harari', status: 'finished', dateFinished: '2026-02-14', color: '#666666' },
-    { id: '11', title: 'The Martian', author: 'Andy Weir', status: 'finished', dateFinished: '2026-01-30', color: '#B51A1A' },
-    { id: '12', title: 'Foundation', author: 'Isaac Asimov', status: 'finished', dateFinished: '2026-01-12', color: '#3A9FBF' },
-    { id: '13', title: 'Neuromancer', author: 'William Gibson', status: 'finished', dateFinished: '2025-12-20', color: '#E58F24' },
-    { id: '14', title: 'Snow Crash', author: 'Neal Stephenson', status: 'finished', dateFinished: '2025-12-05', color: '#24CBE5' },
-];
+import AddBookPopup from './AddBookPopup';
 
 export default function ReadingListScreen() {
-
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildShelfStyles(theme);
+    
+    const { currentUser } = useAuth();
 
-    // 2. DATA PROCESSING (Memoized so it doesn't recalculate on scroll!)
+    // ─── STATE ───────────────────────────────────────────────────────────────
+    const [books, setBooks] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAddPopupVisible, setAddPopupVisible] = useState(false);
+
+    // ─── DATA FETCHING ───────────────────────────────────────────────────────
+    // useFocusEffect runs every time the user navigates back to this screen
+    useFocusEffect(
+        useCallback(() => {
+            const fetchBooks = async () => {
+                if (!currentUser?.uid) return;
+                
+                try {
+                    setIsLoading(true);
+                    const userBooks = await myBooksService.getBooks(currentUser.uid);
+                    setBooks(userBooks);
+                } catch (error) {
+                    console.error("Error fetching books:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            fetchBooks();
+        }, [currentUser])
+    );
+
+    // ─── DATA PROCESSING ─────────────────────────────────────────────────────
     const currentlyReading = useMemo(() => 
-        SAMPLE_BOOKS_DATA.find(book => book.status === 'reading')
-    , []);
+        books.find(book => book.status === 'reading')
+    , [books]);
 
     const sectionsData = useMemo(() => {
-        const finishedBooks = SAMPLE_BOOKS_DATA.filter(book => book.status === 'finished');
+        const finishedBooks = books.filter(book => book.status === 'finished');
         const sectionsMap = {};
         
         finishedBooks.forEach(book => {
-            const date = new Date(book.dateFinished);
+            // Using finishedAt from our new book model
+            const date = new Date(book.finishedAt || book.addedAt); 
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             const monthLabel = monthNames[date.getMonth()];
             const dayLabel = String(date.getDate()).padStart(2, '0');
@@ -63,17 +72,16 @@ export default function ReadingListScreen() {
             sectionsMap[monthLabel].push({ ...book, day: dayLabel });
         });
 
+        // Sort months or items here if needed later
         return Object.keys(sectionsMap).map(month => ({
             title: month,
             data: sectionsMap[month]
         }));
-    }, []);
-
+    }, [books]);
 
     const handleScroll = useScrollTabBarControl();
 
-
-    // 3. RENDER HEADER (Memoized element variable, NOT a component function)
+    // ─── RENDER HEADER ───────────────────────────────────────────────────────
     const headerElement = useMemo(() => (
         <View>
             {/* Main Title Row */}
@@ -82,7 +90,11 @@ export default function ReadingListScreen() {
             </View>
 
             {/* Add New Book Trigger */}
-            <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
+            <TouchableOpacity 
+                style={styles.addButton} 
+                activeOpacity={0.7}
+                onPress={() => setAddPopupVisible(true)} 
+            >
                 <View style={styles.iconWrapper}>
                     <Iconify icon="fluent:add-circle-12-filled" size={24} color={theme.textMuted} />
                 </View>
@@ -95,12 +107,23 @@ export default function ReadingListScreen() {
                     <Text style={styles.sectionHeaderTitle}>Currently Reading</Text>
 
                     <View style={styles.currentReadingCard}>
-                        <Image source={{ uri: currentlyReading.coverUrl }} style={styles.bookCover} />
+                        {currentlyReading.coverUrl ? (
+                            <Image source={{ uri: currentlyReading.coverUrl }} style={styles.bookCover} />
+                        ) : (
+                            <View style={[styles.bookCover, { justifyContent: 'center', alignItems: 'center' }]}>
+                                <Iconify icon="lucide:book" size={24} color={theme.textMuted} />
+                            </View>
+                        )}
 
                         <View style={styles.currentReadingInfo}>
                             <View>
-                                <Text style={styles.currentBookTitle}>{currentlyReading.title}</Text>
-                                <Text style={styles.currentBookAuthor}>{currentlyReading.author}</Text>
+                                <Text style={styles.currentBookTitle} numberOfLines={2}>
+                                    {currentlyReading.title}
+                                </Text>
+                                {/* Adjusted to read from the array of authors */}
+                                <Text style={styles.currentBookAuthor} numberOfLines={1}>
+                                    {currentlyReading.authors?.join(', ') || 'Unknown Author'}
+                                </Text>
                             </View>
 
                             <TouchableOpacity style={styles.updateProgressButton} activeOpacity={0.8}>
@@ -109,23 +132,31 @@ export default function ReadingListScreen() {
                         </View>
 
                         <View style={styles.progressContainer}>
-                            <Text style={styles.progressText}>{currentlyReading.progress}%</Text>
-                            <Iconify icon="fluent:caret-right-24-filled" size={16} color={theme.caret} />
+                            {/* Adjusted to read progressPercentage */}
+                            <Text style={styles.progressText}>{currentlyReading.progressPercentage || 0}%</Text>
+                            <Iconify icon="fluent:caret-right-24-filled" size={16} color={theme.textMuted} />
                         </View>
                     </View>
                 </View>
             )}
         </View>
-    ), [currentlyReading, styles]);
+    ), [currentlyReading, styles, theme]); // Added theme to dependencies for Iconify colors
 
-    // 4. MAIN RENDER
+    // ─── MAIN RENDER ─────────────────────────────────────────────────────────
+    if (isLoading && books.length === 0) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <SectionList
                 sections={sectionsData}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.bookId || item.id} // Supports new model ID
                 
-                // Passed the memoized variable here!
                 ListHeaderComponent={headerElement} 
                 
                 contentContainerStyle={styles.scrollContainer}
@@ -141,13 +172,17 @@ export default function ReadingListScreen() {
                     <View style={styles.historyRow}>
                         <Text style={styles.historyDayText}>{item.day}</Text>
                         <TouchableOpacity style={styles.historyCard} activeOpacity={0.9}>
-                            <View style={[styles.categoryDot, { backgroundColor: item.color }]} />
+                            <View style={[styles.categoryDot, { backgroundColor: item.color || theme.primary }]} />
                             <Text style={styles.historyBookTitle}>{item.title}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
             />
+            
+            <AddBookPopup 
+                isVisible={isAddPopupVisible} 
+                onClose={() => setAddPopupVisible(false)} 
+            />
         </View>
     );
 }
-

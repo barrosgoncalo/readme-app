@@ -138,16 +138,16 @@ export const Colors = {
     textItemTitle: '#EAE6E3',
     
     /** (Branco Puro) - Texto de botões secundários ou ícones para máximo contraste */
-    textBlack: '#FFFFFF',
+    textBlack: '#F2F0EF',
     
     /** (Cinza Quente Médio) - Cabeçalhos de secção e datas. Legível mas secundário */
     textMuted: '#C4BDB8',
     
     /** (Branco Quente Transparente a 50%) - Nomes de autores ou subtítulos. Usamos branco como base em vez de castanho */
-    textAuthor: 'rgba(234, 230, 227, 0.5)',
+    textAuthor: '#F2F0EF90',
     
     /** (Branco Quente Transparente a 30%) - Textos muito discretos, como a percentagem de leitura */
-    textProgress: 'rgba(234, 230, 227, 0.3)',
+    textProgress: '#F2F0EF70',
     
     /** (Preto com 40% de opacidade) - As sombras em dark mode precisam de ser mais escuras/opacas para criar profundidade */
     shadowBase: '#00000060',
@@ -161,7 +161,7 @@ export const Colors = {
     /** (Pêssego Queimado/Terracota) - Fundo colorido do avatar, adaptado para não brilhar demasiado no escuro */
     avatarBgTonal: '#A06C4B',
 
-    caret: '#FFFFFF60'
+    caret: '#F2F0EF60'
   },
     password: {
         gray: '#ccc',

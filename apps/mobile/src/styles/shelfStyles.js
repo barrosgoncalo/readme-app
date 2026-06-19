@@ -7,14 +7,13 @@ export const buildShelfStyles = (theme) => StyleSheet.create({
     },
     scrollContainer: { 
         paddingHorizontal: 28, 
-        paddingTop: 70, 
-        paddingBottom: 120
+        paddingTop: 80, 
     },
     headerRow: { 
         flexDirection: 'row', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        marginBottom: 15 
+        marginBottom: 20
     },
     mainTitle: {
         fontFamily: 'Inter-Light', 

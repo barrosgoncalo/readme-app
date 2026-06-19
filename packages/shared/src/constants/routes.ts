@@ -10,4 +10,5 @@ export const ROUTES = {
     PRIVACY_SECURITY: 'PrivacySecurity',
     CHANGE_PASSWORD: 'ChangePassword',
     PASSWORD_SUCCESS: 'PasswordSuccess',
+    BARCODE_SCANNER: 'BarcodeScannerScreen',
 } as const;
