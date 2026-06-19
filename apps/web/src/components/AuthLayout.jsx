@@ -8,8 +8,10 @@ export default function AuthLayout({ title, subtitle, children, footer, heroBg }
             className={styles.shell}
             style={heroBg ? {
                 backgroundImage: `url(${heroBg})`,
-                backgroundSize: 'cover',
+                backgroundSize: 'contain',
                 backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#2B1C10',
             } : undefined}
         >
             <div className={heroBg ? `${styles.card} ${styles.cardOverlay}` : styles.card}>
