@@ -213,7 +213,7 @@ export default function EditProfileScreen({ navigation, route }) {
                 showsVerticalScrollIndicator={false}
             >
                 {/* ── Avatar Edit Section ── */}
-                <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 30 }}>
+                <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 20 }}>
                     <TouchableOpacity 
                         onPress={() => setModalVisible(true)} 
                         disabled={uploading} 
