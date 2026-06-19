@@ -140,9 +140,9 @@ export default function AppTabs() {
     const showTabBar = () => {
         Animated.spring(translateY, {
             toValue: 0,
-            stiffness: 200, 
-            damping: 25,    
-            mass: 1.2,      
+            stiffness: 200,  // Higher stiffness = faster snap
+            damping: 20,     // Lower damping = slightly quicker finish (less friction)
+            mass: 0.6,       // Lower mass = lighter object, accelerates instantly
             useNativeDriver: true,
         }).start();
     };

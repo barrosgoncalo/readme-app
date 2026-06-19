@@ -221,7 +221,7 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={{ position: 'relative' }}
                     >
                         <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: theme.iconBg || '#EAEAEA', justifyContent: 'center', alignItems: 'center' }}>
-                            {newImageUri || currentUser?.photoURL ? (
+                            { newImageUri || currentUser?.photoURL ? (
                                 <Image 
                                     source={{ 
                                         uri: newImageUri 

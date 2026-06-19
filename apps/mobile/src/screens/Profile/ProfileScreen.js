@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'; // Added useRef
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert, Switch, useColorScheme, ActivityIndicator } from 'react-native';
 import { Iconify } from 'react-native-iconify';
@@ -32,15 +32,25 @@ export default function ProfileScreen({ navigation }) {
 
     const handleScroll = (event) => {
         const currentOffset = event.nativeEvent.contentOffset.y;
-        const direction = currentOffset > lastOffsetY.current ? 'down' : 'up';
+        
+        // Calculate exactly how many pixels the user scrolled since the last frame
+        const diff = currentOffset - lastOffsetY.current;
 
-        if (direction === 'down' && currentOffset > 20) {
+        // SENSITIVITY CONTROL: 
+        // How many pixels must the user scroll before the tab bar reacts?
+        // Lower numbers (like 3-5) = hyper-sensitive, disappears instantly.
+        // Higher numbers (like 15+) = requires a more deliberate, longer swipe.
+        const sensitivityThreshold = 4; 
+
+        if (diff > sensitivityThreshold && currentOffset > 10) {
+            // User is explicitly scrolling down the page -> hide it instantly
             hideTabBar();
-        } else if (direction === 'up') {
+        } else if (diff < -sensitivityThreshold) {
+            // User is explicitly scrolling up the page -> show it instantly
             showTabBar();
         }
 
-        // Safety check to ensure it always shows when at the very top
+        // Safety check: always force it open at the absolute top of the screen
         if (currentOffset <= 0) {
             showTabBar();
         }
@@ -118,7 +128,7 @@ export default function ProfileScreen({ navigation }) {
 
                 <View>
                     <TouchableOpacity onPress={pickImage} disabled={uploading}>
-                        <View style={styles.avatarContainer}>
+                        <View style={styles.avatarContainer }>
                             { currentUser?.photoURL ? (
                                 <Image 
                                     source={{ 

@@ -14,12 +14,10 @@ const firebaseConfig = {
     measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase App (prevents duplicate initializations during hot reloads)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firestore Database
 const db = initializeFirestore(app, {
-    experimentalAutoDetectPersistence: true // Enables offline data support on mobile
+    experimentalAutoDetectPersistence: true
 });
 
 const auth = initializeAuth(app, {
