@@ -7,6 +7,11 @@
     background-repeat: no-repeat;
 }
 
+.shellHero {
+    justify-items: start;
+    padding-left: 6%;
+}
+
 .card {
     width: 100%;
     max-width: 440px;

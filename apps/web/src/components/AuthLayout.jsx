@@ -5,7 +5,7 @@ import styles from './AuthLayout.module.css';
 export default function AuthLayout({ title, subtitle, children, footer, heroBg }) {
     return (
         <main
-            className={styles.shell}
+            className={`${styles.shell} ${heroBg ? styles.shellHero : ''}`}
             style={heroBg ? {
                 backgroundImage: `url(${heroBg})`,
                 backgroundSize: 'contain',
