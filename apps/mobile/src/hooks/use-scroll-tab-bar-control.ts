@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
-import { useTabBarVisibility } from '../components/ui/TabBarContext'; // Adjust path if needed
+import { useTabBarVisibility } from '../components/ui/TabBarContext';
+; // Adjust path if needed
 
 export function useScrollTabBarControl() {
     const { showTabBar, hideTabBar } = useTabBarVisibility();

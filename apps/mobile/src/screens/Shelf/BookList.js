@@ -8,7 +8,7 @@ import {
     Image,
 } from 'react-native';
 import { Iconify } from 'react-native-iconify';
-import { useTabBarVisibility } from '../../components/ui/TabBarContext'; 
+import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 
 // 1. FLAT SOURCE DATA
 // 1. FLAT SOURCE DATA (Expanded for scroll testing)
@@ -63,40 +63,9 @@ export default function ReadingListScreen() {
         }));
     }, []);
 
-    // --- Tab Bar Visibility Logic ---
 
-    const { showTabBar, hideTabBar } = useTabBarVisibility();
-    const lastOffsetY = useRef(0);
+    const handleScroll = useScrollTabBarControl();
 
-    const handleScroll = (event) => {
-        const currentOffset = event.nativeEvent.contentOffset.y;
-        
-        // Calculate exactly how many pixels the user scrolled since the last frame
-        const diff = currentOffset - lastOffsetY.current;
-
-        // SENSITIVITY CONTROL: 
-        // How many pixels must the user scroll before the tab bar reacts?
-        // Lower numbers (like 3-5) = hyper-sensitive, disappears instantly.
-        // Higher numbers (like 15+) = requires a more deliberate, longer swipe.
-        const sensitivityThreshold = 4; 
-
-        if (diff > sensitivityThreshold && currentOffset > 10) {
-            // User is explicitly scrolling down the page -> hide it instantly
-            hideTabBar();
-        } else if (diff < -sensitivityThreshold) {
-            // User is explicitly scrolling up the page -> show it instantly
-            showTabBar();
-        }
-
-        // Safety check: always force it open at the absolute top of the screen
-        if (currentOffset <= 0) {
-            showTabBar();
-        }
-
-        lastOffsetY.current = currentOffset;
-    };
-
-    // --------------------------------
 
     // 3. RENDER HEADER (Memoized element variable, NOT a component function)
     const headerElement = useMemo(() => (
