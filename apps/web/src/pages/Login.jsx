@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout.jsx';
 
-const loginBg = '/login-bg.jpg';
+const loginBg = '/login-bg.jpeg';
 import Field from '../components/Field.jsx';
 import Button from '../components/Button.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';

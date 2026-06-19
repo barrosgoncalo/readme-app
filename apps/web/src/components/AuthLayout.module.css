@@ -44,10 +44,22 @@
     font-size: 0.9rem;
 }
 
-/* Used when a hero background image is present — lifts the card visually */
+/* Used when a hero background image is present — lifts the card visually.
+   Forces light-theme CSS vars so inputs/text look correct in dark mode too. */
 .cardOverlay {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 0.93);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+
+    --bg:          #F4EFE8;
+    --bg-elem:     #FFFFFF;
+    --bg-selected: #D6D3D1;
+    --text:        #1C1A19;
+    --subtext:     #4A4A4A;
+    --primary:     #5C3D2E;
+    --primary-text:#FFFFFF;
+    --secondary:   #F58B2E;
+    --error:       #D32F2F;
+    --error-bg:    rgba(211, 47, 47, 0.10);
 }
