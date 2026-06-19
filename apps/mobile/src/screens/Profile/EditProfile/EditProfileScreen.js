@@ -224,6 +224,9 @@ export default function EditProfileScreen({ navigation, route }) {
                     <TouchableOpacity 
                         onPress={() => {
                             setModalVisible(true);
+                            setFocusedField(null);
+                            Keyboard.dismiss();
+                            setShowDatePicker(false)
                         }}
                         disabled={uploading} 
                         activeOpacity={0.8}
