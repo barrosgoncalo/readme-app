@@ -212,7 +212,12 @@ export default function EditProfileScreen({ navigation, route }) {
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: 60 }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
-                onScrollBeginDrag={() => setShowDatePicker(false)}
+                onScrollBeginDrag={() => {
+                    if (focusedField === "dob") {
+                        setShowDatePicker(false);
+                        setFocusedField(null);
+                    }
+                }}
                 >
                 {/* ── Avatar Edit Section ── */}
                 <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 20 }}>
@@ -275,8 +280,15 @@ export default function EditProfileScreen({ navigation, route }) {
                 <Field label="Date of birth" dirty={dirty.dob} focused={focusedField === 'dob'} styles={styles}>
                     <TouchableOpacity
                         style={styles.rowBetween}
-                        onPress={() => { setShowDatePicker(true); setFocusedField('dob'); Keyboard.dismiss();}}
-                        activeOpacity={0.7}
+                        onPress={() => {
+                            Keyboard.dismiss();
+                            // Delays the highlight by 100ms so the previous input's onBlur
+                            // doesn't overwrite it.
+                            setTimeout(() => {
+                                setShowDatePicker(true);
+                                setFocusedField('dob');
+                            }, 100);
+                        }}                        activeOpacity={0.7}
                     >
                         <Text style={[styles.input, { color: dob ? theme.text : theme.subtext, flex: 1 }]}>
                             {dob || 'DD/MM/YYYY'}
