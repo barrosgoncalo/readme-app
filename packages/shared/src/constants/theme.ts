@@ -54,6 +54,38 @@ export const Colors = {
     tabBarTextActive: '#FFFFFF',
     /** A nice, legible neutral gray for unselected tabs */
     tabBarIconInactive: '#A1A1AA',
+
+    /** (Castanho Acinzentado) - Títulos de destaque na página (ex: mainTitle) */
+    textDisplay: '#363230',
+    
+    /** (Castanho Muito Escuro) - Títulos de itens e livros (ex: currentBookTitle) */
+    textItemTitle: '#1C0E05',
+    
+    /** (Preto Puro) - Texto de botões secundários ou ícones (ex: addButtonText) */
+    textBlack: '#000000',
+    
+    /** (Cinza Quente Claro) - Cabeçalhos de secção e datas (ex: sectionHeaderTitle, historyDayText) */
+    textMuted: '#C4BDB8',
+    
+    /** (Castanho Transparente a 40%) - Nomes de autores ou subtítulos de itens */
+    textAuthor: 'rgba(28, 14, 5, 0.4)',
+    
+    /** (Castanho Transparente a 20%) - Textos muito discretos, como a percentagem de leitura */
+    textProgress: 'rgba(28, 14, 5, 0.2)',
+    
+    /** (Preto com 15% de opacidade) - Cor base para sombras dos cartões flutuantes */
+    shadowBase: '#00000025',
+    
+    /** (Cinza Claro) - Fundo de capas de livros quando a imagem ainda não carregou */
+    coverPlaceholder: '#E8E5E3',
+    
+    /** (Cinza Quente Muito Claro) - Bordas subtis, como a do avatar */
+    borderLight: '#E4DFDC',
+    
+    /** (Pêssego Claro) - Fundo colorido específico para o container do avatar */
+    avatarBgTonal: '#F7D0A3',
+
+    caret: '#1C0E0530'
   },
   dark: {
     /** (Light Gray) - Main body copy, headings, and core readable text. */
@@ -98,6 +130,38 @@ export const Colors = {
     tabBarTextActive: '#EFECE9',
     /** Slate Gray (matches your 'textSecondary' to keep unselected tabs muted but legible) */
     tabBarIconInactive: '#60646C',
+
+    /** (Castanho Acinzentado) - Títulos de destaque na página (ex: mainTitle) */
+    textDisplay: '#F2F0EF',
+
+    /** (Branco Quente/Creme) - Títulos de itens e livros. */
+    textItemTitle: '#EAE6E3',
+    
+    /** (Branco Puro) - Texto de botões secundários ou ícones para máximo contraste */
+    textBlack: '#FFFFFF',
+    
+    /** (Cinza Quente Médio) - Cabeçalhos de secção e datas. Legível mas secundário */
+    textMuted: '#C4BDB8',
+    
+    /** (Branco Quente Transparente a 50%) - Nomes de autores ou subtítulos. Usamos branco como base em vez de castanho */
+    textAuthor: 'rgba(234, 230, 227, 0.5)',
+    
+    /** (Branco Quente Transparente a 30%) - Textos muito discretos, como a percentagem de leitura */
+    textProgress: 'rgba(234, 230, 227, 0.3)',
+    
+    /** (Preto com 40% de opacidade) - As sombras em dark mode precisam de ser mais escuras/opacas para criar profundidade */
+    shadowBase: '#00000060',
+    
+    /** (Cinza Escuro Quente) - Fundo de capas de livros. Combina com o teu backgroundSelected */
+    coverPlaceholder: '#363230',
+    
+    /** (Cinza Escuro) - Bordas subtis, um pouco mais claras que o fundo dos cartões (#242120) */
+    borderLight: '#3A3532',
+    
+    /** (Pêssego Queimado/Terracota) - Fundo colorido do avatar, adaptado para não brilhar demasiado no escuro */
+    avatarBgTonal: '#A06C4B',
+
+    caret: '#FFFFFF60'
   },
     password: {
         gray: '#ccc',
