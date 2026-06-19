@@ -140,9 +140,8 @@ const DummyAddScreen = () => null;
 export default function AppTabs() {
   const translateY = useRef(new Animated.Value(0)).current;
 
-  // Grab the system theme dynamically
-  const colorScheme = useColorScheme() ?? 'light';
-  const themeColors = Colors[colorScheme];
+  const isDark = useColorScheme() === 'dark';
+  const themeColors = Colors[isDark ? 'dark' : 'light'];
 
   const showTabBar = () => {
     Animated.spring(translateY, {
