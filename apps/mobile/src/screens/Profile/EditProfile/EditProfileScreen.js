@@ -11,7 +11,8 @@ import {
     ActivityIndicator,
     Modal,
     StyleSheet,
-    Image
+    Image,
+    Keyboard
 } from 'react-native';
 
 import { Iconify } from 'react-native-iconify';
@@ -211,11 +212,14 @@ export default function EditProfileScreen({ navigation, route }) {
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: 60 }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
-            >
+                onScrollBeginDrag={() => setShowDatePicker(false)}
+                >
                 {/* ── Avatar Edit Section ── */}
                 <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 20 }}>
                     <TouchableOpacity 
-                        onPress={() => setModalVisible(true)} 
+                        onPress={() => {
+                            setModalVisible(true);
+                        }}
                         disabled={uploading} 
                         activeOpacity={0.8}
                         style={{ position: 'relative' }}
@@ -258,7 +262,10 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={[styles.input, { color: theme.text }]}
                         value={fullName}
                         onChangeText={setFullName}
-                        onFocus={() => setFocusedField('fullName')}
+                        onFocus={() => {
+                            setFocusedField('fullName');
+                            setShowDatePicker(false);
+                        }}
                         onBlur={() => setFocusedField(null)}
                         placeholder="Full Name"
                         placeholderTextColor={theme.subtext}
@@ -268,7 +275,7 @@ export default function EditProfileScreen({ navigation, route }) {
                 <Field label="Date of birth" dirty={dirty.dob} focused={focusedField === 'dob'} styles={styles}>
                     <TouchableOpacity
                         style={styles.rowBetween}
-                        onPress={() => { setShowDatePicker(true); setFocusedField('dob'); }}
+                        onPress={() => { setShowDatePicker(true); setFocusedField('dob'); Keyboard.dismiss();}}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.input, { color: dob ? theme.text : theme.subtext, flex: 1 }]}>
@@ -292,7 +299,10 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={[styles.input, { color: theme.text }]}
                         value={username}
                         onChangeText={setUsername}
-                        onFocus={() => setFocusedField('username')}
+                        onFocus={() => {
+                            setFocusedField('username');
+                            setShowDatePicker(false);
+                        }}
                         onBlur={() => setFocusedField(null)}
                         placeholder="username"
                         placeholderTextColor={theme.subtext}
@@ -306,7 +316,10 @@ export default function EditProfileScreen({ navigation, route }) {
                             style={[styles.input, { flex: 1, color: theme.text }]}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
-                            onFocus={() => setFocusedField('phone')}
+                            onFocus={() => {
+                                setFocusedField('phone');
+                                setShowDatePicker(false);
+                            }}
                             onBlur={() => setFocusedField(null)}
                             placeholder="000 000 000"
                             placeholderTextColor={theme.subtext}
@@ -318,7 +331,11 @@ export default function EditProfileScreen({ navigation, route }) {
                 <Field label="Country" dirty={dirty.country} focused={focusedField === 'country'} styles={styles}>
                     <TouchableOpacity
                         style={styles.rowBetween}
-                        onPress={() => { setShowCountryPicker(true); setFocusedField('country'); }}
+                        onPress={() => {
+                            setShowCountryPicker(true);
+                            setFocusedField('country');
+                            setShowDatePicker(false);
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.input, { color: country ? theme.text : theme.subtext, flex: 1 }]}>
@@ -344,7 +361,10 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={[styles.input, { color: theme.text }]}
                         value={city}
                         onChangeText={setCity}
-                        onFocus={() => setFocusedField('city')}
+                        onFocus={() => {
+                            setFocusedField('city');
+                            setShowDatePicker(false);
+                        }}
                         onBlur={() => setFocusedField(null)}
                         placeholder="City"
                         placeholderTextColor={theme.subtext}
@@ -356,7 +376,10 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={[styles.input, { color: theme.text }]}
                         value={district}
                         onChangeText={setDistrict}
-                        onFocus={() => setFocusedField('district')}
+                        onFocus={() => {
+                            setFocusedField('district');
+                            setShowDatePicker(false);
+                        }}
                         onBlur={() => setFocusedField(null)}
                         placeholder="District"
                         placeholderTextColor={theme.subtext}
@@ -368,7 +391,10 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={[styles.input, { color: theme.text }]}
                         value={addressLine1}
                         onChangeText={setAddressLine1}
-                        onFocus={() => setFocusedField('addr1')}
+                        onFocus={() => {
+                            setFocusedField('addr1');
+                            setShowDatePicker(false);
+                        }}
                         onBlur={() => setFocusedField(null)}
                         placeholder="Street address"
                         placeholderTextColor={theme.subtext}
@@ -380,7 +406,10 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={[styles.input, { color: theme.text }]}
                         value={addressLine2}
                         onChangeText={setAddressLine2}
-                        onFocus={() => setFocusedField('addr2')}
+                        onFocus={() => {
+                            setFocusedField('addr2');
+                            setShowDatePicker(false);
+                        }}
                         onBlur={() => setFocusedField(null)}
                         placeholder="Apartment, suite, etc. (optional)"
                         placeholderTextColor={theme.subtext}
@@ -392,7 +421,10 @@ export default function EditProfileScreen({ navigation, route }) {
                         style={[styles.input, { color: theme.text }]}
                         value={postalCode}
                         onChangeText={setPostalCode}
-                        onFocus={() => setFocusedField('postal')}
+                        onFocus={() => {
+                            setFocusedField('postal');
+                            setShowDatePicker(false);
+                        }}
                         onBlur={() => setFocusedField(null)}
                         placeholder="0000-000"
                         placeholderTextColor={theme.subtext}
