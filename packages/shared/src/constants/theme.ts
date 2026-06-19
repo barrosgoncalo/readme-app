@@ -85,7 +85,7 @@ export const Colors = {
     /** (Muted Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#5E5496',       
     cardBackground: '#E8E5E3',
-    headerBackground: '#25170d',
+    headerBackground: '#2a1c11',
     groupShadow: '#242120',
     iconBg: '#342F2C',
     icon: '#C4BDB8',

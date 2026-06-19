@@ -4,10 +4,13 @@ import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/b
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 
-// Import your screens
+// Screens
 import BookList from '../screens/Library/BookList'; 
 import MapScreen from '../screens/Events/MapScreen'; 
 import ProfileScreen from '../screens/Profile/ProfileScreen';
+
+// Components
+import { TabBarVisibilityContext } from './ui/TabBarContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,13 +19,6 @@ type TabBarContextType = {
   showTabBar: () => void;
   hideTabBar: () => void;
 };
-
-export const TabBarVisibilityContext = createContext<TabBarContextType>({
-  showTabBar: () => {},
-  hideTabBar: () => {},
-});
-
-export const useTabBarVisibility = () => useContext(TabBarVisibilityContext);
 
 // --- 2. Define Props ---
 type TabItemProps = {
