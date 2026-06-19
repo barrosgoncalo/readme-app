@@ -10,7 +10,7 @@ import { buildStyles } from '../../styles/profileStyles';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
 import { MenuGroup, MenuItem } from '../../components/ui/MenuComponents';
 
-import { useTabBarVisibility } from '../../components/app-tabs'; 
+import { useTabBarVisibility } from '../../components/ui/TabBarContext'; 
 
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -58,7 +58,6 @@ export default function ProfileScreen({ navigation }) {
 
     // Função para abrir a galeria
     const pickImage = async () => {
-        // Note: Make sure ImagePicker is imported at the top of your file!
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
@@ -73,7 +72,7 @@ export default function ProfileScreen({ navigation }) {
     };
 
     // Função que chama o nosso serviço partilhado
-    const handleUpload = async (imageUri: string) => {
+    const handleUpload = async (imageUri) => {
         setUploading(true);
         try {
             await uploadProfilePicture(currentUser.uid, imageUri);
@@ -137,7 +136,6 @@ export default function ProfileScreen({ navigation }) {
                 showsVerticalScrollIndicator={false}
                 bounces={false}
                 overScrollMode="never"
-                // --- CONNECT THE SCROLL LOGIC HERE ---
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
             >
