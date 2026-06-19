@@ -4,6 +4,7 @@
     place-items: center;
     padding: var(--space-4);
     background: var(--bg);
+    background-repeat: no-repeat;
 }
 
 .card {
@@ -41,4 +42,12 @@
     text-align: center;
     color: var(--subtext);
     font-size: 0.9rem;
+}
+
+/* Used when a hero background image is present — lifts the card visually */
+.cardOverlay {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }

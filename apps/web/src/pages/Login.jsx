@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout.jsx';
+
+const loginBg = '/login-bg.jpg';
 import Field from '../components/Field.jsx';
 import Button from '../components/Button.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';
@@ -49,6 +51,7 @@ export default function Login() {
         <AuthLayout
             title="Sign in"
             subtitle="Welcome back."
+            heroBg={loginBg}
             footer={
                 <span>
                     No account yet? <Link to="/register">Sign up</Link>

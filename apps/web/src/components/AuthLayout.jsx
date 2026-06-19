@@ -1,10 +1,18 @@
 // Centered card layout used by every auth page (Login, Register, Forgot Password, Welcome).
+// Pass `heroBg` (imported image) to show a full-bleed background behind the card.
 import styles from './AuthLayout.module.css';
 
-export default function AuthLayout({ title, subtitle, children, footer }) {
+export default function AuthLayout({ title, subtitle, children, footer, heroBg }) {
     return (
-        <main className={styles.shell}>
-            <div className={styles.card}>
+        <main
+            className={styles.shell}
+            style={heroBg ? {
+                backgroundImage: `url(${heroBg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+            } : undefined}
+        >
+            <div className={heroBg ? `${styles.card} ${styles.cardOverlay}` : styles.card}>
                 <h1 className={styles.title}>{title}</h1>
                 {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
                 <div className={styles.body}>{children}</div>
