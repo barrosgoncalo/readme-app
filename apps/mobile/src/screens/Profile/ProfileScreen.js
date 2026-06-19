@@ -22,6 +22,7 @@ export default function ProfileScreen({ navigation }) {
     const [focusKey, setFocusKey] = useState(0);
 
     // --- Tab Bar Visibility Logic ---
+
     const { showTabBar, hideTabBar } = useTabBarVisibility();
     const lastOffsetY = useRef(0);
 
@@ -42,6 +43,7 @@ export default function ProfileScreen({ navigation }) {
 
         lastOffsetY.current = currentOffset;
     };
+
     // --------------------------------
 
     useEffect(() => {
