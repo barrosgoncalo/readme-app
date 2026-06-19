@@ -35,6 +35,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         marginBottom: 10,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: theme.iconBg
     },
     profilePicture: {
         width: 100,

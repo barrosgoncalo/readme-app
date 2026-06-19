@@ -53,7 +53,7 @@ export default function ProfileScreen({ navigation }) {
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             setFocusKey(prev => prev + 1); 
-            
+
             if (refreshUser) {
                 refreshUser();
             }
@@ -119,12 +119,19 @@ export default function ProfileScreen({ navigation }) {
                 <View>
                     <TouchableOpacity onPress={pickImage} disabled={uploading}>
                         <View style={styles.avatarContainer}>
-                            <Image 
-                                source={{ 
-                                    uri: `${currentUser?.photoURL}?t=${focusKey}_${new Date().getTime()}` 
-                                }} 
-                                style={styles.profilePicture} 
-                            />
+                            { currentUser?.photoURL ? (
+                                <Image 
+                                    source={{ 
+                                        uri: `${currentUser?.photoURL}?t=${focusKey}_${new Date().getTime()}` 
+
+                                    }} 
+
+                                    style={styles.profilePicture} 
+                                />
+
+                            ) : (
+                                    <Iconify icon="lucide:user" size={45} color={theme.text} />
+                                )}
 
                             {uploading && (
                                 <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />
