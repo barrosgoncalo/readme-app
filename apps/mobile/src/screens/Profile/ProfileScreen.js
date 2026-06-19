@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'; // Added useRef
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert, Switch, useColorScheme, ActivityIndicator } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { doSignOut } from '@readme/shared/src/services/auth';
+import { doSignOut, doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { buildStyles } from '../../styles/profileStyles';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
-import { MenuGroup, MenuItem } from '../../components/ui/MenuComponents';
+import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
 
 import { useTabBarVisibility } from '../../components/ui/TabBarContext'; 
 
@@ -20,6 +20,10 @@ export default function ProfileScreen({ navigation }) {
     const { currentUser, refreshUser } = useAuth(); 
     const [uploading, setUploading] = useState(false);
     const [focusKey, setFocusKey] = useState(0);
+
+    const [hasNotifications, setHasNotifications] = useState(
+        currentUser?.notificationSettings?.pushEnabled ?? false
+    );
 
     // --- Tab Bar Visibility Logic ---
 
@@ -58,7 +62,6 @@ export default function ProfileScreen({ navigation }) {
         return unsubscribe;
     }, [navigation, refreshUser]);
 
-    // Função para abrir a galeria
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -73,7 +76,6 @@ export default function ProfileScreen({ navigation }) {
         }
     };
 
-    // Função que chama o nosso serviço partilhado
     const handleUpload = async (imageUri) => {
         setUploading(true);
         try {
@@ -85,6 +87,22 @@ export default function ProfileScreen({ navigation }) {
             setUploading(false);
         }
     };
+
+    const handleNotificationsToggle = async (newValue) => {
+        setHasNotifications(newValue);
+        try {
+            await doUpdateUserProfile(currentUser.uid, {
+                'notificationSettings.pushEnabled': newValue
+            });
+
+            await refreshUser();
+
+        } catch (error) {
+            console.error("Error updating notifications settings:", error);
+            Alert.alert("Error", "Failed to update notifications settings. Please try again.");
+            setHasNotifications(!newValue);
+        }
+    }
 
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
@@ -178,12 +196,6 @@ export default function ProfileScreen({ navigation }) {
                         <MenuItem
                             styles={styles}
                             theme={theme}
-                            icon="fluent:presence-blocked-10-regular"
-                            label="View Blocked Users"
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
                             icon="material-symbols:password"
                             label="Privacy & Security"
                             onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)}
@@ -191,12 +203,20 @@ export default function ProfileScreen({ navigation }) {
                         <MenuItem
                             styles={styles}
                             theme={theme}
-                            icon="lucide:settings"
-                            label="Settings"
+                            icon="fluent:presence-blocked-10-regular"
+                            label="View Blocked Users"
+                        />
+                        <MenuSwitchItem
+                            styles={styles}
+                            theme={theme}
+                            icon={hasNotifications ? "fluent:alert-24-regular" : "fluent:alert-off-24-regular"}
+                            label={hasNotifications ? "Allow notifications" : "Pause notifications"}
+                            value={hasNotifications}
+                            onValueChange={handleNotificationsToggle}
                         />
                     </MenuGroup>
 
-                    {/* GROUP 3 (Sign Out) */}
+                    {/* GROUP 3 */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem 
                             styles={styles}

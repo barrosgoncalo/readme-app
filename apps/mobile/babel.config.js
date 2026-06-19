@@ -39,6 +39,8 @@ export default function (api) {
                         'fluent:person-24-regular',
                         'fluent:library-24-regular',
                         'fluent:library-24-filled',
+                        'fluent:alert-24-regular',
+                        'fluent:alert-off-24-regular',
                         'material-symbols:password',
                         'material-symbols-light:verified-rounded',
                         'material-symbols-light:home-outline-rounded',

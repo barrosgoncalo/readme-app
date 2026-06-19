@@ -35,6 +35,13 @@ export const createUserModel = (uid, profileData, provider) => {
 
         accountStatus: 'active',
 
+        notificationSettings: {
+            pushEnabled: false,
+            emailEnabled: false,
+            newFollowers: false,
+            marketingUpdates: false,
+        },
+
         authProvider: provider
     };
 };
