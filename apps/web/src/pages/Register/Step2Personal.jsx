@@ -4,6 +4,9 @@ import Button from '../../components/Button.jsx';
 export default function Step2Personal({ data, set, onNext, onBack }) {
     const canContinue = data.fullName && data.dob;
 
+    // Calculamos a data de hoje no formato que o HTML espera (AAAA-MM-DD)
+    const today = new Date().toISOString().split('T')[0];
+
     function onSubmit(e) {
         e.preventDefault();
         if (canContinue) onNext();
@@ -31,6 +34,7 @@ export default function Step2Personal({ data, set, onNext, onBack }) {
                 value={data.dob}
                 onChange={(v) => set('dob', v)}
                 required
+                max={today}
             />
             <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.9rem', color: 'var(--subtext)' }}>
                 <input
