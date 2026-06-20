@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useNavigation } from 'react';
 import { 
     View, 
     Text, 
@@ -12,6 +12,7 @@ import {
     StyleSheet
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 import { buildShelfStyles } from '../../styles/shelfStyles';
@@ -21,7 +22,7 @@ import { myBooksService } from '@readme/shared/src/services/books';
 
 import AddBookPopup from './AddBookPopup';
 
-export default function ReadingListScreen() {
+export default function ReadingListScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildShelfStyles(theme);
@@ -130,10 +131,10 @@ export default function ReadingListScreen() {
         finishedBooks.forEach(book => {
             const date = new Date(book.finishedAt || book.addedAt); 
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            
+
             const monthName = monthNames[date.getMonth()];
             const year = date.getFullYear();
-            
+
             // 1. Internal unique key (Ensures January 2025 and January 2026 stay separated)
             const sectionKey = `${monthName}-${year}`;
             const dayLabel = String(date.getDate()).padStart(2, '0');
@@ -146,7 +147,7 @@ export default function ReadingListScreen() {
                     data: []
                 };
             }
-            
+
             sectionsMap[sectionKey].data.push({ ...book, day: dayLabel, rawDate: date.getTime() });
         });
 
@@ -197,7 +198,12 @@ export default function ReadingListScreen() {
                     <Text style={styles.sectionHeaderTitle}>Currently Reading</Text>
 
                     {currentlyReadingBooks.map((book) => (
-                        <View key={book.bookId} style={[styles.currentReadingCard, { marginBottom: 16 }]}>
+                        <TouchableOpacity 
+                            key={book.bookId} 
+                            style={[styles.currentReadingCard, { marginBottom: 16 }]}
+                            activeOpacity={0.8}
+                            onPress={() => navigation.navigate(ROUTES.BOOK_DETAILS, { book: book })} 
+                        >
                             {book.bookDetails?.coverUrl ? (
                                 <Image source={{ uri: book.bookDetails.coverUrl }} style={styles.bookCover} />
                             ) : (
@@ -209,7 +215,7 @@ export default function ReadingListScreen() {
                             <View style={styles.currentReadingInfo}>
                                 <View>
                                     <Text style={styles.currentBookTitle} numberOfLines={1}>
-                                        {book.bookDetails?.title || 'Unknown Title'}
+                                        {book.bookDetails?.title?.replace(/[\r\n]+/g, ' ').trim() || 'Unknown Title'}
                                     </Text>
                                     <Text style={styles.currentBookAuthor} numberOfLines={1}>
                                         {book.bookDetails?.authors?.join(', ') || 'Unknown Author'}
@@ -230,7 +236,7 @@ export default function ReadingListScreen() {
                                 <Text style={styles.progressText}>{book.progressPercentage || 0}%</Text>
                                 <Iconify icon="fluent:caret-right-24-filled" size={16} color={theme.textMuted} />
                             </View>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
             )}
@@ -280,9 +286,14 @@ export default function ReadingListScreen() {
                         <Text style={styles.historyDayText}>{item.day}</Text>
                         <TouchableOpacity style={styles.historyCard} activeOpacity={0.9}>
                             <View style={[styles.categoryDot, { backgroundColor: item.color || theme.primary }]} />
-                            <Text style={styles.historyBookTitle}>
-                                {item.bookDetails?.title || 'Unknown Title'}
-                            </Text>
+
+                            {/* THE FIX IS HERE: Wrapped in flex: 1 and added numberOfLines */}
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.historyBookTitle} numberOfLines={1} ellipsizeMode="tail">
+                                    {item.bookDetails?.title?.replace(/[\r\n]+/g, ' ').trim() || 'Unknown Title'}
+                                </Text>
+                            </View>
+
                         </TouchableOpacity>
                     </View>
                 )}

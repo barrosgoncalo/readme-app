@@ -8,6 +8,7 @@ export const buildShelfStyles = (theme) => StyleSheet.create({
     scrollContainer: { 
         paddingHorizontal: 28, 
         paddingTop: 80, 
+        paddingBottom: 100
     },
     headerRow: { 
         flexDirection: 'row', 

@@ -5,7 +5,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 
 // Screens
-import BookList from '../screens/Shelf/BookList'; 
+import BookListScreen from '../screens/Shelf/BookListScreen'; 
 import MapScreen from '../screens/Events/MapScreen'; 
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 
@@ -165,7 +165,7 @@ export default function AppTabs() {
         >
         <Tab.Screen name="Explore" component={MapScreen} />
         <Tab.Screen name="Add" component={DummyAddScreen} />
-        <Tab.Screen name="Shelf" component={BookList} />
+        <Tab.Screen name="Shelf" component={BookListScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
         </TabBarVisibilityContext.Provider>
