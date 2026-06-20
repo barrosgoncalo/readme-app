@@ -130,17 +130,46 @@ export default function ReadingListScreen() {
         finishedBooks.forEach(book => {
             const date = new Date(book.finishedAt || book.addedAt); 
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const monthLabel = monthNames[date.getMonth()];
+            
+            const monthName = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            
+            // 1. Internal unique key (Ensures January 2025 and January 2026 stay separated)
+            const sectionKey = `${monthName}-${year}`;
             const dayLabel = String(date.getDate()).padStart(2, '0');
 
-            if (!sectionsMap[monthLabel]) sectionsMap[monthLabel] = [];
-            sectionsMap[monthLabel].push({ ...book, day: dayLabel });
+            if (!sectionsMap[sectionKey]) {
+                sectionsMap[sectionKey] = {
+                    month: monthName,
+                    year: year,
+                    sortTimestamp: new Date(year, date.getMonth(), 1).getTime(),
+                    data: []
+                };
+            }
+            
+            sectionsMap[sectionKey].data.push({ ...book, day: dayLabel, rawDate: date.getTime() });
         });
 
-        return Object.keys(sectionsMap).map(month => ({
-            title: month,
-            data: sectionsMap[month]
-        }));
+        // 2. Sort the sections from newest to oldest
+        const sortedSections = Object.values(sectionsMap).sort((a, b) => b.sortTimestamp - a.sortTimestamp);
+
+        // 3. UX Magic: Only append the year if it changes!
+        let currentYearTracker = new Date().getFullYear();
+
+        return sortedSections.map(section => {
+            let displayTitle = section.month;
+
+            // If the year of this section is different from our tracker, stamp the year and update the tracker!
+            if (section.year !== currentYearTracker) {
+                displayTitle = `${section.month} ${section.year}`;
+                currentYearTracker = section.year;
+            }
+
+            return {
+                title: displayTitle, // This gets passed directly to renderSectionHeader
+                data: section.data.sort((a, b) => b.rawDate - a.rawDate)
+            };
+        });
     }, [books]);
 
     const handleScroll = useScrollTabBarControl();
@@ -234,7 +263,7 @@ export default function ReadingListScreen() {
 
                 ListEmptyComponent={
                     (currentlyReadingBooks.length === 0 && sectionsData.length === 0) ? (
-                        <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 95, paddingHorizontal: 30 }}>
+                        <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 120, paddingHorizontal: 30 }}>
                             <Iconify icon="lucide:library" size={56} color={theme.textMuted || '#999'} />
                             <Text style={{ fontSize: 18, fontFamily: 'Inter-SemiBold', color: theme.text, marginTop: 16, marginBottom: 8 }}>
                                 Your shelf is empty
