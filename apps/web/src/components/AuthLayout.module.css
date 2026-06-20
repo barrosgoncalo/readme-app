@@ -6,7 +6,7 @@
     background-color: var(--bg); /* Cor de fundo de segurança */
 
     /* AS 3 REGRAS MÁGICAS PARA A IMAGEM: */
-    background-size: cover; /* Faz a imagem cobrir todo o espaço disponível */
+    background-size: cover; /* Faz a imagem cobrir o espaço disponível por inteiro*/
     background-position: center; /* Mantém a imagem sempre centrada */
     background-repeat: no-repeat; /* Impede que a imagem se repita como um mosaico */
 }
