@@ -10,8 +10,15 @@
     font-weight: 600;
 }
 
+.inputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
 .input {
-    padding: 10px 12px;
+    width: 100%;
+    padding: 10px 40px 10px 12px;
     border: 1px solid var(--bg-selected);
     border-radius: var(--radius);
     background: var(--bg);
@@ -22,4 +29,24 @@
 .input:focus {
     outline: none;
     border-color: var(--primary);
+}
+
+/* O nosso botão do olho */
+.eyeButton {
+    position: absolute;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: var(--subtext); /* Vai buscar a cor do texto secundário do teu tema */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* Esta regra ESCONDE o olho nativo que o Microsoft Edge tenta adicionar sozinho! */
+.input::-ms-reveal,
+.input::-ms-clear {
+    display: none;
 }
