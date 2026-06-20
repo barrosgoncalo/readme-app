@@ -21,6 +21,9 @@ import Chat from '../pages/Chat/index.jsx';
 import Profile from '../pages/Profile/index.jsx';
 import EditProfile from '../pages/Profile/EditProfile.jsx';
 import ChangePassword from '../pages/Profile/ChangePassword.jsx';
+import PrivacySecurity from '../pages/Profile/PrivacySecurity.jsx';
+import BlockedUsers from '../pages/Profile/BlockedUsers.jsx';
+import BookDetail from '../pages/Books/BookDetail.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
 import { WEB_ROUTES } from '../constants/webRoutes.js';
@@ -76,6 +79,7 @@ export default function AppRouter() {
             >
                 <Route path={WEB_ROUTES.BOOKS} element={<Books />} />
                 <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan />} />
+                <Route path="/books/:bookId" element={<BookDetail />} />
                 <Route path={WEB_ROUTES.TRADES} element={<Trades />} />
                 <Route path={WEB_ROUTES.EVENTS} element={<Events />} />
                 <Route path={WEB_ROUTES.MAP} element={<MapPage />} />
@@ -84,6 +88,8 @@ export default function AppRouter() {
                 <Route path={WEB_ROUTES.PROFILE} element={<Profile />} />
                 <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile />} />
                 <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
+                <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
+                <Route path={WEB_ROUTES.PROFILE_BLOCKED_USERS} element={<BlockedUsers />} />
             </Route>
             <Route
                 path="*"

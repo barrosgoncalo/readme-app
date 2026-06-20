@@ -1,19 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import {
-    BookOpen, Pencil, Ban, Lock, Moon, Settings, Award, Heart, LogOut, ChevronRight,
-    Globe, Eye, EyeOff, Camera,
+    BookOpen, Pencil, Ban, Lock, Moon, Settings, Award, Heart, LogOut, ChevronRight, Camera,
 } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
-import { doSignOut, doUpdateUserPassword, doDeleteAccount } from '@readme/shared/src/services/auth.web';
+import { doSignOut } from '@readme/shared/src/services/auth.web';
 import { uploadProfilePicture } from '@readme/shared/src/services/user.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import Button from '../../components/Button.jsx';
 import Spinner from '../../components/Spinner.jsx';
-import ErrorAlert from '../../components/ErrorAlert.jsx';
 import styles from './Profile.module.css';
 
 function initials(userData) {
@@ -33,31 +30,12 @@ export default function Profile() {
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState('');
 
-    // Privacy & Security panel
-    const [privacyOpen, setPrivacyOpen] = useState(false);
-    const [isPublic, setIsPublic] = useState(false);
-    const [privacySaving, setPrivacySaving] = useState(false);
-
-    // Change password
-    const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
-    const [pwSaving, setPwSaving] = useState(false);
-    const [pwError, setPwError] = useState('');
-    const [pwSuccess, setPwSuccess] = useState(false);
-    const [showPw, setShowPw] = useState({ current: false, next: false, confirm: false });
-
-    // Delete account
-    const [deleteStep, setDeleteStep] = useState(0);
-    const [deletePassword, setDeletePassword] = useState('');
-    const [deleteError, setDeleteError] = useState('');
-    const [deleting, setDeleting] = useState(false);
-
     useEffect(() => {
         if (!currentUser) return;
         getDoc(doc(db, 'users', currentUser.uid)).then(snap => {
             if (snap.exists()) {
                 const data = snap.data();
                 setUserData(data);
-                setIsPublic(data.profileVisibility === 'public');
                 setPhotoURL(data.photoURL || null);
             }
         }).finally(() => setLoading(false));
@@ -75,54 +53,7 @@ export default function Profile() {
             setUploadError('Upload failed. Please try again.');
         } finally {
             setUploading(false);
-            // Reset so the same file can be picked again if needed
             e.target.value = '';
-        }
-    }
-
-    async function handlePrivacyToggle(value) {
-        setIsPublic(value);
-        setPrivacySaving(true);
-        try {
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                profileVisibility: value ? 'public' : 'private',
-            });
-            setUserData(prev => ({ ...prev, profileVisibility: value ? 'public' : 'private' }));
-        } catch {
-            setIsPublic(!value);
-        } finally {
-            setPrivacySaving(false);
-        }
-    }
-
-    async function handleChangePassword(e) {
-        e.preventDefault();
-        setPwError('');
-        setPwSuccess(false);
-        if (pwForm.next !== pwForm.confirm) { setPwError('New passwords do not match.'); return; }
-        if (pwForm.next.length < 6) { setPwError('New password must be at least 6 characters.'); return; }
-        setPwSaving(true);
-        try {
-            await doUpdateUserPassword(pwForm.current, pwForm.next);
-            setPwForm({ current: '', next: '', confirm: '' });
-            setPwSuccess(true);
-        } catch (err) {
-            setPwError(err.message || 'Could not change password.');
-        } finally {
-            setPwSaving(false);
-        }
-    }
-
-    async function handleDeleteAccount() {
-        setDeleteError('');
-        setDeleting(true);
-        try {
-            await doDeleteAccount(deletePassword);
-            navigate(WEB_ROUTES.LOGIN, { replace: true });
-        } catch (err) {
-            setDeleteError(err.message || 'Could not delete account.');
-        } finally {
-            setDeleting(false);
         }
     }
 
@@ -133,8 +64,6 @@ export default function Profile() {
 
             {/* ── Header ── */}
             <div className={styles.header}>
-
-                {/* Avatar — clickable to change photo */}
                 <button
                     className={styles.avatarBtn}
                     onClick={() => fileInputRef.current?.click()}
@@ -142,30 +71,16 @@ export default function Profile() {
                     aria-label="Change profile picture"
                 >
                     {photoURL ? (
-                        <img
-                            src={`${photoURL}?t=${Date.now()}`}
-                            alt="Profile"
-                            className={styles.avatarImg}
-                        />
+                        <img src={`${photoURL}?t=${Date.now()}`} alt="Profile" className={styles.avatarImg} />
                     ) : (
                         <div className={styles.avatar}>{initials(userData)}</div>
                     )}
                     <div className={styles.avatarOverlay}>
-                        {uploading
-                            ? <span className={styles.uploadingRing} />
-                            : <Camera size={20} color="#fff" />
-                        }
+                        {uploading ? <span className={styles.uploadingRing} /> : <Camera size={20} color="#fff" />}
                     </div>
                 </button>
 
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleAvatarFileChange}
-                />
-
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarFileChange} />
                 {uploadError && <p className={styles.uploadError}>{uploadError}</p>}
 
                 <p className={styles.userName}>{userData?.username || currentUser?.email}</p>
@@ -185,7 +100,6 @@ export default function Profile() {
 
             {/* ── Group 2: Account ── */}
             <div className={styles.group}>
-
                 <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_EDIT)}>
                     <span className={styles.itemLeft}>
                         <span className={styles.iconBox}><Pencil size={20} /></span>
@@ -194,87 +108,21 @@ export default function Profile() {
                     <ChevronRight size={18} className={styles.chevron} />
                 </button>
 
-                <div className={`${styles.item} ${styles.disabled}`}>
+                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_BLOCKED_USERS)}>
                     <span className={styles.itemLeft}>
                         <span className={styles.iconBox}><Ban size={20} /></span>
                         <span className={styles.itemLabel}>View Blocked Users</span>
                     </span>
                     <ChevronRight size={18} className={styles.chevron} />
-                </div>
+                </button>
 
-                {/* Privacy & Security — expands inline */}
-                <button className={styles.item} onClick={() => { setPrivacyOpen(o => !o); setPwError(''); setPwSuccess(false); setDeleteStep(0); }}>
+                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_PRIVACY_SECURITY)}>
                     <span className={styles.itemLeft}>
                         <span className={styles.iconBox}><Lock size={20} /></span>
                         <span className={styles.itemLabel}>Privacy &amp; Security</span>
                     </span>
-                    <ChevronRight size={18} className={`${styles.chevron} ${privacyOpen ? styles.chevronOpen : ''}`} />
+                    <ChevronRight size={18} className={styles.chevron} />
                 </button>
-
-                {privacyOpen && (
-                    <div className={styles.privacyPanel}>
-
-                        <p className={styles.panelSection}>Privacy</p>
-                        <div className={styles.privacyRow}>
-                            <span className={styles.itemLeft}>
-                                <span className={styles.iconBox}>{isPublic ? <Globe size={18} /> : <Lock size={18} />}</span>
-                                <span>
-                                    <span className={styles.itemLabel}>{isPublic ? 'Public' : 'Private'}</span>
-                                    <span className={styles.helperText}>
-                                        {isPublic
-                                            ? 'Anyone can see your library and request book swaps.'
-                                            : 'Only approved users can see your library and request book swaps.'}
-                                    </span>
-                                </span>
-                            </span>
-                            <Toggle checked={isPublic} onChange={handlePrivacyToggle} disabled={privacySaving} />
-                        </div>
-
-                        <p className={styles.panelSection}>Security</p>
-                        <form className={styles.pwForm} onSubmit={handleChangePassword}>
-                            <PasswordField label="Current password" value={pwForm.current} onChange={v => setPwForm(f => ({ ...f, current: v }))} show={showPw.current} onToggleShow={() => setShowPw(s => ({ ...s, current: !s.current }))} />
-                            <PasswordField label="New password" value={pwForm.next} onChange={v => { setPwForm(f => ({ ...f, next: v })); setPwSuccess(false); }} show={showPw.next} onToggleShow={() => setShowPw(s => ({ ...s, next: !s.next }))} />
-                            <PasswordField label="Confirm new password" value={pwForm.confirm} onChange={v => setPwForm(f => ({ ...f, confirm: v }))} show={showPw.confirm} onToggleShow={() => setShowPw(s => ({ ...s, confirm: !s.confirm }))} />
-                            {pwSuccess && <p className={styles.pwSuccess}>Password changed successfully.</p>}
-                            <ErrorAlert>{pwError}</ErrorAlert>
-                            <Button type="submit" disabled={!pwForm.current || !pwForm.next || !pwForm.confirm || pwSaving}>
-                                {pwSaving ? 'Saving…' : 'Change password'}
-                            </Button>
-                        </form>
-
-                        <p className={styles.panelSection}>Account Management</p>
-                        {deleteStep === 0 && (
-                            <button type="button" className={`${styles.item} ${styles.danger}`} onClick={() => { setDeleteStep(1); setDeleteError(''); }}>
-                                <span className={styles.itemLeft}>
-                                    <span className={styles.iconBox}><LogOut size={18} /></span>
-                                    <span className={styles.itemLabel}>Delete Account</span>
-                                </span>
-                            </button>
-                        )}
-                        {deleteStep === 1 && (
-                            <div className={styles.deleteConfirm}>
-                                <p className={styles.deleteWarning}>This permanently deletes your account and all your data. This cannot be undone.</p>
-                                <div className={styles.editActions}>
-                                    <Button variant="ghost" onClick={() => setDeleteStep(0)}>Cancel</Button>
-                                    <Button onClick={() => setDeleteStep(2)} style={{ background: 'var(--error)', color: '#fff' }}>Continue</Button>
-                                </div>
-                            </div>
-                        )}
-                        {deleteStep === 2 && (
-                            <div className={styles.deleteConfirm}>
-                                <p className={styles.deleteWarning}>Enter your password to confirm deletion.</p>
-                                <PasswordField label="Password" value={deletePassword} onChange={setDeletePassword} show={showPw.delete} onToggleShow={() => setShowPw(s => ({ ...s, delete: !s.delete }))} />
-                                <ErrorAlert>{deleteError}</ErrorAlert>
-                                <div className={styles.editActions}>
-                                    <Button variant="ghost" onClick={() => { setDeleteStep(0); setDeletePassword(''); setDeleteError(''); }}>Cancel</Button>
-                                    <Button onClick={handleDeleteAccount} disabled={!deletePassword || deleting} style={{ background: 'var(--error)', color: '#fff' }}>
-                                        {deleting ? 'Deleting…' : 'Delete my account'}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 <div className={styles.item} onClick={toggle} style={{ cursor: 'pointer' }}>
                     <span className={styles.itemLeft}>
@@ -283,7 +131,6 @@ export default function Profile() {
                     </span>
                     <Toggle checked={theme === 'dark'} onChange={toggle} />
                 </div>
-
             </div>
 
             {/* ── Group 3: Preferences ── */}
@@ -331,24 +178,5 @@ function Toggle({ checked, onChange, disabled }) {
             <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} disabled={disabled} />
             <span className={styles.toggleTrack} />
         </label>
-    );
-}
-
-function PasswordField({ label, value, onChange, show, onToggleShow }) {
-    return (
-        <div className={styles.pwFieldWrap}>
-            <label>{label}</label>
-            <div className={styles.pwInputRow}>
-                <input
-                    type={show ? 'text' : 'password'}
-                    value={value}
-                    onChange={e => onChange(e.target.value)}
-                    autoComplete="off"
-                />
-                <button type="button" className={styles.pwEyeBtn} onClick={onToggleShow} tabIndex={-1}>
-                    {show ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-            </div>
-        </div>
     );
 }

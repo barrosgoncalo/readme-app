@@ -23,6 +23,7 @@ export async function getUsersByIds(uids) {
                 map[d.id] = {
                     username: d.data().username,
                     fullName: d.data().fullName,
+                    photoURL: d.data().photoURL || null,
                 };
             });
             return map;

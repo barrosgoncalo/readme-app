@@ -114,7 +114,7 @@ export default function EditProfile() {
                     <p className={styles.sectionLabel}>Personal</p>
                     <div className={styles.card}>
                         <Field label="Full name" value={form.fullName} onChange={v => set('fullName', v)} required />
-                        <Field label="Date of birth" type="date" value={form.dob} onChange={v => set('dob', v)} />
+                        <Field label="Date of birth" type="date" value={form.dob} onChange={v => set('dob', v)} max={new Date().toISOString().split('T')[0]} />
                         <Field label="Username" value={form.username} onChange={v => set('username', v)} required />
                         <PhoneField
                             country={phoneCountry}

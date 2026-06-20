@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import {
@@ -14,20 +15,38 @@ import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
 import BookCard from './components/BookCard.jsx';
 import AddBookForm from './components/AddBookForm.jsx';
+import { WEB_ROUTES } from '../../constants/webRoutes.js';
 import styles from './Books.module.css';
 
-// ISBN-13 digits only — minimal sanitization so Firestore ID is safe.
+const STATUS_CYCLE = { reading: 'done', done: 'want', want: 'reading' };
+
 function sanitizeIsbn(isbn) {
     if (!isbn) return null;
     const stripped = isbn.replace(/[^0-9Xx]/g, '');
     return stripped || null;
 }
 
+function groupByMonth(books) {
+    const groups = {};
+    books.forEach(book => {
+        const date = new Date(book.addedAt || Date.now());
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const label = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        if (!groups[key]) groups[key] = { label, books: [] };
+        groups[key].books.push(book);
+    });
+    return Object.entries(groups)
+        .sort(([a], [b]) => b.localeCompare(a))
+        .map(([, g]) => g);
+}
+
 export default function Books() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
+    const navigate = useNavigate();
 
-    const [books, setBooks] = useState([]);              // hydrated catalog docs
+    const [books, setBooks] = useState([]);
+    const [myBooksData, setMyBooksData] = useState([]);
     const [favoriteIds, setFavoriteIds] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(null);
@@ -43,16 +62,22 @@ export default function Books() {
         setLoading(true);
         setLoadError(null);
         try {
-            const [myIds, favIds] = await Promise.all([
-                myBooksService.getBooks(uid),
+            const [rawMyBooks, favIds] = await Promise.all([
+                myBooksService.getBooksData(uid),
                 favoriteBooksService.getBooks(uid),
             ]);
+            const myIds = rawMyBooks.map(d => d.id);
             const catalogDocs = await getBooksByIds(myIds);
-            // Render any orphan myBooks ids (no catalog doc) as degraded entries.
-            const present = new Set(catalogDocs.map((b) => b.id));
-            const orphans = myIds.filter((id) => !present.has(id))
-                .map((id) => ({ id, title: null, authors: [], coverUrl: null }));
-            setBooks([...catalogDocs, ...orphans]);
+            const present = new Set(catalogDocs.map(b => b.id));
+            const orphans = myIds
+                .filter(id => !present.has(id))
+                .map(id => ({ id, title: null, authors: [], coverUrl: null }));
+            const hydrated = [...catalogDocs, ...orphans].map(b => ({
+                ...b,
+                ...(rawMyBooks.find(m => m.id === b.id) || {}),
+            }));
+            setBooks(hydrated);
+            setMyBooksData(rawMyBooks);
             setFavoriteIds(new Set(favIds));
         } catch (err) {
             setLoadError(err.message || 'Could not load your books.');
@@ -70,7 +95,13 @@ export default function Books() {
         try {
             const bookId = sanitizeIsbn(data.isbn) || crypto.randomUUID();
             await createBookIfMissing(bookId, { ...data, isbn: sanitizeIsbn(data.isbn), addedBy: uid });
-            await myBooksService.addBook(uid, bookId);
+            await myBooksService.addBook(uid, bookId, {
+                status: 'reading',
+                progress: 0,
+                title: data.title || null,
+                authors: data.authors || [],
+                coverUrl: data.coverUrl || null,
+            });
             setShowAddForm(false);
             await load();
         } catch (err) {
@@ -83,7 +114,7 @@ export default function Books() {
     async function handleRemove(bookId) {
         if (!uid) return;
         const prev = books;
-        setBooks((b) => b.filter((book) => book.id !== bookId));
+        setBooks(b => b.filter(book => book.id !== bookId));
         setBusyId(bookId);
         try {
             await myBooksService.removeBook(uid, bookId);
@@ -103,26 +134,51 @@ export default function Books() {
         setFavoriteIds(next);
         setBusyId(bookId);
         try {
-            if (wasFav) {
-                await favoriteBooksService.removeBook(uid, bookId);
-            } else {
-                await favoriteBooksService.addBook(uid, bookId);
-            }
+            if (wasFav) await favoriteBooksService.removeBook(uid, bookId);
+            else await favoriteBooksService.addBook(uid, bookId);
         } catch {
             setFavoriteIds(favoriteIds);
-            setLoadError('Could not update favorite. Try again.');
         } finally {
             setBusyId(null);
         }
     }
 
+    async function handleRate(bookId, rating) {
+        const book = books.find(b => b.id === bookId);
+        if (!book) return;
+        const newRating = rating === 0 ? null : rating;
+        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, rating: newRating } : b));
+        try {
+            await myBooksService.updateBook(uid, bookId, { rating: newRating });
+        } catch {
+            setBooks(prev => prev.map(b => b.id === bookId ? { ...b, rating: book.rating } : b));
+        }
+    }
+
+    async function handleCycleStatus(bookId) {
+        const book = books.find(b => b.id === bookId);
+        if (!book) return;
+        const next = STATUS_CYCLE[book.status || 'reading'] || 'reading';
+        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, status: next } : b));
+        try {
+            await myBooksService.updateBook(uid, bookId, { status: next });
+        } catch {
+            setBooks(prev => prev.map(b => b.id === bookId ? { ...b, status: book.status } : b));
+        }
+    }
+
+    const currentlyReading = books.filter(b => (b.status || 'reading') === 'reading');
+    const rest = books.filter(b => (b.status || 'reading') !== 'reading');
+    const monthGroups = groupByMonth(rest);
+
     return (
         <div className={styles.page}>
             <div className={styles.header}>
-                <h1 className={styles.title}>My Books</h1>
-                {!showAddForm && books.length > 0 && (
+                <h1 className={styles.title}>Your Reading List</h1>
+                {!showAddForm && (
                     <button type="button" className={styles.addBtn} onClick={() => setShowAddForm(true)}>
-                        <Plus size={16} /> Add a book
+                        <Plus size={16} />
+                        Add new book
                     </button>
                 )}
             </div>
@@ -142,25 +198,58 @@ export default function Books() {
                 <Spinner center label="Loading your books" />
             ) : books.length === 0 && !showAddForm ? (
                 <div className={styles.empty}>
-                    <p className={styles.emptyTitle}>No books yet</p>
-                    <p>Start your shelf by adding your first book.</p>
-                    <div style={{ maxWidth: 240, margin: '16px auto 0' }}>
+                    <p className={styles.emptyTitle}>Your shelf is empty</p>
+                    <p className={styles.emptyText}>Start building your reading list by adding your first book.</p>
+                    <div style={{ maxWidth: 240, margin: '20px auto 0' }}>
                         <Button onClick={() => setShowAddForm(true)}>Add your first book</Button>
                     </div>
                 </div>
             ) : (
-                <div className={styles.list}>
-                    {books.map((book) => (
-                        <BookCard
-                            key={book.id}
-                            book={book}
-                            isFavorite={favoriteIds.has(book.id)}
-                            onToggleFavorite={() => handleToggleFavorite(book.id)}
-                            onRemove={() => handleRemove(book.id)}
-                            busy={busyId === book.id}
-                        />
+                <>
+                    {currentlyReading.length > 0 && (
+                        <section>
+                            <p className={styles.sectionLabel}>Currently Reading</p>
+                            <div className={styles.currentList}>
+                                {currentlyReading.map(book => (
+                                    <BookCard
+                                        key={book.id}
+                                        book={book}
+                                        variant="featured"
+                                        isFavorite={favoriteIds.has(book.id)}
+                                        onToggleFavorite={() => handleToggleFavorite(book.id)}
+                                        onRemove={() => handleRemove(book.id)}
+
+                                        onRate={r => handleRate(book.id, r)}
+                                        onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
+                                        busy={busyId === book.id}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {monthGroups.map(group => (
+                        <section key={group.label}>
+                            <p className={styles.sectionLabel}>{group.label}</p>
+                            <div className={styles.groupList}>
+                                {group.books.map(book => (
+                                    <BookCard
+                                        key={book.id}
+                                        book={book}
+                                        variant="row"
+                                        isFavorite={favoriteIds.has(book.id)}
+                                        onToggleFavorite={() => handleToggleFavorite(book.id)}
+                                        onRemove={() => handleRemove(book.id)}
+
+                                        onRate={r => handleRate(book.id, r)}
+                                        onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
+                                        busy={busyId === book.id}
+                                    />
+                                ))}
+                            </div>
+                        </section>
                     ))}
-                </div>
+                </>
             )}
         </div>
     );

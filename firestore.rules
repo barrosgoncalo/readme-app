@@ -43,7 +43,13 @@ service cloud.firestore {
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accountStatus']))
                     || isAdmin();
 
-      allow delete: if isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
+
+      // users/{uid}/blockedUsers/{blockedUid}
+      match /blockedUsers/{blockedUid} {
+        allow read: if isOwner(userId) && isActive();
+        allow create, delete: if isOwner(userId) && isActive();
+      }
 
       // users/{uid}/favoriteBooks/{bookId}
       match /favoriteBooks/{bookId} {
@@ -56,6 +62,13 @@ service cloud.firestore {
         allow read: if isAuthenticated() && isActive();
         allow write: if isOwner(userId) && isActive();
       }
+    }
+
+    // ─── myBooks COLLECTION GROUP (required for collectionGroup queries) ───
+    // Allows Trades page to query all users' myBooks subcollections at once.
+    match /{path=**}/myBooks/{bookId} {
+      allow read: if isAuthenticated() && isActive();
+      allow write: if false; // writes always go through the typed path /users/{uid}/myBooks/{id}
     }
 
     // ─── BOOK CATALOG ───

@@ -52,10 +52,16 @@ export async function getAvailableTradeBooks(excludeUid) {
         const ownerId = bookDoc.ref.parent.parent.id;
         if (ownerId === excludeUid) continue;
 
+        const data = bookDoc.data();
+        if (!data.availableForTrade) continue;
+
         results.push({
-            bookId: bookDoc.id,
+            bookId: data.bookId || bookDoc.id,
             ownerId,
-            addedAt: bookDoc.data().addedAt,
+            addedAt: data.addedAt,
+            title: data.title || null,
+            authors: data.authors || [],
+            coverUrl: data.coverUrl || null,
         });
     }
 

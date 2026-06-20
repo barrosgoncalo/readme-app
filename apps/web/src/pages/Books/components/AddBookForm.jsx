@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, BookOpen, X } from 'lucide-react';
+import { Search, BookOpen, X, Sparkles, ChevronRight, PenLine } from 'lucide-react';
 import Field from '../../../components/Field.jsx';
 import Button from '../../../components/Button.jsx';
 import ErrorAlert from '../../../components/ErrorAlert.jsx';
@@ -28,6 +28,8 @@ function extractBookData(item) {
         title: info.title || '',
         authors: info.authors || [],
         coverUrl,
+        publishedYear: info.publishedDate ? info.publishedDate.slice(0, 4) : null,
+        description: info.description || null,
     };
 }
 
@@ -85,12 +87,54 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
         });
     }
 
+    function switchMode(next) {
+        setMode(next);
+        setSelected(null);
+        setSearchError(null);
+    }
+
     return (
         <div className={styles.form}>
+            {/* Header with title + close */}
+            <div className={styles.formHeader}>
+                <div className={styles.formHeading}>
+                    <span className={styles.formHeadingIcon}><BookOpen size={18} /></span>
+                    <div>
+                        <h2 className={styles.formTitle}>Add a book</h2>
+                        <p className={styles.formSubtitle}>Search our catalog or enter the details yourself.</p>
+                    </div>
+                </div>
+                <button type="button" className={styles.closeBtn} onClick={onCancel} aria-label="Close">
+                    <X size={18} />
+                </button>
+            </div>
+
+            {/* Segmented mode toggle */}
+            <div className={styles.tabs} role="tablist">
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'search'}
+                    className={`${styles.tab} ${mode === 'search' ? styles.tabActive : ''}`}
+                    onClick={() => switchMode('search')}
+                >
+                    <Search size={15} /> Search
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'manual'}
+                    className={`${styles.tab} ${mode === 'manual' ? styles.tabActive : ''}`}
+                    onClick={() => switchMode('manual')}
+                >
+                    <PenLine size={15} /> Manual entry
+                </button>
+            </div>
+
             {mode === 'search' && !selected && (
                 <>
-                    <div className={styles.searchRow}>
-                        <Search size={16} className={styles.searchIcon} aria-hidden />
+                    <div className={`${styles.searchRow} ${searching ? styles.searchRowBusy : ''}`}>
+                        <Search size={18} className={styles.searchIcon} aria-hidden />
                         <input
                             className={styles.searchInput}
                             type="text"
@@ -100,6 +144,11 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
                             autoFocus
                         />
                         {searching && <Spinner size={16} />}
+                        {!searching && query && (
+                            <button type="button" className={styles.clearQuery} onClick={() => setQuery('')} aria-label="Clear search">
+                                <X size={15} />
+                            </button>
+                        )}
                     </div>
 
                     {searchError && <ErrorAlert>{searchError}</ErrorAlert>}
@@ -109,6 +158,7 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
                             {results.map((item) => {
                                 const info = item.volumeInfo || {};
                                 const thumb = info.imageLinks?.thumbnail?.replace('http://', 'https://');
+                                const year = info.publishedDate ? info.publishedDate.slice(0, 4) : null;
                                 return (
                                     <li key={item.id}>
                                         <button
@@ -128,7 +178,9 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
                                                 <span className={styles.resultAuthors}>
                                                     {info.authors?.join(', ') || 'Unknown author'}
                                                 </span>
+                                                {year && <span className={styles.resultYear}>{year}</span>}
                                             </div>
+                                            <ChevronRight size={18} className={styles.resultChevron} aria-hidden />
                                         </button>
                                     </li>
                                 );
@@ -136,32 +188,46 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
                         </ul>
                     )}
 
-                    {query.trim() && !searching && results.length === 0 && !searchError && (
-                        <p className={styles.noResults}>No results found.</p>
+                    {!query.trim() && (
+                        <div className={styles.hint}>
+                            <span className={styles.hintIcon}><Sparkles size={22} /></span>
+                            <p className={styles.hintTitle}>Find your next read</p>
+                            <p className={styles.hintText}>Start typing a title, author, or ISBN to search millions of books.</p>
+                        </div>
                     )}
 
-                    <div className={styles.footer}>
-                        <button type="button" className={styles.modeLink} onClick={() => setMode('manual')}>
-                            Enter details manually instead
-                        </button>
-                        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-                    </div>
+                    {query.trim() && !searching && results.length === 0 && !searchError && (
+                        <div className={styles.hint}>
+                            <span className={styles.hintIcon}><BookOpen size={22} /></span>
+                            <p className={styles.hintTitle}>No results found</p>
+                            <p className={styles.hintText}>
+                                Try a different search, or{' '}
+                                <button type="button" className={styles.inlineLink} onClick={() => switchMode('manual')}>
+                                    add it manually
+                                </button>.
+                            </p>
+                        </div>
+                    )}
                 </>
             )}
 
             {mode === 'search' && selected && (
                 <>
                     <div className={styles.selectedCard}>
-                        {selected.coverUrl ? (
-                            <img src={selected.coverUrl} alt="" className={styles.selectedCover} />
-                        ) : (
-                            <div className={`${styles.selectedCover} ${styles.thumbPlaceholder}`} aria-hidden>
-                                <BookOpen size={24} />
-                            </div>
-                        )}
+                        <div className={styles.selectedCoverWrap}>
+                            {selected.coverUrl ? (
+                                <img src={selected.coverUrl} alt="" className={styles.selectedCover} />
+                            ) : (
+                                <div className={`${styles.selectedCover} ${styles.thumbPlaceholder}`} aria-hidden>
+                                    <BookOpen size={28} />
+                                </div>
+                            )}
+                        </div>
                         <div className={styles.selectedInfo}>
+                            <span className={styles.selectedBadge}>Selected</span>
                             <p className={styles.selectedTitle}>{selected.title}</p>
                             <p className={styles.selectedAuthors}>{selected.authors.join(', ') || 'Unknown author'}</p>
+                            {selected.publishedYear && <p className={styles.selectedMeta}>Published {selected.publishedYear}</p>}
                         </div>
                         <button type="button" className={styles.clearSelected} onClick={() => setSelected(null)} title="Choose a different book">
                             <X size={16} />
@@ -171,7 +237,7 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
                     <ErrorAlert>{error}</ErrorAlert>
 
                     <div className={styles.actions}>
-                        <Button variant="ghost" onClick={onCancel} disabled={submitting}>Cancel</Button>
+                        <Button variant="ghost" onClick={() => setSelected(null)} disabled={submitting}>Back</Button>
                         <Button onClick={handleConfirm} disabled={submitting}>
                             {submitting ? 'Adding…' : 'Add to My Books'}
                         </Button>
@@ -180,17 +246,14 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
             )}
 
             {mode === 'manual' && (
-                <form onSubmit={handleManualSubmit} style={{ display: 'contents' }}>
-                    <Field label="ISBN (optional)" value={isbn} onChange={setIsbn} placeholder="9780000000000" />
+                <form onSubmit={handleManualSubmit} className={styles.manualForm}>
                     <Field label="Title" value={title} onChange={setTitle} required />
                     <Field label="Authors" value={authors} onChange={setAuthors} placeholder="Comma-separated" required />
-                    <Field label="Cover URL (optional)" value={coverUrl} onChange={setCoverUrl} placeholder="https://…" />
-                    <ErrorAlert>{error}</ErrorAlert>
-                    <div className={styles.footer}>
-                        <button type="button" className={styles.modeLink} onClick={() => setMode('search')}>
-                            Search instead
-                        </button>
+                    <div className={styles.manualRow}>
+                        <Field label="ISBN (optional)" value={isbn} onChange={setIsbn} placeholder="9780000000000" />
+                        <Field label="Cover URL (optional)" value={coverUrl} onChange={setCoverUrl} placeholder="https://…" />
                     </div>
+                    <ErrorAlert>{error}</ErrorAlert>
                     <div className={styles.actions}>
                         <Button variant="ghost" onClick={onCancel} disabled={submitting}>Cancel</Button>
                         <Button type="submit" disabled={!title.trim() || !authors.trim() || submitting}>

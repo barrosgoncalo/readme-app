@@ -14,5 +14,8 @@ export const WEB_ROUTES = {
     PROFILE: '/profile',
     PROFILE_EDIT: '/profile/edit',
     PROFILE_CHANGE_PASSWORD: '/profile/change-password',
+    PROFILE_PRIVACY_SECURITY: '/profile/privacy-security',
+    PROFILE_BLOCKED_USERS: '/profile/blocked-users',
     eventDetails: (eventId) => `/events/${eventId}`,
+    bookDetail: (bookId) => `/books/${bookId}`,
 };

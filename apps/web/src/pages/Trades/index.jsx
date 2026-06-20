@@ -56,14 +56,34 @@ export default function Trades() {
                 userIds.add(trade.requestedFrom);
             });
 
-            // Hydrate book and user details
+            // Build a map of embedded book metadata from the trade items themselves
+            const embeddedMap = {};
+            available.forEach((item) => {
+                embeddedMap[item.bookId] = {
+                    id: item.bookId,
+                    title: item.title,
+                    authors: item.authors,
+                    coverUrl: item.coverUrl,
+                };
+            });
+
+            // Hydrate from catalog (supplements embedded data; fills in books without embedded fields)
             if (bookIds.size > 0) {
-                const books = await getBooksByIds(Array.from(bookIds));
-                const booksMap = {};
-                books.forEach((b) => {
-                    booksMap[b.id] = b;
-                });
-                setBookDetails(booksMap);
+                try {
+                    const books = await getBooksByIds(Array.from(bookIds));
+                    const booksMap = { ...embeddedMap };
+                    books.forEach((b) => {
+                        booksMap[b.id] = {
+                            ...embeddedMap[b.id],
+                            ...b,
+                        };
+                    });
+                    setBookDetails(booksMap);
+                } catch {
+                    setBookDetails(embeddedMap);
+                }
+            } else {
+                setBookDetails(embeddedMap);
             }
 
             if (userIds.size > 0) {

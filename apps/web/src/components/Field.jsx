@@ -1,7 +1,7 @@
 // Reusable labeled input.
 import styles from './Field.module.css';
 
-export default function Field({ label, type = 'text', value, onChange, autoComplete, required, placeholder, name }) {
+export default function Field({ label, type = 'text', value, onChange, autoComplete, required, placeholder, name, max, min }) {
     return (
         <label className={styles.field}>
             <span className={styles.label}>{label}</span>
@@ -14,6 +14,8 @@ export default function Field({ label, type = 'text', value, onChange, autoCompl
                 autoComplete={autoComplete}
                 required={required}
                 placeholder={placeholder}
+                max={max}
+                min={min}
             />
         </label>
     );

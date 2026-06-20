@@ -22,6 +22,7 @@ export async function createBookIfMissing(bookId, data) {
         title: data.title,
         authors: data.authors,
         coverUrl: data.coverUrl || null,
+        description: data.description || null,
         addedBy: data.addedBy,
         createdAt: new Date().toISOString(),
     });
