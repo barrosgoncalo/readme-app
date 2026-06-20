@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useNavigation } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { 
     View, 
     Text, 
@@ -167,7 +167,7 @@ export default function ReadingListScreen({ navigation }) {
             }
 
             return {
-                title: displayTitle, // This gets passed directly to renderSectionHeader
+                title: displayTitle, 
                 data: section.data.sort((a, b) => b.rawDate - a.rawDate)
             };
         });
@@ -222,7 +222,6 @@ export default function ReadingListScreen({ navigation }) {
                                     </Text>
                                 </View>
 
-                                {/* Trigger the Popup! */}
                                 <TouchableOpacity 
                                     style={styles.updateProgressButton} 
                                     activeOpacity={0.8}
@@ -241,7 +240,7 @@ export default function ReadingListScreen({ navigation }) {
                 </View>
             )}
         </View>
-    ), [currentlyReadingBooks, styles, theme]);
+    ), [currentlyReadingBooks, styles, theme, navigation]);
 
     // ─── MAIN RENDER ─────────────────────────────────────────────────────────
     if (isLoading && books.length === 0) {
@@ -284,16 +283,20 @@ export default function ReadingListScreen({ navigation }) {
                 renderItem={({ item }) => (
                     <View style={styles.historyRow}>
                         <Text style={styles.historyDayText}>{item.day}</Text>
-                        <TouchableOpacity style={styles.historyCard} activeOpacity={0.9}>
+                        
+                        {/* THE FIX: Added onPress navigation event here */}
+                        <TouchableOpacity 
+                            style={styles.historyCard} 
+                            activeOpacity={0.8}
+                            onPress={() => navigation.navigate(ROUTES.BOOK_DETAILS, { book: item })}
+                        >
                             <View style={[styles.categoryDot, { backgroundColor: item.color || theme.primary }]} />
 
-                            {/* THE FIX IS HERE: Wrapped in flex: 1 and added numberOfLines */}
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.historyBookTitle} numberOfLines={1} ellipsizeMode="tail">
                                     {item.bookDetails?.title?.replace(/[\r\n]+/g, ' ').trim() || 'Unknown Title'}
                                 </Text>
                             </View>
-
                         </TouchableOpacity>
                     </View>
                 )}
