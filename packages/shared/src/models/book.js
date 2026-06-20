@@ -81,24 +81,20 @@ export const mapIsbnDbBook = (apiData) => {
 /**
  * DATABASE MODEL: Wraps the standardized API data with user-specific shelf data
  */
-export const createUserBookModel = (userId, bookData, status = 'want_to_read') => {
+export const createUserBookModel = (userId, bookId, status = 'want_to_read', overrides = {}) => {
     const now = new Date().toISOString();
 
     return {
         userId: userId,
-        bookId: bookData.bookId,
-        title: bookData.title,
-        authors: bookData.authors,
-        coverUrl: bookData.coverUrl,
-        pageCount: bookData.pageCount,
+        bookId: bookId, // The unique identifier linking to the global Books entity
         status: status,
-        currentPage: 0,
-        progressPercentage: 0,
+        currentPage: overrides.currentPage || 0,
+        progressPercentage: overrides.progressPercentage || 0,
         addedAt: now,
         startedAt: status === 'reading' ? now : null,
         finishedAt: status === 'finished' ? now : null,
-        color: '#E58F24',
-        rating: null,
-        notes: null
+        color: overrides.color || '#E58F24',
+        rating: overrides.rating || null,
+        notes: overrides.notes || null
     };
 };

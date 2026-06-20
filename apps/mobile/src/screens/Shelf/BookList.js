@@ -8,13 +8,13 @@ import {
     useColorScheme,
     ActivityIndicator
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native'; // Added to refresh data when returning from scanner
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 import { buildShelfStyles } from '../../styles/shelfStyles';
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext'; // Import Auth
-import { myBooksService } from '@readme/shared/src/services/books'; // Import Service
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import { myBooksService } from '@readme/shared/src/services/books'; 
 
 import AddBookPopup from './AddBookPopup';
 
@@ -31,7 +31,6 @@ export default function ReadingListScreen() {
     const [isAddPopupVisible, setAddPopupVisible] = useState(false);
 
     // ─── DATA FETCHING ───────────────────────────────────────────────────────
-    // useFocusEffect runs every time the user navigates back to this screen
     useFocusEffect(
         useCallback(() => {
             const fetchBooks = async () => {
@@ -62,7 +61,7 @@ export default function ReadingListScreen() {
         const sectionsMap = {};
         
         finishedBooks.forEach(book => {
-            // Using finishedAt from our new book model
+            // These properties exist on the root user link object
             const date = new Date(book.finishedAt || book.addedAt); 
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             const monthLabel = monthNames[date.getMonth()];
@@ -72,7 +71,6 @@ export default function ReadingListScreen() {
             sectionsMap[monthLabel].push({ ...book, day: dayLabel });
         });
 
-        // Sort months or items here if needed later
         return Object.keys(sectionsMap).map(month => ({
             title: month,
             data: sectionsMap[month]
@@ -107,8 +105,10 @@ export default function ReadingListScreen() {
                     <Text style={styles.sectionHeaderTitle}>Currently Reading</Text>
 
                     <View style={styles.currentReadingCard}>
-                        {currentlyReading.coverUrl ? (
-                            <Image source={{ uri: currentlyReading.coverUrl }} style={styles.bookCover} />
+                        {/* UPDATE: Access coverUrl from the nested bookDetails object 
+                        */}
+                        {currentlyReading.bookDetails?.coverUrl ? (
+                            <Image source={{ uri: currentlyReading.bookDetails.coverUrl }} style={styles.bookCover} />
                         ) : (
                             <View style={[styles.bookCover, { justifyContent: 'center', alignItems: 'center' }]}>
                                 <Iconify icon="lucide:book" size={24} color={theme.textMuted} />
@@ -117,12 +117,12 @@ export default function ReadingListScreen() {
 
                         <View style={styles.currentReadingInfo}>
                             <View>
+                                {/* UPDATE: Access title and authors from the nested bookDetails object */}
                                 <Text style={styles.currentBookTitle} numberOfLines={2}>
-                                    {currentlyReading.title}
+                                    {currentlyReading.bookDetails?.title || 'Unknown Title'}
                                 </Text>
-                                {/* Adjusted to read from the array of authors */}
                                 <Text style={styles.currentBookAuthor} numberOfLines={1}>
-                                    {currentlyReading.authors?.join(', ') || 'Unknown Author'}
+                                    {currentlyReading.bookDetails?.authors?.join(', ') || 'Unknown Author'}
                                 </Text>
                             </View>
 
@@ -132,7 +132,7 @@ export default function ReadingListScreen() {
                         </View>
 
                         <View style={styles.progressContainer}>
-                            {/* Adjusted to read progressPercentage */}
+                            {/* progressPercentage is user-specific, so it stays on the root object */}
                             <Text style={styles.progressText}>{currentlyReading.progressPercentage || 0}%</Text>
                             <Iconify icon="fluent:caret-right-24-filled" size={16} color={theme.textMuted} />
                         </View>
@@ -140,7 +140,7 @@ export default function ReadingListScreen() {
                 </View>
             )}
         </View>
-    ), [currentlyReading, styles, theme]); // Added theme to dependencies for Iconify colors
+    ), [currentlyReading, styles, theme]);
 
     // ─── MAIN RENDER ─────────────────────────────────────────────────────────
     if (isLoading && books.length === 0) {
@@ -155,7 +155,7 @@ export default function ReadingListScreen() {
         <View style={styles.container}>
             <SectionList
                 sections={sectionsData}
-                keyExtractor={(item) => item.bookId || item.id} // Supports new model ID
+                keyExtractor={(item) => item.bookId || item.id} 
                 
                 ListHeaderComponent={headerElement} 
                 
@@ -176,11 +176,7 @@ export default function ReadingListScreen() {
                             marginTop: 95,
                             paddingHorizontal: 30
                         }}>
-                            <Iconify
-                                icon="lucide:library"
-                                size={56}
-                                color={theme.textMuted || '#999'}
-                            />
+                            <Iconify icon="lucide:library" size={56} color={theme.textMuted || '#999'} />
                             <Text style={{
                                 fontSize: 18,
                                 fontFamily: 'Inter-SemiBold',
@@ -194,7 +190,8 @@ export default function ReadingListScreen() {
                                 fontSize: 15,
                                 fontFamily: 'Inter-Regular',
                                 color: theme.textMuted,
-                                textAlign: 'center', lineHeight: 22 }}>
+                                textAlign: 'center', lineHeight: 22 
+                            }}>
                                 Tap the "Add new Book" button above to scan a barcode or search for your first book.
                             </Text>
                         </View>
@@ -206,7 +203,10 @@ export default function ReadingListScreen() {
                         <Text style={styles.historyDayText}>{item.day}</Text>
                         <TouchableOpacity style={styles.historyCard} activeOpacity={0.9}>
                             <View style={[styles.categoryDot, { backgroundColor: item.color || theme.primary }]} />
-                            <Text style={styles.historyBookTitle}>{item.title}</Text>
+                            {/* UPDATE: Access title from the nested bookDetails object */}
+                            <Text style={styles.historyBookTitle}>
+                                {item.bookDetails?.title || 'Unknown Title'}
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 )}
