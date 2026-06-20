@@ -12,4 +12,5 @@ export const ROUTES = {
     PASSWORD_SUCCESS: 'PasswordSuccess',
     BARCODE_SCANNER: 'BarcodeScanner',
     SEARCH_BOOK: 'SearchBook',
+    BOOKS_LIST: 'BooksList',
 } as const;

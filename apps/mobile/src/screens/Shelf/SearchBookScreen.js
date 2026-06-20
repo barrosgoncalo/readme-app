@@ -17,8 +17,8 @@ import {
 import { Iconify } from 'react-native-iconify';
 import { useNavigation } from '@react-navigation/native';
 
-// Adjust paths to match your project structure
 import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes'
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { GoogleBooksService } from '@readme/shared/src/services/googleBooks';
 import { myBooksService } from '@readme/shared/src/services/books';
@@ -68,7 +68,9 @@ export default function SearchBookScreen() {
                 [
                     { 
                         text: 'OK', 
-                        onPress: () => navigation.goBack() 
+                        onPress: () => {
+                            navigation.popToTop(); 
+                        }
                     }
                 ]
             );

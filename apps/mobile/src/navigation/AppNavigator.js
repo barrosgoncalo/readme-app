@@ -19,6 +19,7 @@ import ChangePasswordScreen from '../screens/Profile/PrivacySecurity/ChangePassw
 import PasswordSuccessScreen from '../screens/Profile/PrivacySecurity/PasswordSuccessScreen'
 import BarcodeScannerScreen from '../screens/Shelf/BarcodeScannerScreen';
 import SearchBookScreen from '../screens/Shelf/SearchBookScreen';
+import BookList from '../screens/Shelf/BookList'; 
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -89,6 +90,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.SEARCH_BOOK} 
                             component={SearchBookScreen} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.BOOKS_LIST} 
+                            component={BookList} 
                             options={{ headerShown: false }}
                         />
                     </>
