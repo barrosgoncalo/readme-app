@@ -5,6 +5,8 @@ import Field from '../components/Field.jsx';
 import Button from '../components/Button.jsx';
 import { doPasswordReset } from '@readme/shared/src/services/auth.web';
 
+const ForgotPassBg = '/login-bg.jpeg';
+
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
     const [error, setError] = useState(null);
@@ -28,6 +30,7 @@ export default function ForgotPassword() {
     return (
         <AuthLayout
             title="Reset password"
+            bgImage={ForgotPassBg}
             subtitle={sent ? 'Check your inbox for the reset link.' : 'Enter your account email.'}
             footer={
                 <span>
