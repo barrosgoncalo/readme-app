@@ -15,11 +15,6 @@ export const mapGoogleBook = (apiData) => {
         coverUrl = coverUrl.replace('http:', 'https:').replace('&zoom=1', '&zoom=3');
     }
 
-    const fallbackIsbn = isbn13Obj ? isbn13Obj.identifier : (isbn10Obj ? isbn10Obj.identifier : null);
-    if (!coverUrl && fallbackIsbn) {
-        coverUrl = `https://covers.openlibrary.org/b/isbn/${fallbackIsbn}-L.jpg`;
-    }
-
     return {
         bookId: apiData.id || `google_${Date.now()}`,
         title: info.title || 'Unknown Title',
