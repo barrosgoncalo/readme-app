@@ -10,7 +10,7 @@ export const createUserModel = (uid, profileData, provider) => {
 
         fullName: profileData.fullName,
 
-        phoneNumber: profileData.phoneNumber,
+        phoneNumber: profileData.phoneNumber || null,
 
         dob: profileData.dob,
 

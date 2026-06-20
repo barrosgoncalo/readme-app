@@ -1,5 +1,5 @@
 // @readme/shared/src/services/books.js
-import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 import { createUserBookModel } from "../models/book";
 import ImageColors from 'react-native-image-colors';
@@ -131,6 +131,41 @@ class BookCollectionService {
     }
 }
 
-// Specific instances mapping to their specific subcollections
 export const favoriteBooksService = new BookCollectionService("favoriteBooks");
 export const myBooksService = new BookCollectionService("myBooks");
+
+export const globalBooksService = {
+    /**
+     * Checks if a book already exists in our global Firebase cache by ISBN
+     * @param {string} isbn - The scanned barcode number
+     * @returns {Object|null} - Returns the formatted book object if found, or null if not
+     */
+    async getBookByIsbn(isbn) {
+        try {
+            const booksRef = collection(db, 'books');
+            
+            // 1. Sanitize the string just in case there are unexpected dashes or spaces
+            const cleanIsbn = String(isbn).replace(/[- ]/g, '');
+            
+            // 2. Dynamically choose the correct field to search based on your adapter keys!
+            const targetField = cleanIsbn.length === 13 ? 'isbn13' : 'isbn10';
+            
+            console.log(`[Cache Search] Checking global cache field '${targetField}' for barcode: ${cleanIsbn}`);
+            
+            const q = query(booksRef, where(targetField, '==', cleanIsbn)); 
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                console.log(`[Cache Hit] Perfect match found in Firebase for ${targetField}: ${cleanIsbn}!`);
+                const bookDoc = querySnapshot.docs[0];
+                return { ...bookDoc.data(), bookId: bookDoc.id };
+            }
+            
+            console.log(`[Cache Miss] Barcode ${cleanIsbn} not found in system. Fetching from external APIs...`);
+            return null;
+        } catch (error) {
+            console.error("Error checking global cache:", error);
+            return null; // Fall back safely to external API if Firestore fails
+        }
+    }
+};

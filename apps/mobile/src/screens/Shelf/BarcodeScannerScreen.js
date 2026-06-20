@@ -1,5 +1,5 @@
 // @readme/shared/src/screens/BarcodeScannerScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -21,6 +21,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 
 // ─── SERVICES & MODELS ──────────
 import { GoogleBooksService } from '@readme/shared/src/services/googleBooks';
+import { globalBooksService } from '@readme/shared/src/services/books';
 import { myBooksService } from '@readme/shared/src/services/books';
 
 export default function BarcodeScannerScreen({ navigation }) {
@@ -37,6 +38,7 @@ export default function BarcodeScannerScreen({ navigation }) {
     const [modalVisible, setModalVisible] = useState(false);
     const [scannedBook, setScannedBook] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const isProcessing = useRef(false);
 
     // ─── Permissions ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -64,23 +66,37 @@ export default function BarcodeScannerScreen({ navigation }) {
 
     // ─── Handlers ────────────────────────────────────────────────────────────
     const handleBarCodeScanned = async ({ type, data }) => {
-        if (scanned || loading) return; // Prevent multiple rapid scans
+        if (isProcessing.current) return;
+        isProcessing.current = true;
 
         setScanned(true);
         setLoading(true);
 
         try {
-            // 1. Fetch data from Google Books API
-            const bookResult = await GoogleBooksService.getBookByIsbn(data);
+            let bookResult = await globalBooksService.getBookByIsbn(data);
 
-            // 2. Set the result and show the modal
+            if (!bookResult) {
+                bookResult = await GoogleBooksService.getBookByIsbn(data); // Missing import caused the crash here!
+            }
+
             setScannedBook(bookResult);
             setModalVisible(true);
+            setLoading(false);
 
         } catch (error) {
-            Alert.alert("Error", "Could not connect to the database. Please try again.");
-            setScanned(false);
-        } finally {
+            console.error("Scanning process error:", error);
+            
+            Alert.alert(
+                "Error", 
+                "Could not find book or connect to database. Please try again.",
+                [{ 
+                    text: "OK", 
+                    onPress: () => {
+                        setScanned(false);
+                        isProcessing.current = false;
+                    }
+                }]
+            );
             setLoading(false);
         }
     };
