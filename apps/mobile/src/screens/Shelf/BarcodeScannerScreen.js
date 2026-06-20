@@ -264,7 +264,11 @@ const localStyles = StyleSheet.create({
         position: 'relative',
     },
     overlay: {
-        ...StyleSheet.absoluteFillObject,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.4)', // Darken areas outside the target box
@@ -298,12 +302,18 @@ const localStyles = StyleSheet.create({
     bottomRight: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4 },
     
     loadingOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 5,
+        paddingBottom: 120, // Pushes the centered content up
     },
+
     loadingText: {
         color: '#FFF',
         marginTop: 12,

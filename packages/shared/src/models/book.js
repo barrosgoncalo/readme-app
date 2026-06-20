@@ -15,6 +15,11 @@ export const mapGoogleBook = (apiData) => {
         coverUrl = coverUrl.replace('http:', 'https:').replace('&zoom=1', '&zoom=3');
     }
 
+    const fallbackIsbn = isbn13Obj ? isbn13Obj.identifier : (isbn10Obj ? isbn10Obj.identifier : null);
+    if (!coverUrl && fallbackIsbn) {
+        coverUrl = `https://covers.openlibrary.org/b/isbn/${fallbackIsbn}-L.jpg`;
+    }
+
     return {
         bookId: apiData.id || `google_${Date.now()}`,
         title: info.title || 'Unknown Title',
@@ -45,6 +50,31 @@ export const mapOpenLibraryBook = (apiData, searchedIsbn) => {
         description: apiData.notes || null, 
         categories: apiData.subjects ? apiData.subjects.map(s => s.name).slice(0, 5) : [],
         publishedDate: apiData.publish_date || null,
+    };
+};
+
+/**
+ * ADAPTER 3: Maps ISBNdb JSON into our standard app model
+ */
+export const mapIsbnDbBook = (apiData) => {
+    // ISBNdb puts everything inside a "book" object
+    const info = apiData.book || {};
+    
+    return {
+        bookId: info.isbn13 || info.isbn || `isbndb_${Date.now()}`,
+        title: info.title || 'Unknown Title',
+        authors: info.authors || [], // Usually already an array of strings
+        isbn13: info.isbn13 || null,
+        isbn10: info.isbn || null,
+        
+        // ISBNdb is known for having very reliable, high-res image URLs
+        coverUrl: info.image || null,
+        
+        pageCount: info.pages || 0,
+        description: info.synopsis || info.overview || null,
+        categories: info.subjects || [],
+        
+        publishedDate: info.publish_date || null,
     };
 };
 
