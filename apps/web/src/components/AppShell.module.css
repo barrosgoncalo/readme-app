@@ -12,6 +12,10 @@
     background: #2C2C2E;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     padding: var(--space-4) var(--space-3);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    box-sizing: border-box;
 }
 
 .wordmark {
@@ -123,6 +127,8 @@
         border-bottom: 1px solid var(--bg-selected);
         padding: var(--space-2) var(--space-3);
         overflow-x: auto;
+        height: auto;
+        z-index: 100;
     }
 
     .wordmark {
