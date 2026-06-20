@@ -29,6 +29,7 @@ export default function (api) {
                         'lucide:scan-barcode',
                         'lucide:keyboard',
                         'lucide:search',
+                        'lucide:search-x',
                         'lucide:x-circle',
                         'lucide:library',
                         'mdi:home',

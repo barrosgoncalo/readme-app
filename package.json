@@ -11,6 +11,7 @@
     "babel-preset-expo": "~55.0.8",
     "expo": "~55.0.26",
     "react": "19.2.0",
-    "react-native": "0.83.6"
+    "react-native": "0.83.6",
+    "react-native-image-colors": "^2.6.0"
   }
 }

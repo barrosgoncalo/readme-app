@@ -11,10 +11,11 @@ import {
     Alert,
     useColorScheme
 } from 'react-native';
-import { ROUTES } from '@readme/shared/src/constants/routes';
-
+import ImageColors from 'react-native-image-colors';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Iconify } from 'react-native-iconify';
+
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 
@@ -89,11 +90,14 @@ export default function BarcodeScannerScreen({ navigation }) {
         setIsSaving(true);
 
         try {
+            // The service handles the color extraction automatically now!
             await myBooksService.saveBookToShelf(currentUser.uid, scannedBook, 'reading');
 
-            Alert.alert('Success!', `${scannedBook.title} has been added to your shelf.`, [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            Alert.alert(
+                'Success!', 
+                `"${scannedBook.title}" has been added to your shelf.`, 
+                [{ text: 'OK', onPress: () => navigation.popToTop() }]
+            );
 
         } catch (error) {
             console.error("Firestore Save Error:", error);

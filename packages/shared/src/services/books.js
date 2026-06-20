@@ -2,6 +2,7 @@
 import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { createUserBookModel } from "../models/book";
+import ImageColors from 'react-native-image-colors';
 
 class BookCollectionService {
 
@@ -17,6 +18,39 @@ class BookCollectionService {
      * @param {Object} overrides - Any optional page modifications or custom values
      */
     async saveBookToShelf(uid, globalBookData, status = 'want_to_read', overrides = {}) {
+        let finalOverrides = { ...overrides };
+
+        // 1. We now correctly use globalBookData instead of 'book'
+        if (!finalOverrides.color && globalBookData.coverUrl) {
+            try {
+                const colors = await ImageColors.getColors(globalBookData.coverUrl, {
+                    fallback: '#F58B2E', 
+                    cache: true,
+                    key: globalBookData.coverUrl,
+                });
+
+                // Let's log exactly what the library is finding
+                console.log("Extracted Color Palette:", colors);
+
+                if (colors.platform === 'android') {
+                    // Try vibrant or average first, then dominant, then fallback
+                    finalOverrides.color = colors.vibrant || colors.average || colors.dominant || '#F58B2E';
+                } else if (colors.platform === 'ios') {
+                    // On iOS, 'background' or 'detail' usually look better for book covers than 'primary'
+                    finalOverrides.color = colors.background || colors.detail || colors.primary || '#F58B2E'; 
+                }
+
+                // Safety check: If it somehow grabbed pure black or white, force the fallback
+                if (finalOverrides.color === '#000000' || finalOverrides.color === '#FFFFFF') {
+                    finalOverrides.color = '#F58B2E';
+                }
+
+            } catch (error) {
+                console.log("Service: Could not extract image color, skipping...", error);
+                finalOverrides.color = '#F58B2E'; // Force fallback on error
+            }
+        }
+
         const bookId = String(globalBookData.bookId);
         const cleanGlobalBook = JSON.parse(JSON.stringify(globalBookData));
         cleanGlobalBook.bookId = bookId;
@@ -32,7 +66,9 @@ class BookCollectionService {
             console.log(`[Step 1] CACHE HIT: "/books/${bookId}" already exists. Skipping global write.`);
         }
 
-        const userBookLink = createUserBookModel(uid, bookId, status, overrides);
+        // 2. We must pass finalOverrides here, NOT the original overrides, 
+        // otherwise the newly extracted color gets left behind!
+        const userBookLink = createUserBookModel(uid, bookId, status, finalOverrides);
         const cleanUserLink = JSON.parse(JSON.stringify(userBookLink));
 
         const userBookRef = doc(db, "users", uid, this.collectionName, bookId);
