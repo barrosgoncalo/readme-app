@@ -18,6 +18,7 @@ import PrivacySecurityScreen from '../screens/Profile/PrivacySecurity/PrivacySec
 import ChangePasswordScreen from '../screens/Profile/PrivacySecurity/ChangePasswordScreen'
 import PasswordSuccessScreen from '../screens/Profile/PrivacySecurity/PasswordSuccessScreen'
 import BarcodeScannerScreen from '../screens/Shelf/BarcodeScannerScreen';
+import SearchBookScreen from '../screens/Shelf/SearchBookScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -83,6 +84,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.BARCODE_SCANNER} 
                             component={BarcodeScannerScreen} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.SEARCH_BOOK} 
+                            component={SearchBookScreen} 
                             options={{ headerShown: false }}
                         />
                     </>

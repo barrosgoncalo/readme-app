@@ -99,12 +99,14 @@ export default function AddBookPopup({ isVisible, onClose }) {
                                 <Text style={styles.optionText}>Scan Barcode</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.optionBtn} activeOpacity={0.7}>
-                                <Iconify icon="lucide:keyboard" size={24} color={theme.textItemTitle} />
-                                <Text style={styles.optionText}>Enter ISBN Manually</Text>
-                            </TouchableOpacity>
-                            
-                            <TouchableOpacity style={styles.optionBtn} activeOpacity={0.7}>
+                            <TouchableOpacity
+                                style={styles.optionBtn}
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                    onClose();
+                                    navigation.navigate(ROUTES.SEARCH_BOOK);
+                                }}
+                            >
                                 <Iconify icon="lucide:search" size={24} color={theme.textItemTitle} />
                                 <Text style={styles.optionText}>Search Title / Author</Text>
                             </TouchableOpacity>

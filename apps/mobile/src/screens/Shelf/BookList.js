@@ -168,6 +168,39 @@ export default function ReadingListScreen() {
                     <Text style={styles.timelineMonthHeader}>{title}</Text>
                 )}
 
+                ListEmptyComponent={
+                    (!currentlyReading && sectionsData.length === 0) ? (
+                        <View style={{
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginTop: 95,
+                            paddingHorizontal: 30
+                        }}>
+                            <Iconify
+                                icon="lucide:library"
+                                size={56}
+                                color={theme.textMuted || '#999'}
+                            />
+                            <Text style={{
+                                fontSize: 18,
+                                fontFamily: 'Inter-SemiBold',
+                                color: theme.text,
+                                marginTop: 16,
+                                marginBottom: 8
+                            }}>
+                                Your shelf is empty
+                            </Text>
+                            <Text style={{
+                                fontSize: 15,
+                                fontFamily: 'Inter-Regular',
+                                color: theme.textMuted,
+                                textAlign: 'center', lineHeight: 22 }}>
+                                Tap the "Add new Book" button above to scan a barcode or search for your first book.
+                            </Text>
+                        </View>
+                    ) : null
+                }
+
                 renderItem={({ item }) => (
                     <View style={styles.historyRow}>
                         <Text style={styles.historyDayText}>{item.day}</Text>
