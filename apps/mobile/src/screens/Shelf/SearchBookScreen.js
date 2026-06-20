@@ -21,7 +21,6 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { GoogleBooksService } from '@readme/shared/src/services/googleBooks';
-import { createUserBookModel } from '@readme/shared/src/models/book';
 import { myBooksService } from '@readme/shared/src/services/books';
 
 export default function SearchBookScreen() {
@@ -61,10 +60,18 @@ export default function SearchBookScreen() {
         setSavingBookId(book.bookId);
 
         try {
-            const myNewBook = createUserBookModel(currentUser.uid, book, 'want_to_read');
-            await myBooksService.saveBook(currentUser.uid, myNewBook);
+            await myBooksService.saveBookToShelf(currentUser.uid, book, 'reading');
             
-            Alert.alert('Success!', `"${book.title}" has been added to your shelf.`);
+            Alert.alert(
+                'Success!', 
+                `"${book.title}" has been added to your shelf.`,
+                [
+                    { 
+                        text: 'OK', 
+                        onPress: () => navigation.goBack() 
+                    }
+                ]
+            );
         } catch (error) {
             console.error("Save error:", error);
             Alert.alert("Error", "Failed to save the book to your shelf.");

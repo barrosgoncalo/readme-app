@@ -1,5 +1,5 @@
 // @readme/shared/src/services/books.js
-import { doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { createUserBookModel } from "../models/book";
 
@@ -42,6 +42,26 @@ class BookCollectionService {
         console.log(`[Step 2] SUCCESS: Saved to user shelf subcollection.`);
 
         return cleanUserLink;
+    }
+
+    /**
+     * Generically updates specific fields of a book on the user's shelf.
+     * @param {string} uid - The authenticated user's ID
+     * @param {string} bookId - The ID of the book to update
+     * @param {Object} updates - An object containing the fields to update
+     */
+    async updateBook(uid, bookId, updates) {
+        try {
+            const bookRef = doc(db, "users", uid, this.collectionName, bookId);
+
+            console.log(`[Update] Attempting to update fields for ${bookId}:`, updates);
+            await updateDoc(bookRef, updates);
+            console.log(`[Update] SUCCESS: Updated book fields in ${this.collectionName}.`);
+
+        } catch (error) {
+            console.error(`Error updating book ${bookId} in ${this.collectionName}:`, error);
+            throw error; // Rethrow so your UI can catch and show an alert if needed
+        }
     }
 
     /**
