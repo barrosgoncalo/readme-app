@@ -2,6 +2,7 @@
    Keep in sync with that file. */
 
 :root {
+    color-scheme: light;
     --bg: #F4EFE8;
     --bg-elem: #FFFFFF;
     --bg-selected: #D6D3D1;
@@ -35,20 +36,21 @@
 }
 
 :root[data-theme="dark"] {
-        --bg: #181615;
-        --bg-elem: #242120;
-        --bg-selected: #363230;
-        --text: #D8D6D4;
-        --subtext: #CCCCCC;
-        --primary: #7E5540;
-        --primary-text: #EFECE9;
-        --secondary: #FF9B42;
-        --text-secondary: #60646C;
-        --tertiary: #76AED9;
-        --tertiary-vivid: #409EE0;
-        --tertiary-inactive: #2C4459;
-        --quaternary: #5E5496;
+    color-scheme: dark;
+    --bg: #181615;
+    --bg-elem: #242120;
+    --bg-selected: #363230;
+    --text: #D8D6D4;
+    --subtext: #CCCCCC;
+    --primary: #7E5540;
+    --primary-text: #EFECE9;
+    --secondary: #FF9B42;
+    --text-secondary: #60646C;
+    --tertiary: #76AED9;
+    --tertiary-vivid: #409EE0;
+    --tertiary-inactive: #2C4459;
+    --quaternary: #5E5496;
 
-        --error: #F28B82;
-        --error-bg: rgba(242, 139, 130, 0.14);
+    --error: #F28B82;
+    --error-bg: rgba(242, 139, 130, 0.14);
 }
