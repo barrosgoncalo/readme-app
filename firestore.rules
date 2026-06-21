@@ -31,5 +31,24 @@ service cloud.firestore {
       }
     }
     
+    // ─── BLOCKS COLLECTION ───
+    match /blocks/{blockId} {
+      allow read: if isAuthenticated() && (
+        resource.data.blockerUid == request.auth.uid ||
+        resource.data.blockedUid == request.auth.uid
+      );
+
+      allow create: if isAuthenticated()
+        && request.resource.data.blockerUid == request.auth.uid
+        && request.resource.data.blockedUid is string
+        && request.resource.data.blockerUid != request.resource.data.blockedUid
+        && blockId == request.resource.data.blockerUid + '_' + request.resource.data.blockedUid;
+
+      allow delete: if isAuthenticated()
+        && resource.data.blockerUid == request.auth.uid;
+
+      allow update: if false;
+    }
+    
   }
 }

@@ -7,9 +7,9 @@ import {
 } from "firebase/firestore";
 import { getBlockId, createBlock } from "../models/block";
 
-export const doBlockUser = async (blockerUid, blockedUid, blockedUserSnapshot) => {
+export const doBlockUser = async (blockerUid, blockedUid) => {
     const ref = doc(db, "blocks", getBlockId(blockerUid, blockedUid));
-    await setDoc(ref, createBlock(blockerUid, blockedUid, blockedUserSnapshot));
+    await setDoc(ref, createBlock(blockerUid, blockedUid));
 };
 
 export const doUnblockUser = async (blockerUid, blockedUid) => {
@@ -35,15 +35,35 @@ export const doGetBlockedUsers = async (blockerUid) => {
     const q = query(collection(db, "blocks"), where("blockerUid", "==", blockerUid));
     const snapshot = await getDocs(q);
 
-    console.log("THIS IS WORKING");
+    const profiles = await Promise.all(
+        snapshot.docs.map(async (blockDoc) => {
+            const blockData = blockDoc.data();
+            const blockedUid = blockData.blockedUid;
 
-    return snapshot.docs.map((d) => {
-        const data = d.data();
-        return {
-            id: data.blockedUid,
-            username: data.blockedUsername,
-            fullName: data.blockedFullName,
-            avatarUrl: data.blockedAvatarUrl,
-        };
-    });
+            let username = blockData.blockedUsername ?? null;
+            let fullName = blockData.blockedFullName ?? null;
+            let avatarUrl = blockData.blockedAvatarUrl ?? null;
+
+            try {
+                const userSnap = await getDoc(doc(db, "users", blockedUid));
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    username = userData.username ?? username;
+                    fullName = userData.fullName ?? fullName;
+                    avatarUrl = userData.photoURL ?? avatarUrl;
+                }
+            } catch (error) {
+                console.error(`Failed to fetch profile for blocked user ${blockedUid}:`, error);
+            }
+
+            return {
+                id: blockedUid,
+                username,
+                fullName,
+                avatarUrl,
+            };
+        })
+    );
+
+    return profiles;
 };
