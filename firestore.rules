@@ -149,9 +149,35 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ─── FRIENDS COLLECTION ───
+    // One-way "friend" / follow relationship. Doc ID = `${userUid}_${friendUid}`.
+    match /friends/{friendId} {
+      // Allow reading non-existent docs (resource == null) so doIsFriend()
+      // can check membership without a permission error when the doc is absent.
+      allow read: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userUid == request.auth.uid ||
+        resource.data.friendUid == request.auth.uid
+      );
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userUid == request.auth.uid
+        && request.resource.data.friendUid is string
+        && request.resource.data.userUid != request.resource.data.friendUid
+        && friendId == request.resource.data.userUid + '_' + request.resource.data.friendUid;
+
+      allow delete: if isAuthenticated()
+        && resource.data.userUid == request.auth.uid;
+
+      allow update: if false;
+    }
+
     // ─── BLOCKS COLLECTION ───
     match /blocks/{blockId} {
+      // Allow reading non-existent docs (resource == null) so doIsBlocked()
+      // can check membership without a permission error when the doc is absent.
       allow read: if isAuthenticated() && (
+        resource == null ||
         resource.data.blockerUid == request.auth.uid ||
         resource.data.blockedUid == request.auth.uid
       );

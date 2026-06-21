@@ -23,6 +23,7 @@ import EditProfile from '../pages/Profile/EditProfile.jsx';
 import ChangePassword from '../pages/Profile/ChangePassword.jsx';
 import PrivacySecurity from '../pages/Profile/PrivacySecurity.jsx';
 import BlockedUsers from '../pages/Profile/BlockedUsers.jsx';
+import PublicProfile from '../pages/Users/PublicProfile.jsx';
 import BookDetail from '../pages/Books/BookDetail.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
@@ -90,6 +91,7 @@ export default function AppRouter() {
                 <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
                 <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
                 <Route path={WEB_ROUTES.PROFILE_BLOCKED_USERS} element={<BlockedUsers />} />
+                <Route path="/users/:uid" element={<PublicProfile />} />
             </Route>
             <Route
                 path="*"
