@@ -443,7 +443,7 @@ const localStyles = StyleSheet.create({
     warningIconContainer: {
         marginBottom: 16,
         padding: 12,
-        backgroundColor: 'rgba(239, 68, 68, 0.1)', // Light red background
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderRadius: 50,
     },
     modalTitle: {
@@ -486,7 +486,7 @@ const localStyles = StyleSheet.create({
         marginLeft: 8
     },
     deleteButton: {
-        backgroundColor: '#EF4444', // Red for dangerous actions
+        backgroundColor: '#EF4444',
         marginLeft: 8
     },
     buttonText: {

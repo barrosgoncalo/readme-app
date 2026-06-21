@@ -2,12 +2,12 @@ import React from 'react';
 import { 
     View,
     Text,
-    StyleSheet,
     Image,
     ScrollView,
     TouchableOpacity,
     useColorScheme
 } from 'react-native';
+import { buildBookDetailsStyles } from '../../styles/bookDetailsStyle'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { useNavigation } from '@react-navigation/native';
@@ -21,8 +21,7 @@ export default function BookDetailsScreen({ route }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
 
-    // Removed useMemo. We evaluate this directly now!
-    const styles = buildStyles(theme);
+    const styles = buildBookDetailsStyles();
 
     const { book } = route.params || {};
     const bookData = book?.bookDetails || book || {};
@@ -94,66 +93,3 @@ export default function BookDetailsScreen({ route }) {
         </View>
     );
 }
-
-// ─── Styles ──────────────────────────────────────────────────────────────
-
-// Removed color properties from the stylesheet entirely where they were buggy, 
-// leaving structural styling intact.
-const buildStyles = (theme) => StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingTop: 20, 
-        paddingBottom: 60,
-    },
-    backButton: {
-        alignSelf: 'flex-start',
-        marginBottom: 24,
-        padding: 4, 
-        marginLeft: -4, 
-    },
-    title: {
-        fontFamily: 'Inter-Regular', 
-        fontSize: 28,
-        marginBottom: 4,
-    },
-    subtitle: {
-        fontFamily: 'Inter-Regular',
-        fontSize: 18,
-        marginBottom: 40,
-    },
-    sectionTitle: {
-        fontFamily: 'Inter-Regular',
-        fontSize: 24,
-        marginBottom: 16,
-    },
-    descriptionText: {
-        fontFamily: 'Inter-Regular',
-        fontSize: 15,
-        lineHeight: 24,
-    },
-    imageContainer: {
-        alignSelf: 'center',
-        marginBottom: 48,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.25, 
-        shadowRadius: 30,
-        elevation: 15,
-    },
-    coverImage: {
-        width: 300, 
-        height: 450, 
-        borderRadius: 4, 
-    },
-    placeholderCover: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-    },
-    placeholderText: {
-        fontFamily: 'Inter-Medium',
-    }
-});
