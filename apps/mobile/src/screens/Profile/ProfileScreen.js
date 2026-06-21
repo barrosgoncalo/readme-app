@@ -29,7 +29,7 @@ export default function ProfileScreen({ navigation }) {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            setFocusKey(prev => prev + 1); 
+            setFocusKey(prev => prev + 1);
 
             if (refreshUser) {
                 refreshUser();
@@ -189,6 +189,7 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="fluent:presence-blocked-10-regular"
                             label="View Blocked Users"
+                            onPress={() => navigation.navigate(ROUTES.BLOCKED_USERS)}
                         />
                         <MenuSwitchItem
                             styles={styles}
