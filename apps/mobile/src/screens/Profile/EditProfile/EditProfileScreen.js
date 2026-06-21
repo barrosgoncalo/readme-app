@@ -10,18 +10,18 @@ import {
     Alert,
     ActivityIndicator,
     Modal,
-    StyleSheet,
     Image,
-    Keyboard
+    Keyboard,
+    StatusBar
 } from 'react-native';
-
+import { Field } from '../../../components/ui/FormsComponents'
+import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Colors } from '@readme/shared/src/constants/theme';
 import { doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { auth } from '@readme/shared/src/services/firebase';
 import CountryPicker from 'react-native-country-picker-modal';
-import { buildStyles } from '../../../styles/editProfileStyles';
+import { buildEditProfileStyles } from '../../../styles/editProfileStyles';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
@@ -31,7 +31,7 @@ export default function EditProfileScreen({ navigation, route }) {
 
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildStyles(theme);
+    const styles = buildEditProfileStyles(theme);
 
     const { currentUser, refreshUser } = useAuth();
 
@@ -250,8 +250,8 @@ export default function EditProfileScreen({ navigation, route }) {
                                 )}
                         </View>
 
-                        <View style={localStyles.pencilButtonContainer}>
-                            <View style={localStyles.pencilMiddleLayer}>
+                        <View style={styles.pencilButtonContainer}>
+                            <View style={styles.pencilMiddleLayer}>
                                 <Iconify icon="material-symbols:edit-rounded" size={15} color="#F58B2E" />
                             </View>
                         </View>
@@ -358,17 +358,35 @@ export default function EditProfileScreen({ navigation, route }) {
                         </Text>
                         <Iconify icon="lucide:chevron-down" size={18} color={theme.subtext} />
                     </TouchableOpacity>
-                    <CountryPicker
-                        countryCode={countryCode}
-                        withFlag
-                        withFilter
-                        withEmoji
-                        withCallingCode={false}
-                        onSelect={handleCountrySelect}
+                    <Modal
                         visible={showCountryPicker}
-                        onClose={() => { setShowCountryPicker(false); setFocusedField(null); }}
-                        renderFlagButton={() => null}
-                    />
+                        animationType="slide"
+                        onRequestClose={() => {
+                            setShowCountryPicker(false);
+                            setFocusedField(null);
+                        }} 
+                    >
+                        <View style={{ 
+                            flex: 1, 
+                            paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+                            backgroundColor: theme.background || '#FFFFFF' 
+                        }}>
+                            <CountryPicker
+                                countryCode={countryCode}
+                                withFlag
+                                withFilter
+                                withEmoji
+                                withCallingCode={false}
+                                onSelect={handleCountrySelect}
+                                onClose={() => {
+                                    setShowCountryPicker(false);
+                                    setFocusedField(null);
+                                }}
+                                renderFlagButton={() => null}
+                                withModal={false} 
+                            />
+                        </View>
+                    </Modal>
                 </Field>
 
                 <Field label="City" dirty={dirty.city} focused={focusedField === 'city'} styles={styles}>
@@ -468,20 +486,20 @@ export default function EditProfileScreen({ navigation, route }) {
 
             {/* --- EDIT PICTURE OPTIONS MODAL --- */}
             <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-                <TouchableOpacity style={localStyles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
-                    <View style={[localStyles.modalContent, { backgroundColor: theme.background || '#FFF' }]}>
-                        <View style={localStyles.modalHeaderIndicator} />
-                        <Text style={[localStyles.modalTitle, { color: theme.text || '#000' }]}>Alterar foto de perfil</Text>
-                        <TouchableOpacity style={localStyles.modalOption} onPress={pickImage}>
-                            <Iconify icon="lucide:image" size={22} color="#F58B2E" />
-                            <Text style={[localStyles.modalOptionText, { color: theme.text || '#000' }]}>Escolher da Galeria</Text>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.background}]}>
+                        <View style={styles.modalHeaderIndicator} />
+                        <Text style={[styles.modalTitle, { color: theme.text}]}>Alterar foto de perfil</Text>
+                        <TouchableOpacity style={styles.modalOption} onPress={pickImage}>
+                            <Iconify icon="lucide:image" size={22} color={theme.secondary} />
+                            <Text style={[styles.modalOptionText, { color: theme.text}]}>Escolher da Galeria</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={localStyles.modalOption} onPress={takePhoto}>
-                            <Iconify icon="lucide:camera" size={22} color="#F58B2E" />
-                            <Text style={[localStyles.modalOptionText, { color: theme.text || '#000' }]}>Tirar Foto Nova</Text>
+                        <TouchableOpacity style={styles.modalOption} onPress={takePhoto}>
+                            <Iconify icon="lucide:camera" size={22} color={theme.secondary} />
+                            <Text style={[styles.modalOptionText, { color: theme.text}]}>Tirar Foto Nova</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[localStyles.modalOption, localStyles.cancelOption]} onPress={() => setModalVisible(false)}>
-                            <Text style={localStyles.cancelOptionText}>Cancelar</Text>
+                        <TouchableOpacity style={[styles.modalOption, styles.cancelOption]} onPress={() => setModalVisible(false)}>
+                            <Text style={styles.cancelOptionText}>Cancelar</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -489,95 +507,3 @@ export default function EditProfileScreen({ navigation, route }) {
         </View>
     );
 }
-
-// ─── Field wrapper ────────────────────────────────────────────────────────────
-
-function Field({ label, dirty, focused, children, styles }) {
-    const isHighlighted = dirty || focused;
-    return (
-        <View style={[styles.field, isHighlighted && styles.fieldHighlighted]}>
-            <Text style={[styles.fieldLabel, isHighlighted && styles.fieldLabelHighlighted]}>
-                {label}
-            </Text>
-            {children}
-        </View>
-    );
-}
-
-// ─── Modal & Pencil Styles ────────────────────────────────────────────────────
-const localStyles = StyleSheet.create({
-    pencilButtonContainer: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        backgroundColor: '#FFFFFF',
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
-        elevation: 4, 
-    },
-    pencilMiddleLayer: {
-        backgroundColor: '#F2F0EF',
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingHorizontal: 24,
-        paddingBottom: 40,
-        paddingTop: 14,
-    },
-    modalHeaderIndicator: {
-        width: 40,
-        height: 5,
-        backgroundColor: '#E0E0E0',
-        borderRadius: 3,
-        alignSelf: 'center',
-        marginBottom: 20,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    modalOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 16,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#EAEAEA',
-    },
-    modalOptionText: {
-        fontSize: 16,
-        fontWeight: '500',
-        marginLeft: 14,
-    },
-    cancelOption: {
-        borderBottomWidth: 0,
-        justifyContent: 'center',
-        marginTop: 10,
-        backgroundColor: '#F5F5F5',
-        borderRadius: 12,
-    },
-    cancelOptionText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#666',
-    }
-});

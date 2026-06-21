@@ -181,8 +181,8 @@ export default function ChangePasswordScreen({ navigation }) {
                                     onPress={() => setShowNewPassword(!showNewPassword)}
                                 >
                                     {showNewPassword
-                                        ? <EyeClosedIcon size={22} color={theme.primary || '#000'} />
-                                        : <EyeIcon size={22} color={theme.primary || '#000'} />
+                                        ? <EyeClosedIcon size={22} color={theme.primary} />
+                                        : <EyeIcon size={22} color={theme.primary} />
                                     }
                                 </TouchableOpacity>
                             </View>
@@ -205,15 +205,14 @@ export default function ChangePasswordScreen({ navigation }) {
                                     onChangeText={setConfirmPassword}
                                     secureTextEntry={!showConfirmPassword}
                                     autoCapitalize="none"
-                                    placeholderTextColor="#aaa"
                                 />
                                 <TouchableOpacity
                                     style={styles.eyeButton}
                                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                                 >
                                     {showConfirmPassword
-                                        ? <EyeClosedIcon size={22} color={theme.primary || '#000'} />
-                                        : <EyeIcon size={22} color={theme.primary || '#000'} />
+                                        ? <EyeClosedIcon size={22} color={theme.primary} />
+                                        : <EyeIcon size={22} color={theme.primary} />
                                     }
                                 </TouchableOpacity>
                             </View>

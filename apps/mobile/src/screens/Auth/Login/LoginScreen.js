@@ -63,7 +63,6 @@ export default function LoginScreen({ navigation }) {
             const { idToken, profile } = await doGetGoogleTokenAndProfile();
             await doSignInWithGoogleCredential(idToken, profile);
             console.log("Google Login Successful");
-            // TODO: Navigate to Main App
         } catch (error) {
             console.error(error);
             Alert.alert("Google Login Failed", error.message);

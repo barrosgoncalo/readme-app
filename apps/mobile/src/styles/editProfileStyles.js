@@ -1,7 +1,8 @@
 import { Platform, StyleSheet } from 'react-native';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { Fonts } from '@readme/shared/src/constants/theme';
 
-export const buildStyles = (theme) => StyleSheet.create({
+export const buildEditProfileStyles = (theme) => StyleSheet.create({
     root: {
         flex: 1,
     },
@@ -11,7 +12,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 66 : 20,
+        paddingTop: 66,
         paddingBottom: 12,
         backgroundColor: theme.background,
     },
@@ -19,7 +20,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: theme.text,
-        fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
+        fontFamily: Fonts.inter_bold,
     },
 
     scrollContent: {
@@ -48,7 +49,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontSize: 11,
         color: theme.subtext,
         marginBottom: 2,
-        fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
+        fontFamily: Fonts.inter,
     },
     fieldLabelHighlighted: {
         color: theme.secondary,
@@ -57,7 +58,7 @@ export const buildStyles = (theme) => StyleSheet.create({
     input: {
         fontSize: 15,
         paddingVertical: 0,
-        fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter-Regular' }),
+        fontFamily: Fonts.inter,
     },
 
     rowBetween: {
@@ -87,9 +88,84 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontWeight: '700',
         fontSize: 14,
         letterSpacing: 1.2,
-        fontFamily: Platform.select({ ios: 'Inter-Bold', default: 'Inter-Bold' }),
+        fontFamily: Fonts.inter_bold,
     },
     submitTextDisabled: {
         color: theme.subtext,
     },
+
+    pencilButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 4, 
+    },
+    pencilMiddleLayer: {
+        backgroundColor: '#F2F0EF',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 24,
+        paddingBottom: 40,
+        paddingTop: 14,
+    },
+    modalHeaderIndicator: {
+        width: 40,
+        height: 5,
+        backgroundColor: '#E0E0E0',
+        borderRadius: 3,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    modalOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#EAEAEA',
+    },
+    modalOptionText: {
+        fontSize: 16,
+        fontWeight: '500',
+        marginLeft: 14,
+    },
+    cancelOption: {
+        borderBottomWidth: 0,
+        justifyContent: 'center',
+        marginTop: 10,
+        backgroundColor: theme.shadowBase,
+        borderRadius: 12,
+    },
+    cancelOptionText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#666',
+    }
 });
