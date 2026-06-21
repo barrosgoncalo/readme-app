@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { myBooksService } from '@readme/shared/src/services/books.web';
 import { getBook } from '@readme/shared/src/services/booksCatalog.web';
+import { getUserById } from '@readme/shared/src/services/users.web';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes.js';
@@ -71,6 +72,7 @@ export default function BookDetail() {
 
     const [catalog, setCatalog] = useState(null);
     const [myBook, setMyBook] = useState(null);
+    const [ownerProfile, setOwnerProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -87,9 +89,11 @@ export default function BookDetail() {
         Promise.all([
             getBook(bookId),
             myBooksService.getBookData(targetUid, bookId),
-        ]).then(([cat, my]) => {
+            isOwnBook ? Promise.resolve(null) : getUserById(ownerUid).catch(() => null),
+        ]).then(([cat, my, owner]) => {
             setCatalog(cat);
             setMyBook(my);
+            setOwnerProfile(owner);
             setNotes(my?.notes || '');
         }).catch(err => {
             setError(err.message || 'Could not load book.');
@@ -253,21 +257,19 @@ export default function BookDetail() {
 
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Rating</p>
-                        <ReadOnlyStars rating={myBook?.rating ?? null} />
-                        {!myBook?.rating && <p className={styles.emptyField}>Not rated yet.</p>}
+                        {myBook?.rating
+                            ? <ReadOnlyStars rating={myBook.rating} />
+                            : <p className={styles.emptyField}>{ownerProfile?.username ? `@${ownerProfile.username}` : 'This user'} hasn&rsquo;t rated this book yet!</p>
+                        }
                     </div>
 
-                    {myBook?.notes ? (
-                        <div className={styles.section}>
-                            <p className={styles.sectionLabel}>Review</p>
-                            <p className={styles.readOnlyNotes}>{myBook.notes}</p>
-                        </div>
-                    ) : (
-                        <div className={styles.section}>
-                            <p className={styles.sectionLabel}>Review</p>
-                            <p className={styles.emptyField}>No review yet.</p>
-                        </div>
-                    )}
+                    <div className={styles.section}>
+                        <p className={styles.sectionLabel}>Review</p>
+                        {myBook?.notes
+                            ? <p className={styles.readOnlyNotes}>{myBook.notes}</p>
+                            : <p className={styles.emptyField}>{ownerProfile?.username ? `@${ownerProfile.username}` : 'This user'} hasn&rsquo;t reviewed this book yet.</p>
+                        }
+                    </div>
                 </>
             )}
         </div>
