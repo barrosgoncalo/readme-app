@@ -8,9 +8,11 @@ import {
 } from '@readme/shared/src/services/books.web';
 import {
     getBook,
+    getBookByIsbn,
     getBooksByIds,
     createBookIfMissing,
 } from '@readme/shared/src/services/booksCatalog.web';
+import { mapGoogleBook } from '@readme/shared/src/models/book';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
@@ -104,33 +106,45 @@ export default function Books() {
             });
 
             // Repair legacy books: if a book still has no title and its ID looks like an
-            // ISBN, fetch metadata from Google Books and backfill myBooks + catalog.
+            // ISBN, try the global cache by ISBN first, then fall back to Google Books.
             const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-            if (apiKey) {
-                const needsRepair = hydrated.filter(b => !b.title && /^\d{10,13}$/.test(b.id));
-                if (needsRepair.length > 0) {
-                    await Promise.allSettled(needsRepair.map(async b => {
-                        try {
+            const needsRepair = hydrated.filter(b => !b.title && /^\d{10,13}$/.test(b.id));
+            if (needsRepair.length > 0) {
+                await Promise.allSettled(needsRepair.map(async b => {
+                    try {
+                        let title, authors, coverUrl, description;
+
+                        // Cache check first
+                        const cached = await getBookByIsbn(b.id);
+                        if (cached?.title) {
+                            ({ title, authors, coverUrl, description } = cached);
+                            authors = authors || [];
+                        } else if (apiKey) {
                             const res = await fetch(
                                 `https://www.googleapis.com/books/v1/volumes?q=isbn:${b.id}&maxResults=1&key=${apiKey}`
                             );
                             const json = await res.json();
-                            const info = json.items?.[0]?.volumeInfo;
-                            if (!info?.title) return;
-                            const title = info.title;
-                            const authors = info.authors || [];
-                            const coverUrl = info.imageLinks?.thumbnail?.replace('http://', 'https://') || null;
-                            const description = info.description || null;
-                            const idx = hydrated.findIndex(h => h.id === b.id);
-                            if (idx !== -1) {
-                                hydrated[idx] = { ...hydrated[idx], title, authors, coverUrl, description };
-                            }
-                            // Backfill so next load is instant
-                            myBooksService.updateBook(uid, b.id, { title, authors, coverUrl }).catch(() => {});
-                            createBookIfMissing(b.id, { title, authors, coverUrl, description, isbn: b.id, addedBy: uid }).catch(() => {});
-                        } catch { /* ignore — display stays as placeholder */ }
-                    }));
-                }
+                            const item = json.items?.[0];
+                            if (!item) return;
+                            const mapped = mapGoogleBook(item);
+                            if (!mapped.title || mapped.title === 'Unknown Title') return;
+                            title = mapped.title;
+                            authors = mapped.authors;
+                            coverUrl = mapped.coverUrl;
+                            description = mapped.description;
+                        } else {
+                            return;
+                        }
+
+                        const idx = hydrated.findIndex(h => h.id === b.id);
+                        if (idx !== -1) {
+                            hydrated[idx] = { ...hydrated[idx], title, authors, coverUrl, description };
+                        }
+                        // Backfill so next load is instant
+                        myBooksService.updateBook(uid, b.id, { title, authors, coverUrl }).catch(() => {});
+                        createBookIfMissing(b.id, { title, authors, coverUrl, description, isbn: b.id, addedBy: uid }).catch(() => {});
+                    } catch { /* ignore — display stays as placeholder */ }
+                }));
             }
 
             setBooks(hydrated);
