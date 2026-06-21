@@ -7,6 +7,7 @@ import {
     favoriteBooksService,
 } from '@readme/shared/src/services/books.web';
 import {
+    getBook,
     getBooksByIds,
     createBookIfMissing,
 } from '@readme/shared/src/services/booksCatalog.web';
@@ -17,8 +18,6 @@ import BookCard from './components/BookCard.jsx';
 import AddBookForm from './components/AddBookForm.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes.js';
 import styles from './Books.module.css';
-
-const STATUS_CYCLE = { reading: 'done', done: 'want', want: 'reading' };
 
 function sanitizeIsbn(isbn) {
     if (!isbn) return null;
@@ -46,7 +45,6 @@ export default function Books() {
     const navigate = useNavigate();
 
     const [books, setBooks] = useState([]);
-    const [myBooksData, setMyBooksData] = useState([]);
     const [favoriteIds, setFavoriteIds] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(null);
@@ -67,17 +65,75 @@ export default function Books() {
                 favoriteBooksService.getBooks(uid),
             ]);
             const myIds = rawMyBooks.map(d => d.id);
-            const catalogDocs = await getBooksByIds(myIds);
-            const present = new Set(catalogDocs.map(b => b.id));
-            const orphans = myIds
-                .filter(id => !present.has(id))
-                .map(id => ({ id, title: null, authors: [], coverUrl: null }));
-            const hydrated = [...catalogDocs, ...orphans].map(b => ({
-                ...b,
-                ...(rawMyBooks.find(m => m.id === b.id) || {}),
-            }));
+            const myBooksMap = Object.fromEntries(rawMyBooks.map(m => [m.id, m]));
+
+            let catalogMap = {};
+            try {
+                const catalogDocs = await getBooksByIds(myIds);
+                catalogDocs.forEach(c => { catalogMap[c.id] = c; });
+            } catch (err) {
+                console.error('[Books] batch catalog fetch failed, trying individual:', err);
+            }
+            // For any book still missing metadata, try a direct getDoc as fallback
+            const missingIds = myIds.filter(id => !catalogMap[id]);
+            if (missingIds.length > 0) {
+                const settled = await Promise.allSettled(missingIds.map(id => getBook(id)));
+                settled.forEach((res, i) => {
+                    if (res.status === 'fulfilled' && res.value) {
+                        catalogMap[missingIds[i]] = res.value;
+                    }
+                });
+            }
+
+            const hydrated = myIds.map(id => {
+                const my = myBooksMap[id];
+                const cat = catalogMap[id];
+                return {
+                    id,
+                    title: cat?.title || my?.title || null,
+                    authors: cat?.authors || my?.authors || [],
+                    coverUrl: cat?.coverUrl || my?.coverUrl || null,
+                    description: cat?.description || null,
+                    status: my?.status || 'reading',
+                    progress: my?.progress ?? 0,
+                    addedAt: my?.addedAt || null,
+                    rating: my?.rating ?? null,
+                    notes: my?.notes || null,
+                    availableForTrade: my?.availableForTrade ?? false,
+                };
+            });
+
+            // Repair legacy books: if a book still has no title and its ID looks like an
+            // ISBN, fetch metadata from Google Books and backfill myBooks + catalog.
+            const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+            if (apiKey) {
+                const needsRepair = hydrated.filter(b => !b.title && /^\d{10,13}$/.test(b.id));
+                if (needsRepair.length > 0) {
+                    await Promise.allSettled(needsRepair.map(async b => {
+                        try {
+                            const res = await fetch(
+                                `https://www.googleapis.com/books/v1/volumes?q=isbn:${b.id}&maxResults=1&key=${apiKey}`
+                            );
+                            const json = await res.json();
+                            const info = json.items?.[0]?.volumeInfo;
+                            if (!info?.title) return;
+                            const title = info.title;
+                            const authors = info.authors || [];
+                            const coverUrl = info.imageLinks?.thumbnail?.replace('http://', 'https://') || null;
+                            const description = info.description || null;
+                            const idx = hydrated.findIndex(h => h.id === b.id);
+                            if (idx !== -1) {
+                                hydrated[idx] = { ...hydrated[idx], title, authors, coverUrl, description };
+                            }
+                            // Backfill so next load is instant
+                            myBooksService.updateBook(uid, b.id, { title, authors, coverUrl }).catch(() => {});
+                            createBookIfMissing(b.id, { title, authors, coverUrl, description, isbn: b.id, addedBy: uid }).catch(() => {});
+                        } catch { /* ignore — display stays as placeholder */ }
+                    }));
+                }
+            }
+
             setBooks(hydrated);
-            setMyBooksData(rawMyBooks);
             setFavoriteIds(new Set(favIds));
         } catch (err) {
             setLoadError(err.message || 'Could not load your books.');
@@ -143,30 +199,6 @@ export default function Books() {
         }
     }
 
-    async function handleRate(bookId, rating) {
-        const book = books.find(b => b.id === bookId);
-        if (!book) return;
-        const newRating = rating === 0 ? null : rating;
-        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, rating: newRating } : b));
-        try {
-            await myBooksService.updateBook(uid, bookId, { rating: newRating });
-        } catch {
-            setBooks(prev => prev.map(b => b.id === bookId ? { ...b, rating: book.rating } : b));
-        }
-    }
-
-    async function handleCycleStatus(bookId) {
-        const book = books.find(b => b.id === bookId);
-        if (!book) return;
-        const next = STATUS_CYCLE[book.status || 'reading'] || 'reading';
-        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, status: next } : b));
-        try {
-            await myBooksService.updateBook(uid, bookId, { status: next });
-        } catch {
-            setBooks(prev => prev.map(b => b.id === bookId ? { ...b, status: book.status } : b));
-        }
-    }
-
     const currentlyReading = books.filter(b => (b.status || 'reading') === 'reading');
     const rest = books.filter(b => (b.status || 'reading') !== 'reading');
     const monthGroups = groupByMonth(rest);
@@ -219,7 +251,7 @@ export default function Books() {
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
 
-                                        onRate={r => handleRate(book.id, r)}
+
                                         onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
                                         busy={busyId === book.id}
                                     />
@@ -241,7 +273,7 @@ export default function Books() {
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
 
-                                        onRate={r => handleRate(book.id, r)}
+
                                         onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
                                         busy={busyId === book.id}
                                     />
