@@ -14,7 +14,7 @@ export const getBlockId = (blockerUid, blockedUid) => {
  * Creates a block relationship document.
  * Lives in the top-level `blocks` collection, doc ID = getBlockId(blockerUid, blockedUid).
  */
-export const createBlock = (blockerUid, blockedUid = {}) => {
+export const createBlock = (blockerUid, blockedUid) => {
     return {
         blockerUid,
         blockedUid,

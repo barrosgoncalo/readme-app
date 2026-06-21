@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { ArrowLeft, Search } from 'lucide-react';
-import { db } from '@readme/shared/src/services/firebase.web';
-import { getUsersByIds } from '@readme/shared/src/services/users.web';
+import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/blockUser.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -19,39 +17,33 @@ export default function BlockedUsers() {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
-    const [blocked, setBlocked] = useState([]); // [{ uid, blockedAt, fullName, username, photoURL }]
+    const [blocked, setBlocked] = useState([]);
     const [search, setSearch] = useState('');
     const [unblocking, setUnblocking] = useState(null);
     const [toast, setToast] = useState('');
 
     useEffect(() => {
         if (!currentUser) return;
-        async function load() {
-            const snap = await getDocs(collection(db, 'users', currentUser.uid, 'blockedUsers'));
-            const uids = snap.docs.map(d => d.id);
-            if (uids.length === 0) { setBlocked([]); setLoading(false); return; }
-
-            const profiles = await getUsersByIds(uids);
-            const list = snap.docs.map(d => ({
-                uid: d.id,
-                blockedAt: d.data().blockedAt,
-                fullName: profiles[d.id]?.fullName || '',
-                username: profiles[d.id]?.username || '',
-                photoURL: profiles[d.id]?.photoURL || null,
-            }));
-            list.sort((a, b) => a.fullName.localeCompare(b.fullName));
-            setBlocked(list);
-            setLoading(false);
-        }
-        load();
+        let cancelled = false;
+        (async () => {
+            try {
+                const profiles = await doGetBlockedUsers(currentUser.uid);
+                if (cancelled) return;
+                profiles.sort((a, b) => (a.fullName || a.username || '').localeCompare(b.fullName || b.username || ''));
+                setBlocked(profiles);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
     }, [currentUser]);
 
     async function handleUnblock(uid) {
         setUnblocking(uid);
         try {
-            const user = blocked.find(u => u.uid === uid);
-            await deleteDoc(doc(db, 'users', currentUser.uid, 'blockedUsers', uid));
-            setBlocked(prev => prev.filter(u => u.uid !== uid));
+            const user = blocked.find(u => u.id === uid);
+            await doUnblockUser(currentUser.uid, uid);
+            setBlocked(prev => prev.filter(u => u.id !== uid));
             const name = user?.fullName || user?.username || 'User';
             setToast(`You have successfully unblocked ${name}.`);
             setTimeout(() => setToast(''), 3500);
@@ -62,7 +54,9 @@ export default function BlockedUsers() {
 
     const filtered = blocked.filter(u => {
         const q = search.toLowerCase();
-        return !q || u.fullName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+        return !q
+            || (u.fullName || '').toLowerCase().includes(q)
+            || (u.username || '').toLowerCase().includes(q);
     });
 
     if (loading) return <Spinner center label="Loading blocked users" />;
@@ -104,25 +98,25 @@ export default function BlockedUsers() {
             ) : (
                 <div className={styles.list}>
                     {filtered.map((user, i) => (
-                        <div key={user.uid}>
+                        <div key={user.id}>
                             {i > 0 && <div className={styles.divider} />}
                             <div className={styles.row}>
                                 <div className={styles.avatar}>
-                                    {user.photoURL
-                                        ? <img src={user.photoURL} alt={user.fullName} className={styles.avatarImg} />
+                                    {user.avatarUrl
+                                        ? <img src={user.avatarUrl} alt={user.fullName || user.username || ''} className={styles.avatarImg} />
                                         : <span className={styles.avatarInitials}>{initials(user)}</span>
                                     }
                                 </div>
                                 <div className={styles.info}>
-                                    <span className={styles.name}>{user.fullName || user.username}</span>
-                                    <span className={styles.username}>{user.username}</span>
+                                    <span className={styles.name}>{user.fullName || user.username || 'Unknown'}</span>
+                                    {user.username && <span className={styles.username}>@{user.username}</span>}
                                 </div>
                                 <button
                                     className={styles.unblockBtn}
-                                    onClick={() => handleUnblock(user.uid)}
-                                    disabled={unblocking === user.uid}
+                                    onClick={() => handleUnblock(user.id)}
+                                    disabled={unblocking === user.id}
                                 >
-                                    {unblocking === user.uid ? '…' : 'Unblock'}
+                                    {unblocking === user.id ? '…' : 'Unblock'}
                                 </button>
                             </div>
                         </div>
