@@ -9,6 +9,8 @@ import Step2Personal from './Step2Personal.jsx';
 import Step3Address from './Step3Address.jsx';
 import { doCreateUserWithEmailAndPassword } from '@readme/shared/src/services/auth.web';
 
+const RegisterBg = '/login-bg.jpeg';
+
 const initialData = {
     email: '',
     username: '',
@@ -56,6 +58,7 @@ export default function Register() {
             <AuthLayout
                 title="Check your email"
                 subtitle="We sent you a verification link. Click it, then sign in."
+                bgImage={RegisterBg}
                 footer={<Link to="/login">Back to sign in</Link>}
             >
                 <></>
@@ -73,6 +76,7 @@ export default function Register() {
         <AuthLayout
             title="Sign up"
             subtitle={subtitleByStep[step]}
+            bgImage={RegisterBg}
             footer={
                 <span>
                     Already have an account? <Link to="/login">Sign in</Link>

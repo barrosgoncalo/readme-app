@@ -13,7 +13,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.anonymous.BookCommunityApp",
+      "bundleIdentifier": "com.bookWorms.BookCommunityApp",
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
@@ -58,6 +58,13 @@
           "ios": {
             "useFrameworks": "dynamic"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs to access your photos so you can choose a profile picture.",
+          "cameraPermission": "The app needs to access your camera so you can take a profile picture."
         }
       ],
       "@react-native-community/datetimepicker"

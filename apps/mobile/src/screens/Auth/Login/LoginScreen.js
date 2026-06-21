@@ -21,14 +21,14 @@ import {
 import { useColorScheme } from 'react-native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { buildStyles } from '../../../styles/authStyles';
+import { buildAuthStyles } from '../../../styles/authStyles';
 import { buildPasswordStyles } from '../../../styles/passwordStyles';
 
 export default function LoginScreen({ navigation }) {
 
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildStyles(theme);
+    const styles = buildAuthStyles(theme);
     const passwordStyles = buildPasswordStyles(theme);
 
     // State

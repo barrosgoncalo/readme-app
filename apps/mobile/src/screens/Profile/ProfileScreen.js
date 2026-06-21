@@ -1,23 +1,44 @@
-import React, { useState } from 'react';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext'
-import { View, Text, Image, TouchableOpacity, ScrollView, Switch, useColorScheme } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert, Switch, useColorScheme, ActivityIndicator } from 'react-native';
 import { Iconify } from 'react-native-iconify';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { doSignOut } from '@readme/shared/src/services/auth';
+import { doSignOut, doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { buildStyles } from '../../styles/profileStyles';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
-import { MenuGroup, MenuItem } from '../../components/ui/MenuComponents';
+import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
+
+import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme);
 
-    const { currentUser } = useAuth();
+    const { currentUser, refreshUser } = useAuth(); 
     const [uploading, setUploading] = useState(false);
+    const [focusKey, setFocusKey] = useState(0);
 
-    // Função para abrir a galeria
+    const [hasNotifications, setHasNotifications] = useState(
+        currentUser?.notificationSettings?.pushEnabled ?? false
+    );
+
+    const handleScroll = useScrollTabBarControl();
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            setFocusKey(prev => prev + 1);
+
+            if (refreshUser) {
+                refreshUser();
+            }
+        });
+
+        return unsubscribe;
+    }, [navigation, refreshUser]);
+
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -32,19 +53,33 @@ export default function ProfileScreen({ navigation }) {
         }
     };
 
-    // Função que chama o nosso serviço partilhado
     const handleUpload = async (imageUri) => {
         setUploading(true);
         try {
             await uploadProfilePicture(currentUser.uid, imageUri);
             alert("Foto atualizada com sucesso!");
-            
         } catch (error) {
             alert("Erro ao atualizar a foto.");
         } finally {
             setUploading(false);
         }
     };
+
+    const handleNotificationsToggle = async (newValue) => {
+        setHasNotifications(newValue);
+        try {
+            await doUpdateUserProfile(currentUser.uid, {
+                'notificationSettings.pushEnabled': newValue
+            });
+
+            await refreshUser();
+
+        } catch (error) {
+            console.error("Error updating notifications settings:", error);
+            Alert.alert("Error", "Failed to update notifications settings. Please try again.");
+            setHasNotifications(!newValue);
+        }
+    }
 
     const handleSignOut = async () => {
         console.log("A terminar sessão...");
@@ -60,24 +95,31 @@ export default function ProfileScreen({ navigation }) {
 
                 <View>
                     <TouchableOpacity onPress={pickImage} disabled={uploading}>
-                        <View style={styles.avatarContainer}>
-                            <Image 
-                                source={{ uri: `${currentUser?.photoURL}?t=${new Date().getTime()}` }} 
-                                style={styles.profilePicture} 
-                            />
+                        <View style={styles.avatarContainer }>
+                            { currentUser?.photoURL ? (
+                                <Image 
+                                    source={{ 
+                                        uri: `${currentUser?.photoURL}?t=${focusKey}_${new Date().getTime()}` 
+
+                                    }} 
+
+                                    style={styles.profilePicture} 
+                                />
+
+                            ) : (
+                                    <Iconify icon="lucide:user" size={45} color={theme.text} />
+                                )}
 
                             {uploading && (
                                 <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />
                             )}
-
                         </View>
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.userInfo}>
                     <View style={styles.userNameContainer}>
-                        <Text
-                            style={styles.userName}>
+                        <Text style={styles.userName}>
                             { currentUser?.username || 'Username' }
                         </Text>
                         <Iconify 
@@ -98,6 +140,8 @@ export default function ProfileScreen({ navigation }) {
                 showsVerticalScrollIndicator={false}
                 bounces={false}
                 overScrollMode="never"
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
             >
                 {/* O "Papel" que desliza por cima */}
                 <View style={styles.body}>
@@ -136,25 +180,28 @@ export default function ProfileScreen({ navigation }) {
                         <MenuItem
                             styles={styles}
                             theme={theme}
-                            icon="fluent:presence-blocked-10-regular"
-                            label="View Blocked Users"
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
                             icon="material-symbols:password"
-                            label="Privace & Security"
+                            label="Privacy & Security"
                             onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)}
                         />
                         <MenuItem
                             styles={styles}
                             theme={theme}
-                            icon="lucide:settings"
-                            label="Settings"
+                            icon="fluent:presence-blocked-10-regular"
+                            label="View Blocked Users"
+                            onPress={() => navigation.navigate(ROUTES.BLOCKED_USERS)}
+                        />
+                        <MenuSwitchItem
+                            styles={styles}
+                            theme={theme}
+                            icon={hasNotifications ? "fluent:alert-24-regular" : "fluent:alert-off-24-regular"}
+                            label={hasNotifications ? "Allow notifications" : "Pause notifications"}
+                            value={hasNotifications}
+                            onValueChange={handleNotificationsToggle}
                         />
                     </MenuGroup>
 
-                    {/* GROUP 3 (Sign Out) */}
+                    {/* GROUP 3 */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem 
                             styles={styles}

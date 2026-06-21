@@ -4,6 +4,24 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ─── REUSABLE SECURITY FUNCTIONS ───
+<<<<<<< HEAD
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+    function getMyProfile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isAdmin() { return isAuthenticated() && getMyProfile().role == 'admin'; }
+    function isActive() { return isAuthenticated() && getMyProfile().accountStatus == 'active'; }
+
+    // ─── GLOBAL BOOKS COLLECTION ───
+    match /books/{bookId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ─── USER COLLECTION & SUBCOLLECTIONS ───
+    match /users/{userId} {
+      allow read: if isOwner(userId) || (isAuthenticated() && isActive());
+      allow create: if isOwner(userId) && request.resource.data.role == 'user' && request.resource.data.accountStatus == 'active';
+      allow update: if (isOwner(userId) && isActive() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accountStatus'])) || isAdmin();
+=======
 
     function isAuthenticated() {
       return request.auth != null;
@@ -146,7 +164,38 @@ service cloud.firestore {
                     && !request.resource.data.diff(resource.data).affectedKeys()
                         .hasAny(['bookId', 'offeredBy', 'requestedFrom', 'createdAt']);
 
+>>>>>>> origin/feat/figma-impl-francisco
       allow delete: if isAdmin();
+      
+      match /myBooks/{bookId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /favoriteBooks/{bookId} {
+        allow read, write: if isOwner(userId);
+      }
     }
+    
+    // ─── BLOCKS COLLECTION ───
+    match /blocks/{blockId} {
+      allow read: if isAuthenticated() && (
+        resource.data.blockerUid == request.auth.uid ||
+        resource.data.blockedUid == request.auth.uid
+      );
+
+      allow create: if isAuthenticated()
+        && request.resource.data.blockerUid == request.auth.uid
+        && request.resource.data.blockedUid is string
+        && request.resource.data.blockerUid != request.resource.data.blockedUid
+        && blockId == request.resource.data.blockerUid + '_' + request.resource.data.blockedUid;
+
+      allow delete: if isAuthenticated()
+        && resource.data.blockerUid == request.auth.uid;
+
+      allow update: if false;
+    }
+<<<<<<< HEAD
+    
+=======
+>>>>>>> origin/feat/figma-impl-francisco
   }
 }

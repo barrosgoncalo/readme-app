@@ -1,34 +1,46 @@
-// @readme/shared/src/services/userService.js
 import { doc, updateDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "./firebase"; // Confirma que importas o db aqui!
 
-const storage = getStorage();
-
-export const uploadProfilePicture = async (uid, imageUri) => {
+export const uploadProfilePicture = async (userId, imageUri) => {
     try {
-        // Converter o URI da imagem num "Blob" (formato binário que o Firebase entende)
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
+        console.log("A preparar a imagem para upload...", imageUri);
 
-        // Dizer ao Storage ONDE guardar a foto (pasta profile_pictures / uid_do_user)
-        const storageRef = ref(storage, `profile_pictures/${uid}`);
+        // 1. Conversão à prova de bala (XHR)
+        const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(xhr.response);
+            };
+            xhr.onerror = function(e) {
+                console.error("Erro na conversão XHR:", e);
+                reject(new TypeError('A conversão de rede falhou'));
+            };
+            xhr.responseType = 'blob';
+            xhr.open('GET', imageUri, true);
+            xhr.send(null);
+        });
 
-        // Fazer o Upload!
+        console.log("Blob criado com sucesso! Tamanho:", blob.size);
+
+        // 2. Referência no Storage e Upload
+        const storageRef = ref(storage, `profile_pictures/${userId}`);
         await uploadBytes(storageRef, blob);
 
-        // Pedir ao Storage o URL público da foto que acabámos de enviar
+        // 3. Obter o URL final
         const downloadUrl = await getDownloadURL(storageRef);
-
-        // Guardar esse URL no documento do utilizador no Firestore
-        const userDocRef = doc(db, "users", uid);
+        console.log("Upload concluído! URL:", downloadUrl);
+        
+        // 4. ATUALIZAR O FIRESTORE (Isto é o que estava a faltar!)
+        const userDocRef = doc(db, "users", userId);
         await updateDoc(userDocRef, {
             photoURL: downloadUrl
         });
-
+        
         return downloadUrl;
+        
     } catch (error) {
-        console.error("Erro no upload da foto: ", error);
+        console.error("Erro fatal no uploadProfilePicture:", error);
         throw error;
     }
 };

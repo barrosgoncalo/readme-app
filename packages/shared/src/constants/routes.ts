@@ -10,4 +10,9 @@ export const ROUTES = {
     PRIVACY_SECURITY: 'PrivacySecurity',
     CHANGE_PASSWORD: 'ChangePassword',
     PASSWORD_SUCCESS: 'PasswordSuccess',
+    BLOCKED_USERS: 'BlockedUsersScreen',
+    BARCODE_SCANNER: 'BarcodeScanner',
+    SEARCH_BOOK: 'SearchBook',
+    BOOKS_LIST: 'BooksList',
+    BOOK_DETAILS: 'BooksDetails',
 } as const;

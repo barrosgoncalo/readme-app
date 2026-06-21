@@ -10,7 +10,7 @@ export const createUserModel = (uid, profileData, provider) => {
 
         fullName: profileData.fullName,
 
-        phoneNumber: profileData.phoneNumber,
+        phoneNumber: profileData.phoneNumber || null,
 
         dob: profileData.dob,
 
@@ -34,6 +34,13 @@ export const createUserModel = (uid, profileData, provider) => {
         role: 'user',
 
         accountStatus: 'active',
+
+        notificationSettings: {
+            pushEnabled: false,
+            emailEnabled: false,
+            newFollowers: false,
+            marketingUpdates: false,
+        },
 
         authProvider: provider
     };

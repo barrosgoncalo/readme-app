@@ -21,7 +21,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Separated Components
-import { buildStyles } from '../../../styles/authStyles';
+import { buildAuthStyles } from '../../../styles/authStyles';
 import {
     getPasswordDetails,
     hasMixedCase,
@@ -65,7 +65,7 @@ export default function RegisterScreen({ navigation }) {
 
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildStyles(theme);
+    const styles = buildAuthStyles(theme);
     const passwordStyles = buildPasswordStyles(theme);
 
     const passwordInfo = getPasswordDetails(password);

@@ -11,7 +11,7 @@ export const buildStyles = (theme) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 56 : 20,
+        paddingTop: Platform.OS === 'ios' ? 66 : 20,
         paddingBottom: 12,
         backgroundColor: theme.background,
     },
@@ -72,7 +72,7 @@ export const buildStyles = (theme) => StyleSheet.create({
 
     // Submit — active
     submitBtn: {
-        backgroundColor: Colors.light.primary,
+        backgroundColor: theme.primary,
         borderRadius: 10,
         paddingVertical: 16,
         alignItems: 'center',

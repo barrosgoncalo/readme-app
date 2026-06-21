@@ -1,4 +1,5 @@
 import React from 'react';
+import { LogBox } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@readme/shared/src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -7,6 +8,10 @@ import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-d
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold  } from '@expo-google-fonts/inter';
 
 SplashScreen.preventAutoHideAsync();
+
+LogBox.ignoreLogs([
+  "SafeAreaView has been deprecated and will be removed in a future release"
+]);
 
 export default function App() {
     let [fontsLoaded] = useFonts({
