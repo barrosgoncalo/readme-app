@@ -1,6 +1,16 @@
-import { useState } from 'react';
 import { Heart, Trash2, BookOpen, SquarePen } from 'lucide-react';
 import styles from './BookCard.module.css';
+
+function Stars({ rating }) {
+    const filled = rating ?? 0;
+    return (
+        <span className={styles.stars} aria-label={filled ? `${filled} out of 5 stars` : 'Not rated'}>
+            {[1, 2, 3, 4, 5].map(n => (
+                <span key={n} className={n <= filled ? styles.starFilled : styles.starEmpty}>★</span>
+            ))}
+        </span>
+    );
+}
 
 const STATUS_COLORS = {
     reading: styles.dotReading,
@@ -14,35 +24,7 @@ const STATUS_LABELS = {
     done: 'Finished',
 };
 
-function StarRating({ rating, onRate, size = 'md', disabled }) {
-    const [hovered, setHovered] = useState(null);
-    const active = hovered ?? rating ?? 0;
-
-    return (
-        <div
-            className={`${styles.stars} ${styles[`stars_${size}`]}`}
-            onMouseLeave={() => setHovered(null)}
-            role="group"
-            aria-label="Rating"
-        >
-            {[1, 2, 3, 4, 5].map(n => (
-                <button
-                    key={n}
-                    type="button"
-                    className={`${styles.starBtn} ${n <= active ? styles.starFilled : styles.starEmpty}`}
-                    onMouseEnter={() => !disabled && setHovered(n)}
-                    onClick={() => !disabled && onRate(n === rating ? 0 : n)}
-                    disabled={disabled}
-                    aria-label={`Rate ${n} star${n !== 1 ? 's' : ''}`}
-                >
-                    ★
-                </button>
-            ))}
-        </div>
-    );
-}
-
-export default function BookCard({ book, variant = 'row', isFavorite, onToggleFavorite, onRemove, onRate, onEdit, busy }) {
+export default function BookCard({ book, variant = 'row', isFavorite, onToggleFavorite, onRemove, onEdit, busy }) {
     const authors = Array.isArray(book.authors) ? book.authors.join(', ') : (book.authors || '');
     const status = book.status || 'reading';
     const day = book.addedAt ? new Date(book.addedAt).getDate() : null;
@@ -62,15 +44,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                 <div className={styles.featuredBody}>
                     <p className={styles.featuredTitle}>{book.title || 'Untitled'}</p>
                     <p className={styles.featuredAuthors}>{authors || 'Unknown author'}</p>
-                    <StarRating rating={book.rating} onRate={onRate} size="md" disabled={busy} />
-                    {typeof book.progress === 'number' && (
-                        <div className={styles.progressWrap}>
-                            <div className={styles.progressBar}>
-                                <div className={styles.progressFill} style={{ width: `${book.progress}%` }} />
-                            </div>
-                            <span className={styles.progressLabel}>{book.progress}%</span>
-                        </div>
-                    )}
+                    <Stars rating={book.rating} />
                     <div className={styles.featuredActions}>
                         <span className={styles.statusPill}>
                             <span className={`${styles.dot} ${STATUS_COLORS[status]}`} />
@@ -120,7 +94,8 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
             />
             <div className={styles.rowInfo}>
                 <span className={styles.rowTitle}>{book.title || 'Untitled'}</span>
-                <StarRating rating={book.rating} onRate={onRate} size="sm" disabled={busy} />
+                {authors && <span className={styles.rowAuthors}>{authors}</span>}
+                {book.rating > 0 && <Stars rating={book.rating} />}
             </div>
             {book.coverUrl ? (
                 <img src={book.coverUrl} alt="" className={styles.rowThumb} />

@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import AuthLayout from '../components/AuthLayout.jsx';
-import Field from '../components/Field.jsx';
-import Button from '../components/Button.jsx';
 import { doPasswordReset } from '@readme/shared/src/services/auth.web';
+import styles from './ForgotPassword.module.css';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -26,29 +24,50 @@ export default function ForgotPassword() {
     }
 
     return (
-        <AuthLayout
-            title="Reset password"
-            subtitle={sent ? 'Check your inbox for the reset link.' : 'Enter your account email.'}
-            footer={
-                <span>
-                    Remembered it? <Link to="/login">Sign in</Link>
-                </span>
-            }
-        >
-            {!sent && (
-                <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                    <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
-                    {error && <div role="alert" style={{ color: '#D32F2F', fontSize: '0.9rem' }}>{error}</div>}
-                    <Button type="submit" disabled={submitting}>
-                        {submitting ? 'Sending…' : 'Send reset email'}
-                    </Button>
-                </form>
-            )}
-            {sent && (
-                <Link to="/login" style={{ width: '100%' }}>
-                    <Button>Back to sign in</Button>
-                </Link>
-            )}
-        </AuthLayout>
+        <div className={styles.shell}>
+            <div className={styles.card}>
+                <div className={styles.left}>
+                    <div>
+                        <p className={styles.badge}>Recovery</p>
+                        <h1 className={styles.heading}>Reset Password</h1>
+                    </div>
+
+                    {!sent ? (
+                        <>
+                            <p className={styles.description}>
+                                Enter the email address associated with your account and we'll send you a link to reset your password.
+                            </p>
+                            <form onSubmit={onSubmit} className={styles.form}>
+                                <input
+                                    className={styles.input}
+                                    type="email"
+                                    placeholder="Email address"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    autoComplete="email"
+                                    required
+                                />
+                                {error && <p className={styles.error}>{error}</p>}
+                                <button type="submit" className={styles.btn} disabled={submitting}>
+                                    {submitting ? 'Sending…' : 'Send Reset Link'}
+                                </button>
+                            </form>
+                        </>
+                    ) : (
+                        <p className={styles.success}>
+                            Check your inbox — a reset link is on its way to <strong>{email}</strong>.
+                        </p>
+                    )}
+
+                    <div className={styles.footer}>
+                        Remembered it? <Link to="/login">Back to sign in</Link>
+                    </div>
+                </div>
+
+                <div className={styles.right}>
+                    <img src="/recovery-worm.png" alt="" className={styles.illustration} />
+                </div>
+            </div>
+        </div>
     );
 }

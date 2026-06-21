@@ -120,9 +120,11 @@ export default function BookDetail() {
 
     const status = myBook?.status || 'reading';
     const availableForTrade = myBook?.availableForTrade ?? false;
-    const authors = Array.isArray(catalog?.authors)
-        ? catalog.authors.join(', ')
-        : (catalog?.authors || '');
+    const displayTitle = catalog?.title || myBook?.title || 'Untitled';
+    const displayCoverUrl = catalog?.coverUrl || myBook?.coverUrl || null;
+    const displayDescription = catalog?.description || null;
+    const rawAuthors = catalog?.authors || myBook?.authors || [];
+    const authors = Array.isArray(rawAuthors) ? rawAuthors.join(', ') : (rawAuthors || '');
 
     return (
         <div className={styles.page}>
@@ -139,17 +141,17 @@ export default function BookDetail() {
                 <>
                     {/* Hero */}
                     <div className={styles.hero}>
-                        {catalog?.coverUrl ? (
-                            <img src={catalog.coverUrl} alt="" className={styles.cover} />
+                        {displayCoverUrl ? (
+                            <img src={displayCoverUrl} alt="" className={styles.cover} />
                         ) : (
                             <div className={`${styles.cover} ${styles.coverPlaceholder}`}>
                                 <BookOpen size={48} />
                             </div>
                         )}
-                        <h1 className={styles.title}>{catalog?.title || 'Untitled'}</h1>
+                        <h1 className={styles.title}>{displayTitle}</h1>
                         {authors && <p className={styles.authors}>{authors}</p>}
-                        {catalog?.description && (
-                            <p className={styles.heroDescription}>{catalog.description}</p>
+                        {displayDescription && (
+                            <p className={styles.heroDescription}>{displayDescription}</p>
                         )}
                     </div>
 
