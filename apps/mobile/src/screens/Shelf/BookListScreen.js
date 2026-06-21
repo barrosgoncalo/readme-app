@@ -9,7 +9,6 @@ import {
     ActivityIndicator,
     Modal,
     TextInput,
-    StyleSheet
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '@readme/shared/src/constants/routes';
@@ -125,7 +124,6 @@ export default function ReadingListScreen({ navigation }) {
             // Delete from backend DB
             await myBooksService.deleteBook(currentUser.uid, targetId);
 
-            // Instantly remove it from the local UI state using the safe ID
             setBooks(prevBooks => prevBooks.filter(book => (book.bookId || book.id) !== targetId));
         } catch (error) {
             console.error("Failed to delete book:", error);
@@ -346,16 +344,16 @@ export default function ReadingListScreen({ navigation }) {
                 animationType="fade"
                 onRequestClose={() => setUpdatePopupVisible(false)}
             >
-                <View style={localStyles.modalOverlay}>
-                    <View style={[localStyles.modalContent, { backgroundColor: theme.backgroundElement || '#FFF' }]}>
-                        <Text style={[localStyles.modalTitle, { color: theme.text }]}>Update Progress</Text>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement || '#FFF' }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>Update Progress</Text>
 
-                        <Text style={[localStyles.modalSubtitle, { color: theme.textMuted }]}>
+                        <Text style={[styles.modalSubtitle, { color: theme.textMuted }]}>
                             What page are you currently on?
                         </Text>
 
                         <TextInput
-                            style={[localStyles.input, { borderColor: theme.border, color: theme.text }]}
+                            style={[styles.input, { borderColor: theme.border, color: theme.text }]}
                             keyboardType="number-pad"
                             value={newPageInput}
                             onChangeText={setNewPageInput}
@@ -364,19 +362,19 @@ export default function ReadingListScreen({ navigation }) {
                             autoFocus={true}
                         />
 
-                        <View style={localStyles.buttonRow}>
+                        <View style={styles.buttonRow}>
                             <TouchableOpacity 
-                                style={[localStyles.actionButton, localStyles.cancelButton]} 
+                                style={[styles.actionButton, styles.cancelButton]} 
                                 onPress={() => setUpdatePopupVisible(false)}
                             >
-                                <Text style={[localStyles.buttonText, { color: theme.text }]}>Cancel</Text>
+                                <Text style={[styles.buttonText, { color: theme.text }]}>Cancel</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
-                                style={[localStyles.actionButton, localStyles.saveButton, { backgroundColor: theme.primary || '#E58F24' }]} 
+                                style={[styles.actionButton, styles.saveButton, { backgroundColor: theme.primary || '#E58F24' }]} 
                                 onPress={submitProgressUpdate}
                             >
-                                <Text style={[localStyles.buttonText, { color: '#FFF' }]}>Save</Text>
+                                <Text style={[styles.buttonText, { color: '#FFF' }]}>Save</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -390,32 +388,32 @@ export default function ReadingListScreen({ navigation }) {
                 animationType="fade"
                 onRequestClose={() => setDeletePopupVisible(false)}
             >
-                <View style={localStyles.modalOverlay}>
-                    <View style={[localStyles.modalContent, { backgroundColor: theme.backgroundElement || '#FFF' }]}>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement || '#FFF' }]}>
                         
-                        <View style={localStyles.warningIconContainer}>
+                        <View style={styles.warningIconContainer}>
                             <Iconify icon="lucide:trash-2" size={32} color="#EF4444" />
                         </View>
                         
-                        <Text style={[localStyles.modalTitle, { color: theme.text }]}>Delete Book?</Text>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>Delete Book?</Text>
 
-                        <Text style={[localStyles.modalSubtitle, { color: theme.textMuted, textAlign: 'center' }]}>
+                        <Text style={[styles.modalSubtitle, { color: theme.textMuted, textAlign: 'center' }]}>
                             Are you sure you want to remove "{selectedBookForDelete?.bookDetails?.title?.trim() || 'this book'}" from your list? This action cannot be undone.
                         </Text>
 
-                        <View style={localStyles.buttonRow}>
+                        <View style={styles.buttonRow}>
                             <TouchableOpacity 
-                                style={[localStyles.actionButton, localStyles.cancelButton]} 
+                                style={[styles.actionButton, styles.cancelButton]} 
                                 onPress={() => setDeletePopupVisible(false)}
                             >
-                                <Text style={[localStyles.buttonText, { color: theme.text }]}>Cancel</Text>
+                                <Text style={[styles.buttonText, { color: theme.text }]}>Cancel</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
-                                style={[localStyles.actionButton, localStyles.deleteButton]} 
+                                style={[styles.actionButton, styles.deleteButton]} 
                                 onPress={handleDeleteBook}
                             >
-                                <Text style={[localStyles.buttonText, { color: '#FFF' }]}>Delete</Text>
+                                <Text style={[styles.buttonText, { color: '#FFF' }]}>Delete</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -424,73 +422,3 @@ export default function ReadingListScreen({ navigation }) {
         </View>
     );
 }
-
-// ─── LOCAL STYLES FOR MODALS ─────────────────────────────────────────────────
-const localStyles = StyleSheet.create({
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20
-    },
-    modalContent: {
-        width: '100%',
-        padding: 24,
-        borderRadius: 16,
-        alignItems: 'center'
-    },
-    warningIconContainer: {
-        marginBottom: 16,
-        padding: 12,
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        borderRadius: 50,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontFamily: 'Inter-SemiBold',
-        marginBottom: 8
-    },
-    modalSubtitle: {
-        fontSize: 14,
-        fontFamily: 'Inter-Regular',
-        marginBottom: 20,
-        lineHeight: 20
-    },
-    input: {
-        width: '100%',
-        borderWidth: 1,
-        borderRadius: 8,
-        padding: 16,
-        fontSize: 16,
-        fontFamily: 'Inter-Medium',
-        marginBottom: 24,
-        textAlign: 'center'
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        width: '100%',
-        justifyContent: 'space-between'
-    },
-    actionButton: {
-        flex: 1,
-        paddingVertical: 14,
-        borderRadius: 8,
-        alignItems: 'center'
-    },
-    cancelButton: {
-        backgroundColor: 'transparent',
-        marginRight: 8
-    },
-    saveButton: {
-        marginLeft: 8
-    },
-    deleteButton: {
-        backgroundColor: '#EF4444',
-        marginLeft: 8
-    },
-    buttonText: {
-        fontSize: 16,
-        fontFamily: 'Inter-SemiBold'
-    }
-});
