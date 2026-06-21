@@ -3,6 +3,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { getAvailableTradeBooks, getIncomingTrades, getOutgoingTrades, createTrade as createTradeService, updateTradeStatus } from '@readme/shared/src/services/trades.web';
 import { getBooksByIds } from '@readme/shared/src/services/booksCatalog.web';
 import { getUsersByIds } from '@readme/shared/src/services/users.web';
+import { TRADE_STATUS } from '@readme/shared/src/constants/trade';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
@@ -186,7 +187,7 @@ export default function Trades() {
                                     onRequestTrade={() => handleRequestTrade(item.bookId, item.ownerId)}
                                     busy={busyIds.has(`${item.bookId}:${item.ownerId}`)}
                                     disableRequest={outgoingTrades.some(
-                                        (t) => t.bookId === item.bookId && t.requestedFrom === item.ownerId && t.status === 'pending'
+                                        (t) => t.bookId === item.bookId && t.requestedFrom === item.ownerId && t.status === TRADE_STATUS.PENDING
                                     )}
                                 />
                             ))}
@@ -209,9 +210,9 @@ export default function Trades() {
                                     book={bookDetails[trade.bookId] || { id: trade.bookId, title: 'Untitled', authors: [] }}
                                     otherPartyName={userDetails[trade.offeredBy]?.username || 'Unknown'}
                                     isIncoming
-                                    onAccept={() => handleUpdateStatus(trade.id, 'accepted')}
-                                    onDecline={() => handleUpdateStatus(trade.id, 'declined')}
-                                    onComplete={() => handleUpdateStatus(trade.id, 'completed')}
+                                    onAccept={() => handleUpdateStatus(trade.id, TRADE_STATUS.ACCEPTED)}
+                                    onDecline={() => handleUpdateStatus(trade.id, TRADE_STATUS.DECLINED)}
+                                    onComplete={() => handleUpdateStatus(trade.id, TRADE_STATUS.COMPLETED)}
                                     busy={busyIds.has(trade.id)}
                                 />
                             ))}
@@ -234,8 +235,8 @@ export default function Trades() {
                                     book={bookDetails[trade.bookId] || { id: trade.bookId, title: 'Untitled', authors: [] }}
                                     otherPartyName={userDetails[trade.requestedFrom]?.username || 'Unknown'}
                                     isIncoming={false}
-                                    onDecline={() => handleUpdateStatus(trade.id, 'declined')}
-                                    onComplete={() => handleUpdateStatus(trade.id, 'completed')}
+                                    onDecline={() => handleUpdateStatus(trade.id, TRADE_STATUS.DECLINED)}
+                                    onComplete={() => handleUpdateStatus(trade.id, TRADE_STATUS.COMPLETED)}
                                     busy={busyIds.has(trade.id)}
                                 />
                             ))}
