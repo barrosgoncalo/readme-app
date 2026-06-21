@@ -10,7 +10,7 @@ export const buildStyles = (theme, colorScheme) =>
             flexDirection: 'row',
             alignItems: 'center',
             paddingHorizontal: Spacing.three,
-            paddingTop: Spacing.five,
+            paddingTop: 70,
             paddingBottom: Spacing.three,
         },
         backButton: {

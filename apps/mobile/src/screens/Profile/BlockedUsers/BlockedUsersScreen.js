@@ -20,8 +20,8 @@ export default function BlockedUsersScreen({ navigation }) {
     const theme = Colors[colorScheme];
     const styles = buildStyles(theme, colorScheme);
 
-    const { user } = useAuth(); // assumes AuthContext exposes { user } once onAuthStateChanged resolves
-    const currentUid = user?.uid;
+    const { currentUser } = useAuth();
+    const currentUid = currentUser?.uid;
 
     const [blockedUsers, setBlockedUsers] = useState([]);
 
@@ -133,7 +133,7 @@ const BlockedUserRow = ({ user, theme, styles, isLast, onPress }) => (
 
             <View>
                 {user.fullName && <Text style={styles.fullName}>{user.fullName}</Text>}
-                <Text style={styles.username}>@{user.username}</Text>
+                <Text style={styles.username}>@{user.username || 'unknown'}</Text>
             </View>
         </View>
     </TouchableOpacity>
