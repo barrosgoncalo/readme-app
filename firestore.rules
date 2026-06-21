@@ -193,9 +193,5 @@ service cloud.firestore {
 
       allow update: if false;
     }
-<<<<<<< HEAD
-    
-=======
->>>>>>> origin/feat/figma-impl-francisco
   }
 }
