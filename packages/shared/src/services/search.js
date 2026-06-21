@@ -1,8 +1,17 @@
-import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
+// 1. Import the Algolia 'lite' client (optimized for frontend search)
+import { liteClient } from "algoliasearch/lite";
 
-// If services/block.js already has an equivalent helper (e.g. getBlockedUserIds),
-// use that instead of this one to avoid duplicating logic.
+const API_APP_ID_KEY = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID;
+const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
+
+// 2. Initialize the client.
+// CRITICAL: Only use your Search-Only API Key here. NEVER put your Admin Key in frontend code.
+const algoliaClient = liteClient(API_APP_ID_KEY, API_SEARCH_KEY);
+
+
+
 const getBlockedUserIdSet = async (currentUserUid) => {
     const blocksRef = collection(db, "blocks");
 
@@ -22,19 +31,30 @@ export const searchUsers = async (searchText, currentUserUid, resultLimit = 20) 
     const trimmed = searchText.trim();
     if (!trimmed) return [];
 
-    const usersRef = collection(db, "users");
-    const q = query(
-        usersRef,
-        where("username", ">=", trimmed),
-        where("username", "<=", trimmed + "\uf8ff"),
-        orderBy("username"),
-        limit(resultLimit)
-    );
+    // 3. Query Algolia instead of Firestore
+    const { results } = await algoliaClient.search({
+        requests: [
+            {
+                indexName: "users", // Must match the index name you set in the Firebase Extension
+                query: trimmed,
+                // Fetch a few extra results just in case the top hits happen to be blocked users
+                hitsPerPage: resultLimit + 10,
+            },
+        ],
+    });
 
-    const snapshot = await getDocs(q);
+    // Algolia returns data inside the 'hits' array
+    const hits = results[0].hits;
+
+    // 4. Fetch the blocked IDs from Firestore (your existing logic)
     const blockedIds = await getBlockedUserIdSet(currentUserUid);
 
-    return snapshot.docs
-        .map((doc) => ({ uid: doc.id, ...doc.data() }))
-        .filter((user) => user.uid !== currentUserUid && !blockedIds.has(user.uid));
+    // 5. Format and filter the results
+    return hits
+        .map((hit) => {
+            // The Firebase Extension automatically saves the Firestore document ID as the Algolia 'objectID'
+            return { uid: hit.objectID, ...hit };
+        })
+        .filter((user) => user.uid !== currentUserUid && !blockedIds.has(user.uid))
+        .slice(0, resultLimit); // Enforce the final limit after filtering out blocked users
 };
