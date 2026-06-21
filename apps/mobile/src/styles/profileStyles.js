@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { Spacing, Fonts, Colors } from '@readme/shared/src/constants/theme';
+import { Colors } from '@readme/shared/src/constants/theme';
 
-export const buildStyles = (theme) => StyleSheet.create({
+export const buildProfileStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.headerBackground,

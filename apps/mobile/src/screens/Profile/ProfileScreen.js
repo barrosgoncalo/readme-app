@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doSignOut, doUpdateUserProfile } from '@readme/shared/src/services/auth';
-import { buildStyles } from '../../styles/profileStyles';
+import { buildProfileStyles } from '../../styles/profileStyles';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
 
@@ -15,7 +15,7 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildStyles(theme);
+    const styles = buildProfileStyles(theme);
 
     const { currentUser, refreshUser } = useAuth(); 
     const [uploading, setUploading] = useState(false);
