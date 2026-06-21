@@ -1,7 +1,37 @@
 import { db } from './firebase';
-import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, documentId } from 'firebase/firestore';
 
 const USERS_COLLECTION = 'users';
+
+export async function getUserById(uid) {
+    if (!uid) return null;
+    const snap = await getDoc(doc(db, USERS_COLLECTION, uid));
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() };
+}
+
+export async function searchUsers(queryStr, { excludeUid, limit = 20 } = {}) {
+    const q = String(queryStr || '').trim().toLowerCase();
+    if (!q) return [];
+    const snap = await getDocs(collection(db, USERS_COLLECTION));
+    const out = [];
+    for (const d of snap.docs) {
+        if (excludeUid && d.id === excludeUid) continue;
+        const data = d.data();
+        const username = (data.username || '').toLowerCase();
+        const fullName = (data.fullName || '').toLowerCase();
+        if (username.includes(q) || fullName.includes(q)) {
+            out.push({
+                id: d.id,
+                username: data.username || null,
+                fullName: data.fullName || null,
+                photoURL: data.photoURL || null,
+            });
+            if (out.length >= limit) break;
+        }
+    }
+    return out;
+}
 
 export async function getUsersByIds(uids) {
     if (!uids || uids.length === 0) return {};
