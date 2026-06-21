@@ -27,14 +27,6 @@ export default function BlockedUsersScreen({ navigation }) {
     const [blockedUsers, setBlockedUsers] = useState([]);
 
     useEffect(() => {
-        doBlockUser(
-            "4uiUXw36wpWKcOnbRQo9sx0SZQs2", // blocker
-            "Nm3rCQxiNHdSfTeY2ZrOgOWD82v1", // blocked
-        ).then(() => console.log("Block created"))
-            .catch((err) => console.error("Block failed:", err));
-    }, []);
-
-    useEffect(() => {
         // Guard: don't fetch until we actually have an authenticated uid.
         // (auth.currentUser is unreliable on first render in RN — it can
         // still be null while Firebase rehydrates from AsyncStorage.)
@@ -42,9 +34,7 @@ export default function BlockedUsersScreen({ navigation }) {
 
         const fetchBlockedUsers = async () => {
             try {
-                console.log(currentUid);
                 const users = await doGetBlockedUsers(currentUid);
-                console.log(users);
                 setBlockedUsers(users);
             } catch (error) {
                 console.error("Failed to fetch blocked users:", error);
