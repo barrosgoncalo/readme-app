@@ -3,6 +3,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { getAvailableTradeBooks, getIncomingTrades, getOutgoingTrades, createTrade as createTradeService, updateTradeStatus } from '@readme/shared/src/services/trades.web';
 import { getBooksByIds } from '@readme/shared/src/services/booksCatalog.web';
 import { getUsersByIds } from '@readme/shared/src/services/users.web';
+import { doGetBlockedUids } from '@readme/shared/src/services/blockUser.web';
 import { TRADE_STATUS } from '@readme/shared/src/constants/trade';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
@@ -30,36 +31,41 @@ export default function Trades() {
         setLoading(true);
         setError(null);
         try {
-            const [available, incoming, outgoing] = await Promise.all([
+            const [available, incoming, outgoing, blockedUids] = await Promise.all([
                 getAvailableTradeBooks(uid),
                 getIncomingTrades(uid),
                 getOutgoingTrades(uid),
+                doGetBlockedUids(uid).catch(() => new Set()),
             ]);
 
-            setAvailableBooks(available);
-            setIncomingTrades(incoming);
-            setOutgoingTrades(outgoing);
+            const filteredAvailable = available.filter(b => !blockedUids.has(b.ownerId));
+            const filteredIncoming = incoming.filter(t => !blockedUids.has(t.offeredBy));
+            const filteredOutgoing = outgoing.filter(t => !blockedUids.has(t.requestedFrom));
+
+            setAvailableBooks(filteredAvailable);
+            setIncomingTrades(filteredIncoming);
+            setOutgoingTrades(filteredOutgoing);
 
             // Collect unique book and user IDs
             const bookIds = new Set();
             const userIds = new Set();
 
-            available.forEach((item) => {
+            filteredAvailable.forEach((item) => {
                 bookIds.add(item.bookId);
                 userIds.add(item.ownerId);
             });
-            incoming.forEach((trade) => {
+            filteredIncoming.forEach((trade) => {
                 bookIds.add(trade.bookId);
                 userIds.add(trade.offeredBy);
             });
-            outgoing.forEach((trade) => {
+            filteredOutgoing.forEach((trade) => {
                 bookIds.add(trade.bookId);
                 userIds.add(trade.requestedFrom);
             });
 
             // Build a map of embedded book metadata from the trade items themselves
             const embeddedMap = {};
-            available.forEach((item) => {
+            filteredAvailable.forEach((item) => {
                 embeddedMap[item.bookId] = {
                     id: item.bookId,
                     title: item.title,

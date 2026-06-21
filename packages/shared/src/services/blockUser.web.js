@@ -25,6 +25,14 @@ export const doIsBlocked = async (uidA, uidB) => {
     return aBlockedB.exists() || bBlockedA.exists();
 };
 
+// Lightweight version — returns just the set of blocked UIDs. Use when you only
+// need to filter content, not render profiles.
+export const doGetBlockedUids = async (blockerUid) => {
+    const q = query(collection(db, "blocks"), where("blockerUid", "==", blockerUid));
+    const snapshot = await getDocs(q);
+    return new Set(snapshot.docs.map(d => d.data().blockedUid));
+};
+
 // Returns blocked users as ready-to-render profile objects (id, username, fullName, avatarUrl).
 // Any uid whose user doc no longer exists is dropped from the result.
 export const doGetBlockedUsers = async (blockerUid) => {
