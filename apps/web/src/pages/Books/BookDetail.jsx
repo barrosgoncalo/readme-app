@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { myBooksService } from '@readme/shared/src/services/books.web';
@@ -40,11 +40,34 @@ function StarRating({ rating, onRate, disabled }) {
     );
 }
 
+function ReadOnlyStars({ rating }) {
+    const filled = rating ?? 0;
+    return (
+        <div className={styles.stars} role="img" aria-label={filled ? `${filled} out of 5 stars` : 'Not rated'}>
+            {[1, 2, 3, 4, 5].map(n => (
+                <span
+                    key={n}
+                    className={`${styles.starBtn} ${n <= filled ? styles.starFilled : styles.starEmpty}`}
+                    style={{ cursor: 'default' }}
+                >
+                    ★
+                </span>
+            ))}
+            {filled > 0 && <span className={styles.ratingLabel}>{filled} / 5</span>}
+        </div>
+    );
+}
+
 export default function BookDetail() {
     const { bookId } = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
+
+    // If ?owner=<uid> is present and differs from the current user, show read-only view.
+    const ownerUid = searchParams.get('owner');
+    const isOwnBook = !ownerUid || ownerUid === uid;
 
     const [catalog, setCatalog] = useState(null);
     const [myBook, setMyBook] = useState(null);
@@ -60,9 +83,10 @@ export default function BookDetail() {
         if (!uid || !bookId) return;
         setLoading(true);
         setError(null);
+        const targetUid = isOwnBook ? uid : ownerUid;
         Promise.all([
             getBook(bookId),
-            myBooksService.getBookData(uid, bookId),
+            myBooksService.getBookData(targetUid, bookId),
         ]).then(([cat, my]) => {
             setCatalog(cat);
             setMyBook(my);
@@ -70,7 +94,7 @@ export default function BookDetail() {
         }).catch(err => {
             setError(err.message || 'Could not load book.');
         }).finally(() => setLoading(false));
-    }, [uid, bookId]);
+    }, [uid, bookId, ownerUid, isOwnBook]);
 
     async function handleStatusChange(status) {
         setMyBook(prev => ({ ...prev, status }));
@@ -128,18 +152,18 @@ export default function BookDetail() {
 
     return (
         <div className={styles.page}>
-            <button type="button" className={styles.backBtn} onClick={() => navigate(WEB_ROUTES.BOOKS)}>
+            <button type="button" className={styles.backBtn} onClick={() => navigate(isOwnBook ? WEB_ROUTES.BOOKS : -1)}>
                 <ArrowLeft size={18} />
-                My Books
+                {isOwnBook ? 'My Books' : 'Back'}
             </button>
 
             {loading ? (
                 <Spinner center label="Loading book" />
             ) : error ? (
                 <ErrorAlert>{error}</ErrorAlert>
-            ) : (
+            ) : isOwnBook ? (
+                // ── Owner view: full editing controls ──
                 <>
-                    {/* Hero */}
                     <div className={styles.hero}>
                         {displayCoverUrl ? (
                             <img src={displayCoverUrl} alt="" className={styles.cover} />
@@ -155,35 +179,15 @@ export default function BookDetail() {
                         )}
                     </div>
 
-                    {/* Status toggle */}
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Reading status</p>
                         <div className={styles.statusToggle}>
-                            <button
-                                type="button"
-                                className={`${styles.statusBtn} ${status === 'reading' ? styles.statusBtnActive : ''}`}
-                                onClick={() => handleStatusChange('reading')}
-                            >
-                                Reading
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.statusBtn} ${status === 'done' ? styles.statusBtnActive : ''}`}
-                                onClick={() => handleStatusChange('done')}
-                            >
-                                Finished
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`}
-                                onClick={() => handleStatusChange('want')}
-                            >
-                                Want to read
-                            </button>
+                            <button type="button" className={`${styles.statusBtn} ${status === 'reading' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('reading')}>Reading</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === 'done' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('done')}>Finished</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('want')}>Want to read</button>
                         </div>
                     </div>
 
-                    {/* Trade toggle */}
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Trading</p>
                         <button
@@ -192,9 +196,7 @@ export default function BookDetail() {
                             onClick={handleTradeToggle}
                             aria-pressed={availableForTrade}
                         >
-                            <span className={styles.tradeToggleIcon}>
-                                <ArrowLeftRight size={16} />
-                            </span>
+                            <span className={styles.tradeToggleIcon}><ArrowLeftRight size={16} /></span>
                             <span className={styles.tradeToggleBody}>
                                 <span className={styles.tradeToggleLabel}>
                                     {availableForTrade ? 'Available for trade' : 'Not available for trade'}
@@ -211,13 +213,11 @@ export default function BookDetail() {
                         </button>
                     </div>
 
-                    {/* Rating */}
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Your rating</p>
                         <StarRating rating={myBook?.rating ?? null} onRate={handleRate} />
                     </div>
 
-                    {/* Notes */}
                     <div className={styles.section}>
                         <div className={styles.sectionLabelRow}>
                             <p className={styles.sectionLabel}>Your notes</p>
@@ -232,6 +232,42 @@ export default function BookDetail() {
                             rows={5}
                         />
                     </div>
+                </>
+            ) : (
+                // ── Read-only view: cover + meta + owner's rating & notes ──
+                <>
+                    <div className={styles.hero}>
+                        {displayCoverUrl ? (
+                            <img src={displayCoverUrl} alt="" className={styles.cover} />
+                        ) : (
+                            <div className={`${styles.cover} ${styles.coverPlaceholder}`}>
+                                <BookOpen size={48} />
+                            </div>
+                        )}
+                        <h1 className={styles.title}>{displayTitle}</h1>
+                        {authors && <p className={styles.authors}>{authors}</p>}
+                        {displayDescription && (
+                            <p className={styles.heroDescription}>{displayDescription}</p>
+                        )}
+                    </div>
+
+                    <div className={styles.section}>
+                        <p className={styles.sectionLabel}>Rating</p>
+                        <ReadOnlyStars rating={myBook?.rating ?? null} />
+                        {!myBook?.rating && <p className={styles.emptyField}>Not rated yet.</p>}
+                    </div>
+
+                    {myBook?.notes ? (
+                        <div className={styles.section}>
+                            <p className={styles.sectionLabel}>Review</p>
+                            <p className={styles.readOnlyNotes}>{myBook.notes}</p>
+                        </div>
+                    ) : (
+                        <div className={styles.section}>
+                            <p className={styles.sectionLabel}>Review</p>
+                            <p className={styles.emptyField}>No review yet.</p>
+                        </div>
+                    )}
                 </>
             )}
         </div>
