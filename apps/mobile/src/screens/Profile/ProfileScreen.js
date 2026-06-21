@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { View, Text, Image, TouchableOpacity, ScrollView, Alert, Switch, useColorScheme, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert, useColorScheme, ActivityIndicator } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@readme/shared/src/constants/theme';
@@ -41,7 +41,7 @@ export default function ProfileScreen({ navigation }) {
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [1, 1],
             quality: 1,
