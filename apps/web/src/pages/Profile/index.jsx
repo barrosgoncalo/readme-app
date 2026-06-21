@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import {
-    BookOpen, Pencil, Ban, Lock, Moon, Settings, Award, Heart, LogOut, ChevronRight, Camera,
+    BookOpen, Pencil, Ban, Lock, Moon, Users, Award, Heart, LogOut, ChevronRight, Camera,
 } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
 import { doSignOut } from '@readme/shared/src/services/auth.web';
@@ -135,13 +135,13 @@ export default function Profile() {
 
             {/* ── Group 3: Preferences ── */}
             <div className={styles.group}>
-                <div className={`${styles.item} ${styles.disabled}`}>
+                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_FRIENDS)}>
                     <span className={styles.itemLeft}>
-                        <span className={styles.iconBox}><Settings size={20} /></span>
-                        <span className={styles.itemLabel}>Settings</span>
+                        <span className={styles.iconBox}><Users size={20} /></span>
+                        <span className={styles.itemLabel}>Friends</span>
                     </span>
                     <ChevronRight size={18} className={styles.chevron} />
-                </div>
+                </button>
                 <div className={`${styles.item} ${styles.disabled}`}>
                     <span className={styles.itemLeft}>
                         <span className={styles.iconBox}><Award size={20} /></span>
