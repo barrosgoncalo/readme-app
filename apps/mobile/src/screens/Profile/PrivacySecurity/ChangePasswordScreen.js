@@ -65,12 +65,12 @@ export default function ChangePasswordScreen({ navigation }) {
     };
 
     const handleSave = async () => {
-        
+
         if (newPassword !== confirmPassword) {
             Alert.alert("Error", "New passwords do not match!");
             return;
         }
-        
+
         if (oldPassword === newPassword) {
             Alert.alert("Error", "Your new password cannot be the same as your old password.");
             return;
@@ -219,18 +219,18 @@ export default function ChangePasswordScreen({ navigation }) {
                         </View>
 
                         {/* Submit Changed */}
-                    <TouchableOpacity
-                        style={[
-                            styles.submitBtn,
-                            isAnyEmpty && styles.submitBtnDisabled,
-                            isSaving && { opacity: 0.7 },
-                        ]}
-                        onPress={handleSave}
-                        disabled={isAnyEmpty || isSaving}
-                        activeOpacity={0.85}
-                    >
-                        {isSaving ? (
-                                <ActivityIndicator color="#fff" />
+                        <TouchableOpacity
+                            style={[
+                                styles.submitBtn,
+                                isAnyEmpty && styles.submitBtnDisabled,
+                                isSaving && { opacity: 0.7 },
+                            ]}
+                            onPress={handleSave}
+                            disabled={isAnyEmpty || isSaving}
+                            activeOpacity={0.85}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color={theme.buttonText} />
                             ) : (
                                     <Text style={[styles.submitText, isAnyEmpty && styles.submitTextDisabled]}>
                                         SAVE CHANGES
