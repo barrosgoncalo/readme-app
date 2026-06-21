@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Animated, Image } from 'react-native';
 import * as ExpoSplash from 'expo-splash-screen';
 import { useColorScheme } from '@readme/shared/src/hooks/use-color-scheme';
-import { buildStyles } from './splashStyles';
+import { buildStyles } from '../../styles/splashStyles';
 import { Colors } from '@readme/shared/src/constants/theme';
 
 ExpoSplash.preventAutoHideAsync();
