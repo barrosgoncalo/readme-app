@@ -11,7 +11,7 @@ import {
     Alert,
     useColorScheme
 } from 'react-native';
-import ImageColors from 'react-native-image-colors';
+import { buildBarcodeScannerStyles } from '../../styles/barcodeScannerStyles';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Iconify } from 'react-native-iconify';
 
@@ -28,6 +28,7 @@ export default function BarcodeScannerScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const { currentUser } = useAuth();
+    const styles = buildBarcodeScannerStyles();
 
     // ─── State ───────────────────────────────────────────────────────────────
     const [permission, requestPermission] = useCameraPermissions();
@@ -53,12 +54,12 @@ export default function BarcodeScannerScreen({ navigation }) {
 
     if (!permission.granted) {
         return (
-            <View style={[localStyles.centerContainer, { backgroundColor: theme.background }]}>
+            <View style={[styles.centerContainer, { backgroundColor: theme.background }]}>
                 <Text style={{ color: theme.text, marginBottom: 20 }}>
                     We need your permission to show the camera
                 </Text>
-                <TouchableOpacity style={localStyles.primaryButton} onPress={requestPermission}>
-                    <Text style={localStyles.primaryButtonText}>Grant Permission</Text>
+                <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
+                    <Text style={styles.primaryButtonText}>Grant Permission</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -131,19 +132,19 @@ export default function BarcodeScannerScreen({ navigation }) {
 
     // ─── Render ──────────────────────────────────────────────────────────────
     return (
-        <View style={[localStyles.root, { backgroundColor: theme.background }]}>
+        <View style={[styles.root, { backgroundColor: theme.background }]}>
 
             {/* ── Header ── */}
-            <View style={[localStyles.header, { backgroundColor: theme.background }]}>
+            <View style={[styles.header, { backgroundColor: theme.background }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
                     <Iconify icon="lucide:arrow-left" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={[localStyles.headerTitle, { color: theme.text }]}>Scan Barcode</Text>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Scan Barcode</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             {/* ── Camera View ── */}
-            <View style={localStyles.cameraContainer}>
+            <View style={styles.cameraContainer}>
                 <CameraView
                     style={StyleSheet.absoluteFillObject}
                     facing="back"
@@ -154,88 +155,88 @@ export default function BarcodeScannerScreen({ navigation }) {
                 />
 
                 {/* ── Scanner Overlay ── */}
-                <View style={localStyles.overlay}>
-                    <View style={localStyles.scanTarget}>
-                        <View style={[localStyles.corner, localStyles.topLeft]} />
-                        <View style={[localStyles.corner, localStyles.topRight]} />
-                        <View style={[localStyles.corner, localStyles.bottomLeft]} />
-                        <View style={[localStyles.corner, localStyles.bottomRight]} />
+                <View style={styles.overlay}>
+                    <View style={styles.scanTarget}>
+                        <View style={[styles.corner, styles.topLeft]} />
+                        <View style={[styles.corner, styles.topRight]} />
+                        <View style={[styles.corner, styles.bottomLeft]} />
+                        <View style={[styles.corner, styles.bottomRight]} />
                     </View>
-                    <Text style={localStyles.instructionText}>
+                    <Text style={styles.instructionText}>
                         Center the barcode inside the frame
                     </Text>
                 </View>
 
                 {/* ── Loading Overlay ── */}
                 {loading && (
-                    <View style={localStyles.loadingOverlay}>
+                    <View style={styles.loadingOverlay}>
                         <ActivityIndicator size="large" color="#F58B2E" />
-                        <Text style={localStyles.loadingText}>Fetching book data...</Text>
+                        <Text style={styles.loadingText}>Fetching book data...</Text>
                     </View>
                 )}
             </View>
 
             {/* ── Result Modal ── */}
             <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={resetScanner}>
-                <View style={localStyles.modalOverlay}>
-                    <View style={[localStyles.modalContent, { backgroundColor: theme.background || '#FFF' }]}>
-                        <View style={localStyles.modalHeaderIndicator} />
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.background || '#FFF' }]}>
+                        <View style={styles.modalHeaderIndicator} />
 
                         {scannedBook ? (
                             <>
-                                <Text style={[localStyles.modalTitle, { color: theme.text }]}>Book Found!</Text>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Book Found!</Text>
 
-                                <View style={localStyles.bookPreviewContainer}>
+                                <View style={styles.bookPreviewContainer}>
                                     {scannedBook.coverUrl ? (
-                                        <Image source={{ uri: scannedBook.coverUrl }} style={localStyles.bookCover} />
+                                        <Image source={{ uri: scannedBook.coverUrl }} style={styles.bookCover} />
                                     ) : (
-                                            <View style={[localStyles.bookCover, localStyles.placeholderCover]}>
+                                            <View style={[styles.bookCover, styles.placeholderCover]}>
                                                 <Iconify icon="lucide:book" size={32} color="#999" />
                                             </View>
                                         )}
-                                    <View style={localStyles.bookDetails}>
-                                        <Text style={[localStyles.bookTitle, { color: theme.text }]} numberOfLines={2}>
+                                    <View style={styles.bookDetails}>
+                                        <Text style={[styles.bookTitle, { color: theme.text }]} numberOfLines={2}>
                                             {scannedBook.title}
                                         </Text>
-                                        <Text style={localStyles.bookAuthor} numberOfLines={1}>
+                                        <Text style={styles.bookAuthor} numberOfLines={1}>
                                             {scannedBook.authors?.join(', ') || 'Unknown Author'}
                                         </Text>
-                                        <Text style={localStyles.bookPages}>
+                                        <Text style={styles.bookPages}>
                                             {scannedBook.pageCount > 0 ? `${scannedBook.pageCount} pages` : 'Unknown pages'}
                                         </Text>
                                     </View>
                                 </View>
 
                                 <TouchableOpacity 
-                                    style={localStyles.primaryButton} 
+                                    style={styles.primaryButton} 
                                     onPress={handleSaveBook}
                                     disabled={isSaving}
                                 >
-                                    {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={localStyles.primaryButtonText}>Add to Shelf</Text>}
+                                    {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryButtonText}>Add to Shelf</Text>}
                                 </TouchableOpacity>
                             </>
                         ) : (
                                 <>
-                                    <Text style={[localStyles.modalTitle, { color: theme.text }]}>Book Not Found</Text>
-                                    <Text style={[localStyles.errorText, { color: theme.subtext }]}>
+                                    <Text style={[styles.modalTitle, { color: theme.text }]}>Book Not Found</Text>
+                                    <Text style={[styles.errorText, { color: theme.subtext }]}>
                                         We couldn't find this ISBN in the database.
                                     </Text>
 
-                                    <TouchableOpacity style={localStyles.primaryButton} onPress={() => {
+                                    <TouchableOpacity style={styles.primaryButton} onPress={() => {
                                         setModalVisible(false);
                                         navigation.navigate(ROUTES.SEARCH_BOOK);
                                     }}>
-                                        <Text style={localStyles.primaryButtonText}>Enter Details Manually</Text>
+                                        <Text style={styles.primaryButtonText}>Enter Details Manually</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
 
                         <TouchableOpacity 
-                            style={[localStyles.cancelOption, { backgroundColor: theme.backgroundElement }]} 
+                            style={[styles.cancelOption, { backgroundColor: theme.backgroundElement }]} 
                             onPress={resetScanner}
                             disabled={isSaving}
                         >
-                            <Text style={[localStyles.cancelOptionText, { color: theme.textMuted }]}>
+                            <Text style={[styles.cancelOptionText, { color: theme.textMuted }]}>
                                 {scannedBook ? "Cancel" : "Scan Again"}
                             </Text>
                         </TouchableOpacity>
@@ -246,38 +247,3 @@ export default function BarcodeScannerScreen({ navigation }) {
         </View>
     );
 }
-
-// ─── Styles ──────────────────────────────────────────────────────────────
-const localStyles = StyleSheet.create({
-    root: { flex: 1 },
-    centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20, zIndex: 10 },
-    headerTitle: { fontSize: 18, fontWeight: '700', fontFamily: 'Inter-SemiBold' },
-    cameraContainer: { flex: 1, position: 'relative' },
-    overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' },
-    scanTarget: { width: 250, height: 150, backgroundColor: 'transparent', position: 'relative' },
-    instructionText: { color: '#FFF', marginTop: 30, fontSize: 14, fontWeight: '600', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-    corner: { position: 'absolute', width: 30, height: 30, borderColor: '#F58B2E' },
-    topLeft: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4 },
-    topRight: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4 },
-    bottomLeft: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4 },
-    bottomRight: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4 },
-    loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', zIndex: 5, paddingBottom: 120 },
-    loadingText: { color: '#FFF', marginTop: 12, fontSize: 16, fontWeight: '600' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'flex-end' },
-    modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingBottom: 40, paddingTop: 14 },
-    modalHeaderIndicator: { width: 40, height: 5, backgroundColor: '#E0E0E0', borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-    modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 20, textAlign: 'center' },
-    bookPreviewContainer: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.03)', padding: 16, borderRadius: 16, marginBottom: 24 },
-    bookCover: { width: 70, height: 105, borderRadius: 6, backgroundColor: '#EAEAEA' },
-    placeholderCover: { justifyContent: 'center', alignItems: 'center' },
-    bookDetails: { flex: 1, marginLeft: 16, justifyContent: 'center' },
-    bookTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
-    bookAuthor: { fontSize: 15, color: '#666', marginBottom: 8 },
-    bookPages: { fontSize: 13, color: '#999' },
-    errorText: { textAlign: 'center', fontSize: 15, marginBottom: 24, paddingHorizontal: 20 },
-    primaryButton: { backgroundColor: '#F58B2E', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 },
-    primaryButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-    cancelOption: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
-    cancelOptionText: { fontSize: 16, fontWeight: '600' }
-});
