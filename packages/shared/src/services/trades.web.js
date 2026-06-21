@@ -2,6 +2,7 @@ import { db } from './firebase.web';
 import {
     collection, addDoc, getDocs, query, where, updateDoc, doc, collectionGroup,
 } from 'firebase/firestore';
+import { TRADE_STATUS } from '../constants/trade';
 
 const TRADES_COLLECTION = 'trades';
 
@@ -11,7 +12,7 @@ export async function createTrade({ bookId, offeredBy, requestedFrom }) {
         bookId,
         offeredBy,
         requestedFrom,
-        status: 'pending',
+        status: TRADE_STATUS.PENDING,
         createdAt: now,
         updatedAt: now,
     });

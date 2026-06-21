@@ -1,17 +1,20 @@
 import { BookOpen } from 'lucide-react';
+import { TRADE_STATUS } from '@readme/shared/src/constants/trade';
 import Button from '../../../components/Button.jsx';
 import styles from './TradeRequestCard.module.css';
+
+const STATUS_LABEL = {
+    [TRADE_STATUS.PENDING]: 'Pending',
+    [TRADE_STATUS.ACCEPTED]: 'Accepted',
+    [TRADE_STATUS.DECLINED]: 'Declined',
+    [TRADE_STATUS.COMPLETED]: 'Completed',
+};
 
 export default function TradeRequestCard({
     trade, book, otherPartyName, isIncoming, onAccept, onDecline, onComplete, busy,
 }) {
     const authors = Array.isArray(book.authors) ? book.authors.join(', ') : book.authors;
-    const statusLabel = {
-        pending: 'Pending',
-        accepted: 'Accepted',
-        declined: 'Declined',
-        completed: 'Completed',
-    }[trade.status] || trade.status;
+    const statusLabel = STATUS_LABEL[trade.status] || trade.status;
 
     return (
         <div className={styles.card}>
@@ -38,7 +41,7 @@ export default function TradeRequestCard({
                     </span>
 
                     <div className={styles.actions}>
-                        {isIncoming && trade.status === 'pending' && (
+                        {isIncoming && trade.status === TRADE_STATUS.PENDING && (
                             <>
                                 <Button
                                     variant="ghost"
@@ -58,7 +61,7 @@ export default function TradeRequestCard({
                             </>
                         )}
 
-                        {trade.status === 'accepted' && (
+                        {trade.status === TRADE_STATUS.ACCEPTED && (
                             <Button
                                 onClick={onComplete}
                                 disabled={busy}
@@ -68,7 +71,7 @@ export default function TradeRequestCard({
                             </Button>
                         )}
 
-                        {!isIncoming && trade.status === 'pending' && (
+                        {!isIncoming && trade.status === TRADE_STATUS.PENDING && (
                             <Button
                                 variant="ghost"
                                 onClick={onDecline}

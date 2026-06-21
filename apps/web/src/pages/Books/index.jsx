@@ -13,6 +13,7 @@ import {
     createBookIfMissing,
 } from '@readme/shared/src/services/booksCatalog.web';
 import { mapGoogleBook } from '@readme/shared/src/models/book';
+import { sanitizeIsbn } from '@readme/shared/src/utils/isbn';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
@@ -20,12 +21,6 @@ import BookCard from './components/BookCard.jsx';
 import AddBookForm from './components/AddBookForm.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes.js';
 import styles from './Books.module.css';
-
-function sanitizeIsbn(isbn) {
-    if (!isbn) return null;
-    const stripped = isbn.replace(/[^0-9Xx]/g, '');
-    return stripped || null;
-}
 
 function groupByMonth(books) {
     const groups = {};
