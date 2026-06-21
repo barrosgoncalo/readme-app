@@ -5,14 +5,6 @@ import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildSuccessStyles } from '../../../styles/successStyles';
-import {
-    getPasswordDetails,
-    hasLowerCase,
-    hasUpperCase,
-    hasMixedCase,
-    hasNumbers,
-    hasValidLength,
-} from '@readme/shared/src/utils/registerUtils';
 
 export default function PasswordChangedSuccessScreen({ navigation }) {
 
