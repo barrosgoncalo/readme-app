@@ -207,7 +207,6 @@ export default function PublicProfile() {
             await doBlockUser(currentUser.uid, uid);
             setIsBlocked(true);
             showToast('User blocked.');
-            setTimeout(() => navigate(WEB_ROUTES.PROFILE_BLOCKED_USERS), 800);
         } catch (e) {
             showToast('Block failed. Please try again.');
             console.error(e);

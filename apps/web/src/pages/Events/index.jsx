@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { getUpcomingEvents, createEvent as createEventService } from '@readme/shared/src/services/events.web';
+import { doGetBlockedUids } from '@readme/shared/src/services/blockUser.web';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
@@ -23,8 +24,11 @@ export default function Events() {
         setLoading(true);
         setError(null);
         try {
-            const upcoming = await getUpcomingEvents();
-            setEvents(upcoming);
+            const [upcoming, blockedUids] = await Promise.all([
+                getUpcomingEvents(),
+                uid ? doGetBlockedUids(uid).catch(() => new Set()) : Promise.resolve(new Set()),
+            ]);
+            setEvents(upcoming.filter(e => !blockedUids.has(e.ownerId)));
         } catch (err) {
             setError(err.message || 'Could not load events.');
         } finally {
