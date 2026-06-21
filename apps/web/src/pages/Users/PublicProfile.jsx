@@ -17,10 +17,10 @@ function initialsFor(user) {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
 }
 
-function BookRow({ book }) {
+function BookRow({ book, ownerUid }) {
     return (
         <Link
-            to={WEB_ROUTES.bookDetail(book.bookId || book.id)}
+            to={`${WEB_ROUTES.bookDetail(book.bookId || book.id)}?owner=${ownerUid}`}
             className={styles.bookRow}
         >
             <div className={styles.coverWrap}>
@@ -295,7 +295,7 @@ export default function PublicProfile() {
                 <p className={styles.empty}>No books available for trade.</p>
             ) : (
                 <div className={styles.bookList}>
-                    {tradeBooks.map(b => <BookRow key={b.id} book={b} />)}
+                    {tradeBooks.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
                 </div>
             )}
 
@@ -304,7 +304,7 @@ export default function PublicProfile() {
                 <p className={styles.empty}>This user hasn&rsquo;t added any books yet.</p>
             ) : (
                 <div className={styles.bookList}>
-                    {books.map(b => <BookRow key={b.id} book={b} />)}
+                    {books.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
                 </div>
             )}
         </div>

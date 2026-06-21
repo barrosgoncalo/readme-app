@@ -20,6 +20,7 @@ export async function searchUsers(queryStr, { excludeUid, limit = 20 } = {}) {
     for (const d of snap.docs) {
         if (excludeUid && d.id === excludeUid) continue;
         const data = d.data();
+        if (data.profileVisibility !== 'public') continue;
         const username = (data.username || '').toLowerCase();
         const fullName = (data.fullName || '').toLowerCase();
         if (username.includes(q) || fullName.includes(q)) {
