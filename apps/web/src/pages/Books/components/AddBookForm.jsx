@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, BookOpen, X, Sparkles, ChevronRight, PenLine } from 'lucide-react';
+import { mapGoogleBook } from '@readme/shared/src/models/book';
 import Field from '../../../components/Field.jsx';
 import Button from '../../../components/Button.jsx';
 import ErrorAlert from '../../../components/ErrorAlert.jsx';
@@ -16,20 +17,13 @@ async function searchGoogleBooks(query) {
     return data.items || [];
 }
 
+// Bridge mapGoogleBook (isbn13/isbn10) to handleAdd's expected shape (single isbn + publishedYear).
 function extractBookData(item) {
-    const info = item.volumeInfo || {};
-    const identifiers = info.industryIdentifiers || [];
-    const isbn13 = identifiers.find((id) => id.type === 'ISBN_13')?.identifier || null;
-    const isbn10 = identifiers.find((id) => id.type === 'ISBN_10')?.identifier || null;
-    const isbn = isbn13 || isbn10;
-    const coverUrl = info.imageLinks?.thumbnail?.replace('http://', 'https://') || null;
+    const mapped = mapGoogleBook(item);
     return {
-        isbn,
-        title: info.title || '',
-        authors: info.authors || [],
-        coverUrl,
-        publishedYear: info.publishedDate ? info.publishedDate.slice(0, 4) : null,
-        description: info.description || null,
+        ...mapped,
+        isbn: mapped.isbn13 || mapped.isbn10 || null,
+        publishedYear: mapped.publishedDate ? String(mapped.publishedDate).slice(0, 4) : null,
     };
 }
 
