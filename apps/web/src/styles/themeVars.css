@@ -1,0 +1,56 @@
+/* CSS variables generated from packages/shared/src/constants/theme.ts.
+   Keep in sync with that file. */
+
+:root {
+    color-scheme: light;
+    --bg: #F4EFE8;
+    --bg-elem: #FFFFFF;
+    --bg-selected: #D6D3D1;
+    --text: #1C1A19;
+    --subtext: #4A4A4A;
+    --primary: #5C3D2E;
+    --primary-text: #FFFFFF;
+    --secondary: #F58B2E;
+    --text-secondary: #F58B2E;
+    --tertiary: #649fcb;
+    --tertiary-vivid: #2689d1;
+    --tertiary-inactive: #C8DFF0;
+    --quaternary: #3B3561;
+
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --max-content-width: 800px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 16px;
+    --space-4: 24px;
+    --space-5: 32px;
+    --space-6: 64px;
+
+    --radius: 10px;
+    --radius-lg: 16px;
+
+    --error: #D32F2F;
+    --error-bg: rgba(211, 47, 47, 0.10);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #181615;
+    --bg-elem: #242120;
+    --bg-selected: #363230;
+    --text: #D8D6D4;
+    --subtext: #CCCCCC;
+    --primary: #7E5540;
+    --primary-text: #EFECE9;
+    --secondary: #FF9B42;
+    --text-secondary: #60646C;
+    --tertiary: #76AED9;
+    --tertiary-vivid: #409EE0;
+    --tertiary-inactive: #2C4459;
+    --quaternary: #5E5496;
+
+    --error: #F28B82;
+    --error-bg: rgba(242, 139, 130, 0.14);
+}

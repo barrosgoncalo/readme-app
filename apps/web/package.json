@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@readme/shared": "*",
+    "lucide-react": "^1.20.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "@readme/shared": "*"
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
