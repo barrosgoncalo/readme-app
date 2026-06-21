@@ -13,7 +13,8 @@ import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildStyles } from '../../../styles/blockedUsersStyles';
 import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/blockUser';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext'; // adjust path/hook name to match your AuthContext
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import {doBlockUser} from "../../../../../../packages/shared/src/services/blockUser"; // adjust path/hook name to match your AuthContext
 
 export default function BlockedUsersScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -24,6 +25,14 @@ export default function BlockedUsersScreen({ navigation }) {
     const currentUid = currentUser?.uid;
 
     const [blockedUsers, setBlockedUsers] = useState([]);
+
+    useEffect(() => {
+        doBlockUser(
+            "4uiUXw36wpWKcOnbRQo9sx0SZQs2", // blocker
+            "Nm3rCQxiNHdSfTeY2ZrOgOWD82v1", // blocked
+        ).then(() => console.log("Block created"))
+            .catch((err) => console.error("Block failed:", err));
+    }, []);
 
     useEffect(() => {
         // Guard: don't fetch until we actually have an authenticated uid.
