@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { Spacing, Fonts } from '@readme/shared/src/constants/theme';
 
-export const buildStyles = (theme) => StyleSheet.create({
+export const buildAuthStyles = (theme) => StyleSheet.create({
     scrollContainer: {
         flexGrow: 1,
         backgroundColor: theme.background,

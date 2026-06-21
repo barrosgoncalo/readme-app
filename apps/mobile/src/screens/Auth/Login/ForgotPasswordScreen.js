@@ -14,13 +14,13 @@ import { useColorScheme } from 'react-native';
 
 import { doPasswordReset } from '@readme/shared/src/services/auth';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { buildStyles } from '../../../styles/authStyles';
+import { buildAuthStyles } from '../../../styles/authStyles';
 
 export default function ForgotPasswordScreen({ navigation }) {
     // Dynamic Theme Setup
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildStyles(theme);
+    const styles = buildAuthStyles(theme);
 
     // State Management
     const [email, setEmail] = useState('');

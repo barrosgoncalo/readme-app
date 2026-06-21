@@ -20,7 +20,7 @@ class BookCollectionService {
     async saveBookToShelf(uid, globalBookData, status = 'want_to_read', overrides = {}) {
         let finalOverrides = { ...overrides };
 
-        // 1. We now correctly use globalBookData instead of 'book'
+        // We now correctly use globalBookData instead of 'book'
         if (!finalOverrides.color && globalBookData.coverUrl) {
             try {
                 const colors = await ImageColors.getColors(globalBookData.coverUrl, {
@@ -184,7 +184,7 @@ export const globalBooksService = {
             return null;
         } catch (error) {
             console.error("Error checking global cache:", error);
-            return null; // Fall back safely to external API if Firestore fails
+            return null;
         }
     }
 };
