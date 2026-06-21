@@ -81,6 +81,25 @@ class BookCollectionService {
     }
 
     /**
+     * Deletes a book from the user's specific shelf.
+     * @param {string} userId - The authenticated user's ID
+     * @param {string} bookId - The ID of the book to delete
+     */
+    async deleteBook(userId, bookId) {
+        try {
+            // Use this.collectionName to dynamically target 'myBooks' or 'favoriteBooks'
+            const bookRef = doc(db, 'users', userId, this.collectionName, bookId);
+
+            console.log(`[Delete] Attempting to remove book ${bookId} from /users/${userId}/${this.collectionName}`);
+            await deleteDoc(bookRef);
+            console.log(`[Delete] SUCCESS: Removed book from ${this.collectionName}.`);
+        } catch (error) {
+            console.error(`Error deleting book ${bookId} from ${this.collectionName}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Generically updates specific fields of a book on the user's shelf.
      * @param {string} uid - The authenticated user's ID
      * @param {string} bookId - The ID of the book to update

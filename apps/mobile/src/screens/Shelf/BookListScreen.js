@@ -39,6 +39,10 @@ export default function ReadingListScreen({ navigation }) {
     const [selectedBookForUpdate, setSelectedBookForUpdate] = useState(null);
     const [newPageInput, setNewPageInput] = useState('');
 
+    // Delete Popup State
+    const [isDeletePopupVisible, setDeletePopupVisible] = useState(false);
+    const [selectedBookForDelete, setSelectedBookForDelete] = useState(null);
+
     // ─── HANDLERS ────────────────────────────────────────────────────────────
 
     const handlePageUpdate = async (bookId, newPage, totalPages) => {
@@ -88,7 +92,6 @@ export default function ReadingListScreen({ navigation }) {
         const totalPages = selectedBookForUpdate.bookDetails?.pageCount || 1;
         handlePageUpdate(selectedBookForUpdate.bookId, parsedPage, totalPages);
 
-        // Reset and close modal
         setUpdatePopupVisible(false);
         setSelectedBookForUpdate(null);
         setNewPageInput('');
@@ -98,6 +101,38 @@ export default function ReadingListScreen({ navigation }) {
         setSelectedBookForUpdate(book);
         setNewPageInput(String(book.currentPage || 0));
         setUpdatePopupVisible(true);
+    };
+
+    // ─── DELETE HANDLERS ─────────────────────────────────────────────────────
+
+    const openDeletePopup = (book) => {
+        setSelectedBookForDelete(book);
+        setDeletePopupVisible(true);
+    };
+
+    const handleDeleteBook = async () => {
+        if (!currentUser?.uid || !selectedBookForDelete) return;
+
+        // Safely grab whichever ID your database uses
+        const targetId = selectedBookForDelete.bookId || selectedBookForDelete.id;
+
+        if (!targetId) {
+            console.error("Could not find a valid ID for this book!");
+            return;
+        }
+
+        try {
+            // Delete from backend DB
+            await myBooksService.deleteBook(currentUser.uid, targetId);
+
+            // Instantly remove it from the local UI state using the safe ID
+            setBooks(prevBooks => prevBooks.filter(book => (book.bookId || book.id) !== targetId));
+        } catch (error) {
+            console.error("Failed to delete book:", error);
+        } finally {
+            setDeletePopupVisible(false);
+            setSelectedBookForDelete(null);
+        }
     };
 
     // ─── DATA FETCHING ───────────────────────────────────────────────────────
@@ -135,7 +170,6 @@ export default function ReadingListScreen({ navigation }) {
             const monthName = monthNames[date.getMonth()];
             const year = date.getFullYear();
 
-            // 1. Internal unique key (Ensures January 2025 and January 2026 stay separated)
             const sectionKey = `${monthName}-${year}`;
             const dayLabel = String(date.getDate()).padStart(2, '0');
 
@@ -151,16 +185,13 @@ export default function ReadingListScreen({ navigation }) {
             sectionsMap[sectionKey].data.push({ ...book, day: dayLabel, rawDate: date.getTime() });
         });
 
-        // 2. Sort the sections from newest to oldest
         const sortedSections = Object.values(sectionsMap).sort((a, b) => b.sortTimestamp - a.sortTimestamp);
 
-        // 3. UX Magic: Only append the year if it changes!
         let currentYearTracker = new Date().getFullYear();
 
         return sortedSections.map(section => {
             let displayTitle = section.month;
 
-            // If the year of this section is different from our tracker, stamp the year and update the tracker!
             if (section.year !== currentYearTracker) {
                 displayTitle = `${section.month} ${section.year}`;
                 currentYearTracker = section.year;
@@ -202,7 +233,8 @@ export default function ReadingListScreen({ navigation }) {
                             key={book.bookId} 
                             style={[styles.currentReadingCard, { marginBottom: 16 }]}
                             activeOpacity={0.8}
-                            onPress={() => navigation.navigate(ROUTES.BOOK_DETAILS, { book: book })} 
+                            onPress={() => navigation.navigate(ROUTES.BOOK_DETAILS, { book: book })}
+                            onLongPress={() => openDeletePopup(book)} // <-- ADDED LONG PRESS HERE
                         >
                             {book.bookDetails?.coverUrl ? (
                                 <Image source={{ uri: book.bookDetails.coverUrl }} style={styles.bookCover} />
@@ -284,11 +316,11 @@ export default function ReadingListScreen({ navigation }) {
                     <View style={styles.historyRow}>
                         <Text style={styles.historyDayText}>{item.day}</Text>
                         
-                        {/* THE FIX: Added onPress navigation event here */}
                         <TouchableOpacity 
                             style={styles.historyCard} 
                             activeOpacity={0.8}
                             onPress={() => navigation.navigate(ROUTES.BOOK_DETAILS, { book: item })}
+                            onLongPress={() => openDeletePopup(item)} // <-- ADDED LONG PRESS HERE
                         >
                             <View style={[styles.categoryDot, { backgroundColor: item.color || theme.primary }]} />
 
@@ -350,11 +382,50 @@ export default function ReadingListScreen({ navigation }) {
                     </View>
                 </View>
             </Modal>
+
+            {/* ── DELETE BOOK CONFIRMATION POPUP ── */}
+            <Modal
+                visible={isDeletePopupVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setDeletePopupVisible(false)}
+            >
+                <View style={localStyles.modalOverlay}>
+                    <View style={[localStyles.modalContent, { backgroundColor: theme.backgroundElement || '#FFF' }]}>
+                        
+                        <View style={localStyles.warningIconContainer}>
+                            <Iconify icon="lucide:trash-2" size={32} color="#EF4444" />
+                        </View>
+                        
+                        <Text style={[localStyles.modalTitle, { color: theme.text }]}>Delete Book?</Text>
+
+                        <Text style={[localStyles.modalSubtitle, { color: theme.textMuted, textAlign: 'center' }]}>
+                            Are you sure you want to remove "{selectedBookForDelete?.bookDetails?.title?.trim() || 'this book'}" from your list? This action cannot be undone.
+                        </Text>
+
+                        <View style={localStyles.buttonRow}>
+                            <TouchableOpacity 
+                                style={[localStyles.actionButton, localStyles.cancelButton]} 
+                                onPress={() => setDeletePopupVisible(false)}
+                            >
+                                <Text style={[localStyles.buttonText, { color: theme.text }]}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[localStyles.actionButton, localStyles.deleteButton]} 
+                                onPress={handleDeleteBook}
+                            >
+                                <Text style={[localStyles.buttonText, { color: '#FFF' }]}>Delete</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
 
-// ─── LOCAL STYLES FOR MODAL ─────────────────────────────────────────────────
+// ─── LOCAL STYLES FOR MODALS ─────────────────────────────────────────────────
 const localStyles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
@@ -369,6 +440,12 @@ const localStyles = StyleSheet.create({
         borderRadius: 16,
         alignItems: 'center'
     },
+    warningIconContainer: {
+        marginBottom: 16,
+        padding: 12,
+        backgroundColor: 'rgba(239, 68, 68, 0.1)', // Light red background
+        borderRadius: 50,
+    },
     modalTitle: {
         fontSize: 18,
         fontFamily: 'Inter-SemiBold',
@@ -377,7 +454,8 @@ const localStyles = StyleSheet.create({
     modalSubtitle: {
         fontSize: 14,
         fontFamily: 'Inter-Regular',
-        marginBottom: 20
+        marginBottom: 20,
+        lineHeight: 20
     },
     input: {
         width: '100%',
@@ -405,6 +483,10 @@ const localStyles = StyleSheet.create({
         marginRight: 8
     },
     saveButton: {
+        marginLeft: 8
+    },
+    deleteButton: {
+        backgroundColor: '#EF4444', // Red for dangerous actions
         marginLeft: 8
     },
     buttonText: {
