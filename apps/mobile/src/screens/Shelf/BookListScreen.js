@@ -187,7 +187,7 @@ export default function ReadingListScreen({ navigation }) {
                 onPress={() => setAddPopupVisible(true)} 
             >
                 <View style={styles.iconWrapper}>
-                    <Iconify icon="fluent:add-circle-12-filled" size={24} color={theme.textMuted} />
+                    <Iconify icon="fluent:add-circle-12-filled" size={24} color={theme.darkerSecondary} />
                 </View>
                 <Text style={styles.addButtonText}>Add new Book</Text>
             </TouchableOpacity>

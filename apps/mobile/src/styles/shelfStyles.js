@@ -35,11 +35,11 @@ export const buildShelfStyles = (theme) => StyleSheet.create({
         justifyContent: 'center' 
     },
     addButtonText: {
-        fontFamily: 'Inter-Light', 
+        fontFamily: 'Inter-Italic', 
         fontStyle: 'italic', 
-        fontWeight: '300', 
+        fontWeight: '500', 
         fontSize: 16, 
-        color: theme.textBlack,
+        color: theme.darkerSecondary,
     },
     currentlyReadingSection: { 
         marginBottom: 20 

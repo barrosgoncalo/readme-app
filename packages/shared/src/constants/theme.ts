@@ -29,7 +29,7 @@ export const Colors = {
     /** (Bright Orange) - Secondary buttons, notification badges, and distinct interactive elements. */
     secondary: '#F58B2E',
     /** (Bright Orange) - Secondary buttons, notification badges, and distinct interactive elements. */
-    darkerSecondary: '#F58B2E',
+    darkerSecondary: '#ff8a24',
     /** (Bright Orange) - Alternative text used for inline accents. */
     textSecondary: '#F58B2E',
     /** (Soft Blue) - Soft accent for informational alerts and standard links. */
