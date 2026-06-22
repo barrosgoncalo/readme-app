@@ -13,6 +13,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { buildPublicationStyles } from '../../styles/publicationStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
+import SuccessModal from '../../components/ui/SuccessModal';
 
 const FormInput = ({ label, placeholder, value, onChangeText, maxLength, styles }) => (
     <View style={styles.inputWrapper}>
@@ -51,6 +52,16 @@ const FormTextArea = ({ label, placeholder, value, onChangeText, maxLength, styl
     </View>
 );
 
+const handleUpload = () => {
+    console.log({ bookName, authorName, subject, description });
+    setSuccessModalVisible(true);
+};
+
+const handleGoHome = () => {
+    setSuccessModalVisible(false);
+    navigation.goBack(); 
+};
+
 // --- Ecrã Principal ---
 
 export default function CreatePublicationScreen({ navigation }) {
@@ -65,8 +76,16 @@ export default function CreatePublicationScreen({ navigation }) {
     const [description, setDescription] = useState('');
     const [subject, setSubject] = useState(''); 
 
+    const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
+
     const handleUpload = () => {
         console.log({ bookName, authorName, subject, description });
+        setSuccessModalVisible(true);
+    };
+
+    const handleGoHome = () => {
+        setSuccessModalVisible(false);
+        navigation.goBack(); 
     };
 
     return (
@@ -76,7 +95,7 @@ export default function CreatePublicationScreen({ navigation }) {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
                 <View style={styles.mainContent}>
-                    
+
                     {/* Top Content Group */}
                     <View style={styles.topFieldsContainer}>
                         {/* Header */}
@@ -92,7 +111,13 @@ export default function CreatePublicationScreen({ navigation }) {
 
                         {/* Photo Upload Box */}
                         <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7}>
-                            <Iconify icon="lucide:camera" size={44} color="#E5AE7A" strokeWidth={1.5} />
+                            <Iconify
+                                icon="lucide:camera"
+                                size={44}
+                                color={theme.secondary}
+                                opacity={0.8}
+                                strokeWidth={1.5}
+                            />
                             <View style={styles.addPhotoRow}>
                                 <Iconify icon="lucide:plus-circle" size={16} color="#444" />
                                 <Text style={styles.addPhotoText}>Add photos</Text>
@@ -149,6 +174,13 @@ export default function CreatePublicationScreen({ navigation }) {
                     >
                         <Text style={styles.submitButtonText}>UPLOAD</Text>
                     </TouchableOpacity>
+
+                    <SuccessModal 
+                        visible={isSuccessModalVisible}
+                        onClose={() => setSuccessModalVisible(false)}
+                        onGoHome={handleGoHome}
+                        bookName={bookName}
+                    />
 
                 </View>
             </KeyboardAvoidingView>

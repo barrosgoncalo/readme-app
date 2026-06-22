@@ -56,7 +56,7 @@ export const buildPublicationStyles = (theme) => StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         fontStyle: 'italic',
-        color: '#444444',
+        color: 'F58B2E',
     },
     // Form Elements
     inputWrapper: {
