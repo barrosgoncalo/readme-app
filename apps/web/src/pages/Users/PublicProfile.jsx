@@ -3,19 +3,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, UserPlus, UserCheck, Ban, Repeat } from 'lucide-react';
 import { getUserById } from '@readme/shared/src/services/users.web';
 import { myBooksService } from '@readme/shared/src/services/books.web';
-import { getBook, getBookByIsbn, getBooksByIds } from '@readme/shared/src/services/booksCatalog.web';
-import { mapGoogleBook } from '@readme/shared/src/models/book';
+import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks.web';
 import { doAddFriend, doRemoveFriend, doIsFriend } from '@readme/shared/src/services/friendUser.web';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
+import UserAvatar from '../../components/UserAvatar.jsx';
+import { useToast } from '../../hooks/useToast';
 import styles from './PublicProfile.module.css';
-
-function initialsFor(user) {
-    const name = user?.fullName || user?.username || '';
-    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-}
 
 function BookRow({ book, ownerUid }) {
     return (
@@ -54,7 +50,7 @@ export default function PublicProfile() {
     const [isBlocked, setIsBlocked] = useState(false);
     const [friendBusy, setFriendBusy] = useState(false);
     const [blockBusy, setBlockBusy] = useState(false);
-    const [toast, setToast] = useState('');
+    const [toast, showToast] = useToast(3000);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
 
@@ -85,78 +81,8 @@ export default function PublicProfile() {
                 const myBookDocs = await myBooksService.getBooksData(uid).catch(() => []);
                 if (cancelled) return;
 
-                const myIds = myBookDocs.map(d => d.id);
-                const myBooksMap = Object.fromEntries(myBookDocs.map(m => [m.id, m]));
-
-                const catalogMap = {};
-                try {
-                    const catalogDocs = await getBooksByIds(myIds);
-                    catalogDocs.forEach(c => { catalogMap[c.id] = c; });
-                } catch { /* batch may fail; fall through to individual gets */ }
-
-                const missingIds = myIds.filter(id => !catalogMap[id]);
-                if (missingIds.length > 0) {
-                    const settled = await Promise.allSettled(missingIds.map(id => getBook(id)));
-                    settled.forEach((res, i) => {
-                        if (res.status === 'fulfilled' && res.value) {
-                            catalogMap[missingIds[i]] = res.value;
-                        }
-                    });
-                }
-
-                const hydrated = myIds.map(id => {
-                    const my = myBooksMap[id];
-                    const cat = catalogMap[id];
-                    return {
-                        id,
-                        bookId: id,
-                        title: cat?.title || my?.title || null,
-                        authors: cat?.authors || my?.authors || [],
-                        coverUrl: cat?.coverUrl || my?.coverUrl || null,
-                        description: cat?.description || null,
-                        status: my?.status || 'reading',
-                        addedAt: my?.addedAt || null,
-                        rating: my?.rating ?? null,
-                        availableForTrade: my?.availableForTrade ?? false,
-                    };
-                });
-
-                // Legacy ISBN-based repair: for old books with no title and an ISBN-shaped
-                // ID, try the global cache by ISBN, then Google Books. Read-only — we
-                // can't write to another user's myBooks subcollection.
                 const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-                const needsRepair = hydrated.filter(b => !b.title && /^\d{10,13}$/.test(b.id));
-                if (needsRepair.length > 0) {
-                    await Promise.allSettled(needsRepair.map(async b => {
-                        try {
-                            let title, authors, coverUrl;
-                            const cached = await getBookByIsbn(b.id);
-                            if (cached?.title) {
-                                title = cached.title;
-                                authors = cached.authors || [];
-                                coverUrl = cached.coverUrl || null;
-                            } else if (apiKey) {
-                                const res = await fetch(
-                                    `https://www.googleapis.com/books/v1/volumes?q=isbn:${b.id}&maxResults=1&key=${apiKey}`
-                                );
-                                const json = await res.json();
-                                const item = json.items?.[0];
-                                if (!item) return;
-                                const mapped = mapGoogleBook(item);
-                                if (!mapped.title || mapped.title === 'Unknown Title') return;
-                                title = mapped.title;
-                                authors = mapped.authors;
-                                coverUrl = mapped.coverUrl;
-                            } else {
-                                return;
-                            }
-                            const idx = hydrated.findIndex(h => h.id === b.id);
-                            if (idx !== -1) {
-                                hydrated[idx] = { ...hydrated[idx], title, authors, coverUrl };
-                            }
-                        } catch { /* keep placeholder on error */ }
-                    }));
-                }
+                const hydrated = await hydrateMyBooks(myBookDocs, { apiKey });
 
                 if (!cancelled) setBooks(hydrated);
             } finally {
@@ -165,11 +91,6 @@ export default function PublicProfile() {
         })();
         return () => { cancelled = true; };
     }, [uid, currentUser, navigate]);
-
-    function showToast(message) {
-        setToast(message);
-        setTimeout(() => setToast(''), 3000);
-    }
 
     async function handleFriendToggle() {
         if (!currentUser || friendBusy) return;
@@ -244,11 +165,7 @@ export default function PublicProfile() {
             </div>
 
             <div className={styles.profileCard}>
-                <div className={styles.avatar}>
-                    {user.photoURL
-                        ? <img src={user.photoURL} alt="" className={styles.avatarImg} />
-                        : <span className={styles.avatarInitials}>{initialsFor(user)}</span>}
-                </div>
+                <UserAvatar user={user} />
                 <div className={styles.profileInfo}>
                     <h1 className={styles.name}>{user.fullName || user.username || 'Unknown'}</h1>
                     {user.username && <p className={styles.username}>@{user.username}</p>}

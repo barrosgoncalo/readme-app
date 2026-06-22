@@ -7,12 +7,9 @@ import {
     favoriteBooksService,
 } from '@readme/shared/src/services/books.web';
 import {
-    getBook,
-    getBookByIsbn,
-    getBooksByIds,
     createBookIfMissing,
 } from '@readme/shared/src/services/booksCatalog.web';
-import { mapGoogleBook } from '@readme/shared/src/models/book';
+import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks.web';
 import { sanitizeIsbn } from '@readme/shared/src/utils/isbn';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
@@ -61,86 +58,14 @@ export default function Books() {
                 myBooksService.getBooksData(uid),
                 favoriteBooksService.getBooks(uid),
             ]);
-            const myIds = rawMyBooks.map(d => d.id);
-            const myBooksMap = Object.fromEntries(rawMyBooks.map(m => [m.id, m]));
-
-            let catalogMap = {};
-            try {
-                const catalogDocs = await getBooksByIds(myIds);
-                catalogDocs.forEach(c => { catalogMap[c.id] = c; });
-            } catch (err) {
-                console.error('[Books] batch catalog fetch failed, trying individual:', err);
-            }
-            // For any book still missing metadata, try a direct getDoc as fallback
-            const missingIds = myIds.filter(id => !catalogMap[id]);
-            if (missingIds.length > 0) {
-                const settled = await Promise.allSettled(missingIds.map(id => getBook(id)));
-                settled.forEach((res, i) => {
-                    if (res.status === 'fulfilled' && res.value) {
-                        catalogMap[missingIds[i]] = res.value;
-                    }
-                });
-            }
-
-            const hydrated = myIds.map(id => {
-                const my = myBooksMap[id];
-                const cat = catalogMap[id];
-                return {
-                    id,
-                    title: cat?.title || my?.title || null,
-                    authors: cat?.authors || my?.authors || [],
-                    coverUrl: cat?.coverUrl || my?.coverUrl || null,
-                    description: cat?.description || null,
-                    status: my?.status || 'reading',
-                    progress: my?.progress ?? 0,
-                    addedAt: my?.addedAt || null,
-                    rating: my?.rating ?? null,
-                    notes: my?.notes || null,
-                    availableForTrade: my?.availableForTrade ?? false,
-                };
-            });
-
-            // Repair legacy books: if a book still has no title and its ID looks like an
-            // ISBN, try the global cache by ISBN first, then fall back to Google Books.
             const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-            const needsRepair = hydrated.filter(b => !b.title && /^\d{10,13}$/.test(b.id));
-            if (needsRepair.length > 0) {
-                await Promise.allSettled(needsRepair.map(async b => {
-                    try {
-                        let title, authors, coverUrl, description;
-
-                        // Cache check first
-                        const cached = await getBookByIsbn(b.id);
-                        if (cached?.title) {
-                            ({ title, authors, coverUrl, description } = cached);
-                            authors = authors || [];
-                        } else if (apiKey) {
-                            const res = await fetch(
-                                `https://www.googleapis.com/books/v1/volumes?q=isbn:${b.id}&maxResults=1&key=${apiKey}`
-                            );
-                            const json = await res.json();
-                            const item = json.items?.[0];
-                            if (!item) return;
-                            const mapped = mapGoogleBook(item);
-                            if (!mapped.title || mapped.title === 'Unknown Title') return;
-                            title = mapped.title;
-                            authors = mapped.authors;
-                            coverUrl = mapped.coverUrl;
-                            description = mapped.description;
-                        } else {
-                            return;
-                        }
-
-                        const idx = hydrated.findIndex(h => h.id === b.id);
-                        if (idx !== -1) {
-                            hydrated[idx] = { ...hydrated[idx], title, authors, coverUrl, description };
-                        }
-                        // Backfill so next load is instant
-                        myBooksService.updateBook(uid, b.id, { title, authors, coverUrl }).catch(() => {});
-                        createBookIfMissing(b.id, { title, authors, coverUrl, description, isbn: b.id, addedBy: uid }).catch(() => {});
-                    } catch { /* ignore — display stays as placeholder */ }
-                }));
-            }
+            const hydrated = await hydrateMyBooks(rawMyBooks, {
+                apiKey,
+                onRepair: (bookId, data) => Promise.all([
+                    myBooksService.updateBook(uid, bookId, { title: data.title, authors: data.authors, coverUrl: data.coverUrl }),
+                    createBookIfMissing(bookId, { ...data, isbn: bookId, addedBy: uid }),
+                ]),
+            });
 
             setBooks(hydrated);
             setFavoriteIds(new Set(favIds));

@@ -107,34 +107,6 @@
     padding: 14px var(--space-3);
 }
 
-/* ── Avatar ── */
-.avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.avatarImg {
-    width: 44px;
-    height: 44px;
-    object-fit: cover;
-    border-radius: 50%;
-    display: block;
-}
-
-.avatarInitials {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--primary-text);
-    font-family: var(--font-serif);
-}
-
 /* ── Info ── */
 .info {
     flex: 1;
@@ -161,8 +133,8 @@
     text-overflow: ellipsis;
 }
 
-/* ── Unblock button ── */
-.unblockBtn {
+/* ── Action button ── */
+.actionBtn {
     background: var(--bg-elem);
     border: none;
     border-radius: 20px;
@@ -175,11 +147,11 @@
     transition: background 0.12s;
 }
 
-.unblockBtn:hover:not(:disabled) {
+.actionBtn:hover:not(:disabled) {
     background: var(--bg);
 }
 
-.unblockBtn:disabled {
+.actionBtn:disabled {
     opacity: 0.5;
     cursor: default;
 }
