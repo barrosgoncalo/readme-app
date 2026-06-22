@@ -4,12 +4,8 @@ import { Search } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/users.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
+import UserAvatar from '../../components/UserAvatar.jsx';
 import styles from './Map.module.css';
-
-function initialsFor(user) {
-    const name = user?.fullName || user?.username || '';
-    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-}
 
 export default function Explore() {
     const { currentUser } = useAuth();
@@ -68,11 +64,7 @@ export default function Explore() {
                         <div key={u.id}>
                             {i > 0 && <div className={styles.divider} />}
                             <Link to={WEB_ROUTES.userProfile(u.id)} className={styles.row}>
-                                <div className={styles.avatar}>
-                                    {u.photoURL
-                                        ? <img src={u.photoURL} alt="" className={styles.avatarImg} />
-                                        : <span className={styles.avatarInitials}>{initialsFor(u)}</span>}
-                                </div>
+                                <UserAvatar user={u} />
                                 <div className={styles.info}>
                                     <span className={styles.name}>{u.fullName || u.username || 'Unknown'}</span>
                                     {u.username && <span className={styles.username}>@{u.username}</span>}
