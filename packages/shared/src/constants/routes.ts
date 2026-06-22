@@ -15,5 +15,6 @@ export const ROUTES = {
     SEARCH_BOOK: 'SearchBook',
     BOOKS_LIST: 'BooksList',
     BOOK_DETAILS: 'BooksDetails',
-    SEARCH: 'Search'
+    SEARCH: 'Search',
+    PUBLICATION: 'Publication'
 } as const;
