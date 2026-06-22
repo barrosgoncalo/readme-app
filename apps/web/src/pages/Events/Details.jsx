@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { getEvent, getAttendees, isAttending, joinEvent, leaveEvent } from '@readme/shared/src/services/events.web';
+import { getEvent, getAttendees, isAttending, joinEvent, leaveEvent } from '@readme/shared/src/services/events';
 import { getUsersByIds } from '@readme/shared/src/services/users.web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';

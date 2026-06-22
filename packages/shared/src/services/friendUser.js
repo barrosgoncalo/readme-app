@@ -1,4 +1,5 @@
-// Mobile/RN variant — mirrors friendUser.web.js but imports the native firebase entry.
+// Shared across web and mobile. The `./firebase` import resolves to firebase.web.js
+// on web (via Vite resolve.extensions) and firebase.js on mobile (via Metro).
 import { db } from "./firebase";
 import {
     doc, setDoc, deleteDoc, getDoc,

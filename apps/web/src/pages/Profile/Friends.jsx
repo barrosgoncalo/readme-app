@@ -1,4 +1,4 @@
-import { doGetFriends, doRemoveFriend } from '@readme/shared/src/services/friendUser.web';
+import { doGetFriends, doRemoveFriend } from '@readme/shared/src/services/friendUser';
 import UserListPage from '../../components/UserListPage.jsx';
 
 export default function Friends() {
