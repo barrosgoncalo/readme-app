@@ -53,7 +53,10 @@ class BookCollectionService {
 
         const bookId = String(globalBookData.bookId);
         const cleanGlobalBook = JSON.parse(JSON.stringify(globalBookData));
+
         cleanGlobalBook.bookId = bookId;
+        cleanGlobalBook.addedBy = uid;
+        cleanGlobalBook.createdAt = new Date().toISOString();
 
         const globalBookRef = doc(db, "books", bookId);
         const globalBookSnap = await getDoc(globalBookRef);
