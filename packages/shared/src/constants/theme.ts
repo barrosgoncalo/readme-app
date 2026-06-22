@@ -65,7 +65,7 @@ export const Colors = {
     textBlack: '#000000',
     
     /** (Cinza Quente Claro) - Cabeçalhos de secção e datas (ex: sectionHeaderTitle, historyDayText) */
-    textMuted: '#C4BDB8',
+    textMuted: '#1C0E0540',
     
     /** (Castanho Transparente a 40%) - Nomes de autores ou subtítulos de itens */
     textAuthor: 'rgba(28, 14, 5, 0.4)',

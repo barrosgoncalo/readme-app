@@ -55,8 +55,8 @@ export default function (api) {
                         'material-symbols-light:home-outline-rounded',
                         'material-symbols:edit-rounded',
                         'uiw:user-delete',
-
-
+                        'ic:round-minus',
+                        'ic:round-plus'
                     ],
                 },
             ],

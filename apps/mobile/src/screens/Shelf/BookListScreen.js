@@ -4,16 +4,16 @@ import {
     Text, 
     SectionList, 
     TouchableOpacity, 
-    Image,
     useColorScheme,
     ActivityIndicator,
     Modal,
-    TextInput,
 } from 'react-native';
+import { CurrentReadingCard } from '../../components/ui/CurrentReadingCard.js'
 import { useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
+
 import { buildShelfStyles } from '../../styles/shelfStyles';
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
@@ -21,6 +21,9 @@ import { myBooksService } from '@readme/shared/src/services/books';
 
 import AddBookPopup from './AddBookPopup';
 
+
+
+// ─── MAIN SCREEN COMPONENT ───────────────────────────────────────────────
 export default function ReadingListScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
@@ -33,17 +36,11 @@ export default function ReadingListScreen({ navigation }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isAddPopupVisible, setAddPopupVisible] = useState(false);
 
-    // Update Progress Popup State
-    const [isUpdatePopupVisible, setUpdatePopupVisible] = useState(false);
-    const [selectedBookForUpdate, setSelectedBookForUpdate] = useState(null);
-    const [newPageInput, setNewPageInput] = useState('');
-
     // Delete Popup State
     const [isDeletePopupVisible, setDeletePopupVisible] = useState(false);
     const [selectedBookForDelete, setSelectedBookForDelete] = useState(null);
 
     // ─── HANDLERS ────────────────────────────────────────────────────────────
-
     const handlePageUpdate = async (bookId, newPage, totalPages) => {
         if (!currentUser?.uid) return;
 
@@ -79,31 +76,7 @@ export default function ReadingListScreen({ navigation }) {
         }
     };
 
-    const submitProgressUpdate = () => {
-        if (!selectedBookForUpdate) return;
-
-        const parsedPage = parseInt(newPageInput, 10);
-        if (isNaN(parsedPage)) {
-            setUpdatePopupVisible(false);
-            return; 
-        }
-
-        const totalPages = selectedBookForUpdate.bookDetails?.pageCount || 1;
-        handlePageUpdate(selectedBookForUpdate.bookId, parsedPage, totalPages);
-
-        setUpdatePopupVisible(false);
-        setSelectedBookForUpdate(null);
-        setNewPageInput('');
-    };
-
-    const openUpdatePopup = (book) => {
-        setSelectedBookForUpdate(book);
-        setNewPageInput(String(book.currentPage || 0));
-        setUpdatePopupVisible(true);
-    };
-
     // ─── DELETE HANDLERS ─────────────────────────────────────────────────────
-
     const openDeletePopup = (book) => {
         setSelectedBookForDelete(book);
         setDeletePopupVisible(true);
@@ -112,7 +85,6 @@ export default function ReadingListScreen({ navigation }) {
     const handleDeleteBook = async () => {
         if (!currentUser?.uid || !selectedBookForDelete) return;
 
-        // Safely grab whichever ID your database uses
         const targetId = selectedBookForDelete.bookId || selectedBookForDelete.id;
 
         if (!targetId) {
@@ -121,9 +93,7 @@ export default function ReadingListScreen({ navigation }) {
         }
 
         try {
-            // Delete from backend DB
             await myBooksService.deleteBook(currentUser.uid, targetId);
-
             setBooks(prevBooks => prevBooks.filter(book => (book.bookId || book.id) !== targetId));
         } catch (error) {
             console.error("Failed to delete book:", error);
@@ -155,7 +125,7 @@ export default function ReadingListScreen({ navigation }) {
     // ─── DATA PROCESSING ─────────────────────────────────────────────────────
     const currentlyReadingBooks = useMemo(() => 
         books.filter(book => book.status === 'reading')
-        , [books]);
+    , [books]);
 
     const sectionsData = useMemo(() => {
         const finishedBooks = books.filter(book => book.status === 'finished');
@@ -227,45 +197,16 @@ export default function ReadingListScreen({ navigation }) {
                     <Text style={styles.sectionHeaderTitle}>Currently Reading</Text>
 
                     {currentlyReadingBooks.map((book) => (
-                        <TouchableOpacity 
-                            key={book.bookId} 
-                            style={[styles.currentReadingCard, { marginBottom: 16 }]}
-                            activeOpacity={0.8}
-                            onPress={() => navigation.navigate(ROUTES.BOOK_DETAILS, { book: book })}
-                            onLongPress={() => openDeletePopup(book)} // <-- ADDED LONG PRESS HERE
-                        >
-                            {book.bookDetails?.coverUrl ? (
-                                <Image source={{ uri: book.bookDetails.coverUrl }} style={styles.bookCover} />
-                            ) : (
-                                    <View style={[styles.bookCover, { justifyContent: 'center', alignItems: 'center' }]}>
-                                        <Iconify icon="lucide:book" size={24} color={theme.textMuted} />
-                                    </View>
-                                )}
-
-                            <View style={styles.currentReadingInfo}>
-                                <View>
-                                    <Text style={styles.currentBookTitle} numberOfLines={1}>
-                                        {book.bookDetails?.title?.replace(/[\r\n]+/g, ' ').trim() || 'Unknown Title'}
-                                    </Text>
-                                    <Text style={styles.currentBookAuthor} numberOfLines={1}>
-                                        {book.bookDetails?.authors?.join(', ') || 'Unknown Author'}
-                                    </Text>
-                                </View>
-
-                                <TouchableOpacity 
-                                    style={styles.updateProgressButton} 
-                                    activeOpacity={0.8}
-                                    onPress={() => openUpdatePopup(book)}
-                                >
-                                    <Text style={styles.updateProgressText}>Update Progress</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.progressContainer}>
-                                <Text style={styles.progressText}>{book.progressPercentage || 0}%</Text>
-                                <Iconify icon="fluent:caret-right-24-filled" size={16} color={theme.textMuted} />
-                            </View>
-                        </TouchableOpacity>
+                        <CurrentReadingCard 
+                            key={book.bookId || book.id} 
+                            book={book} 
+                            theme={theme} 
+                            styles={styles} 
+                            navigation={navigation}
+                            detailsRoute={ROUTES.BOOK_DETAILS}
+                            onLongPress={openDeletePopup}
+                            onSaveProgress={handlePageUpdate}
+                        />
                     ))}
                 </View>
             )}
@@ -318,7 +259,7 @@ export default function ReadingListScreen({ navigation }) {
                             style={styles.historyCard} 
                             activeOpacity={0.8}
                             onPress={() => navigation.navigate(ROUTES.BOOK_DETAILS, { book: item })}
-                            onLongPress={() => openDeletePopup(item)} // <-- ADDED LONG PRESS HERE
+                            onLongPress={() => openDeletePopup(item)} 
                         >
                             <View style={[styles.categoryDot, { backgroundColor: item.color || theme.primary }]} />
 
@@ -336,50 +277,6 @@ export default function ReadingListScreen({ navigation }) {
                 isVisible={isAddPopupVisible} 
                 onClose={() => setAddPopupVisible(false)} 
             />
-
-            {/* ── UPDATE PROGRESS POPUP ── */}
-            <Modal
-                visible={isUpdatePopupVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setUpdatePopupVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement || '#FFF' }]}>
-                        <Text style={[styles.modalTitle, { color: theme.text }]}>Update Progress</Text>
-
-                        <Text style={[styles.modalSubtitle, { color: theme.textMuted }]}>
-                            What page are you currently on?
-                        </Text>
-
-                        <TextInput
-                            style={[styles.input, { borderColor: theme.border, color: theme.text }]}
-                            keyboardType="number-pad"
-                            value={newPageInput}
-                            onChangeText={setNewPageInput}
-                            placeholder="e.g. 142"
-                            placeholderTextColor={theme.textMuted}
-                            autoFocus={true}
-                        />
-
-                        <View style={styles.buttonRow}>
-                            <TouchableOpacity 
-                                style={[styles.actionButton, styles.cancelButton]} 
-                                onPress={() => setUpdatePopupVisible(false)}
-                            >
-                                <Text style={[styles.buttonText, { color: theme.text }]}>Cancel</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                style={[styles.actionButton, styles.saveButton, { backgroundColor: theme.primary || '#E58F24' }]} 
-                                onPress={submitProgressUpdate}
-                            >
-                                <Text style={[styles.buttonText, { color: '#FFF' }]}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
 
             {/* ── DELETE BOOK CONFIRMATION POPUP ── */}
             <Modal

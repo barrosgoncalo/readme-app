@@ -64,6 +64,50 @@ export const buildShelfStyles = (theme) => StyleSheet.create({
         shadowOpacity: 0.15,
         elevation: 10,
     },
+    fallbackCover: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    bookTextWrapper: {
+        flex: 1,
+        paddingRight: 10,
+    },
+    updateInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 8,
+        padding: 4,
+    },
+    pageTextInput: {
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        minWidth: 45,
+        textAlign: 'center',
+        fontFamily: 'Inter-Medium',
+        fontSize: 13,
+    },
+    maxPage: {
+        fontSize: 12,
+        marginHorizontal: 6,
+        fontFamily: 'Inter-Medium',
+    },
+    smallSaveButton: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    smallSaveButtonText: {
+        color: '#FFF',
+        fontSize: 11,
+        fontFamily: 'Inter-Bold',
+    },
+    maxPage: {
+        color: theme.textMuted,
+        fontSize: 12,
+        marginHorizontal: 6,
+        fontFamily: 'Inter-Medium'
+    },
     bookCover: { 
         width: 70, 
         height: 105, 
