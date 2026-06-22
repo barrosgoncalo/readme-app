@@ -1,8 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { Spacing, Fonts } from '@readme/shared/src/constants/theme';
 
-export const buildStyles = (theme, colorScheme) =>
-    StyleSheet.create({
+export const buildBlockedUsersStyles = (theme) => StyleSheet.create({
         container: {
             flex: 1,
         },
@@ -24,7 +23,7 @@ export const buildStyles = (theme, colorScheme) =>
             fontSize: 20,
             fontFamily: Fonts.inter_bold,
             color: theme.text,
-            marginRight: 32, // balances backButton width so the title stays visually centered
+            marginRight: 32,
         },
         scrollContent: {
             paddingHorizontal: Spacing.three,

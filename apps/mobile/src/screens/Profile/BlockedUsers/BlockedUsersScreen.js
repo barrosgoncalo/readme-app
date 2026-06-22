@@ -11,15 +11,14 @@ import {
 import { Iconify } from 'react-native-iconify';
 
 import { Colors } from '@readme/shared/src/constants/theme';
-import { buildStyles } from '../../../styles/blockedUsersStyles';
+import { buildBlockedUsersStyles } from '../../../styles/blockedUsersStyles';
 import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/blockUser';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import {doBlockUser} from "../../../../../../packages/shared/src/services/blockUser"; // adjust path/hook name to match your AuthContext
 
 export default function BlockedUsersScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildStyles(theme, colorScheme);
+    const styles = buildBlockedUsersStyles(theme);
 
     const { currentUser } = useAuth();
     const currentUid = currentUser?.uid;
@@ -27,9 +26,6 @@ export default function BlockedUsersScreen({ navigation }) {
     const [blockedUsers, setBlockedUsers] = useState([]);
 
     useEffect(() => {
-        // Guard: don't fetch until we actually have an authenticated uid.
-        // (auth.currentUser is unreliable on first render in RN — it can
-        // still be null while Firebase rehydrates from AsyncStorage.)
         if (!currentUid) return;
 
         const fetchBlockedUsers = async () => {
@@ -96,7 +92,7 @@ export default function BlockedUsersScreen({ navigation }) {
                     notified when you block them.
                 </Text>
 
-                <View style={[styles.listCard, { backgroundColor: theme.cardBackground }]}>
+                <View style={[styles.listCard, { backgroundColor: theme.backgroundElement }]}>
                     {blockedUsers.map((blockedUser, index) => (
                         <BlockedUserRow
                             key={blockedUser.id}
