@@ -1,99 +1,162 @@
-import { StyleSheet } from 'react-native';
-import { Spacing, Fonts, Colors } from '@readme/shared/src/constants/theme';
+import { StyleSheet, Dimensions } from 'react-native';
+import { Fonts } from '@readme/shared/src/constants/theme';
 
-export const buildStyles = (theme) => StyleSheet.create({
+const { width } = Dimensions.get('window');
+const COLUMN_WIDTH = (width - 48) / 2;
+
+export const buildExploreStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.background,
+        backgroundColor: '#F5F5F5', // Fundo cinzento claro da imagem
     },
-    scrollContent: {
-        paddingTop: 60,
-        paddingHorizontal: 20,
-        paddingBottom: 120, // leaves room for the floating tab bar
-    },
-
     // --- Header ---
-    headerRow: {
+    headerContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 24,
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingTop: 60,
+        paddingBottom: 20,
     },
-    greeting: {
-        fontSize: 26,
-        fontWeight: '700',
-        color: theme.textDisplay,
+    headerTitle: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#111111',
     },
-    subGreeting: {
+    headerSubtitle: {
         fontSize: 16,
         fontWeight: '600',
         color: theme.secondary,
         marginTop: 4,
+        fontFamily: Fonts.inter_bold
     },
     searchButton: {
-        width: 36,
-        height: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
+        padding: 8,
     },
-
-    // --- Swap activity carousel ---
-    activityPanel: {
-        backgroundColor: theme.headerBackground,
-        borderRadius: 28,
-        paddingVertical: 18,
-        paddingHorizontal: 14,
-        marginBottom: 28,
+    
+    swapSectionContainer: {
+        backgroundColor: '#26150F',
+        borderRadius: 20,
+        paddingVertical: 10,
+        marginBottom: 24,
+        overflow: 'hidden',
     },
-    activityCard: {
-        width: 72,
-        height: 96,
-        borderRadius: 12,
-        marginRight: 12,
+    swapList: {
+        gap: 16,
+        paddingHorizontal: 28,
+        paddingTop: 12,
+        paddingBottom: 12,
     },
-    activityCover: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 12,
-        resizeMode: 'cover',
+    
+    // --- Grid de Livros ---
+    gridContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 100,
     },
-    statusDot: {
-        position: 'absolute',
-        top: -4,
-        right: -4,
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        borderWidth: 2,
-        borderColor: theme.headerBackground,
-    },
-
-    // --- Discover grid ---
-    grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
+    row: {
         justifyContent: 'space-between',
-    },
-    bookCard: {
-        width: '48%',
         marginBottom: 24,
     },
-    bookCover: {
-        width: '100%',
-        height: 200,
-        borderRadius: 18,
-        resizeMode: 'cover',
-        marginBottom: 8,
-        backgroundColor: theme.coverPlaceholder,
+    
+    // --- Floating Nav Bar ---
+    navBarContainer: {
+        position: 'absolute',
+        bottom: 30,
+        alignSelf: 'center',
+        backgroundColor: '#000000',
+        borderRadius: 40,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 8,
+        paddingHorizontal: 12,
+        width: '85%',
+        height: 64,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 8,
     },
-    bookTitle: {
-        fontSize: 14,
+    navTabActive: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#2A2A2A',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 30,
+        gap: 8,
+    },
+    navTextActive: {
+        color: '#FFFFFF',
+        fontSize: 16,
         fontWeight: '600',
-        color: theme.textItemTitle,
     },
-    bookAuthor: {
+    navTabInactive: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+    },
+
+    // --- Estilos dos Componentes Extraídos ---
+    // SwapCard
+    swapCardWrapper: {
+        width: 76,
+        height: 102,
+        marginRight: 12,
+        borderRadius: 8,
+        backgroundColor: '#FFF',
+    },
+    swapCardImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 6,
+        resizeMode: 'cover',
+    },
+    statusBadge: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#00000',
+    },
+    
+    // BookGridItem
+    bookGridWrapper: {
+        width: COLUMN_WIDTH,
+    },
+    bookCoverContainer: {
+        width: '100%',
+        aspectRatio: 0.75,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 8, // Borda branca em volta da imagem
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
+    },
+    bookGridImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 8,
+        resizeMode: 'cover',
+    },
+    bookGridTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#222',
+        marginBottom: 4,
+    },
+    bookGridAuthor: {
         fontSize: 12,
-        color: theme.textAuthor,
-        marginTop: 2,
-    },
+        color: '#888',
+        fontWeight: '500',
+    }
 });

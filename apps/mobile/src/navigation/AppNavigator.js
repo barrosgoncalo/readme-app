@@ -21,7 +21,7 @@ import BlockedUsersScreen from '../screens/Profile/BlockedUsers/BlockedUsersScre
 import BarcodeScannerScreen from '../screens/Shelf/BarcodeScannerScreen';
 import SearchBookScreen from '../screens/Shelf/SearchBookScreen';
 import BookDetailsScreen from '../screens/Shelf/BookDetailsScreen';
-import SearchScreen from '../screens/Events/SearchScreen';
+import SearchScreen from '../screens/Explore/SearchScreen';
 
 
 import AppTabs from '../components/app-tabs'; 

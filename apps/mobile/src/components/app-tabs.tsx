@@ -6,7 +6,7 @@ import { Iconify } from 'react-native-iconify';
 
 // Screens
 import BookListScreen from '../screens/Shelf/BookListScreen'; 
-import MapScreen from '../screens/Events/MapScreen'; 
+import ExploreScreen from '../screens/Explore/ExploreScreen'; 
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 
 // Components
@@ -140,9 +140,9 @@ export default function AppTabs() {
     const showTabBar = () => {
         Animated.spring(translateY, {
             toValue: 0,
-            stiffness: 200,  // Higher stiffness = faster snap
-            damping: 20,     // Lower damping = slightly quicker finish (less friction)
-            mass: 0.6,       // Lower mass = lighter object, accelerates instantly
+            stiffness: 200,
+            damping: 20,
+            mass: 0.6,
             useNativeDriver: true,
         }).start();
     };
@@ -163,7 +163,7 @@ export default function AppTabs() {
         tabBar={(props) => <CustomTabBar {...props} translateY={translateY} themeColors={themeColors} />}
         screenOptions={{ headerShown: false }} 
         >
-        <Tab.Screen name="Explore" component={MapScreen} />
+        <Tab.Screen name="Explore" component={ExploreScreen} />
         <Tab.Screen name="Add" component={DummyAddScreen} />
         <Tab.Screen name="Shelf" component={BookListScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
