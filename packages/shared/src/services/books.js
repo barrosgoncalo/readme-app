@@ -47,7 +47,7 @@ class BookCollectionService {
 
             } catch (error) {
                 console.log("Service: Could not extract image color, skipping...", error);
-                finalOverrides.color = '#F58B2E'; // Force fallback on error
+                finalOverrides.color = '#F58B2E';
             }
         }
 

@@ -8,6 +8,7 @@ import {
     StatusBar,
     useColorScheme
 } from 'react-native';
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 import { buildExploreStyles } from '../../styles/exploreStyles';
@@ -31,7 +32,7 @@ const MOCK_BOOKS = [
     { id: '4', title: 'Carta Aberta a Salvador Dali', author: 'Salvador Dali', imageUrl: 'https://via.placeholder.com/200x300/cc0000/fff?text=Rodin' },
 ];
 
-export default function ExploreScreen() {
+export default function ExploreScreen({navigation}) {
 
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
@@ -44,7 +45,10 @@ export default function ExploreScreen() {
                 <Text style={styles.headerTitle}>Hello, Myco</Text>
                 <Text style={styles.headerSubtitle}>Let's start swaping</Text>
             </View>
-            <TouchableOpacity style={styles.searchButton}>
+            <TouchableOpacity 
+                style={styles.searchButton}
+                onPress={() => navigation.navigate(ROUTES.SEARCH)}
+            >
                 <Iconify icon="lucide:search" size={28} color="#000" />
             </TouchableOpacity>
         </View>
@@ -52,19 +56,19 @@ export default function ExploreScreen() {
 
     // Swap Section Render (Scroll Horizontal)
     const renderSwapSection = () => (
-        <View style={[styles.swapSectionContainer, { overflow: 'visible' }]}>
+        <View style={styles.swapSectionContainer}> 
             <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.swapList}
-                style={{ overflow: 'visible' }}
+                // Apaga a linha do style={{ overflow: 'visible' }} !
             >
                 {MOCK_SWAPS.map((swap) => (
                     <SwapCard 
                         key={swap.id} 
                         imageUrl={swap.imageUrl} 
                         status={swap.status} 
-                        styles={styles} // <-- PASSAR OS STYLES AQUI
+                        styles={styles} 
                     />
                 ))}
             </ScrollView>

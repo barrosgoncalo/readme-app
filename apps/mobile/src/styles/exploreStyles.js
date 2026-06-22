@@ -34,16 +34,18 @@ export const buildExploreStyles = (theme) => StyleSheet.create({
         padding: 8,
     },
     
-    // --- Swap Section ---
     swapSectionContainer: {
         backgroundColor: '#26150F',
         borderRadius: 20,
-        paddingVertical: 22,
+        paddingVertical: 10,
         marginBottom: 24,
+        overflow: 'hidden',
     },
     swapList: {
         gap: 16,
         paddingHorizontal: 28,
+        paddingTop: 12,
+        paddingBottom: 12,
     },
     
     // --- Grid de Livros ---
@@ -112,14 +114,15 @@ export const buildExploreStyles = (theme) => StyleSheet.create({
     },
     statusBadge: {
         position: 'absolute',
-        top: -8,       // Ajustado um pouco mais para cima
-        right: -8,     // Ajustado um pouco mais para a direita
-        width: 24,     // Tamanho fixo do círculo
-        height: 24,    // Tamanho fixo do círculo
-        borderRadius: 12, // Metade do width/height para ser um círculo perfeito
+        top: -8,
+        right: -8,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
+        borderColor: '#00000',
     },
     
     // BookGridItem
