@@ -21,6 +21,7 @@ import BlockedUsersScreen from '../screens/Profile/BlockedUsers/BlockedUsersScre
 import BarcodeScannerScreen from '../screens/Shelf/BarcodeScannerScreen';
 import SearchBookScreen from '../screens/Shelf/SearchBookScreen';
 import BookDetailsScreen from '../screens/Shelf/BookDetailsScreen';
+import SearchScreen from '../screens/Events/SearchScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -98,9 +99,14 @@ export default function AppNavigator() {
                             component={SearchBookScreen} 
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.BOOK_DETAILS} 
-                            component={BookDetailsScreen} 
+                        <Stack.Screen
+                            name={ROUTES.BOOK_DETAILS}
+                            component={BookDetailsScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name={ROUTES.SEARCH}
+                            component={SearchScreen}
                             options={{ headerShown: false }}
                         />
                     </>

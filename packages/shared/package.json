@@ -2,5 +2,8 @@
   "name": "@readme/shared",
   "version": "1.0.0",
   "private": true,
-  "main": "src/index.js"
+  "main": "src/index.js",
+  "dependencies": {
+    "algoliasearch": "^5.55.0"
+  }
 }

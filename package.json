@@ -9,6 +9,7 @@
   "scripts": {},
   "dependencies": {
     "@readme/shared": "^1.0.0",
+    "algoliasearch": "^5.55.0",
     "babel-preset-expo": "~55.0.8",
     "expo": "~55.0.26",
     "expo-image-picker": "^56.0.18",
