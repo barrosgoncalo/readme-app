@@ -4,7 +4,7 @@ import { ArrowLeft, BookOpen, UserPlus, UserCheck, Ban, Repeat } from 'lucide-re
 import { getUserById } from '@readme/shared/src/services/users.web';
 import { myBooksService } from '@readme/shared/src/services/books.web';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks.web';
-import { doAddFriend, doRemoveFriend, doIsFriend } from '@readme/shared/src/services/friendUser.web';
+import { doAddFriend, doRemoveFriend, doIsFriend } from '@readme/shared/src/services/friendUser';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser.web';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
