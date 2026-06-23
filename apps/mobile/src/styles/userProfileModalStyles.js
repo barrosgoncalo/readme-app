@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { Colors } from '@readme/shared/src/constants/theme';
 
 export const buildStyles = (theme) => StyleSheet.create({
     overlay: {
@@ -66,18 +65,18 @@ export const buildStyles = (theme) => StyleSheet.create({
         justifyContent: 'center',
     },
     followButton: {
-        backgroundColor: theme.tertiaryVivid,
+        backgroundColor: theme.followPillButton,
     },
     blockButton: {
-        backgroundColor: Colors.password.red,
+        backgroundColor: theme.blockPillButton,
     },
     cancelButton: {
-        backgroundColor: Colors.password.gray,
+        backgroundColor: theme.cancelPillButton,
     },
     pillButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#FFFFFF',
+        color: theme.text,
     },
     cancelButtonText: {
         fontSize: 16,

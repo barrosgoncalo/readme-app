@@ -71,7 +71,7 @@ export default function SearchScreen({ navigation }) {
                 <Text style={styles.resultFullName}>{item.fullName}</Text>
             </View>
         </TouchableOpacity>
-    ), [navigation]);
+    ),  [navigation, theme, styles]);
 
     return (
         <View style={styles.container}>
@@ -109,6 +109,7 @@ export default function SearchScreen({ navigation }) {
                 user={selectedUser}
                 onClose={() => setModalVisible(false)}
                 onBlocked={handleUserBlocked}
+                theme={theme}
             />
 
         </View>
