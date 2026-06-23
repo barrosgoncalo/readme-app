@@ -19,17 +19,17 @@ import { BookGridItem } from '../../components/ui/BookGridItem';
 
 // Dados fictícios baseados na tua imagem
 const MOCK_SWAPS = [
-    { id: '1', imageUrl: 'https://via.placeholder.com/100x150/800080/FFFFFF?text=Picasso', status: 'giving' },
-    { id: '2', imageUrl: 'https://via.placeholder.com/100x150/cccccc/000000?text=Face', status: 'giving' },
-    { id: '3', imageUrl: 'https://via.placeholder.com/100x150/ffaa00/FFFFFF?text=Tantrisme', status: 'receiving' },
-    { id: '4', imageUrl: 'https://via.placeholder.com/100x150/ffff00/000000?text=Pessoa', status: 'receiving' },
+    { id: '1', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/12/oplanodeimagem_capa.png', status: 'giving' },
+    { id: '2', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2026/03/burroughscapa.png', status: 'giving' },
+    { id: '3', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/12/oplanodeimagem_capa.png', status: 'receiving' },
+    { id: '4', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/02/pentangulo5capa.png', status: 'receiving' },
 ];
 
 const MOCK_BOOKS = [
-    { id: '1', title: 'Carta Aberta a Salvador Dali', author: 'Salvador Dali', imageUrl: 'https://via.placeholder.com/200x300/ff9999/000?text=Dali+1' },
-    { id: '2', title: 'Carta Aberta a Salvador Dali', author: 'Salvador Dali', imageUrl: 'https://via.placeholder.com/200x300/9999ff/000?text=Magritte' },
-    { id: '3', title: 'Carta Aberta a Salvador Dali', author: 'Salvador Dali', imageUrl: 'https://via.placeholder.com/200x300/99ff99/000?text=Andrade' },
-    { id: '4', title: 'Carta Aberta a Salvador Dali', author: 'Salvador Dali', imageUrl: 'https://via.placeholder.com/200x300/cc0000/fff?text=Rodin' },
+    { id: '1', title: 'Carta Aberta a Salvador Dali', author: 'Salvador Dali', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2020/05/IMG_4746.jpg' },
+    { id: '2', title: 'ORIGENS DO NACIONALISMO AFRICANO', author: 'Mário Pinto de Andrade', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/11/origensnacionalismoafricanocapa.png' },
+    { id: '3', title: 'FERNANDO PESSOA: UNE PHOTOBIOGRAPHIE', author: 'Maria José de Lancastre', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/03/fernandopessoaunephotobiographe_capa.png' },
+    { id: '4', title: 'EL SURREALISMO', author: 'A. Cirici-Pellicer', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/03/surrealismocapa.png' },
 ];
 
 export default function ExploreScreen({navigation}) {
