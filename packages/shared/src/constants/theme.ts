@@ -46,6 +46,10 @@ export const Colors = {
     iconBg: '#C4BDB8',
     icon: '#342F2C',
     verifiedColor: '#1C0E05',
+    /** Pill Colors */
+    followPillButton: 'rgba(50,150,243,0.84)',
+    blockPillButton: 'rgba(230,55,55,0.83)',
+    cancelPillButton: 'rgba(202,197,195,0.85)',
     /** The pitch-black main bar */
     tabBarBackground: '#000000',
     /** The dark gray expanding pill */
@@ -115,13 +119,17 @@ export const Colors = {
     /** (Dark Slate Blue) - Disabled states for blue buttons, or subtle blue background fills. */
     tertiaryInactive: '#2C4459', 
     /** (Muted Purple) - Final accent for distinct tags or alternative categorization. */
-    quaternary: '#5E5496',       
-    cardBackground: '#E8E5E3',
+    quaternary: '#5E5496',
+    cardBackground: '#242120',
     headerBackground: '#2a1c11',
     groupShadow: '#242120',
     iconBg: '#342F2C',
     icon: '#C4BDB8',
     verifiedColor: '#F58B2E',
+    /** Pill Colors */
+    blockPillButton: '#C9484D',
+    followPillButton: '#3A8FD0',
+    cancelPillButton: '#363230',
     /** Pitch black to anchor the floating bar and provide OLED-friendly contrast*/
     tabBarBackground: '#000000',
     /** Warm Medium-Dark Gray (matches your 'backgroundSelected' color) */
