@@ -35,7 +35,7 @@ export default function SuccessModal({ visible, onClose, onGoHome, bookName }) {
                         style={styles.gradientMaskContainer}
                         maskElement={
                             <View style={styles.maskElementContainer}>
-                                <Text style={styles.successTitle}>SUCCESS</Text>
+                                <Text style={styles.successTitle}>CONGRATS</Text>
                             </View>
                         }
                     >
