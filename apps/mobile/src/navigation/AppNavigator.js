@@ -22,6 +22,7 @@ import BarcodeScannerScreen from '../screens/Shelf/BarcodeScannerScreen';
 import SearchBookScreen from '../screens/Shelf/SearchBookScreen';
 import BookDetailsScreen from '../screens/Shelf/BookDetailsScreen';
 import SearchScreen from '../screens/Explore/SearchScreen';
+import CreatePublicationScreen from '../screens/Publication/CreatePublicationScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -107,6 +108,11 @@ export default function AppNavigator() {
                         <Stack.Screen
                             name={ROUTES.SEARCH}
                             component={SearchScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name={ROUTES.PUBLICATION}
+                            component={CreatePublicationScreen}
                             options={{ headerShown: false }}
                         />
                     </>
