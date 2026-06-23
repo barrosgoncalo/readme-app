@@ -50,11 +50,11 @@ export const buildStyles = (theme) => StyleSheet.create({
     resultUsername: {
         fontSize: 15,
         fontWeight: '600',
-        color: theme.textItemTitle,
+        color: theme.text,
     },
     resultFullName: {
         fontSize: 13,
-        color: theme.textAuthor,
+        color: theme.subtext,
         marginTop: 2,
     },
     emptyState: {

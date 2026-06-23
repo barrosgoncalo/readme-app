@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, Image, TouchableOpacity, TouchableWithoutFeedback, Alert, useColorScheme } from 'react-native';
+import { Modal, View, Text, Image, TouchableOpacity, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { Colors } from '@readme/shared/src/constants/theme';
 import { doBlockUser } from '@readme/shared/src/services/blockUser';
 import { buildStyles } from '../../styles/userProfileModalStyles';
 
-export default function UserProfileModal({ visible, user, onClose, onBlocked }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+export default function UserProfileModal({ visible, user, onClose, onBlocked, theme }) {
     const styles = buildStyles(theme);
 
     const { currentUser } = useAuth();
