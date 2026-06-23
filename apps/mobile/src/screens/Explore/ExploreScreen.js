@@ -12,6 +12,7 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 import { buildExploreStyles } from '../../styles/exploreStyles';
+import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 
 // Importa os teus componentes extraídos
 import { SwapCard } from '../../components/ui/SwapCard';
@@ -37,6 +38,7 @@ export default function ExploreScreen({navigation}) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildExploreStyles(theme);
+    const handleScroll = useScrollTabBarControl();
     
     // Header Render
     const renderHeader = () => (
@@ -54,14 +56,13 @@ export default function ExploreScreen({navigation}) {
         </View>
     );
 
-    // Swap Section Render (Scroll Horizontal)
+    // Swap Section Rende
     const renderSwapSection = () => (
         <View style={styles.swapSectionContainer}> 
             <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.swapList}
-                // Apaga a linha do style={{ overflow: 'visible' }} !
             >
                 {MOCK_SWAPS.map((swap) => (
                     <SwapCard 
@@ -75,29 +76,20 @@ export default function ExploreScreen({navigation}) {
         </View>
     );
 
-    const FloatingNavBar = () => (
-        <View style={styles.navBarContainer}>
-            <TouchableOpacity style={styles.navTabActive}>
-                <Iconify icon="lucide:home" size={22} color="#FFF" />
-                <Text style={styles.navTextActive}>Explore</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.navTabInactive}>
-                <Iconify icon="lucide:user" size={28} color="#888" />
-            </TouchableOpacity>
-        </View>
-    );
-
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
-            
+
             <FlatList
                 data={MOCK_BOOKS}
                 keyExtractor={(item) => item.id}
                 numColumns={2}
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={styles.gridContainer}
+
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+
                 ListHeaderComponent={
                     <>
                         {renderHeader()}
@@ -109,14 +101,12 @@ export default function ExploreScreen({navigation}) {
                         title={item.title}
                         author={item.author}
                         imageUrl={item.imageUrl}
-                        styles={styles} // <-- PASSAR OS STYLES AQUI TAMBÉM
+                        styles={styles} 
                         onPress={() => console.log('Livro clicado:', item.title)}
                     />
                 )}
                 showsVerticalScrollIndicator={false}
             />
-
-            <FloatingNavBar />
         </View>
     );
 };
