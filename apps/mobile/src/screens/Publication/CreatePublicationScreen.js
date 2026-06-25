@@ -3,83 +3,39 @@ import React, { useState } from 'react';
 import {
     View,
     Text,
-    TextInput,
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
     useColorScheme,
+    ScrollView
 } from 'react-native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildPublicationStyles } from '../../styles/publicationStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import SuccessModal from '../../components/ui/SuccessModal';
-
-const FormInput = ({ label, placeholder, value, onChangeText, maxLength, styles }) => (
-    <View style={styles.inputWrapper}>
-        <Text style={styles.label}>{label}</Text>
-        <View style={styles.inputUnderline}>
-            <TextInput
-                style={styles.textInput}
-                placeholder={placeholder}
-                placeholderTextColor="#888"
-                value={value}
-                onChangeText={onChangeText}
-                maxLength={maxLength}
-            />
-            <Text style={styles.charCount}>
-                {value.length} / {maxLength}
-            </Text>
-        </View>
-    </View>
-);
-
-const FormTextArea = ({ label, placeholder, value, onChangeText, maxLength, styles }) => (
-    <View style={styles.inputWrapper}>
-        <Text style={styles.label}>{label}</Text>
-        <TextInput
-            style={styles.textArea}
-            placeholder={placeholder}
-            placeholderTextColor="#888"
-            value={value}
-            onChangeText={onChangeText}
-            maxLength={maxLength}
-            multiline
-        />
-        <Text style={styles.textAreaCharCount}>
-            {value.length} / {maxLength}
-        </Text>
-    </View>
-);
-
-const handleUpload = () => {
-    console.log({ bookName, authorName, subject, description });
-    setSuccessModalVisible(true);
-};
-
-const handleGoHome = () => {
-    setSuccessModalVisible(false);
-    navigation.goBack(); 
-};
-
-// --- Ecrã Principal ---
+import { FormInput, FormTextArea, FormDropdown  } from '../../components/ui/FormsComponents';
 
 export default function CreatePublicationScreen({ navigation }) {
-
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildPublicationStyles(theme);
 
-
     const [bookName, setBookName] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [description, setDescription] = useState('');
+    
+    // Dropdown States
     const [subject, setSubject] = useState(''); 
-
+    const [condition, setCondition] = useState(''); 
     const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
 
+    // Dropdown Data Arrays
+    const SUBJECT_OPTIONS = ['Fiction', 'Non-Fiction', 'Science Fiction', 'Fantasy', 'History', 'Biography', 'Textbook'];
+    const CONDITION_OPTIONS = ['Brand New', 'Like New', 'Good', 'Fair', 'Poor (Reading Copy)'];
+
     const handleUpload = () => {
-        console.log({ bookName, authorName, subject, description });
+        console.log({ bookName, authorName, subject, condition, description });
         setSuccessModalVisible(true);
     };
 
@@ -94,81 +50,97 @@ export default function CreatePublicationScreen({ navigation }) {
                 style={styles.container} 
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
+                {/* Ensure styles.mainContent has `flex: 1` 
+                  so it fills the screen and pushes the button down 
+                */}
                 <View style={styles.mainContent}>
 
-                    {/* Top Content Group */}
-                    <View style={styles.topFieldsContainer}>
-                        {/* Header */}
-                        <View style={styles.header}>
-                            <Text style={styles.headerTitle}>Create{'\n'}Publication</Text>
-                            <TouchableOpacity 
-                                style={styles.closeButton} 
-                                onPress={() => navigation.goBack()}
-                            >
-                                <Iconify icon="lucide:x" size={28} color="#000" />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Photo Upload Box */}
-                        <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7}>
-                            <Iconify
-                                icon="lucide:camera"
-                                size={44}
-                                color={theme.secondary}
-                                opacity={0.8}
-                                strokeWidth={1.5}
-                            />
-                            <View style={styles.addPhotoRow}>
-                                <Iconify icon="lucide:plus-circle" size={16} color="#444" />
-                                <Text style={styles.addPhotoText}>Add photos</Text>
+                    {/* Scrollable Container for Form Fields */}
+                    <ScrollView 
+                        style={{ flex: 1 }} 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 20 }} // Adds a bit of padding at the very bottom of the scroll
+                    >
+                        <View style={styles.topFieldsContainer}>
+                            {/* Header */}
+                            <View style={styles.header}>
+                                <Text style={styles.headerTitle}>Create{'\n'}Publication</Text>
+                                <TouchableOpacity 
+                                    style={styles.closeButton} 
+                                    onPress={() => navigation.goBack()}
+                                >
+                                    <Iconify icon="lucide:x" size={28} color="#000" />
+                                </TouchableOpacity>
                             </View>
-                        </TouchableOpacity>
 
-                        {/* Form Fields */}
-                        <FormInput
-                            label="Book's Name"
-                            placeholder="e.g. Art of War"
-                            value={bookName}
-                            onChangeText={setBookName}
-                            maxLength={80}
-                            styles={styles}
-                        />
-
-                        <FormInput
-                            label="Author's Name"
-                            placeholder="e.g. Sun Tzu"
-                            value={authorName}
-                            onChangeText={setAuthorName}
-                            maxLength={50}
-                            styles={styles}
-                        />
-
-                        {/* Fake Dropdown Subject Field */}
-                        <View style={styles.inputWrapper}>
-                            <Text style={styles.label}>Subject</Text>
-                            <TouchableOpacity style={styles.inputUnderline} activeOpacity={0.7}>
-                                <View style={styles.dropdownContent}>
-                                    <Text style={subject ? styles.textInput : styles.dropdownPlaceholder}>
-                                        {subject || "Choose the book's subject"}
-                                    </Text>
+                            {/* Photo Upload Box */}
+                            <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7}>
+                                <Iconify
+                                    icon="lucide:camera"
+                                    size={44}
+                                    color={theme.secondary}
+                                    opacity={0.8}
+                                    strokeWidth={1.5}
+                                />
+                                <View style={styles.addPhotoRow}>
+                                    <Iconify icon="lucide:plus-circle" size={16} color={theme.subtext} />
+                                    <Text style={styles.addPhotoText}>Add photos</Text>
                                 </View>
-                                <Iconify icon="lucide:chevron-down" size={20} color="#000" />
                             </TouchableOpacity>
+
+                            {/* Form Fields */}
+                            <FormInput
+                                label="Book's Name"
+                                placeholder="e.g. Art of War"
+                                value={bookName}
+                                onChangeText={setBookName}
+                                maxLength={80}
+                                styles={styles}
+                            />
+
+                            <FormInput
+                                label="Author's Name"
+                                placeholder="e.g. Sun Tzu"
+                                value={authorName}
+                                onChangeText={setAuthorName}
+                                maxLength={50}
+                                styles={styles}
+                            />
+
+                            {/* Real Dropdown Subject Field */}
+                            <FormDropdown
+                                label="Subject"
+                                placeholder="Choose the book's subject"
+                                value={subject}
+                                onSelect={setSubject}
+                                options={SUBJECT_OPTIONS}
+                                styles={styles}
+                            />
+
+                            {/* Real Dropdown Condition Field */}
+                            <FormDropdown
+                                label="Condition"
+                                placeholder="Choose the book's condition"
+                                value={condition}
+                                onSelect={setCondition}
+                                options={CONDITION_OPTIONS}
+                                styles={styles}
+                            />
+
+                            <FormTextArea
+                                label="Description"
+                                placeholder="Write what you would like to read if it were you seeing this publication"
+                                value={description}
+                                onChangeText={setDescription}
+                                maxLength={9000}
+                                styles={styles}
+                            />
                         </View>
+                    </ScrollView>
 
-                        <FormTextArea
-                            label="Description"
-                            placeholder="Write what you would like to read if it were you seeing this publication"
-                            value={description}
-                            onChangeText={setDescription}
-                            maxLength={9000}
-                            styles={styles}
-                        />
-                    </View>
-
-                    {/* Submit Button (Sempre fixo no fundo) */}
+                    {/* Submit Button (Permanently anchored to the bottom) */}
                     <TouchableOpacity 
-                        style={styles.submitButton} 
+                        style={[styles.submitButton, { marginTop: 'auto' }]} 
                         onPress={handleUpload}
                         activeOpacity={0.8}
                     >

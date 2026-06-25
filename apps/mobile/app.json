@@ -56,9 +56,10 @@
       [
         "expo-build-properties",
         {
-          "ios": {
-            "useFrameworks": "dynamic"
-          }
+            "ios": {
+                "useFrameworks": "dynamic",
+                "deploymentTarget": "15.1" 
+            }
         }
       ],
       [

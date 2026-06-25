@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { withOpacity } from '@readme/shared/src/utils/colorUtils'
 
 export const buildPublicationStyles = (theme) => StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#F4F4F4',
+        backgroundColor: theme.background,
     },
     container: {
         flex: 1,
@@ -29,7 +30,7 @@ export const buildPublicationStyles = (theme) => StyleSheet.create({
     headerTitle: {
         fontSize: 32,
         fontWeight: '600',
-        color: '#111111',
+        color: theme.text,
         lineHeight: 38,
     },
     closeButton: {
@@ -38,7 +39,7 @@ export const buildPublicationStyles = (theme) => StyleSheet.create({
     // Photo Upload Box
     uploadBox: {
         borderWidth: 1.5,
-        borderColor: '#333333',
+        borderColor: theme.backgroundSelected,
         borderStyle: 'dashed',
         borderRadius: 20,
         paddingVertical: 40,
@@ -56,7 +57,7 @@ export const buildPublicationStyles = (theme) => StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         fontStyle: 'italic',
-        color: 'F58B2E',
+        color: theme.subtext,
     },
     // Form Elements
     inputWrapper: {
@@ -65,7 +66,7 @@ export const buildPublicationStyles = (theme) => StyleSheet.create({
     label: {
         fontSize: 15,
         fontWeight: '500',
-        color: '#111111',
+        color: theme.text,
         marginBottom: 8,
     },
     inputUnderline: {
@@ -83,19 +84,19 @@ export const buildPublicationStyles = (theme) => StyleSheet.create({
     },
     charCount: {
         fontSize: 11,
-        color: '#888888',
+        color: theme.subtext,
         marginLeft: 8,
     },
     textArea: {
         borderWidth: 1,
-        borderColor: '#CCCCCC',
+        borderColor: theme.backgroundSelected,
         borderRadius: 8,
         padding: 12,
         height: 100,
         fontSize: 14,
         color: '#111111',
         textAlignVertical: 'top',
-        backgroundColor: '#F4F4F4',
+        backgroundColor: theme.backgroundElement,
     },
     textAreaCharCount: {
         fontSize: 11,
@@ -112,7 +113,7 @@ export const buildPublicationStyles = (theme) => StyleSheet.create({
     },
     // Submit Button
     submitButton: {
-        backgroundColor: '#352F4E',
+        backgroundColor: theme.quaternary,
         borderRadius: 30,
         paddingVertical: 16,
         alignItems: 'center',
