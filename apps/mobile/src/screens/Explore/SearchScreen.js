@@ -3,7 +3,6 @@ import { View, TextInput, FlatList, Text, Image, TouchableOpacity, useColorSchem
 import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { ROUTES } from '@readme/shared/src/constants/routes';
 import { searchUsers } from '@readme/shared/src/services/search';
 import { buildStyles } from '../../styles/searchStyles';
 import UserProfileModal from '../../components/ui/UserProfileModal';
@@ -88,11 +87,9 @@ export default function SearchScreen({ navigation }) {
                     autoCorrect={false}
                 />
                 
-                {/* Trailing Elements Container */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     {loading && <ActivityIndicator size="small" color={theme.secondary} />}
 
-                    {/* Ultra-compact, thick circular Go-Back Button */}
                     <TouchableOpacity 
                         onPress={() => navigation.goBack()} 
                         style={{
