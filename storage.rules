@@ -1,18 +1,23 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
-    match /b/{bucket}/o {
-        // Regra específica para a pasta de fotos de perfil
-        match /profile_pictures/{userId} {
-
-            // Qualquer pessoa pode ver as fotos de perfil (público)
-            allow read: if true;
-
+  match /b/{bucket}/o {
+  
+    // ─── PROFILE PICTURES ───
+    match /profile_pictures/{userId} {
+        // Qualquer pessoa pode ver as fotos de perfil (público)
+        allow read: if true;
         // Apenas o utilizador autenticado e cujo UID coincide com o nome do ficheiro pode escrever ou apagar
         allow write, delete: if request.auth != null && request.auth.uid == userId;
     }
-}
+
+    // ─── BOOK PUBLICATIONS (NEW) ───
+    match /books/{publicationId}/{allPaths=**} {
+        // Any authenticated user can view the book images
+        allow read: if request.auth != null;
+        // Any authenticated user can upload images to their publication folder
+        allow write: if request.auth != null; 
+    }
+    
+  }
 }

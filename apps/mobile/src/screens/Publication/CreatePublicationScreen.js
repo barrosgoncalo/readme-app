@@ -1,5 +1,6 @@
 // src/screens/CreateAnnouncementScreen.js
 import React, { useState } from 'react';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import {
     View,
     Text,
@@ -7,14 +8,23 @@ import {
     KeyboardAvoidingView,
     Platform,
     useColorScheme,
-    ScrollView
+    ScrollView,
+    Image,
+    Alert
 } from 'react-native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildPublicationStyles } from '../../styles/publicationStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import SuccessModal from '../../components/ui/SuccessModal';
-import { FormLineInput, FormTextArea, FormDropdown  } from '../../components/ui/FormsComponents';
+import { FormLineInput, FormTextArea, FormDropdown } from '../../components/ui/FormsComponents';
+
+// Firebase imports
+import { doc, setDoc } from 'firebase/firestore'; 
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@readme/shared/src/services/firebase';
+import { createPublicationModel } from '@readme/shared/src/models/publication';
+import * as ImagePicker from 'expo-image-picker'; 
 
 export default function CreatePublicationScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -25,18 +35,118 @@ export default function CreatePublicationScreen({ navigation }) {
     const [authorName, setAuthorName] = useState('');
     const [description, setDescription] = useState('');
     
-    // Dropdown States
+    const [images, setImages] = useState([]); 
+    const [isUploading, setIsUploading] = useState(false);
+    
     const [subject, setSubject] = useState(''); 
     const [condition, setCondition] = useState(''); 
     const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
 
-    // Dropdown Data Arrays
     const SUBJECT_OPTIONS = ['Fiction', 'Non-Fiction', 'Science Fiction', 'Fantasy', 'History', 'Biography', 'Textbook'];
     const CONDITION_OPTIONS = ['Brand New', 'Like New', 'Good', 'Fair', 'Poor (Reading Copy)'];
 
-    const handleUpload = () => {
-        console.log({ bookName, authorName, subject, condition, description });
-        setSuccessModalVisible(true);
+    const { currentUser } = useAuth();
+
+    const handlePickImage = async () => {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        
+        if (permissionResult.granted === false) {
+            Alert.alert("Permission Required", "We need access to your gallery to upload photos.");
+            return;
+        }
+
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: 'images',
+            allowsMultipleSelection: true, 
+            allowsEditing: false, 
+            quality: 0.8,            
+        });
+
+        if (!result.canceled) {
+            const newUris = result.assets.map(asset => asset.uri);
+            setImages(prevImages => [...prevImages, ...newUris]);
+        }
+    };
+
+    const removeImage = (indexToRemove) => {
+        setImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
+    };
+
+    const handleUpload = async () => {
+        if (!bookName || images.length === 0) {
+            Alert.alert("Missing Information", "Please add a title and at least one photo.");
+            return;
+        }
+
+        setIsUploading(true);
+
+        const timestamp = Date.now();
+        const customPublicationId = `${currentUser.uid}_${timestamp}`;
+        const generatedBookId = `book_${bookName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${timestamp}`;
+
+        let uploadedImageUrls = [];
+
+        // ==========================================
+        // STAGE 1: UPLOAD IMAGES TO FIREBASE STORAGE
+        // ==========================================
+        try {
+            uploadedImageUrls = await Promise.all(
+                images.map(async (uri, index) => {
+                    const blob = await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.onload = () => resolve(xhr.response);
+                        xhr.onerror = (e) => reject(new TypeError('Network request failed'));
+                        xhr.responseType = 'blob';
+                        xhr.open('GET', uri, true);
+                        xhr.send(null);
+                    });
+                    
+                    const imageRef = ref(storage, `books/${customPublicationId}/image_${index}`);
+                    await uploadBytes(imageRef, blob);
+                    blob.close();
+                    
+                    return await getDownloadURL(imageRef);
+                })
+            );
+        } catch (error) {
+            setIsUploading(false);
+            console.error("Storage Error:", error);
+            Alert.alert(
+                "Storage Permission Error", 
+                "Firebase blocked the image upload. Please check your Firebase Storage Rules in the console."
+            );
+            return; // Stop the function here if images fail
+        }
+
+        // ==========================================
+        // STAGE 2: SAVE TEXT DATA TO FIRESTORE
+        // ==========================================
+        try {
+            const publicationData = createPublicationModel(
+                currentUser.uid, 
+                {
+                    title: bookName,
+                    author: authorName || "Unknown Author",
+                    images: uploadedImageUrls, 
+                    bookId: generatedBookId 
+                }, 
+                description
+            );
+
+            await setDoc(doc(db, 'publications', customPublicationId), publicationData);
+
+            console.log("Successfully published:", customPublicationId);
+            setIsUploading(false);
+            setSuccessModalVisible(true);
+
+        } catch (error) {
+            setIsUploading(false);
+            console.error("Firestore Error:", error);
+            Alert.alert(
+                "Firestore Permission Error", 
+                "Database blocked the save. Ensure the current user has 'accountStatus: \"active\"' in their user document."
+            );
+        }
     };
 
     const handleGoHome = () => {
@@ -45,50 +155,73 @@ export default function CreatePublicationScreen({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={[styles.safeArea, { flex: 1 }]}>
             <KeyboardAvoidingView 
-                style={styles.container} 
+                style={[styles.container, { flex: 1 }]} 
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
-                {/* Ensure styles.mainContent has `flex: 1` 
-                  so it fills the screen and pushes the button down 
-                */}
-                <View style={styles.mainContent}>
-
-                    {/* Scrollable Container for Form Fields */}
+                <View style={[styles.mainContent, { flex: 1 }]}>
                     <ScrollView 
                         style={{ flex: 1 }} 
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{ paddingBottom: 20 }}
+                        contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
                     >
                         <View style={styles.topFieldsContainer}>
-                            {/* Header */}
                             <View style={styles.header}>
                                 <Text style={styles.headerTitle}>Create{'\n'}Publication</Text>
-                                <TouchableOpacity 
-                                    style={styles.closeButton} 
-                                    onPress={() => navigation.goBack()}
-                                >
+                                <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
                                     <Iconify icon="lucide:x" size={28} color={theme.text} />
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Photo Upload Box */}
-                            <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7}>
-                                <Iconify
-                                    icon="lucide:camera"
-                                    size={44}
-                                    color={theme.secondary}
-                                    opacity={0.8}
-                                    strokeWidth={1.5}
-                                />
-                                <View style={styles.addPhotoRow}>
-                                    <Iconify icon="lucide:plus-circle" size={16} color={theme.subtext} />
-                                    <Text style={styles.addPhotoText}>Add photos</Text>
-                                </View>
-                            </TouchableOpacity>
+                            <ScrollView 
+                                horizontal 
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ gap: 12, paddingVertical: 10 }}
+                                style={{ marginBottom: 20 }}
+                            >
+                                {images.map((uri, index) => (
+                                    <View key={index} style={{ width: 100, height: 133, position: 'relative' }}>
+                                        <Image 
+                                            source={{ uri }} 
+                                            style={{ width: '100%', height: '100%', borderRadius: 12 }} 
+                                        />
+                                        <TouchableOpacity 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                top: -8, 
+                                                right: -8, 
+                                                backgroundColor: theme.background, 
+                                                borderRadius: 12 
+                                            }}
+                                            onPress={() => removeImage(index)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Iconify icon="lucide:x-circle" size={24} color={theme.text} />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
 
-                            {/* Form Fields */}
+                                <TouchableOpacity 
+                                    style={{
+                                        width: 100, 
+                                        height: 133, 
+                                        borderRadius: 12,
+                                        borderWidth: 1,
+                                        borderColor: theme.secondary,
+                                        borderStyle: 'dashed',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        backgroundColor: theme.background
+                                    }} 
+                                    activeOpacity={0.7} 
+                                    onPress={handlePickImage}
+                                >
+                                    <Iconify icon="lucide:plus" size={32} color={theme.subtext} />
+                                    <Text style={{ color: theme.subtext, fontSize: 12, marginTop: 4 }}>Add photo</Text>
+                                </TouchableOpacity>
+                            </ScrollView>
+
                             <FormLineInput
                                 label="Book's Name"
                                 placeholder="e.g. Art of War"
@@ -107,7 +240,6 @@ export default function CreatePublicationScreen({ navigation }) {
                                 styles={styles}
                             />
 
-                            {/* Real Dropdown Subject Field */}
                             <FormDropdown
                                 label="Subject"
                                 placeholder="Choose the book's subject"
@@ -117,7 +249,6 @@ export default function CreatePublicationScreen({ navigation }) {
                                 styles={styles}
                             />
 
-                            {/* Real Dropdown Condition Field */}
                             <FormDropdown
                                 label="Condition"
                                 placeholder="Choose the book's condition"
@@ -138,13 +269,15 @@ export default function CreatePublicationScreen({ navigation }) {
                         </View>
                     </ScrollView>
 
-                    {/* Submit Button (Permanently anchored to the bottom) */}
                     <TouchableOpacity 
-                        style={[styles.submitButton, { marginTop: 'auto' }]} 
+                        style={[styles.submitButton, { marginTop: 'auto', opacity: isUploading ? 0.7 : 1 }]} 
                         onPress={handleUpload}
                         activeOpacity={0.8}
+                        disabled={isUploading}
                     >
-                        <Text style={styles.submitButtonText}>UPLOAD</Text>
+                        <Text style={styles.submitButtonText}>
+                            {isUploading ? 'UPLOADING...' : 'UPLOAD'}
+                        </Text>
                     </TouchableOpacity>
 
                     <SuccessModal 
@@ -153,7 +286,6 @@ export default function CreatePublicationScreen({ navigation }) {
                         onGoHome={handleGoHome}
                         bookName={bookName}
                     />
-
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
