@@ -58,7 +58,7 @@ export default function ExploreScreen({navigation}) {
                 <Text style={styles.headerTitle} numberOfLines={2} ellipsizeMode="tail">
                     Hello, {currentUser?.username}
                 </Text>
-                <Text style={styles.headerSubtitle}>Let's start swaping</Text>
+                <Text style={styles.headerSubtitle}>Let's start swapping</Text>
             </View>
             <TouchableOpacity 
                 style={styles.searchButton}

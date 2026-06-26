@@ -4,16 +4,22 @@ import {
     View,
     Text,
     TouchableOpacity,
-    StyleSheet,
     Modal,
-    Image
+    Image,
+    useColorScheme // <-- 1. Added this
 } from 'react-native';
-import { Fonts } from '@readme/shared/src/constants/theme';
+import { Fonts, Colors } from '@readme/shared/src/constants/theme'; // <-- 2. Added Colors
 import { Iconify } from 'react-native-iconify';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { buildPublicationSuccessStyles } from '../../styles/publicationSuccessStyles';
 
 export default function SuccessModal({ visible, onClose, onGoHome, bookName }) {
+    // 3. Setup the theme hook
+    const colorScheme = useColorScheme() ?? 'light';
+    const theme = Colors[colorScheme];
+    const styles = buildPublicationSuccessStyles(theme);
+
     return (
         <Modal
             transparent={true}
@@ -63,84 +69,3 @@ export default function SuccessModal({ visible, onClose, onGoHome, bookName }) {
         </Modal>
     );
 }
-
-const styles = StyleSheet.create({
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: '#00000060',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalContent: {
-        width: '80%',
-        backgroundColor: '#DCDCDC',
-        borderRadius: 20,
-        paddingHorizontal: 20,
-        paddingBottom: 30,
-        alignItems: 'center',
-        marginTop: 80,
-    },
-    successImage: {
-        width: 250,
-        height: 220,
-        marginTop: -120,
-        resizeMode: 'contain',
-        marginBottom: 10,
-    },
-    gradientMaskContainer: {
-        height: 50,
-        width: '100%',
-        marginBottom: 8,
-    },
-    maskElementContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    gradientFill: {
-        flex: 1,
-    },
-    successTitle: {
-        fontSize: 30,
-        fontWeight: '900',
-        color: '#FFA500', 
-        letterSpacing: 0,
-        marginBottom: 16,
-        fontFamily: Fonts.inter_semi,
-        lineHeight: 45,
-    },
-    successSubtitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#111111',
-        marginBottom: 2,
-    },
-    successBookName: {
-        fontSize: 14,
-        color: '#666666',
-        textDecorationLine: 'underline',
-        marginBottom: 16,
-    },
-    successMessage: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: '#111111',
-        marginBottom: 24,
-    },
-    homeButton: {
-        flexDirection: 'row',
-        backgroundColor: '#5C3A21',
-        paddingVertical: 14,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        alignItems: 'center',
-        gap: 10,
-        width: '80%',
-        justifyContent: 'center',
-    },
-    homeButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '700',
-    },
-});
