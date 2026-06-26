@@ -1,0 +1,216 @@
+.page {
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+    padding: var(--space-5) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.backBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: var(--radius);
+    transition: background 0.12s;
+}
+
+.backBtn:hover {
+    background: var(--bg-selected);
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+    font-family: var(--font-serif);
+}
+
+/* ── Search ── */
+.searchRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    padding: 10px 14px;
+    border: 1px solid var(--bg-selected);
+}
+
+.searchIcon {
+    color: var(--subtext);
+    flex-shrink: 0;
+}
+
+.searchInput {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+}
+
+.searchInput::placeholder {
+    color: var(--subtext);
+}
+
+/* ── Meta ── */
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.count {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--secondary);
+}
+
+.description {
+    font-size: 0.88rem;
+    color: var(--subtext);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── List ── */
+.list {
+    background: var(--bg-selected);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.divider {
+    height: 1px;
+    background: var(--bg);
+    margin: 0 var(--space-3);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 14px var(--space-3);
+}
+
+/* ── Avatar ── */
+.avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.avatarImg {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
+.avatarInitials {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-text);
+    font-family: var(--font-serif);
+}
+
+/* ── Info ── */
+.info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.username {
+    font-size: 0.82rem;
+    color: var(--subtext);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Unblock button ── */
+.unblockBtn {
+    background: var(--bg-elem);
+    border: none;
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s;
+}
+
+.unblockBtn:hover:not(:disabled) {
+    background: var(--bg);
+}
+
+.unblockBtn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* ── Toast ── */
+.toast {
+    position: fixed;
+    top: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: var(--primary-text);
+    padding: 12px 20px;
+    border-radius: var(--radius-lg);
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    z-index: 1000;
+    white-space: nowrap;
+    animation: fadeInDown 0.2s ease;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Empty ── */
+.empty {
+    color: var(--subtext);
+    font-size: 0.95rem;
+    text-align: center;
+    padding: var(--space-5) 0;
+}
