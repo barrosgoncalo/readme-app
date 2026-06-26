@@ -77,6 +77,7 @@ export default function SearchScreen({ navigation }) {
         <View style={styles.container}>
             <View style={styles.searchBar}>
                 <Iconify icon="lucide:search" size={20} color={theme.subtext} />
+                
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search users..."
@@ -86,7 +87,32 @@ export default function SearchScreen({ navigation }) {
                     autoCapitalize="none"
                     autoCorrect={false}
                 />
-                {loading && <ActivityIndicator size="small" color={theme.secondary} />}
+                
+                {/* Trailing Elements Container */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {loading && <ActivityIndicator size="small" color={theme.secondary} />}
+
+                    {/* Ultra-compact, thick circular Go-Back Button */}
+                    <TouchableOpacity 
+                        onPress={() => navigation.goBack()} 
+                        style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: 9,
+                            backgroundColor: theme.backgroundSelected, 
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <Iconify 
+                            icon="lucide:x" 
+                            size={12}
+                            color={theme.subtext} 
+                            strokeWidth={3.5}
+                        />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <FlatList
