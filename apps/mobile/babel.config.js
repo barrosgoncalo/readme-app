@@ -39,6 +39,7 @@ export default function (api) {
                         'lucide:x',
                         'lucide:plus-circle',
                         'lucide:plus',
+                        'lucide:star',
                         'mdi:home',
                         'lucide:lock',
                         'solar:medal-star-circle-linear',

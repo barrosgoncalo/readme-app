@@ -2,8 +2,8 @@
 
 /**
  * Creates a standardized publication object to be saved to the database.
- * * @param {string} uid - The ID of the user creating the post (currentUser.uid)
- * @param {object} bookData - Object containing book details (title, author, images array, etc.)
+ * @param {string} uid - The ID of the user creating the post (currentUser.uid)
+ * @param {object} bookData - Object containing book details (title, author, condition, subject, images array, etc.)
  * @param {string} detailsText - The text content of the user's publication
  * @returns {object} The formatted data payload for Firestore
  */
@@ -15,9 +15,10 @@ export const createPublicationModel = (uid, bookData, detailsText = "") => {
         book: {
             title: bookData?.title || "Unknown Title",
             author: bookData?.author || "Unknown Author",
-            // Now strictly handles an array of image addresses from Firebase Storage
             images: bookData?.images || bookData?.coverImages || [],
-            bookId: bookData?.bookId || null
+            bookId: bookData?.bookId || null,
+            condition: bookData?.condition || "Not specified",
+            subject: bookData?.subject || "Not specified"
         },
 
         detailsText: detailsText.trim(),

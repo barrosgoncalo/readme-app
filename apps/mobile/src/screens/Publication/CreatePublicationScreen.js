@@ -128,7 +128,9 @@ export default function CreatePublicationScreen({ navigation }) {
                     title: bookName,
                     author: authorName || "Unknown Author",
                     images: uploadedImageUrls, 
-                    bookId: generatedBookId 
+                    bookId: generatedBookId ,
+                    condition: condition,
+                    subject: subject
                 }, 
                 description
             );

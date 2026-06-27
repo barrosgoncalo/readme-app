@@ -47,9 +47,6 @@ export default function ExploreScreen({navigation}) {
     const fetchPublications = async () => {
         setIsLoadingBooks(true);
         try {
-            console.log("=== DEBUG AUTH ===");
-            console.log("UID Autenticado no Frontend:", auth.currentUser?.uid);
-            console.log("Email Autenticado no Frontend:", auth.currentUser?.email);
             const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
             
@@ -138,7 +135,7 @@ export default function ExploreScreen({navigation}) {
                 </View>
             ) : (
                 <FlatList
-                    data={books} // <-- AGORA USA OS DADOS DA BASE DE DADOS
+                    data={books}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
                     columnWrapperStyle={styles.row}
@@ -151,17 +148,16 @@ export default function ExploreScreen({navigation}) {
                             {renderSwapSection()}
                         </>
                     }
-                    renderItem={({ item }) => (
-                        <BookGridItem 
-                            title={item.title}
-                            author={item.author}
-                            imageUrl={item.imageUrl}
-                            styles={styles} 
-                            onPress={() => console.log('Livro clicado:', item.id, item.publicationData)}
-                        />
-                    )}
-                    // Se não houver publicações, mostra uma mensagem simpática
-                    ListEmptyComponent={
+                        renderItem={({ item }) => (
+                            <BookGridItem 
+                                title={item.title}
+                                author={item.author}
+                                imageUrl={item.imageUrl}
+                                styles={styles} 
+                                onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { book: item })}
+                            />
+                        )}
+                        ListEmptyComponent={
                         <Text style={{ textAlign: 'center', color: theme.subtext, marginTop: 40 }}>
                             No books published yet. Be the first to swap!
                         </Text>

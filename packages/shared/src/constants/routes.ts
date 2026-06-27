@@ -16,5 +16,6 @@ export const ROUTES = {
     BOOKS_LIST: 'BooksList',
     BOOK_DETAILS: 'BooksDetails',
     SEARCH: 'Search',
-    PUBLICATION: 'Publication'
+    PUBLICATION: 'Publication',
+    PUBLICATION_DETAILS: 'PublicationDetails',
 } as const;
