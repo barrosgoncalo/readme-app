@@ -42,9 +42,14 @@ export default function ExploreScreen({navigation}) {
     const [isLoadingBooks, setIsLoadingBooks] = useState(true);
     const [focusKey, setFocusKey] = useState(0);
 
+    const auth = useAuth();
+
     const fetchPublications = async () => {
         setIsLoadingBooks(true);
         try {
+            console.log("=== DEBUG AUTH ===");
+            console.log("UID Autenticado no Frontend:", auth.currentUser?.uid);
+            console.log("Email Autenticado no Frontend:", auth.currentUser?.email);
             const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
             
@@ -72,9 +77,13 @@ export default function ExploreScreen({navigation}) {
     };
 
     useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
+        const unsubscribe = navigation.addListener('focus', async () => {
             setFocusKey(prev => prev + 1);
-            if (refreshUser) refreshUser();
+
+            if (refreshUser) {
+                await refreshUser(); 
+            }
+
             fetchPublications();
         });
         return unsubscribe;

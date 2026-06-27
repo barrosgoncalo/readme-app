@@ -1,6 +1,7 @@
 import { auth, db } from "./firebase";
 import {
     createUserWithEmailAndPassword,
+    deleteUser,
     signInWithEmailAndPassword, 
     sendPasswordResetEmail, 
     updatePassword ,
@@ -10,7 +11,7 @@ import {
     GoogleAuthProvider,
     EmailAuthProvider,
 } from "firebase/auth"
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ACCOUNT_STATUS } from "../constants/authConstants";
 import { createUserModel } from '@readme/shared/src/models/user';
@@ -18,6 +19,25 @@ import { createUserModel } from '@readme/shared/src/models/user';
 export const saveUserData = async (uid, profileData, provider) => {
     const userData = createUserModel(uid, profileData, provider);
     await setDoc(doc(db, "users", uid), userData);
+};
+
+export const doDeleteUserProfile = async (uid) => {
+    try {
+        const currentUser = auth.currentUser;
+        
+        if (!currentUser || currentUser.uid !== uid) {
+            throw new Error("No authenticated user found or UID mismatch.");
+        }
+
+        const userRef = doc(db, 'users', uid);
+        await deleteDoc(userRef);
+
+        await deleteUser(currentUser);
+        
+    } catch (error) {
+        console.error("Error deleting account:", error);
+        throw error;
+    }
 };
 
 

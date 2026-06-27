@@ -6,10 +6,14 @@ service cloud.firestore {
     // ─── REUSABLE SECURITY FUNCTIONS ───
     function isAuthenticated() { return request.auth != null; }
     function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+
+    function hasProfile() { return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+
     function getMyProfile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
-    function isAdmin() { return isAuthenticated() && getMyProfile().role == 'admin'; }
-    function isBackOfficer() { return isAuthenticated() && getMyProfile().role == 'back_officer'; }
-    function isActive() { return isAuthenticated() && getMyProfile().accountStatus == 'active'; }
+
+    function isAdmin() { return isAuthenticated() && hasProfile() && getMyProfile().role == 'admin'; }
+    function isBackOfficer() { return isAuthenticated() && hasProfile() && getMyProfile().role == 'back_officer'; }
+    function isActive() { return isAuthenticated() && hasProfile() && getMyProfile().accountStatus == 'active'; }
 
     // ─── USERS ───
     match /users/{userId} {
@@ -53,6 +57,7 @@ service cloud.firestore {
     match /publications/{publicationId} {
       // Any active user can read posts
       allow read: if isAuthenticated() && isActive();
+      allow read: if request.auth != null;
       
       // Users can only create posts under their own UID
       allow create: if isAuthenticated() && isActive() 
