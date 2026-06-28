@@ -44,6 +44,7 @@ export default function (api) {
                         'mdi:star-outline',
                         'mdi:cards-heart',
                         'mdi:cards-heart-outline',
+                        'mdi:heart',
                         'lucide:lock',
                         'solar:medal-star-circle-linear',
                         'solar:moon-outline',

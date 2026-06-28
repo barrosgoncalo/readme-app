@@ -53,19 +53,27 @@ service cloud.firestore {
       allow write: if false; 
     }
 
-    // ─── PUBLICATIONS (NEW POSTS FEATURE) ───
+   // ─── PUBLICATIONS (NEW POSTS FEATURE) ───
     match /publications/{publicationId} {
       // Any active user can read posts
       allow read: if isAuthenticated() && isActive();
-      allow read: if request.auth != null;
       
       // Users can only create posts under their own UID
       allow create: if isAuthenticated() && isActive() 
                     && request.resource.data.uid == request.auth.uid;
       
-      // Only the author or an admin can edit/delete their post
-      allow update, delete: if isAuthenticated() && isActive() 
-                            && (resource.data.uid == request.auth.uid || isAdmin() || isBackOfficer());
+      // Update Rule: Owners can update everything. Anyone can update JUST the favoriteCount.
+      allow update: if isAuthenticated() && isActive() 
+                    && (
+                      resource.data.uid == request.auth.uid 
+                      // FIX: Changed 'favoriteCount' to 'stats'
+                      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats'])
+                      || isAdmin() || isBackOfficer()
+                    );
+
+      // Only the author or an admin can delete their post
+      allow delete: if isAuthenticated() && isActive() 
+                    && (resource.data.uid == request.auth.uid || isAdmin() || isBackOfficer());
     }
 
     // ─── BOOK CATALOG ───
