@@ -22,6 +22,7 @@ export const createUserModel = (uid, profileData, provider) => {
 
         rating: 0,
         reviewCount: 0,
+        favoriteBooks: [],
 
         createdAt: new Date().toISOString(),
         photoURL: profileData.photoURL || null,

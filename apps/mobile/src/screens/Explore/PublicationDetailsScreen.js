@@ -13,18 +13,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 
 // Firebase Imports
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { db } from '@readme/shared/src/services/firebase'; 
 
 const { width } = Dimensions.get('window');
 
 export default function BookDetailsScreen({ route, navigation }) {
     const passedBook = route?.params?.book;
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
 
-    // 1. Safe book data mapping (Now grabbing the FULL array of images)
+    // Ensure you are passing the document ID from your feed layout
+    const bookId = passedBook?.id; 
+
     const bookImages = passedBook?.publicationData?.book?.images?.length > 0 
         ? passedBook.publicationData.book.images 
-        : ['https://via.placeholder.com/400x600']; // Fallback if no images exist
+        : ['https://via.placeholder.com/400x600'];
 
     const book = {
         title: passedBook?.publicationData?.book?.title || 'Unknown Title',
@@ -33,12 +38,11 @@ export default function BookDetailsScreen({ route, navigation }) {
         condition: passedBook?.publicationData?.book?.condition || 'Condition not specified',
         subject: passedBook?.publicationData?.book?.subject || 'Not specified',
         images: bookImages,
-        // uid: passedBook?.publicationData?.uid
-        uid: passedBook?.publicationData?.userId || passedBook?.publicationData?.uid || passedBook?.userId || passedBook?.uid || passedBook?.sellerId
+        uid: passedBook?.publicationData?.uid
     };
 
-    // 2. State for the seller and active image dot
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isFavorited, setIsFavorited] = useState(false);
     const [seller, setSeller] = useState({
         name: 'Loading...',
         rating: 0,
@@ -46,13 +50,35 @@ export default function BookDetailsScreen({ route, navigation }) {
         avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=loading'
     });
 
-    // Handle Image Swipe to update the dot indicator
     const handleScroll = (event) => {
         const scrollPosition = event.nativeEvent.contentOffset.x;
         const index = Math.round(scrollPosition / width);
         setCurrentImageIndex(index);
     };
 
+    // Sync Favorite Icon State on Initialization
+    useEffect(() => {
+        const checkFavoriteStatus = async () => {
+            if (!currentUser || !bookId) return;
+
+            try {
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    const favorites = userData.favoriteBooks || [];
+                    setIsFavorited(favorites.includes(bookId));
+                }
+            } catch (error) {
+                console.error('[BookDetailsScreen] Failed to verify user favorite records:', error);
+            }
+        };
+
+        checkFavoriteStatus();
+    }, [bookId, currentUser]);
+
+    // Retrieve Seller Profile Data
     useEffect(() => {
         const fetchSellerProfile = async () => {
             if (!book.uid) {
@@ -67,7 +93,6 @@ export default function BookDetailsScreen({ route, navigation }) {
                 if (sellerDocSnap.exists()) {
                     const sellerData = sellerDocSnap.data();
 
-                    // Resolve cross-platform naming conventions for user profiles
                     const fetchedAvatar = sellerData.photoURL || 
                         sellerData.profilePicture || 
                         sellerData.profilePic || 
@@ -97,6 +122,31 @@ export default function BookDetailsScreen({ route, navigation }) {
         fetchSellerProfile();
     }, [book.uid]);
 
+    const handleToggleFavorite = async () => {
+        if (!currentUser) {
+            console.warn('[BookDetailsScreen] Guest operations restricted. Must log in to favorite.');
+            return;
+        }
+        if (!bookId) {
+            console.warn('[BookDetailsScreen] Missing operational context (Book ID). Execution aborted.');
+            return;
+        }
+
+        const baselineState = isFavorited;
+        setIsFavorited(!baselineState);
+
+        try {
+            const userDocRef = doc(db, 'users', currentUser.uid);
+
+            await updateDoc(userDocRef, {
+                favoriteBooks: !baselineState ? arrayUnion(bookId) : arrayRemove(bookId)
+            });
+        } catch (error) {
+            console.error('[BookDetailsScreen] Database persistence error handling user favorites:', error);
+            setIsFavorited(baselineState); 
+        }
+    };
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -110,7 +160,7 @@ export default function BookDetailsScreen({ route, navigation }) {
                         pagingEnabled
                         showsHorizontalScrollIndicator={false}
                         onScroll={handleScroll}
-                        scrollEventThrottle={16} // Fires smoothly during scroll
+                        scrollEventThrottle={16}
                     >
                         {book.images.map((imgUrl, index) => (
                             <View key={index} style={styles.singleImageWrapper}>
@@ -123,7 +173,6 @@ export default function BookDetailsScreen({ route, navigation }) {
                         ))}
                     </ScrollView>
 
-                    {/* Pagination Dots (Only show if more than 1 image) */}
                     {book.images.length > 1 && (
                         <View style={styles.paginationContainer}>
                             {book.images.map((_, index) => (
@@ -146,8 +195,12 @@ export default function BookDetailsScreen({ route, navigation }) {
                             <Iconify icon="lucide:arrow-left" size={24} color="#FFFFFF" />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.iconButton}>
-                            <Iconify icon="lucide:heart" size={24} color="#FFFFFF" />
+                        <TouchableOpacity style={styles.iconButton} onPress={handleToggleFavorite}>
+                            <Iconify 
+                                icon={isFavorited ? "mdi:cards-heart" : "mdi:cards-heart-outline"} 
+                                size={24} 
+                                color={isFavorited ? "#c80d0d" : "#FFFFFF"} 
+                            />
                         </TouchableOpacity>
                     </SafeAreaView>
                 </View>
@@ -231,7 +284,7 @@ const styles = StyleSheet.create({
     imageContainer: {
         width: width,
         height: 450,
-        backgroundColor: '#EAEAEA', // Changed to a soft gray in case images have transparent/white backgrounds
+        backgroundColor: '#EAEAEA',
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
         overflow: 'hidden',
