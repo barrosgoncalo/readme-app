@@ -1,19 +1,14 @@
 // @readme/shared/src/models/user.js
 
+
 export const createUserModel = (uid, profileData, provider) => {
     return {
         uid: uid,
-
         userId: profileData.email.trim().toLowerCase(),
-
         username: profileData.username,
-
         fullName: profileData.fullName,
-
         phoneNumber: profileData.phoneNumber || null,
-
         dob: profileData.dob,
-
         profileVisibility: profileData.isPublic ? 'public' : 'private',
         
         institutionalAddress: {
@@ -25,16 +20,14 @@ export const createUserModel = (uid, profileData, provider) => {
             country: profileData.country
         },
 
+        rating: 0,
+        reviewCount: 0,
+
         createdAt: new Date().toISOString(),
-
-        // default
-
         photoURL: profileData.photoURL || null,
-
         role: 'user',
-
         accountStatus: 'active',
-
+        
         notificationSettings: {
             pushEnabled: false,
             emailEnabled: false,
