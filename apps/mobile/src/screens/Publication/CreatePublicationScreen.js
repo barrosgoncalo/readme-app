@@ -34,10 +34,10 @@ export default function CreatePublicationScreen({ navigation }) {
     const [bookName, setBookName] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [description, setDescription] = useState('');
-    
+
     const [images, setImages] = useState([]); 
     const [isUploading, setIsUploading] = useState(false);
-    
+
     const [subject, setSubject] = useState(''); 
     const [condition, setCondition] = useState(''); 
     const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
@@ -49,7 +49,7 @@ export default function CreatePublicationScreen({ navigation }) {
 
     const handlePickImage = async () => {
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
+
         if (permissionResult.granted === false) {
             Alert.alert("Permission Required", "We need access to your gallery to upload photos.");
             return;
@@ -100,11 +100,11 @@ export default function CreatePublicationScreen({ navigation }) {
                         xhr.open('GET', uri, true);
                         xhr.send(null);
                     });
-                    
+
                     const imageRef = ref(storage, `books/${customPublicationId}/image_${index}`);
                     await uploadBytes(imageRef, blob);
                     blob.close();
-                    
+
                     return await getDownloadURL(imageRef);
                 })
             );
@@ -122,13 +122,18 @@ export default function CreatePublicationScreen({ navigation }) {
         // STAGE 2: SAVE TEXT DATA TO FIRESTORE
         // ==========================================
         try {
+            const sellerName = currentUser?.username || currentUser?.displayName || currentUser?.name || 'Anonymous Swapper';
+            const sellerAvatar = currentUser?.photoURL || currentUser?.profilePicture || currentUser?.avatarUrl || null;
+
             const publicationData = createPublicationModel(
                 currentUser.uid, 
+                sellerName,
+                sellerAvatar,
                 {
                     title: bookName,
                     author: authorName || "Unknown Author",
                     images: uploadedImageUrls, 
-                    bookId: generatedBookId ,
+                    bookId: generatedBookId,
                     condition: condition,
                     subject: subject
                 }, 

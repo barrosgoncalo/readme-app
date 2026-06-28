@@ -49,7 +49,7 @@ export default function ExploreScreen({navigation}) {
         try {
             const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
-            
+
             const fetchedBooks = querySnapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -58,13 +58,17 @@ export default function ExploreScreen({navigation}) {
                     title: data.book?.title || 'Unknown Title',
                     author: data.book?.author || 'Unknown Author',
                     imageUrl: data.book?.images && data.book.images.length > 0 
-                                ? data.book.images[0] 
-                                : null,
+                        ? data.book.images[0] 
+                        : null,
+                    seller: {
+                        name: data.sellerName || data.ownerName || 'Anonymous Swapper',
+                        avatarUrl: data.sellerAvatar || data.ownerAvatar || null,
+                    },
                     publicationData: data
                 };
             })
             .filter( book => book.uid !== currentUser?.uid);
-            
+
             setBooks(fetchedBooks);
         } catch (error) {
             console.error("Erro a carregar publicações:", error);
@@ -146,15 +150,18 @@ export default function ExploreScreen({navigation}) {
                         <>
                             {renderHeader()}
                             {renderSwapSection()}
-                        </>
-                    }
+                            </>
+                        }
                         renderItem={({ item }) => (
                             <BookGridItem 
                                 title={item.title}
                                 author={item.author}
                                 imageUrl={item.imageUrl}
                                 styles={styles} 
-                                onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { book: item })}
+                                onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
+                                    book: item,
+                                seller: item.seller
+                                })}
                             />
                         )}
                         ListEmptyComponent={

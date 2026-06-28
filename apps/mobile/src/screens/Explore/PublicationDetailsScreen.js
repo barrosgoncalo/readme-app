@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
-    Image,
     TouchableOpacity,
     ScrollView,
     StyleSheet,
     StatusBar,
     Dimensions
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { Iconify } from 'react-native-iconify';
 
@@ -21,10 +21,10 @@ const { width } = Dimensions.get('window');
 
 export default function BookDetailsScreen({ route, navigation }) {
     const passedBook = route?.params?.book;
+    const passedSeller = route?.params?.seller; // <-- 1. Extract the passed seller
+
     const auth = getAuth();
     const currentUser = auth.currentUser;
-
-    // Ensure you are passing the document ID from your feed layout
     const bookId = passedBook?.id; 
 
     const bookImages = passedBook?.publicationData?.book?.images?.length > 0 
@@ -43,11 +43,13 @@ export default function BookDetailsScreen({ route, navigation }) {
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorited, setIsFavorited] = useState(false);
+    
+    // 2. Use passedSeller for the initial state instead of hardcoded loading values
     const [seller, setSeller] = useState({
-        name: 'Loading...',
-        rating: 0,
-        reviews: 0,
-        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=loading'
+        name: passedSeller?.name || 'Loading...',
+        rating: passedSeller?.rating || 0,
+        reviews: passedSeller?.reviews || 0,
+        avatarUrl: passedSeller?.avatarUrl || null // Set to null instead of DiceBear
     });
 
     const handleScroll = (event) => {
@@ -166,8 +168,10 @@ export default function BookDetailsScreen({ route, navigation }) {
                             <View key={index} style={styles.singleImageWrapper}>
                                 <Image
                                     source={{ uri: imgUrl }}
-                                    style={[styles.bookImage, { objectFit: 'contain' }]}
+                                    style={styles.bookImage}
                                     contentFit="contain"
+                                    transition={300}
+                                    cachePolicy="memory-disk"
                                 />
                             </View>
                         ))}
@@ -231,8 +235,11 @@ export default function BookDetailsScreen({ route, navigation }) {
                     <TouchableOpacity style={styles.sellerCard}>
                         <View style={styles.sellerInfoLeft}>
                             <Image 
-                                source={{ uri: seller.avatarUrl }} 
-                                style={styles.sellerAvatar} 
+                                source={seller.avatarUrl ? { uri: seller.avatarUrl } : null} 
+                                style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]}
+                                contentFit="cover"
+                                transition={200}
+                                cachePolicy="memory-disk"
                             />
                             <View>
                                 <Text style={styles.sellerName}>{seller.name}</Text>
@@ -328,7 +335,7 @@ const styles = StyleSheet.create({
     },
     topButtonsContainer: {
         position: 'absolute',
-        top: 20,
+        top: 5,
         left: 0,
         right: 0,
         flexDirection: 'row',
