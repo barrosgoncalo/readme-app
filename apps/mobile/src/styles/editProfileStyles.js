@@ -1,5 +1,4 @@
-import { Platform, StyleSheet } from 'react-native';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { StyleSheet } from 'react-native';
 import { Fonts } from '@readme/shared/src/constants/theme';
 
 export const buildEditProfileStyles = (theme) => StyleSheet.create({

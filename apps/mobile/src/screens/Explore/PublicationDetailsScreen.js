@@ -4,10 +4,12 @@ import {
     Text,
     TouchableOpacity,
     ScrollView,
-    StyleSheet,
     StatusBar,
-    Dimensions
+    Dimensions,
+    useColorScheme
 } from 'react-native';
+import { Colors } from '@readme/shared/src/constants/theme';
+import { buildBookDetailsStyles } from '../../styles/publicationDetailsStyles';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { Iconify } from 'react-native-iconify';
@@ -20,8 +22,12 @@ import { db } from '@readme/shared/src/services/firebase';
 const { width } = Dimensions.get('window');
 
 export default function BookDetailsScreen({ route, navigation }) {
+    const colorScheme = useColorScheme() ?? 'light';
+    const theme = Colors[colorScheme];
+    const styles = buildBookDetailsStyles(theme);
+
     const passedBook = route?.params?.book;
-    const passedSeller = route?.params?.seller; // <-- 1. Extract the passed seller
+    const passedSeller = route?.params?.seller;
 
     const auth = getAuth();
     const currentUser = auth.currentUser;
@@ -279,211 +285,3 @@ export default function BookDetailsScreen({ route, navigation }) {
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F5F4F2', 
-    },
-    scrollContent: {
-        paddingBottom: 100, 
-    },
-    imageContainer: {
-        width: width,
-        height: 450,
-        backgroundColor: '#EAEAEA',
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-        overflow: 'hidden',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
-        position: 'relative',
-    },
-    singleImageWrapper: {
-        width: width,
-        height: 450,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    bookImage: {
-        width: '100%',
-        height: '100%',
-    },
-    paginationContainer: {
-        position: 'absolute',
-        bottom: 16,
-        left: 0,
-        right: 0,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    dot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        marginHorizontal: 4,
-    },
-    activeDot: {
-        backgroundColor: '#FFFFFF',
-        width: 10,
-        height: 10,
-    },
-    topButtonsContainer: {
-        position: 'absolute',
-        top: 5,
-        left: 0,
-        right: 0,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        zIndex: 10,
-    },
-    iconButton: {
-        width: 44,
-        height: 44,
-        backgroundColor: 'rgba(92, 61, 46, 0.9)', 
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    detailsContainer: {
-        paddingHorizontal: 20,
-        paddingTop: 24,
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: '600',
-        color: '#333333',
-        marginBottom: 8,
-        textTransform: 'capitalize',
-    },
-    author: {
-        fontSize: 18,
-        color: '#888888',
-        marginBottom: 20,
-    },
-    description: {
-        fontSize: 15,
-        lineHeight: 22,
-        color: '#8A8A8A',
-        marginBottom: 24,
-    },
-    infoBoxesContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 24,
-    },
-    infoBox: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#8A8A8A',
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-    },
-    infoBoxLabel: {
-        position: 'absolute',
-        top: -10, 
-        left: 16,
-        backgroundColor: '#F5F4F2', 
-        paddingHorizontal: 6,
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333333',
-    },
-    infoBoxValue: {
-        fontSize: 16,
-        color: '#555555',
-    },
-    sellerCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#F5F4F2',
-        borderWidth: 1,
-        borderColor: '#DCD9D4',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 20,
-    },
-    sellerInfoLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    sellerAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#EACCA5',
-        marginRight: 12,
-    },
-    sellerName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333333',
-        marginBottom: 4,
-    },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    starIcon: {
-        marginRight: 2,
-    },
-    reviewsCount: {
-        fontSize: 12,
-        color: '#888888',
-        marginLeft: 6,
-    },
-    bottomBar: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: '#F5F4F2',
-        borderTopWidth: 1,
-        borderColor: '#EAEAEA',
-        paddingVertical: 12,
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        paddingHorizontal: 20,
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    chatButton: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#7A5B4C',
-        borderRadius: 12,
-        paddingVertical: 16,
-        marginRight: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    chatButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#5C3D2E',
-    },
-    offerButton: {
-        flex: 1,
-        backgroundColor: '#5C3D2E',
-        borderRadius: 12,
-        paddingVertical: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    offerButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
-    },
-});

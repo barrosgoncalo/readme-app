@@ -1,0 +1,220 @@
+import { StyleSheet, Dimensions } from 'react-native';
+import { Fonts } from '@readme/shared/src/constants/theme';
+
+const { width } = Dimensions.get('window');
+
+export const buildBookDetailsStyles = (theme) => {
+    return StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: theme.background, 
+        },
+        scrollContent: {
+            paddingBottom: 100, 
+        },
+        imageContainer: {
+            width: width,
+            height: 450,
+            backgroundColor: theme.coverPlaceholder,
+            borderBottomLeftRadius: 20,
+            borderBottomRightRadius: 20,
+            overflow: 'hidden',
+            shadowColor: theme.shadowBase,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 10,
+            elevation: 5,
+            position: 'relative',
+        },
+        singleImageWrapper: {
+            width: width,
+            height: 450,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        bookImage: {
+            width: '100%',
+            height: '100%',
+        },
+        paginationContainer: {
+            position: 'absolute',
+            bottom: 16,
+            left: 0,
+            right: 0,
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        dot: {
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: theme.textProgress, // Subdued transparent color
+            marginHorizontal: 4,
+        },
+        activeDot: {
+            backgroundColor: theme.textItemTitle,
+            width: 10,
+            height: 10,
+        },
+        topButtonsContainer: {
+            position: 'absolute',
+            top: 5,
+            left: 0,
+            right: 0,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingHorizontal: 20,
+            zIndex: 10,
+        },
+        iconButton: {
+            width: 44,
+            height: 44,
+            backgroundColor: theme.headerBackground, // Darker, contrasting background
+            borderRadius: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: 0.9, // Applied here since hex doesn't support easy transparency in RN
+        },
+        detailsContainer: {
+            paddingHorizontal: 20,
+            paddingTop: 24,
+        },
+        title: {
+            fontFamily: Fonts.playfair_bold,
+            fontSize: 26,
+            color: theme.textDisplay,
+            marginBottom: 8,
+            textTransform: 'capitalize',
+        },
+        author: {
+            fontFamily: Fonts.inter_regular,
+            fontSize: 18,
+            color: theme.textAuthor,
+            marginBottom: 20,
+        },
+        description: {
+            fontFamily: Fonts.inter_regular,
+            fontSize: 15,
+            lineHeight: 22,
+            color: theme.subtext,
+            marginBottom: 24,
+        },
+        infoBoxesContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+        },
+        infoBox: {
+            flex: 1,
+            borderWidth: 1,
+            borderColor: theme.borderLight,
+            borderRadius: 8,
+            paddingVertical: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+        },
+        infoBoxLabel: {
+            position: 'absolute',
+            top: -10, 
+            left: 16,
+            backgroundColor: theme.background,
+            paddingHorizontal: 6,
+            fontFamily: Fonts.inter_bold,
+            fontSize: 14,
+            color: theme.textItemTitle,
+        },
+        infoBoxValue: {
+            fontFamily: Fonts.inter_semi,
+            fontSize: 16,
+            color: theme.text,
+        },
+        sellerCard: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: theme.cardBackground,
+            borderWidth: 1,
+            borderColor: theme.borderLight,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 20,
+        },
+        sellerInfoLeft: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        sellerAvatar: {
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: theme.avatarBgTonal,
+            marginRight: 12,
+        },
+        sellerName: {
+            fontFamily: Fonts.inter_semi,
+            fontSize: 16,
+            color: theme.textItemTitle,
+            marginBottom: 4,
+        },
+        ratingContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        starIcon: {
+            marginRight: 2,
+        },
+        reviewsCount: {
+            fontFamily: Fonts.inter_regular,
+            fontSize: 12,
+            color: theme.textMuted,
+            marginLeft: 6,
+        },
+        bottomBar: {
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: theme.backgroundElement,
+            borderTopWidth: 1,
+            borderColor: theme.borderLight,
+            paddingTop: 12,     // Shrinks the container above the buttons
+            paddingBottom: 3, // Shrinks the container below the buttons, pushing them lower
+        },
+        buttonRow: {
+            flexDirection: 'row',
+            paddingHorizontal: 20,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        chatButton: {
+            flex: 1,
+            borderWidth: 1,
+            borderColor: theme.primary,
+            borderRadius: 12,
+            paddingVertical: 16, // Restored to your perfect thickness
+            marginRight: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        chatButtonText: {
+            fontFamily: Fonts.inter_semi,
+            fontSize: 16,
+            color: theme.primary, 
+        },
+        offerButton: {
+            flex: 1,
+            backgroundColor: theme.primary,
+            borderRadius: 12,
+            paddingVertical: 16, // Restored to your perfect thickness
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        offerButtonText: {
+            fontFamily: Fonts.inter_semi,
+            fontSize: 16,
+            color: theme.primaryText,
+        },
+    });
+};
