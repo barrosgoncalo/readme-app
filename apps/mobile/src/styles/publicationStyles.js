@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { withOpacity } from '@readme/shared/src/utils/colorUtils'
 
 export const buildPublicationStyles = (theme) => StyleSheet.create({
     safeArea: {

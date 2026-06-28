@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 
 // Firebase Imports
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@readme/shared/src/services/firebase'; 
 
@@ -145,10 +145,16 @@ export default function BookDetailsScreen({ route, navigation }) {
 
         try {
             const userDocRef = doc(db, 'users', currentUser.uid);
+            const publicationDocRef = doc(db, 'publications', bookId); 
 
-            await updateDoc(userDocRef, {
-                favoriteBooks: !baselineState ? arrayUnion(bookId) : arrayRemove(bookId)
-            });
+            await Promise.all([
+                updateDoc(userDocRef, {
+                    favoriteBooks: !baselineState ? arrayUnion(bookId) : arrayRemove(bookId)
+                }),
+                updateDoc(publicationDocRef, {
+                    "stats.likesCount": increment(!baselineState ? 1 : -1)
+                })
+            ]);
         } catch (error) {
             console.error('[BookDetailsScreen] Database persistence error handling user favorites:', error);
             setIsFavorited(baselineState); 

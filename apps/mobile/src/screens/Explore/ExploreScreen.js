@@ -19,7 +19,6 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { SwapCard } from '../../components/ui/SwapCard';
 import { BookGridItem } from '../../components/ui/BookGridItem';
 
-// Firebase Imports
 import { 
     collection, 
     getDocs, 
@@ -50,7 +49,7 @@ export default function ExploreScreen({navigation}) {
     const { currentUser, refreshUser } = useAuth(); 
 
     const [books, setBooks] = useState([]);
-    const [userFavorites, setUserFavorites] = useState([]); // Array of book IDs
+    const [userFavorites, setUserFavorites] = useState([]);
     const [isLoadingBooks, setIsLoadingBooks] = useState(true);
     const [focusKey, setFocusKey] = useState(0);
 
