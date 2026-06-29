@@ -85,6 +85,8 @@ export const Colors = {
     
     /** (Cinza Quente Muito Claro) - Bordas subtis, como a do avatar */
     borderLight: '#E4DFDC',
+
+    borderDark: '#d9d3ce',
     
     /** (Pêssego Claro) - Fundo colorido específico para o container do avatar */
     avatarBgTonal: '#F7D0A3',
@@ -165,6 +167,8 @@ export const Colors = {
     
     /** (Cinza Escuro) - Bordas subtis, um pouco mais claras que o fundo dos cartões (#242120) */
     borderLight: '#3A3532',
+
+    borderDark: '#292424',
     
     /** (Pêssego Queimado/Terracota) - Fundo colorido do avatar, adaptado para não brilhar demasiado no escuro */
     avatarBgTonal: '#A06C4B',

@@ -25,6 +25,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@readme/shared/src/services/firebase';
 import { createPublicationModel } from '@readme/shared/src/models/publication';
 import * as ImagePicker from 'expo-image-picker'; 
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function CreatePublicationScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -56,15 +57,34 @@ export default function CreatePublicationScreen({ navigation }) {
         }
 
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: 'images',
-            allowsMultipleSelection: true, 
-            allowsEditing: false, 
-            quality: 0.8,            
+            mediaTypes: 'images', // Expo v50+ uses string instead of ImagePicker.MediaTypeOptions
+            allowsMultipleSelection: false, 
+            allowsEditing: true, 
+            aspect: [3, 4], 
+            quality: 1, // Let ImageManipulator handle the final compression
         });
 
         if (!result.canceled) {
-            const newUris = result.assets.map(asset => asset.uri);
-            setImages(prevImages => [...prevImages, ...newUris]);
+            const rawUri = result.assets[0].uri;
+            
+            try {
+                const manipulatedImage = await ImageManipulator.manipulateAsync(
+                    rawUri,
+                    [], // Empty array because we don't need to manually crop/rotate
+                    { 
+                        compress: 0.8, // Optimizes file size for storage
+                        format: ImageManipulator.SaveFormat.JPEG 
+                    }
+                );
+                
+                // Save the fixed image URI to state instead of the raw one
+                setImages(prevImages => [...prevImages, manipulatedImage.uri]);
+                
+            } catch (error) {
+                console.error("Failed to process image orientation:", error);
+                // Fallback to the raw image just in case the manipulator fails
+                setImages(prevImages => [...prevImages, rawUri]);
+            }
         }
     };
 

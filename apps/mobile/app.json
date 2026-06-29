@@ -56,10 +56,10 @@
       [
         "expo-build-properties",
         {
-            "ios": {
-                "useFrameworks": "dynamic",
-                "deploymentTarget": "15.1" 
-            }
+          "ios": {
+            "deploymentTarget": "16.4",
+            "useFrameworks": "static"
+          }
         }
       ],
       [
@@ -68,8 +68,7 @@
           "photosPermission": "The app needs to access your photos so you can choose a profile picture.",
           "cameraPermission": "The app needs to access your camera so you can take a profile picture."
         }
-      ],
-      "@react-native-community/datetimepicker"
+      ]
     ],
     "experiments": {
       "reactCompiler": true

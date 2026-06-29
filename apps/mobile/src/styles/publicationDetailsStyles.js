@@ -1,5 +1,6 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { Fonts } from '@readme/shared/src/constants/theme';
+import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -70,11 +71,11 @@ export const buildBookDetailsStyles = (theme) => {
         iconButton: {
             width: 44,
             height: 44,
-            backgroundColor: theme.headerBackground, // Darker, contrasting background
+            backgroundColor: theme.headerBackground,
             borderRadius: 12,
             justifyContent: 'center',
             alignItems: 'center',
-            opacity: 0.9, // Applied here since hex doesn't support easy transparency in RN
+            opacity: 0.9,
         },
         detailsContainer: {
             paddingHorizontal: 20,
@@ -104,11 +105,12 @@ export const buildBookDetailsStyles = (theme) => {
             flexDirection: 'row',
             justifyContent: 'space-between',
             marginBottom: 24,
+            marginTop: 10,
         },
         infoBox: {
             flex: 1,
             borderWidth: 1,
-            borderColor: theme.borderLight,
+            borderColor: theme.borderDark,
             borderRadius: 8,
             paddingVertical: 14,
             alignItems: 'center',
@@ -121,12 +123,12 @@ export const buildBookDetailsStyles = (theme) => {
             left: 16,
             backgroundColor: theme.background,
             paddingHorizontal: 6,
-            fontFamily: Fonts.inter_bold,
+            fontFamily: Fonts.inter_semi,
             fontSize: 14,
             color: theme.textItemTitle,
         },
         infoBoxValue: {
-            fontFamily: Fonts.inter_semi,
+            fontFamily: Fonts.inter_regular,
             fontSize: 16,
             color: theme.text,
         },
@@ -179,8 +181,8 @@ export const buildBookDetailsStyles = (theme) => {
             backgroundColor: theme.backgroundElement,
             borderTopWidth: 1,
             borderColor: theme.borderLight,
-            paddingTop: 12,     // Shrinks the container above the buttons
-            paddingBottom: 3, // Shrinks the container below the buttons, pushing them lower
+            paddingTop: 12,
+            paddingBottom: 3,
         },
         buttonRow: {
             flexDirection: 'row',
@@ -193,7 +195,7 @@ export const buildBookDetailsStyles = (theme) => {
             borderWidth: 1,
             borderColor: theme.primary,
             borderRadius: 12,
-            paddingVertical: 16, // Restored to your perfect thickness
+            paddingVertical: 16,
             marginRight: 12,
             justifyContent: 'center',
             alignItems: 'center',
@@ -207,7 +209,7 @@ export const buildBookDetailsStyles = (theme) => {
             flex: 1,
             backgroundColor: theme.primary,
             borderRadius: 12,
-            paddingVertical: 16, // Restored to your perfect thickness
+            paddingVertical: 16,
             justifyContent: 'center',
             alignItems: 'center',
         },
