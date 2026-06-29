@@ -16,7 +16,7 @@ export const BookGridItem = ({
     onToggleFavorite    // The function passed from ExploreScreen
 }) => {
     const localStyles = createLocalStyles(theme);
-    const activeHeartColor = theme.password?.red || '#D32F2F'; 
+    const activeHeartColor = theme.heart; 
     const inactiveHeartColor = theme.textItemTitle;
 
     return (

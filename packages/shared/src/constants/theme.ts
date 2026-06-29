@@ -91,7 +91,9 @@ export const Colors = {
     /** (Pêssego Claro) - Fundo colorido específico para o container do avatar */
     avatarBgTonal: '#F7D0A3',
 
-    caret: '#1C0E0530'
+    caret: '#1C0E0530',
+
+    heart:'#D32F2F'
   },
   dark: {
     /** (Light Gray) - Main body copy, headings, and core readable text. */
@@ -173,7 +175,9 @@ export const Colors = {
     /** (Pêssego Queimado/Terracota) - Fundo colorido do avatar, adaptado para não brilhar demasiado no escuro */
     avatarBgTonal: '#A06C4B',
 
-    caret: '#F2F0EF60'
+    caret: '#F2F0EF60',
+
+    heart:'#D32F2F'
   },
     password: {
         gray: '#ccc',

@@ -48,7 +48,52 @@ export default function CreatePublicationScreen({ navigation }) {
 
     const { currentUser } = useAuth();
 
-    const handlePickImage = async () => {
+    // ==========================================
+    // IMAGE HANDLING LOGIC
+    // ==========================================
+
+    const processAndSaveImage = async (rawUri) => {
+        try {
+            const manipulatedImage = await ImageManipulator.manipulateAsync(
+                rawUri,
+                [], // Empty array because we don't need to manually crop/rotate
+                { 
+                    compress: 0.8, // Optimizes file size for storage
+                    format: ImageManipulator.SaveFormat.JPEG 
+                }
+            );
+            
+            // Save the fixed image URI to state instead of the raw one
+            setImages(prevImages => [...prevImages, manipulatedImage.uri]);
+            
+        } catch (error) {
+            console.error("Failed to process image orientation:", error);
+            // Fallback to the raw image just in case the manipulator fails
+            setImages(prevImages => [...prevImages, rawUri]);
+        }
+    };
+
+    const takePhoto = async () => {
+        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+        if (permissionResult.granted === false) {
+            Alert.alert("Permission Required", "We need access to your camera to take photos.");
+            return;
+        }
+
+        let result = await ImagePicker.launchCameraAsync({
+            mediaTypes: 'images',
+            allowsEditing: true,
+            aspect: [3, 4],
+            quality: 1, 
+        });
+
+        if (!result.canceled) {
+            await processAndSaveImage(result.assets[0].uri);
+        }
+    };
+
+    const pickFromGallery = async () => {
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (permissionResult.granted === false) {
@@ -57,40 +102,37 @@ export default function CreatePublicationScreen({ navigation }) {
         }
 
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: 'images', // Expo v50+ uses string instead of ImagePicker.MediaTypeOptions
+            mediaTypes: 'images', 
             allowsMultipleSelection: false, 
             allowsEditing: true, 
             aspect: [3, 4], 
-            quality: 1, // Let ImageManipulator handle the final compression
+            quality: 1,
         });
 
         if (!result.canceled) {
-            const rawUri = result.assets[0].uri;
-            
-            try {
-                const manipulatedImage = await ImageManipulator.manipulateAsync(
-                    rawUri,
-                    [], // Empty array because we don't need to manually crop/rotate
-                    { 
-                        compress: 0.8, // Optimizes file size for storage
-                        format: ImageManipulator.SaveFormat.JPEG 
-                    }
-                );
-                
-                // Save the fixed image URI to state instead of the raw one
-                setImages(prevImages => [...prevImages, manipulatedImage.uri]);
-                
-            } catch (error) {
-                console.error("Failed to process image orientation:", error);
-                // Fallback to the raw image just in case the manipulator fails
-                setImages(prevImages => [...prevImages, rawUri]);
-            }
+            await processAndSaveImage(result.assets[0].uri);
         }
+    };
+
+    const handleAddImagePress = () => {
+        Alert.alert(
+            "Add Photo",
+            "Choose a method to add a photo",
+            [
+                { text: "Take a Photo", onPress: takePhoto },
+                { text: "Choose from Gallery", onPress: pickFromGallery },
+                { text: "Cancel", style: "cancel" }
+            ]
+        );
     };
 
     const removeImage = (indexToRemove) => {
         setImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
     };
+
+    // ==========================================
+    // UPLOAD LOGIC
+    // ==========================================
 
     const handleUpload = async () => {
         if (!bookName || images.length === 0) {
@@ -106,9 +148,7 @@ export default function CreatePublicationScreen({ navigation }) {
 
         let uploadedImageUrls = [];
 
-        // ==========================================
         // STAGE 1: UPLOAD IMAGES TO FIREBASE STORAGE
-        // ==========================================
         try {
             uploadedImageUrls = await Promise.all(
                 images.map(async (uri, index) => {
@@ -135,12 +175,10 @@ export default function CreatePublicationScreen({ navigation }) {
                 "Storage Permission Error", 
                 "Firebase blocked the image upload. Please check your Firebase Storage Rules in the console."
             );
-            return; // Stop the function here if images fail
+            return;
         }
 
-        // ==========================================
         // STAGE 2: SAVE TEXT DATA TO FIRESTORE
-        // ==========================================
         try {
             const sellerName = currentUser?.username || currentUser?.displayName || currentUser?.name || 'Anonymous Swapper';
             const sellerAvatar = currentUser?.photoURL || currentUser?.profilePicture || currentUser?.avatarUrl || null;
@@ -242,7 +280,7 @@ export default function CreatePublicationScreen({ navigation }) {
                                         backgroundColor: theme.background
                                     }} 
                                     activeOpacity={0.7} 
-                                    onPress={handlePickImage}
+                                    onPress={handleAddImagePress}
                                 >
                                     <Iconify icon="lucide:plus" size={32} color={theme.subtext} />
                                     <Text style={{ color: theme.subtext, fontSize: 12, marginTop: 4 }}>Add photo</Text>

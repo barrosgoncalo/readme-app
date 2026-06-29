@@ -245,7 +245,7 @@ export default function BookDetailsScreen({ route, navigation }) {
                             <Iconify 
                                 icon={isFavorited ? "mdi:cards-heart" : "mdi:cards-heart-outline"} 
                                 size={24} 
-                                color={isFavorited ? "#c80d0d" : "#FFFFFF"} 
+                                color={isFavorited ? theme.heart : "#FFFFFF"} 
                             />
                         </TouchableOpacity>
                     </SafeAreaView>

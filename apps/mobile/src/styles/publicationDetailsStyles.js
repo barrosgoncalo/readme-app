@@ -105,7 +105,7 @@ export const buildBookDetailsStyles = (theme) => {
             flexDirection: 'row',
             justifyContent: 'space-between',
             marginBottom: 24,
-            marginTop: 10,
+            marginTop: 5,
         },
         infoBox: {
             flex: 1,
