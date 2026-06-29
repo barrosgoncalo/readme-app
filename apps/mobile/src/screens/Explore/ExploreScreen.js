@@ -55,7 +55,6 @@ export default function ExploreScreen({navigation}) {
 
     // Fetch publications
     const fetchPublications = async () => {
-        setIsLoadingBooks(true);
         try {
             const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);

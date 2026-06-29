@@ -109,7 +109,6 @@ export default function ReadingListScreen({ navigation }) {
             const fetchBooks = async () => {
                 if (!currentUser?.uid) return;
                 try {
-                    setIsLoading(true);
                     const userBooks = await myBooksService.getBooks(currentUser.uid);
                     setBooks(userBooks);
                 } catch (error) {
