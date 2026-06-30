@@ -6,7 +6,9 @@ import {
     StyleSheet, 
     Alert,
     useColorScheme,
-    ActivityIndicator
+    ActivityIndicator,
+    TextInput,
+    Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
@@ -25,18 +27,35 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     
     const { targetBook, targetSeller, offeredBooks = [] } = route.params;
     
-    // States for dynamic location loading
+    // Core States
     const [sellerLocations, setSellerLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedLocation, setSelectedLocation] = useState(null);
+    
+    // Alternative Custom Location States
+    const [isProposingAlternative, setIsProposingAlternative] = useState(false);
+    const [customLocation, setCustomLocation] = useState(null);
+    const [geocodingCustom, setGeocodingCustom] = useState(false);
+    
+    // Address Search States
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+
+    // Keep track of where the user is looking on the map
+    const [currentRegion, setCurrentRegion] = useState({
+        latitude: 38.7223,
+        longitude: -9.1393,
+        latitudeDelta: 0.08,
+        longitudeDelta: 0.08,
+    });
+
     const mapRef = useRef(null);
 
-    // 1. Fetch and geocode locations directly on this screen using the seller's UID
+    // Fetch and geocode seller locations from Firebase
     useEffect(() => {
         const fetchAndGeocodeLocations = async () => {
             const sellerUid = targetBook?.uid;
             if (!sellerUid) {
-                console.warn('[StepTwoOfferScreen] Missing seller UID from targetBook.');
                 setLoading(false);
                 return;
             }
@@ -61,7 +80,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                                 };
                             }
                         } catch (error) {
-                            console.warn(`[StepTwoOfferScreen] Geocoding failed for ${pinTitle}:`, error);
+                            console.warn(`Geocoding failed for ${pinTitle}:`, error);
                         }
                         return null;
                     };
@@ -74,7 +93,6 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                         const country = addressData.country || 'Portugal';
                         const cityCountry = `${city}, ${country}`.trim();
 
-                        // Process Address Line 1
                         let address1String = addressData.addressLine1 || '';
                         address1String = address1String.replace(/n(?:º)?\s*(\d+)/i, 'nº $1');
                         
@@ -86,7 +104,6 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                             geocodePromises.push(getGeocodedPin(address1String, 'primary_loc', 'Primary Location'));
                         }
 
-                        // Process Address Line 2
                         if (addressData.addressLine2) {
                             let address2String = addressData.addressLine2;
                             const hasPostalCode = /\d{4}-\d{3}/.test(address2String);
@@ -106,7 +123,6 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                     const resolvedPins = await Promise.all(geocodePromises);
                     let mappedLocations = resolvedPins.filter(pin => pin !== null);
 
-                    // Ultimate safety fallback if no addresses geocode properly
                     if (mappedLocations.length === 0) {
                         mappedLocations = [
                             { id: 'fallback', title: 'Lisbon Center', address: 'Lisbon, Portugal', latitude: 38.7223, longitude: -9.1393 }
@@ -114,6 +130,13 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                     }
 
                     setSellerLocations(mappedLocations);
+                    
+                    setCurrentRegion({
+                        latitude: mappedLocations[0].latitude,
+                        longitude: mappedLocations[0].longitude,
+                        latitudeDelta: 0.08,
+                        longitudeDelta: 0.08,
+                    });
                 }
             } catch (error) {
                 console.error('[StepTwoOfferScreen] Error resolving seller profile:', error);
@@ -125,9 +148,9 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         fetchAndGeocodeLocations();
     }, [targetBook?.uid]);
 
-    // 2. Animate and frame map viewport around the resolved pins
+    // Automatically adjust map frame around seller pins
     useEffect(() => {
-        if (mapRef.current && sellerLocations.length > 0) {
+        if (mapRef.current && sellerLocations.length > 0 && !isProposingAlternative) {
             setTimeout(() => {
                 if (sellerLocations.length === 1) {
                     mapRef.current.animateToRegion({
@@ -144,10 +167,110 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                 }
             }, 400); 
         }
-    }, [sellerLocations]);
+    }, [sellerLocations, isProposingAlternative]);
+
+    // Forward Geocode: Convert Typed Address to Coordinates
+    const handleSearchAddress = async () => {
+        if (!searchQuery.trim()) return;
+        setIsSearching(true);
+        Keyboard.dismiss();
+        
+        try {
+            const geocoded = await Location.geocodeAsync(searchQuery);
+            if (geocoded.length > 0) {
+                const { latitude, longitude } = geocoded[0];
+                
+                // Fly map to new searched spot
+                mapRef.current?.animateToRegion({
+                    latitude,
+                    longitude,
+                    latitudeDelta: 0.02,
+                    longitudeDelta: 0.02,
+                }, 1000);
+
+                // Instantly update the custom pin and card based on the search
+                handleReverseGeocode({ latitude, longitude });
+            } else {
+                Alert.alert("Location Not Found", "We couldn't find that address. Try adding a city or postal code.");
+            }
+        } catch (error) {
+            console.warn("Search geocoding error:", error);
+            Alert.alert("Error", "Something went wrong searching for that address.");
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Reverse Geocode: Convert Coordinates to Address Text
+    const handleReverseGeocode = async (coords) => {
+        setGeocodingCustom(true);
+        try {
+            const response = await Location.reverseGeocodeAsync({
+                latitude: coords.latitude,
+                longitude: coords.longitude
+            });
+
+            if (response.length > 0) {
+                const place = response[0];
+                const streetName = place.street || place.name || "Custom Spot";
+                const streetNumber = place.streetNumber ? ` ${place.streetNumber}` : "";
+                const neighborhood = place.district ? `, ${place.district}` : "";
+                const cityName = place.city ? `, ${place.city}` : "";
+
+                setCustomLocation({
+                    id: 'proposed_custom',
+                    title: 'Proposed Custom Location',
+                    address: `${streetName}${streetNumber}${neighborhood}${cityName}`,
+                    latitude: coords.latitude,
+                    longitude: coords.longitude
+                });
+            } else {
+                setCustomLocation({
+                    id: 'proposed_custom',
+                    title: 'Proposed Custom Location',
+                    address: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`,
+                    latitude: coords.latitude,
+                    longitude: coords.longitude
+                });
+            }
+        } catch (error) {
+            console.warn("Reverse geocoding error:", error);
+        } finally {
+            setGeocodingCustom(false);
+        }
+    };
+
+    // Initialize custom location pin right in the center of the current viewport
+    const handleStartProposingAlternative = () => {
+        setSelectedLocation(null);
+        setSearchQuery(''); // Reset search bar
+        setIsProposingAlternative(true);
+        
+        const centerCoords = {
+            latitude: currentRegion.latitude,
+            longitude: currentRegion.longitude
+        };
+        handleReverseGeocode(centerCoords);
+    };
+
+    // Gracefully exit alternative location mode
+    const handleCancelAlternative = () => {
+        setIsProposingAlternative(false);
+        setCustomLocation(null);
+        setSearchQuery('');
+        Keyboard.dismiss();
+    };
+
+    // Handle map surface clicks during custom location placement
+    const handleMapPress = (e) => {
+        if (!isProposingAlternative) return;
+        Keyboard.dismiss();
+        handleReverseGeocode(e.nativeEvent.coordinate);
+    };
 
     const handleSendOffer = () => {
-        if (!selectedLocation) return;
+        const finalLocation = isProposingAlternative ? customLocation : selectedLocation;
+        if (!finalLocation) return;
         
         const offeredTitles = offeredBooks
             .map(item => item.book?.title || item.title || 'Unknown Title')
@@ -155,12 +278,12 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         
         Alert.alert(
             "Offer Ready to Send!",
-            `You are offering: ${offeredTitles}\nIn exchange for: ${targetBook.title}\nMeeting at: ${selectedLocation.title}`,
+            `You are offering: ${offeredTitles}\nIn exchange for: ${targetBook.title}\nMeeting at: ${finalLocation.title}\n(${finalLocation.address})`,
             [
                 { 
                     text: "Send to Chat", 
                     onPress: () => {
-                        console.log("Offer Payload:", { targetBook, targetSeller, offeredBooks, selectedLocation });
+                        console.log("Offer Payload:", { targetBook, targetSeller, offeredBooks, selectedLocation: finalLocation });
                         navigation.popToTop(); 
                     } 
                 },
@@ -168,6 +291,9 @@ export default function StepTwoOfferScreen({ route, navigation }) {
             ]
         );
     };
+
+    const activeLocationSelection = isProposingAlternative ? customLocation : selectedLocation;
+    const canSend = isProposingAlternative ? (customLocation && !geocodingCustom) : !!selectedLocation;
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -177,7 +303,9 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Iconify icon="lucide:arrow-left" size={24} color={theme.textItemTitle} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textItemTitle }]}>Choose Exchange Location</Text>
+                <Text style={[styles.headerTitle, { color: theme.textItemTitle }]}>
+                    {isProposingAlternative ? "Propose Custom Spot" : "Choose Exchange Location"}
+                </Text>
                 <View style={{ width: 24 }} /> 
             </SafeAreaView>
 
@@ -193,14 +321,13 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                         ref={mapRef}
                         provider={PROVIDER_DEFAULT}
                         style={styles.map}
-                        initialRegion={{
-                            latitude: sellerLocations[0]?.latitude || 38.7223,
-                            longitude: sellerLocations[0]?.longitude || -9.1393,
-                            latitudeDelta: 0.08,
-                            longitudeDelta: 0.08,
-                        }}
+                        onRegionChangeComplete={setCurrentRegion}
+                        onPress={handleMapPress}
+                        onPanDrag={Keyboard.dismiss} // Dismiss keyboard when dragging map
+                        initialRegion={currentRegion}
                     >
-                        {sellerLocations.map((loc) => (
+                        {/* Only show seller options if NOT in alternative proposal mode */}
+                        {!isProposingAlternative && sellerLocations.map((loc) => (
                             <Marker
                                 key={loc.id}
                                 coordinate={{ latitude: loc.latitude, longitude: loc.longitude }}
@@ -210,26 +337,74 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                                 onPress={() => setSelectedLocation(loc)}
                             />
                         ))}
+
+                        {/* Interactive Custom Alternative Pin */}
+                        {isProposingAlternative && customLocation && (
+                            <Marker
+                                draggable
+                                coordinate={{ latitude: customLocation.latitude, longitude: customLocation.longitude }}
+                                title="Your Custom Proposal"
+                                description="Drag me or tap somewhere else!"
+                                pinColor="#E53E3E" 
+                                onMarkerDragEnd={(e) => handleReverseGeocode(e.nativeEvent.coordinate)}
+                            />
+                        )}
                     </MapView>
                 )}
 
+                {/* Floating Search Bar Overlay (Only active during custom proposal) */}
+                {isProposingAlternative && (
+                    <View style={[styles.searchContainer, { backgroundColor: theme.backgroundElement, borderColor: theme.borderLight }]}>
+                        <Iconify icon="lucide:search" size={20} color={theme.subtext} />
+                        <TextInput
+                            style={[styles.searchInput, { color: theme.textItemTitle }]}
+                            placeholder="Search a street, cafe, or city..."
+                            placeholderTextColor={theme.subtext}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            onSubmitEditing={handleSearchAddress}
+                            returnKeyType="search"
+                            autoCorrect={false}
+                        />
+                        {isSearching ? (
+                            <ActivityIndicator size="small" color={theme.primary || '#E58A1F'} />
+                        ) : searchQuery.length > 0 ? (
+                            <TouchableOpacity onPress={() => setSearchQuery('')}>
+                                <Ionicons name="close-circle" size={20} color={theme.subtext} />
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
+                )}
+
                 {/* Floating Dynamic Action Card */}
-                {!loading && selectedLocation && (
+                {!loading && activeLocationSelection && (
                     <View style={[styles.actionCard, { backgroundColor: theme.backgroundElement, borderColor: theme.borderLight }]}>
                         <View style={styles.actionCardHeader}>
                             <View style={{ flex: 1 }}>
-                                <Text style={[styles.actionTitle, { color: theme.textItemTitle }]}>{selectedLocation.title}</Text>
-                                <Text style={[styles.actionSub, { color: theme.subtext }]}>{selectedLocation.address}</Text>
+                                <Text style={[styles.actionTitle, { color: theme.textItemTitle }]}>
+                                    {activeLocationSelection.title}
+                                </Text>
+                                {geocodingCustom ? (
+                                    <ActivityIndicator size="small" color={theme.primary} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
+                                ) : (
+                                    <Text style={[styles.actionSub, { color: theme.subtext }]}>{activeLocationSelection.address}</Text>
+                                )}
                             </View>
-                            <TouchableOpacity onPress={() => setSelectedLocation(null)} style={{ padding: 4 }}>
+                            <TouchableOpacity 
+                                onPress={() => isProposingAlternative ? handleCancelAlternative() : setSelectedLocation(null)} 
+                                style={{ padding: 4 }}
+                            >
                                 <Ionicons name="close" size={20} color={theme.subtext} />
                             </TouchableOpacity>
                         </View>
+                        {isProposingAlternative && (
+                            <Text style={styles.helperText}>💡 Tip: Search an address above, drag the red pin, or tap anywhere on the map.</Text>
+                        )}
                     </View>
                 )}
             </View>
 
-            {/* Premium Grounded Floating Bottom Bar */}
+            {/* Grounded Floating Bottom Action Dock */}
             <SafeAreaView edges={['bottom']} style={[styles.bottomBar, { 
                 backgroundColor: theme.backgroundElement,
                 borderTopColor: theme.borderLight
@@ -238,25 +413,33 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                     style={[
                         styles.sendButton, 
                         { 
-                            backgroundColor: selectedLocation ? (theme.primary || '#E58A1F') : theme.borderLight,
-                            shadowColor: selectedLocation ? (theme.primary || '#E58A1F') : '#000',
-                            elevation: selectedLocation ? 8 : 0,
+                            backgroundColor: canSend ? (theme.primary || '#E58A1F') : theme.borderLight,
+                            shadowColor: canSend ? (theme.primary || '#E58A1F') : '#000',
+                            elevation: canSend ? 8 : 0,
                         }
                     ]} 
                     onPress={handleSendOffer}
-                    disabled={!selectedLocation || loading}
+                    disabled={!canSend || loading}
                     activeOpacity={0.85}
                 >
-                    <Iconify icon="lucide:send" size={20} color={selectedLocation ? '#FFFFFF' : theme.subtext} />
+                    <Iconify icon="lucide:send" size={20} color={canSend ? '#FFFFFF' : theme.subtext} />
                     <Text style={[
                         styles.sendButtonText, 
-                        { color: selectedLocation ? '#FFFFFF' : theme.subtext }
-                    ]}>Send Offer</Text>
+                        { color: canSend ? '#FFFFFF' : theme.subtext }
+                    ]}>
+                        {isProposingAlternative ? "Propose This Spot" : "Send Offer"}
+                    </Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity style={styles.proposeAlternativeButton} onPress={() => Alert.alert("Feature", "Open a custom location picker here.")}>
-                    <Text style={[styles.proposeAlternativeText, { color: theme.secondary || '#E58A1F' }]}>Or propose a different location</Text>
-                </TouchableOpacity>
+                {isProposingAlternative ? (
+                    <TouchableOpacity style={styles.proposeAlternativeButton} onPress={handleCancelAlternative}>
+                        <Text style={[styles.proposeAlternativeText, { color: '#E53E3E' }]}>Cancel and use seller's locations</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity style={styles.proposeAlternativeButton} onPress={handleStartProposingAlternative}>
+                        <Text style={[styles.proposeAlternativeText, { color: theme.secondary || '#E58A1F' }]}>Or propose a different location</Text>
+                    </TouchableOpacity>
+                )}
             </SafeAreaView>
         </View>
     );
@@ -271,10 +454,42 @@ const styles = StyleSheet.create({
     map: { width: '100%', height: '100%' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 12, fontSize: 14, fontWeight: '600' },
+    
+    // Search Bar Styles
+    searchContainer: {
+        position: 'absolute',
+        top: 16,
+        left: 20,
+        right: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        height: 52,
+        borderRadius: 26,
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 12,
+        marginRight: 8,
+        fontSize: 15,
+        fontWeight: '500',
+        height: '100%',
+    },
+
+    // Action Card Styles
     actionCard: { position: 'absolute', bottom: 140, left: 20, right: 20, padding: 16, borderRadius: 12, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 },
     actionCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
     actionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-    actionSub: { fontSize: 13 },
+    actionSub: { fontSize: 13, lineHeight: 18 },
+    helperText: { fontSize: 11, color: '#A35C37', marginTop: 10, fontStyle: 'italic' },
+    
+    // Bottom Bar Styles
     bottomBar: { 
         position: 'absolute',
         bottom: 0,
@@ -302,6 +517,6 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
     sendButtonText: { fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
-    proposeAlternativeButton: { marginTop: 14, alignItems: 'center' },
+    proposeAlternativeButton: { marginTop: 14, alignItems: 'center', paddingVertical: 4 },
     proposeAlternativeText: { fontSize: 14, fontWeight: '600' }
 });
