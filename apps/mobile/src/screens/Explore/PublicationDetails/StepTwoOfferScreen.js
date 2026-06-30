@@ -1,64 +1,85 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, useColorScheme, ActivityIndicator, Keyboard } from 'react-native';
+import { 
+    View, 
+    Text, 
+    TouchableOpacity, 
+    StyleSheet, 
+    Alert, 
+    useColorScheme, 
+    ActivityIndicator, 
+    Keyboard 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import * as Location from 'expo-location';
 
-// Custom Hooks & Components 
+// Custom Hooks & Modular Sub-Components Architecture
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
 import MapSearchBar from '../../../components/ui/MapSearchBar';
 import SelectedLocationCard from '../../../components/ui/SelectedLocationCard';
 import OfferBottomDock from '../../../components/ui/OfferBottomDock';
 
+// ====================================================================
+// DESIGN CONSTANTS & CONFIGURATION
+// ====================================================================
+const DEFAULT_MAP_VIEWPORT = { 
+    latitude: 38.7223, 
+    longitude: -9.1393, 
+    latitudeDelta: 0.08, 
+    longitudeDelta: 0.08 
+};
+
 /**
  * StepTwoOfferScreen
- * Allows the user to select an exchange location for a book offer.
- * Users can either choose from the seller's predefined locations or 
- * propose a custom alternative location by tapping/dragging on the map.
+ * Handles the secondary stage of the transactional offer pipeline.
+ * Coordinates rendering pre-defined seller meet-up points alongside an
+ * interactive alternative custom placement workspace using reverse geocoding.
  */
 export default function StepTwoOfferScreen({ route, navigation }) {
-    // --- Theme & Navigation Params ---
+    // --- Theme & Navigation Context ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const { targetBook, offeredBooks = [] } = route.params;
 
-    // --- Data Fetching ---
-    // Custom hook to fetch and geocode the seller's institutional addresses
-    const { sellerLocations, loading } = useSellerLocations(targetBook?.uid);
-
-    // --- State Management ---
-    // Tracks the predefined seller location the user has tapped on
-    const [selectedLocation, setSelectedLocation] = useState(null);
-    
-    // Toggles the mode where the user can pick their own map spot
-    const [isProposingAlternative, setIsProposingAlternative] = useState(false);
-    
-    // Stores the coordinate and address data for the user's custom dropped pin
-    const [customLocation, setCustomLocation] = useState(null);
-    
-    // True while Expo is resolving coordinates into a readable street address
-    const [geocodingCustom, setGeocodingCustom] = useState(false);
-    
-    // Controls what part of the world the map is currently showing. Defaults to Lisbon center.
-    const [currentRegion, setCurrentRegion] = useState({ 
-        latitude: 38.7223, 
-        longitude: -9.1393, 
-        latitudeDelta: 0.08, 
-        longitudeDelta: 0.08 
-    });
-
+    // --- References ---
     const mapRef = useRef(null);
 
-    // --- Lifecycle Effects ---
-    // Automatically zooms and centers the map to fit all available seller markers once they load
+    // --- Isolated Remote Data Queries ---
+    // Custom hook queries Firebase profile fields and transforms address schemas into coordinates
+    const { sellerLocations, loading } = useSellerLocations(targetBook?.uid);
+
+    // --- UI/UX Interaction States ---
+    // Tracks the predefined marker chosen by the user
+    const [selectedLocation, setSelectedLocation] = useState(null);
+    
+    // Toggles the interface overlay into alternative custom drop-pin workspace mode
+    const [isProposingAlternative, setIsProposingAlternative] = useState(false);
+    
+    // Captures structural geometry and reverse geocoded textual metadata for custom coordinates
+    const [customLocation, setCustomLocation] = useState(null);
+    
+    // Toggled true during reverse coordinate text translations to handle async visual responses
+    const [geocodingCustom, setGeocodingCustom] = useState(false);
+    
+    // Captures active map tracking values to anchor subsequent custom workflows
+    const [currentRegion, setCurrentRegion] = useState(DEFAULT_MAP_VIEWPORT);
+
+    // ====================================================================
+    // LIFECYCLE EFFECTS
+    // ====================================================================
+
+    /**
+     * Effect: Responsive Viewport Camera Controller.
+     * Evaluates marker changes to calculate and execute map bounding fits or centering transitions.
+     */
     useEffect(() => {
-        // Only fit to markers if we have them and the user isn't in custom proposal mode
+        // Skip automatic framing changes if user is designing a custom alternative spot
         if (mapRef.current && sellerLocations.length > 0 && !isProposingAlternative) {
-            setTimeout(() => {
+            const viewportTimer = setTimeout(() => {
                 if (sellerLocations.length === 1) {
-                    // Zoom closely if there's only one location
+                    // Smooth linear tracking shift for lone coordinates
                     mapRef.current.animateToRegion({
                         latitude: sellerLocations[0].latitude,
                         longitude: sellerLocations[0].longitude,
@@ -66,21 +87,27 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                         longitudeDelta: 0.04,
                     }, 1000); 
                 } else {
-                    // Fit all markers within view, leaving padding for the floating bottom UI
+                    // Compound calculation matrix framing all coordinates safely with custom bottom padding allowances
                     mapRef.current.fitToCoordinates(sellerLocations, {
                         edgePadding: { top: 80, right: 80, bottom: 360, left: 80 },
                         animated: true,
                     });
                 }
-            }, 400); // Slight delay ensures map view is fully mounted before animating
+            }, 400); // 400ms delay window protects map canvas instantiation integrity across frames
+
+            return () => clearTimeout(viewportTimer);
         }
     }, [sellerLocations, isProposingAlternative]);
 
-    // --- Handlers ---
-    
+    // ====================================================================
+    // COORD ENGINE & ADAPTER ROUTINES
+    // ====================================================================
+
     /**
-     * Converts raw map coordinates into a readable street address.
-     * Used when the user taps the map or drags the custom marker.
+     * Reverse Geocoding Engine.
+     * Takes raw map coordinates, contacts localized geospatial mapping clients,
+     * and compiles a cleanly formatted string address structure.
+     * * @param {Object} coords - Spatial latitude and longitude values.
      */
     const handleReverseGeocode = async (coords) => {
         setGeocodingCustom(true);
@@ -88,16 +115,19 @@ export default function StepTwoOfferScreen({ route, navigation }) {
             const response = await Location.reverseGeocodeAsync(coords);
             const place = response[0];
 
-            // Fallback address format just in case reverse geocoding yields limited data
+            // Setup a fallback absolute geometry string if network layers return unpopulated strings
             let address = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
             
             if (place) {
-                // Construct a readable address string from the geocode result
                 const street = place.street || place.name || "Custom Spot";
-                address = `${street}${place.streetNumber ? ` ${place.streetNumber}` : ""}${place.district ? `, ${place.district}` : ""}${place.city ? `, ${place.city}` : ""}`;
+                const streetNumber = place.streetNumber ? ` ${place.streetNumber}` : "";
+                const district = place.district ? `, ${place.district}` : "";
+                const city = place.city ? `, ${place.city}` : "";
+                
+                address = `${street}${streetNumber}${district}${city}`;
             }
 
-            // Update the custom location state to render the marker and bottom card
+            // Sync structured state model properties
             setCustomLocation({
                 id: 'proposed_custom',
                 title: 'Proposed Custom Location',
@@ -106,15 +136,15 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                 longitude: coords.longitude
             });
         } catch (error) {
-            console.warn("Reverse geocoding error:", error);
+            console.warn("[Reverse Geocoding Runtime Warning]", error);
         } finally {
             setGeocodingCustom(false);
         }
     };
 
     /**
-     * Enters alternative mode. Clears any selected predefined seller location
-     * and drops a custom pin right in the center of the user's current screen.
+     * Initializes alternative selection canvas mode, purging previous state selections
+     * and resolving the exact point directly under the user's current camera center view.
      */
     const handleStartProposingAlternative = () => {
         setSelectedLocation(null);
@@ -126,7 +156,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     };
 
     /**
-     * Exits alternative mode, removing the custom pin and closing the keyboard.
+     * Teardown routine to safely reset custom workspaces and exit back to primary layouts.
      */
     const handleCancelAlternative = () => {
         setIsProposingAlternative(false);
@@ -135,16 +165,16 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     };
 
     /**
-     * Packages the selected data and moves the user forward in the flow.
+     * Compiles payload arguments and passes contextual metrics to parent navigation flows.
      */
     const handleSendOffer = () => {
-        // Determine which location to use based on the current mode
         const finalLocation = isProposingAlternative ? customLocation : selectedLocation;
         if (!finalLocation) return;
 
-        const offeredTitles = offeredBooks.map(item => item.book?.title || item.title || 'Unknown Title').join(', ');
+        const offeredTitles = offeredBooks
+            .map(item => item.book?.title || item.title || 'Unknown Title')
+            .join(', ');
 
-        // Placeholder confirmation alert (replace navigation.popToTop with your actual chat creation logic)
         Alert.alert(
             "Offer Ready to Send!",
             `Offering: ${offeredTitles}\nFor: ${targetBook.title}\nAt: ${finalLocation.title}\n(${finalLocation.address})`,
@@ -155,16 +185,17 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         );
     };
 
-    // --- Derived Values for Rendering ---
-    // Determines which location details to show in the floating card
+    // --- Reactive Layout Selectors ---
     const activeLocationSelection = isProposingAlternative ? customLocation : selectedLocation;
-    // Disables the 'Send' button if no location is finalized or if actively geocoding
     const canSend = isProposingAlternative ? (customLocation && !geocodingCustom) : !!selectedLocation;
 
+    // ====================================================================
+    // UI RENDERING LIFECYCLE
+    // ====================================================================
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
 
-            {/* --- Top Header Navigation --- */}
+            {/* --- TOP HEADER NAVIGATION TIER --- */}
             <SafeAreaView edges={['top']} style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Iconify icon="lucide:arrow-left" size={24} color={theme.textItemTitle} />
@@ -172,61 +203,56 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                 <Text style={[styles.headerTitle, { color: theme.textItemTitle }]}>
                     {isProposingAlternative ? "Propose Custom Spot" : "Choose Exchange Location"}
                 </Text> 
-                {/* Empty view to balance the header layout */}
+                {/* Visual architectural balance element anchor */}
                 <View style={{ width: 24 }}/>
             </SafeAreaView>
 
-            {/* --- Main Map Area --- */}
+            {/* --- CORE VISUAL MAP ENGINE SURFACE --- */}
             <View style={styles.mapContainer}>
                 {loading ? (
-                    // Loading State
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color={theme.primary || "#E58A1F"} />
                         <Text style={[styles.loadingText, { color: theme.subtext }]}>Finding spots...</Text>
                     </View>
                 ) : (
-                        // Loaded Map
-                        <MapView
-                            ref={mapRef}
-                            provider={PROVIDER_DEFAULT}
-                            style={styles.map}
-                            onRegionChangeComplete={setCurrentRegion} // Keep track of camera position
-                            // If in custom mode, tapping the map moves the custom pin
-                            onPress={(e) => isProposingAlternative && handleReverseGeocode(e.nativeEvent.coordinate)}
-                            onPanDrag={Keyboard.dismiss}
-                            initialRegion={currentRegion}
-                        >
-                            {/* Render standard seller pins only if we aren't proposing an alternative */}
-                            {!isProposingAlternative && sellerLocations.map((loc) => (
-                                <Marker
-                                    key={loc.id}
-                                    coordinate={loc}
-                                    title={loc.title}
-                                    description={loc.address}
-                                    // Highlight the currently selected pin
-                                    pinColor={selectedLocation?.id === loc.id ? (theme.primary || "#E58A1F") : "#A35C37"}
-                                    onPress={() => setSelectedLocation(loc)}
-                                />
-                            ))}
+                    <MapView
+                        ref={mapRef}
+                        provider={PROVIDER_DEFAULT}
+                        style={styles.map}
+                        onRegionChangeComplete={setCurrentRegion}
+                        onPress={(e) => isProposingAlternative && handleReverseGeocode(e.nativeEvent.coordinate)}
+                        onPanDrag={Keyboard.dismiss}
+                        initialRegion={currentRegion}
+                    >
+                        {/* Predefined Seller Locations Layer */}
+                        {!isProposingAlternative && sellerLocations.map((loc) => (
+                            <Marker
+                                key={loc.id}
+                                coordinate={loc}
+                                title={loc.title}
+                                description={loc.address}
+                                pinColor={selectedLocation?.id === loc.id ? (theme.primary || "#E58A1F") : "#A35C37"}
+                                onPress={() => setSelectedLocation(loc)}
+                            />
+                        ))}
 
-                            {/* Render the draggable custom pin if in alternative mode */}
-                            {isProposingAlternative && customLocation && (
-                                <Marker
-                                    draggable
-                                    coordinate={customLocation}
-                                    title="Your Custom Proposal"
-                                    description="Drag me or tap somewhere else!"
-                                    pinColor="#E53E3E" 
-                                    // Update address text when user drops the pin in a new spot
-                                    onMarkerDragEnd={(e) => handleReverseGeocode(e.nativeEvent.coordinate)}
-                                />
-                            )}
-                        </MapView>
-                    )}
+                        {/* Custom Interactive Floating Workspace Layer */}
+                        {isProposingAlternative && customLocation && (
+                            <Marker
+                                draggable
+                                coordinate={customLocation}
+                                title="Your Custom Proposal"
+                                description="Drag me or tap somewhere else!"
+                                pinColor="#E53E3E" 
+                                onMarkerDragEnd={(e) => handleReverseGeocode(e.nativeEvent.coordinate)}
+                            />
+                        )}
+                    </MapView>
+                )}
 
-                {/* --- Floating Overlays --- */}
+                {/* --- FLOATING WORKSPACE COMPONENT OVERLAYS --- */}
 
-                {/* Search Bar (Only visible in Custom Location Mode) */}
+                {/* Sub-component: Forward Geocoding Text Search Bar Input */}
                 {isProposingAlternative && (
                     <MapSearchBar 
                         theme={theme} 
@@ -235,7 +261,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                     />
                 )}
 
-                {/* Info Card showing details of the currently selected/placed pin */}
+                {/* Sub-component: Contextual Detail Map Display Card */}
                 {!loading && activeLocationSelection && (
                     <SelectedLocationCard 
                         theme={theme} 
@@ -247,7 +273,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                 )}
             </View>
 
-            {/* --- Fixed Bottom Actions --- */}
+            {/* --- FIXATED FOOTER DOCK ACTION PLATFORM --- */}
             <OfferBottomDock 
                 theme={theme}
                 canSend={canSend}
@@ -260,6 +286,9 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     );
 }
 
+// ====================================================================
+// STYLE SHEET SPECIFICATIONS
+// ====================================================================
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, paddingTop: 12 },
