@@ -67,9 +67,9 @@ export default function StepOneOfferScreen({ route, navigation }) {
 
     const handleNext = () => {
         if (selectedBooks.length === 0) return;
-        navigation.navigate(ROUTES.STEP_TWO_OFFER, {
-            targetBook,
-            targetSeller,
+        navigation.navigate(ROUTES.STEP_TWO_OFFER, { 
+            targetBook, 
+            targetSeller, 
             offeredBooks: selectedBooks 
         });
     };

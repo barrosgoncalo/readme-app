@@ -148,9 +148,9 @@ export default function BookDetailsScreen({ route, navigation }) {
     };
 
     const handleMakeOffer = () => {
-        navigation.navigate( ROUTES.STEP_ONE_OFFER, { 
+        navigation.navigate(ROUTES.STEP_ONE_OFFER, { 
             targetBook: book, 
-            targetSeller: seller 
+            targetSeller: seller
         });
     };
 
