@@ -23,7 +23,9 @@ import SearchBookScreen from '../screens/Shelf/SearchBookScreen';
 import BookDetailsScreen from '../screens/Shelf/BookDetailsScreen';
 import SearchScreen from '../screens/Explore/SearchScreen';
 import CreatePublicationScreen from '../screens/Publication/CreatePublicationScreen';
-import PublicationDetailsScreen from '../screens/Explore/PublicationDetailsScreen';
+import PublicationDetailsScreen from '../screens/Explore/PublicationDetails/PublicationDetailsScreen';
+import StepOneOffer from '../screens/Explore/PublicationDetails/StepOneOfferScreen';
+import StepTwoOffer from '../screens/Explore/PublicationDetails/StepTwoOfferScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -121,10 +123,19 @@ export default function AppNavigator() {
                             component={PublicationDetailsScreen}
                             options={{ headerShown: false }}
                         />
+                        <Stack.Screen 
+                            name={ROUTES.STEP_ONE_OFFER} 
+                            component={StepOneOffer} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.STEP_TWO_OFFER} 
+                            component={StepTwoOffer} 
+                            options={{ headerShown: false }} 
+                        />
                     </>
                 ) : (
                         <>
-                            {/* Use custom conditional layout trees rather than nested closures */}
                             {showSplash ? (
                                 <Stack.Screen name={ROUTES.SPLASH}>
                                     {() => <SplashScreen onFinish={handleSplashFinish} />}

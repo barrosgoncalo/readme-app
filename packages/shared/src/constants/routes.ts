@@ -18,4 +18,6 @@ export const ROUTES = {
     SEARCH: 'Search',
     PUBLICATION: 'Publication',
     PUBLICATION_DETAILS: 'PublicationDetails',
+    STEP_ONE_OFFER: 'StepOneOffer',
+    STEP_TWO_OFFER: 'StepTwoOffer',
 } as const;
