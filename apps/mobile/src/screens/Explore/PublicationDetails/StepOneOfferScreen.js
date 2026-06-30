@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     View, 
     Text, 
@@ -6,27 +6,61 @@ import {
     FlatList, 
     StyleSheet, 
     ActivityIndicator,
+    useColorScheme
 } from 'react-native';
-import { ROUTES } from '@readme/shared/src/constants/routes';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
+
+// External Libraries
 import { Iconify } from 'react-native-iconify';
+
+// Firebase Imports
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@readme/shared/src/services/firebase'; 
+
+// Internal Architecture
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { useColorScheme } from 'react-native';
+import { BookCard } from '../../../components/ui/BookCard';
+
+// ==========================================
+// HELPER FUNCTIONS
+// ==========================================
+
+/**
+ * Normalizes raw Firebase document data into a clean object for the UI.
+ * Doing this here prevents repetitive parsing during the render cycle.
+ */
+const normalizeBookData = (doc) => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        title: data.book?.title || data.title || 'Unknown Title',
+        imageUrl: data.book?.images?.[0] || 'https://via.placeholder.com/150',
+        rawDocData: data
+    };
+};
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 
 export default function StepOneOfferScreen({ route, navigation }) {
+    // --- Theme & Navigation Context ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-
     const { targetBook, targetSeller } = route.params;
 
+    // --- Local State ---
     const [myBooks, setMyBooks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedBooks, setSelectedBooks] = useState([]);
 
+    // ==========================================
+    // EFFECTS
+    // ==========================================
+
+    // Fetch the user's available books from Firestore on mount
     useEffect(() => {
         const fetchMyBooks = async () => {
             const auth = getAuth();
@@ -39,13 +73,10 @@ export default function StepOneOfferScreen({ route, navigation }) {
                 );
                 const querySnapshot = await getDocs(q);
 
-                const books = [];
-                querySnapshot.forEach((doc) => {
-                    books.push({ id: doc.id, ...doc.data() });
-                });
+                const books = querySnapshot.docs.map(normalizeBookData);
                 setMyBooks(books);
             } catch (error) {
-                console.error("Error fetching user books:", error);
+                console.error("[StepOneOfferScreen] Error fetching user books:", error);
             } finally {
                 setLoading(false);
             }
@@ -54,7 +85,13 @@ export default function StepOneOfferScreen({ route, navigation }) {
         fetchMyBooks();
     }, []);
 
-    const handleBookPress = (book) => {
+    // ==========================================
+    // HANDLERS
+    // ==========================================
+
+    // Toggles the selection state of a specific book
+    // Wrapped in useCallback so the memoized BookCard doesn't unnecessarily re-render
+    const handleBookPress = useCallback((book) => {
         setSelectedBooks((prevSelected) => {
             const isAlreadySelected = prevSelected.some((item) => item.id === book.id);
             if (isAlreadySelected) {
@@ -63,10 +100,12 @@ export default function StepOneOfferScreen({ route, navigation }) {
                 return [...prevSelected, book];
             }
         });
-    };
+    }, []);
 
+    // Proceeds to the map/location phase of the offer
     const handleNext = () => {
         if (selectedBooks.length === 0) return;
+        
         navigation.navigate(ROUTES.STEP_TWO_OFFER, { 
             targetBook, 
             targetSeller, 
@@ -74,41 +113,30 @@ export default function StepOneOfferScreen({ route, navigation }) {
         });
     };
 
+    // --- Render Helpers ---
+
     const renderBookItem = ({ item }) => {
         const isSelected = selectedBooks.some((book) => book.id === item.id);
-        const imageUrl = item.book?.images?.[0] || 'https://via.placeholder.com/150';
-        const title = item.book?.title || item.title || 'Unknown Title';
-
         return (
-            <TouchableOpacity 
-                style={[
-                    styles.bookCard, 
-                    { 
-                        backgroundColor: theme.backgroundElement,
-                        borderColor: isSelected ? theme.primary : theme.borderLight,
-                        borderWidth: isSelected ? 2 : 1
-                    }
-                ]}
-                onPress={() => handleBookPress(item)}
-                activeOpacity={0.7}
-            >
-                <Image source={{ uri: imageUrl }} style={styles.bookImage} contentFit="cover" />
-                <View style={styles.bookInfo}>
-                    <Text style={[styles.bookTitle, { color: theme.textItemTitle }]} numberOfLines={2}>{title}</Text>
-                </View>
-                {isSelected && (
-                    <View style={[styles.checkBadge, { backgroundColor: theme.primary }]}>
-                        <Iconify icon="lucide:check" size={14} color="#FFFFFF" />
-                    </View>
-                )}
-            </TouchableOpacity>
+            <BookCard 
+                item={item} 
+                isSelected={isSelected} 
+                onPress={handleBookPress} 
+                theme={theme} 
+            />
         );
     };
 
     const hasSelection = selectedBooks.length > 0;
 
+    // ==========================================
+    // RENDER
+    // ==========================================
+
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
+            
+            {/* --- HEADER --- */}
             <SafeAreaView edges={['top']} style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Iconify icon="lucide:arrow-left" size={24} color={theme.textItemTitle} />
@@ -117,13 +145,16 @@ export default function StepOneOfferScreen({ route, navigation }) {
                 <View style={{ width: 24 }} /> 
             </SafeAreaView>
 
+            {/* --- MAIN CONTENT AREA --- */}
             {loading ? (
                 <View style={styles.centerContent}>
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : myBooks.length === 0 ? (
                 <View style={styles.centerContent}>
-                    <Text style={[styles.emptyText, { color: theme.subtext }]}>You don't have any books in your collection to offer yet.</Text>
+                    <Text style={[styles.emptyText, { color: theme.subtext }]}>
+                        You don't have any books in your collection to offer yet.
+                    </Text>
                 </View>
             ) : (
                 <FlatList
@@ -133,10 +164,11 @@ export default function StepOneOfferScreen({ route, navigation }) {
                     contentContainerStyle={styles.listContainer}
                     numColumns={2}
                     columnWrapperStyle={styles.row}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
 
-            {/* Premium Floating Bottom Bar aligned with details screen */}
+            {/* --- FLOATING BOTTOM ACTION BAR --- */}
             <SafeAreaView edges={['bottom']} style={[styles.bottomBar, { 
                 backgroundColor: theme.backgroundElement,
                 borderTopColor: theme.borderLight
@@ -168,20 +200,32 @@ export default function StepOneOfferScreen({ route, navigation }) {
     );
 }
 
+// ==========================================
+// STYLES
+// ==========================================
+
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, paddingTop: 12 },
     backButton: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: '700' },
+    
+    // States (Loading / Empty)
     centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
     emptyText: { fontSize: 16, textAlign: 'center', lineHeight: 24 },
-    listContainer: { padding: 16, paddingBottom: 120 }, // Extra padding so cards aren't hidden behind the floating bar
+    
+    // List & Grid
+    listContainer: { padding: 16, paddingBottom: 120 }, // Ensures content isn't hidden behind the floating bar
     row: { justifyContent: 'space-between', marginBottom: 16 },
+    
+    // Book Card
     bookCard: { width: '48%', borderRadius: 12, overflow: 'hidden', padding: 8, position: 'relative' },
     bookImage: { width: '100%', aspectRatio: 0.7, borderRadius: 8, backgroundColor: '#EAEAEA' },
     bookInfo: { marginTop: 8 },
     bookTitle: { fontSize: 14, fontWeight: '600' },
     checkBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
+    
+    // Bottom Floating Dock
     bottomBar: { 
         position: 'absolute', 
         bottom: 0, 
@@ -198,13 +242,12 @@ const styles = StyleSheet.create({
     },
     nextButton: { 
         width: '100%', 
-        borderRadius: 16, // Consistent rounded rectangle
+        borderRadius: 16, 
         paddingVertical: 16, 
         flexDirection: 'row', 
         alignItems: 'center', 
         justifyContent: 'center', 
         gap: 12,
-        // Active button shadow
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

@@ -11,9 +11,9 @@ export const BookGridItem = ({
     onPress, 
     styles, 
     theme, 
-    isFavorite,         // Passed exactly as it is in the parent's state
-    favoriteCount = 0,  // Passed from parent
-    onToggleFavorite    // The function passed from ExploreScreen
+    isFavorite,
+    favoriteCount = 0,
+    onToggleFavorite
 }) => {
     const localStyles = createLocalStyles(theme);
     const activeHeartColor = theme.heart; 
