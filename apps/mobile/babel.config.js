@@ -40,6 +40,7 @@ export default function (api) {
                         'lucide:plus-circle',
                         'lucide:plus',
                         'lucide:star',
+                        'lucide:navigation',
                         'mdi:home',
                         'mdi:star-outline',
                         'mdi:cards-heart',

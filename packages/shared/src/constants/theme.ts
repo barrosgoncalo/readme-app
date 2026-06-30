@@ -12,6 +12,7 @@ import { Platform } from 'react-native';
  */
 export const Colors = {
   light: {
+    pureWhite: '#FFFFFF',
     /** (Almost Black) - Main body copy, headings, and core readable text. */
     text: '#1C1A19',
     /** (Dark Gray) - Captions, placeholders, descriptions, and less prominent text. */
@@ -96,6 +97,7 @@ export const Colors = {
     heart:'#D32F2F'
   },
   dark: {
+    pureWhite: '#FFFFFF',
     /** (Light Gray) - Main body copy, headings, and core readable text. */
     text: '#D8D6D4',
     /** (Medium Gray) - Captions, placeholders, descriptions, and less prominent text. */
