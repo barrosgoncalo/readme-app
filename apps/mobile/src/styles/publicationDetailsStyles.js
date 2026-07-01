@@ -1,6 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { Fonts } from '@readme/shared/src/constants/theme';
-import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 
 const { width } = Dimensions.get('window');
 

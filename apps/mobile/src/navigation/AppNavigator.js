@@ -26,6 +26,7 @@ import CreatePublicationScreen from '../screens/Publication/CreatePublicationScr
 import PublicationDetailsScreen from '../screens/Explore/PublicationDetails/PublicationDetailsScreen';
 import StepOneOffer from '../screens/Explore/PublicationDetails/StepOneOfferScreen';
 import StepTwoOffer from '../screens/Explore/PublicationDetails/StepTwoOfferScreen';
+import PublicProfileScreen from '../screens/Explore/PublicProfileScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -131,6 +132,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.STEP_TWO_OFFER} 
                             component={StepTwoOffer} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.PUBLIC_PROFILE_SCREEN} 
+                            component={PublicProfileScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

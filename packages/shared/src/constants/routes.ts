@@ -20,4 +20,5 @@ export const ROUTES = {
     PUBLICATION_DETAILS: 'PublicationDetails',
     STEP_ONE_OFFER: 'StepOneOffer',
     STEP_TWO_OFFER: 'StepTwoOffer',
+    PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen'
 } as const;
