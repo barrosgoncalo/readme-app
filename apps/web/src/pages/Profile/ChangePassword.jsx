@@ -13,7 +13,12 @@ export default function ChangePassword() {
 
     const backPath = location.state?.from || WEB_ROUTES.PROFILE_PRIVACY_SECURITY;
 
-    const back = () => navigate(backPath);
+    const back = () => navigate(backPath, {
+        state: {
+            draftForm: location.state?.draftForm,
+            draftPhoneCountry: location.state?.draftPhoneCountry
+        }
+    });
 
     const [form, setForm] = useState({ current: '', next: '', confirm: '' });
     const [show, setShow] = useState({ current: false, next: false, confirm: false });

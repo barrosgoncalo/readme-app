@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { ArrowLeft, ChevronRight, KeyRound } from 'lucide-react';
-import { db } from '@readme/shared/src/services/firebase.web';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { WEB_ROUTES } from '../../constants/webRoutes';
-import { DEFAULT_COUNTRY, parseStoredPhone } from '../../components/PhoneField/countryCodes.js';
+import {useState, useEffect} from 'react';
+import {useNavigate, useLocation} from 'react-router-dom';
+import {doc, getDoc, updateDoc} from 'firebase/firestore';
+import {ArrowLeft, ChevronRight, KeyRound} from 'lucide-react';
+import {db} from '@readme/shared/src/services/firebase.web';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
+import {WEB_ROUTES} from '../../constants/webRoutes';
+import {DEFAULT_COUNTRY, parseStoredPhone} from '../../components/PhoneField/countryCodes.js';
 import PhoneField from '../../components/PhoneField/index.jsx';
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
@@ -14,16 +14,17 @@ import ErrorAlert from '../../components/ErrorAlert.jsx';
 import styles from './EditProfile.module.css';
 
 export default function EditProfile() {
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!location.state?.draftForm);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const [phoneCountry, setPhoneCountry] = useState(DEFAULT_COUNTRY);
-    const [form, setForm] = useState({
+    const [phoneCountry, setPhoneCountry] = useState(location.state?.draftPhoneCountry || DEFAULT_COUNTRY);
+    const [form, setForm] = useState(location.state?.draftForm || {
         fullName: '',
         dob: '',
         username: '',
@@ -38,11 +39,14 @@ export default function EditProfile() {
 
     useEffect(() => {
         if (!currentUser) return;
+
+        if (location.state?.draftForm) return;
+
         getDoc(doc(db, 'users', currentUser.uid)).then(snap => {
             if (!snap.exists()) return;
             const d = snap.data();
             const addr = d.institutionalAddress || {};
-            const { country, number } = parseStoredPhone(d.phoneNumber);
+            const {country, number} = parseStoredPhone(d.phoneNumber);
             setPhoneCountry(country);
             setForm({
                 fullName: d.fullName || '',
@@ -57,10 +61,10 @@ export default function EditProfile() {
                 postalCode: addr.postalCode || '',
             });
         }).finally(() => setLoading(false));
-    }, [currentUser]);
+    }, [currentUser, location.state?.draftForm]);
 
     function set(field, value) {
-        setForm(f => ({ ...f, [field]: value }));
+        setForm(f => ({...f, [field]: value}));
         setSuccess(false);
     }
 
@@ -97,13 +101,13 @@ export default function EditProfile() {
         }
     }
 
-    if (loading) return <Spinner center label="Loading profile" />;
+    if (loading) return <Spinner center label="Loading profile"/>;
 
     return (
         <div className={styles.page}>
             <div className={styles.header}>
                 <button className={styles.backBtn} onClick={() => navigate(WEB_ROUTES.PROFILE)}>
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={20}/>
                 </button>
                 <h1 className={styles.title}>Edit Profile</h1>
             </div>
@@ -113,12 +117,16 @@ export default function EditProfile() {
                 <section className={styles.section}>
                     <p className={styles.sectionLabel}>Personal</p>
                     <div className={styles.card}>
-                        <Field label="Full name" value={form.fullName} onChange={v => set('fullName', v)} required />
-                        <Field label="Date of birth" type="date" value={form.dob} onChange={v => set('dob', v)} max={new Date().toISOString().split('T')[0]} />
-                        <Field label="Username" value={form.username} onChange={v => set('username', v)} required />
+                        <Field label="Full name" value={form.fullName} onChange={v => set('fullName', v)} required/>
+                        <Field label="Date of birth" type="date" value={form.dob} onChange={v => set('dob', v)}
+                               max={new Date().toISOString().split('T')[0]}/>
+                        <Field label="Username" value={form.username} onChange={v => set('username', v)} required/>
                         <PhoneField
                             country={phoneCountry}
-                            onCountryChange={c => { setPhoneCountry(c); setSuccess(false); }}
+                            onCountryChange={c => {
+                                setPhoneCountry(c);
+                                setSuccess(false);
+                            }}
                             value={form.phoneNumber}
                             onChange={v => set('phoneNumber', v)}
                         />
@@ -128,27 +136,36 @@ export default function EditProfile() {
                 <section className={styles.section}>
                     <p className={styles.sectionLabel}>Address</p>
                     <div className={styles.card}>
-                        <Field label="Address line 1" value={form.addressLine1} onChange={v => set('addressLine1', v)} />
-                        <Field label="Address line 2" value={form.addressLine2} onChange={v => set('addressLine2', v)} />
+                        <Field label="Address line 1" value={form.addressLine1} onChange={v => set('addressLine1', v)}/>
+                        <Field label="Address line 2" value={form.addressLine2} onChange={v => set('addressLine2', v)}/>
                         <div className={styles.row}>
-                            <Field label="City" value={form.city} onChange={v => set('city', v)} />
-                            <Field label="District" value={form.district} onChange={v => set('district', v)} />
+                            <Field label="City" value={form.city} onChange={v => set('city', v)}/>
+                            <Field label="District" value={form.district} onChange={v => set('district', v)}/>
                         </div>
                         <div className={styles.row}>
-                            <Field label="Postal code" value={form.postalCode} onChange={v => set('postalCode', v)} />
-                            <Field label="Country" value={form.country} onChange={v => set('country', v)} />
+                            <Field label="Postal code" value={form.postalCode} onChange={v => set('postalCode', v)}/>
+                            <Field label="Country" value={form.country} onChange={v => set('country', v)}/>
                         </div>
                     </div>
                 </section>
 
                 <section className={styles.section}>
                     <p className={styles.sectionLabel}>Security</p>
-                    <div className={styles.navCard} onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, { state: { from: WEB_ROUTES.PROFILE_EDIT } })}>
+                    <div
+                        className={styles.navCard}
+                        onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, {
+                            state: {
+                                from: WEB_ROUTES.PROFILE_EDIT,
+                                draftForm: form,
+                                draftPhoneCountry: phoneCountry
+                            }
+                        })}
+                    >
                         <span className={styles.navLeft}>
-                            <span className={styles.navIcon}><KeyRound size={18} /></span>
+                            <span className={styles.navIcon}><KeyRound size={18}/></span>
                             <span className={styles.navLabel}>Change password</span>
                         </span>
-                        <ChevronRight size={18} className={styles.navChevron} />
+                        <ChevronRight size={18} className={styles.navChevron}/>
                     </div>
                 </section>
 
@@ -156,7 +173,8 @@ export default function EditProfile() {
                 {success && <p className={styles.successMsg}>Saved!</p>}
 
                 <div className={styles.actions}>
-                    <Button variant="ghost" type="button" onClick={() => navigate(WEB_ROUTES.PROFILE)} disabled={saving}>
+                    <Button variant="ghost" type="button" onClick={() => navigate(WEB_ROUTES.PROFILE)}
+                            disabled={saving}>
                         Cancel
                     </Button>
                     <Button type="submit" disabled={saving}>
