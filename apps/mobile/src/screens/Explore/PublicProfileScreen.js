@@ -18,7 +18,10 @@ import { Iconify } from 'react-native-iconify';
 
 import { Colors, Fonts } from '@readme/shared/src/constants/theme';
 import { withOpacity } from '@readme/shared/src/utils/colorUtils';
+
 // --- SERVICE IMPORTS ---
+import { auth } from '@readme/shared/src/services/firebase';
+import { doBlockUser } from '@readme/shared/src/services/blockUser';
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
 import { fetchUserPublications } from '@readme/shared/src/services/publications';
 
@@ -88,11 +91,54 @@ export default function PublicProfileScreen({ navigation, route }) {
         }
     };
 
+    const handleBlockUser = async () => {
+        const currentUserUid = auth?.currentUser?.uid;
+        
+        if (!currentUserUid) {
+            Alert.alert("Error", "You must be logged in to block a user.");
+            return;
+        }
+
+        try {
+            await doBlockUser(currentUserUid, userId);
+            
+            Alert.alert(
+                "User Blocked", 
+                `You have blocked ${profile?.username || 'this user'}. You will no longer see their content.`,
+                [{ 
+                    text: "OK", 
+                    onPress: () => {
+                        if (navigation.canGoBack()) {
+                            navigation.popToTop(); 
+                        }
+                    } 
+                }]
+            );
+        } catch (error) {
+            console.error("Error blocking user:", error);
+            Alert.alert("Error", "Could not block the user at this time. Please try again.");
+        }
+    };
+
     const handleOpenOptions = () => {
         Alert.alert("User Options", `What would you like to do with ${profile?.username || 'this user'}?`, [
             { text: "Cancel", style: "cancel" },
             { text: "Report User", onPress: () => console.log("Report") },
-            { text: "Block User", onPress: () => console.log("Block"), style: "destructive" }
+            { 
+                text: "Block User", 
+                style: "destructive",
+                onPress: () => {
+                    // Ask for confirmation before actually blocking
+                    Alert.alert(
+                        "Confirm Block",
+                        `Are you sure you want to block ${profile?.username || 'this user'}?`,
+                        [
+                            { text: "Cancel", style: "cancel" },
+                            { text: "Block", style: "destructive", onPress: handleBlockUser }
+                        ]
+                    );
+                } 
+            }
         ]);
     };
 
