@@ -1,7 +1,10 @@
+import {useEffect, useState} from 'react';
 import {Link, NavLink, Outlet, useNavigate} from 'react-router-dom';
-import {Sun, Moon, BookOpen, ArrowLeftRight, CalendarDays, Map, User} from 'lucide-react';
+import {doc, onSnapshot} from 'firebase/firestore';
+import {ArrowLeftRight, BookOpen, CalendarDays, Map, Moon, Sun, User} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {doSignOut} from '@readme/shared/src/services/auth.web';
+import {db} from '@readme/shared/src/services/firebase.web';
 import {useTheme} from '../contexts/ThemeContext';
 import {WEB_ROUTES} from '../constants/webRoutes';
 import styles from './AppShell.module.css';
@@ -18,6 +21,20 @@ export default function AppShell() {
     const {currentUser} = useAuth();
     const {theme, toggle} = useTheme();
     const navigate = useNavigate();
+
+    const [username, setUsername] = useState('');
+
+    useEffect(() => {
+        if (!currentUser?.uid) return;
+
+        const unsubscribe = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
+            if (docSnap.exists()) {
+                setUsername(docSnap.data().username || '');
+            }
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
 
     async function onSignOut() {
         await doSignOut();
@@ -47,10 +64,9 @@ export default function AppShell() {
                         </NavLink>
                     ))}
                 </nav>
-
                 <div className={styles.userFooter}>
                     <span className={styles.userName}>
-                        {currentUser?.displayName || currentUser?.email || 'Reader'}
+                        {username || currentUser?.email || 'Reader'}
                     </span>
                     <div className={styles.footerActions}>
                         <button type="button" className={styles.iconBtn} onClick={toggle} title="Toggle theme">
