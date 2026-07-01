@@ -17,6 +17,7 @@ import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
 
 import { Colors, Fonts } from '@readme/shared/src/constants/theme';
+import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 // --- SERVICE IMPORTS ---
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
 import { fetchUserPublications } from '@readme/shared/src/services/publications';
@@ -52,7 +53,6 @@ export default function PublicProfileScreen({ navigation, route }) {
         else setLoading(true);
 
         try {
-            // Fetch profile data and publications concurrently
             const [profileData, publicationsData] = await Promise.all([
                 fetchUserProfile(userId),
                 fetchUserPublications(userId)
@@ -76,7 +76,6 @@ export default function PublicProfileScreen({ navigation, route }) {
 
     // --- ACTIONS ---
     const handleFollowToggle = async () => {
-        // Optimistic UI Update
         const previousFollowingState = isFollowing;
         setIsFollowing(!previousFollowingState);
 
@@ -84,7 +83,6 @@ export default function PublicProfileScreen({ navigation, route }) {
             await toggleFollowUser(userId, !previousFollowingState);
         } catch (error) {
             console.error("Error updating follow status:", error);
-            // Revert on error
             setIsFollowing(previousFollowingState);
             Alert.alert("Error", "Could not update follow status.");
         }
@@ -102,7 +100,8 @@ export default function PublicProfileScreen({ navigation, route }) {
     const renderPublications = () => {
         if (publications.length === 0) {
             return (
-                <View style={styles.reviewsContainer}>
+                <View style={styles.emptyStateContainer}>
+                    <Iconify icon="lucide:book-dashed" size={48} color={theme.borderLight} />
                     <Text style={styles.emptyStateText}>No publications listed yet.</Text>
                 </View>
             );
@@ -115,6 +114,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                         key={item.id} 
                         style={styles.publicationCard}
                         onPress={() => navigation.navigate('PublicationDetails', { publicationId: item.id })}
+                        activeOpacity={0.8}
                     >
                         <View style={styles.bookCoverPlaceholder}>
                             {item.book?.images && item.book.images.length > 0 ? (
@@ -122,14 +122,17 @@ export default function PublicProfileScreen({ navigation, route }) {
                                     source={{ uri: item.book.images[0] }} 
                                     style={styles.bookCoverImage}
                                     contentFit="cover"
+                                    transition={200}
                                 />
                             ) : (
-                                    <Iconify icon="lucide:book" size={32} color={theme.textMuted || "#A0A0A0"} />
-                                )}
+                                <Iconify icon="lucide:book" size={28} color={theme.textMuted || "#A0A0A0"} />
+                            )}
                         </View>
-                        <Text style={styles.bookTitle} numberOfLines={1}>
-                            {item.book?.title || 'Untitled Book'}
-                        </Text>
+                        <View style={styles.bookInfo}>
+                            <Text style={styles.bookTitle} numberOfLines={1}>
+                                {item.book?.title || 'Untitled Book'}
+                            </Text>
+                        </View>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -137,12 +140,13 @@ export default function PublicProfileScreen({ navigation, route }) {
     };
 
     const renderReviews = () => (
-        <View style={styles.reviewsContainer}>
+        <View style={styles.emptyStateContainer}>
+            <Iconify icon="lucide:message-square-dashed" size={48} color={theme.borderLight} />
             <Text style={styles.emptyStateText}>No reviews yet.</Text>
         </View>
     );
 
-    // Global loading handler
+    // --- OPTIMISTIC UI STATE ---
     let displayedFollowers = profile?.followers || 0;
     if (profile) {
         if (isFollowing && !profile.isCurrentUserFollowing) {
@@ -151,9 +155,10 @@ export default function PublicProfileScreen({ navigation, route }) {
             displayedFollowers -= 1;
         }
     }
+
     if (loading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={[styles.container, styles.centerAll]}>
                 <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
@@ -163,7 +168,7 @@ export default function PublicProfileScreen({ navigation, route }) {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            {/* --- TOP BUTTONS CONTAINER --- */}
+            {/* --- TOP BUTTONS CONTAINER (Reverted to Original) --- */}
             <SafeAreaView edges={['top']} style={styles.topButtonsContainer}>
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
                     <Iconify icon="lucide:arrow-left" size={24} color="#FFFFFF" />
@@ -182,13 +187,8 @@ export default function PublicProfileScreen({ navigation, route }) {
                 }
             >
                 
-                {/* --- IMAGE AT THE VERY TOP --- */}
-                <View style={[styles.imageContainer, {
-                        backgroundColor: '#EACCA5',
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                    }]}
-                >
+                {/* --- HERO IMAGE --- */}
+                <View style={styles.imageContainer}>
                     {isValidPhoto ? (
                         <Image 
                             source={{ uri: profile.photoURL }} 
@@ -197,65 +197,78 @@ export default function PublicProfileScreen({ navigation, route }) {
                             transition={300}
                         />
                     ) : (
-                        <Iconify icon="lucide:user" size={80} color="#FFFFFF" />
+                        <View style={styles.placeholderBackground}>
+                            <Iconify icon="lucide:user" size={64} color="rgba(255,255,255,0.8)" />
+                        </View>
                     )}
                 </View>
 
-                {/* --- PROFILE INFO & BIO --- */}
+                {/* --- PROFILE INFO --- */}
                 <View style={styles.infoContainer}>
-                    <View style={styles.nameRow}>
-                        <Text style={styles.name}>{profile?.username || 'Unknown User'}</Text>
-                        {profile?.isVerified && (
-                            <Iconify icon="mdi:check-decagram" size={24} color="#22C55E" style={{ marginLeft: 6 }} />
-                        )}
-                    </View>
-                    
-                    <Text style={styles.bio}>{profile?.bio || 'No bio available.'}</Text>
-
-                    {/* --- STATS ROW --- */}
-                    <View style={styles.statsRow}>
-                        <View style={styles.statItem}>
-                            <Iconify icon="lucide:user" size={25} color={theme.subtext} />
-                            <Text style={styles.statText}>{displayedFollowers}</Text>
+                    {/* Header Row: Name & Button together for premium layout */}
+                    <View style={styles.headerRow}>
+                        <View style={styles.nameWrapper}>
+                            <Text style={styles.name} numberOfLines={1}>{profile?.username || 'Unknown User'}</Text>
+                            {profile?.isVerified && (
+                                <Iconify icon="mdi:check-decagram" size={22} color="#22C55E" style={{ marginLeft: 6, marginTop: 2 }} />
+                            )}
                         </View>
-                        <View style={styles.statItem}>
-                            <Iconify icon="lucide:copy-check" size={25} color={theme.subtext} />
-                            <Text style={styles.statText}>{publications.length}</Text>
-                        </View>
-
-                        <View style={{ flex: 1 }} /> 
-
-                        {/* --- FOLLOW BUTTON --- */}
+                        
                         <TouchableOpacity 
                             style={[styles.followButton, isFollowing && styles.followingButton]}
                             onPress={handleFollowToggle}
+                            activeOpacity={0.8}
                         >
                             <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
                                 {isFollowing ? "Following" : "Follow"}
                             </Text>
-                            <Iconify 
-                                icon={isFollowing ? "lucide:check" : "lucide:plus"} 
-                                size={24} 
-                                color={isFollowing ? theme.primary : '#FFFFFF'} 
-                            />
                         </TouchableOpacity>
+                    </View>
+                    
+                    <Text style={styles.bio}>{profile?.bio || 'No bio available.'}</Text>
+
+                    {/* --- STATS CARD --- */}
+                    <View style={styles.statsCard}>
+                        <View style={styles.statItem}>
+                            <View style={styles.statIconContainer}>
+                                <Iconify icon="lucide:users" size={20} color={theme.primary} />
+                            </View>
+                            <View>
+                                <Text style={styles.statNumber}>{displayedFollowers}</Text>
+                                <Text style={styles.statLabel}>Followers</Text>
+                            </View>
+                        </View>
+                        
+                        <View style={styles.statDivider} />
+
+                        <View style={styles.statItem}>
+                            <View style={styles.statIconContainer}>
+                                <Iconify icon="lucide:book-open" size={20} color={theme.primary} />
+                            </View>
+                            <View>
+                                <Text style={styles.statNumber}>{publications.length}</Text>
+                                <Text style={styles.statLabel}>Listings</Text>
+                            </View>
+                        </View>
                     </View>
                 </View>
 
                 {/* --- TAB NAVIGATION --- */}
                 <View style={styles.tabContainer}>
                     <TouchableOpacity 
-                        style={[styles.tab, activeTab === 'publications' && styles.activeTab]}
+                        style={styles.tab}
                         onPress={() => setActiveTab('publications')}
                     >
                         <Text style={[styles.tabText, activeTab === 'publications' && styles.activeTabText]}>Publications</Text>
+                        {activeTab === 'publications' && <View style={styles.activeIndicator} />}
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[styles.tab, activeTab === 'reviews' && styles.activeTab]}
+                        style={styles.tab}
                         onPress={() => setActiveTab('reviews')}
                     >
                         <Text style={[styles.tabText, activeTab === 'reviews' && styles.activeTabText]}>Reviews</Text>
+                        {activeTab === 'reviews' && <View style={styles.activeIndicator} />}
                     </TouchableOpacity>
                 </View>
 
@@ -278,6 +291,11 @@ export const buildProfileStyles = (theme) => {
             flex: 1,
             backgroundColor: theme.background,
         },
+        centerAll: {
+            justifyContent: 'center',
+            alignItems: 'center'
+        },
+        // Reverted to original
         topButtonsContainer: {
             position: 'absolute',
             top: 5,
@@ -289,6 +307,7 @@ export const buildProfileStyles = (theme) => {
             paddingHorizontal: 20,
             paddingTop: 10,
         },
+        // Reverted to original
         iconButton: {
             width: 44,
             height: 44,
@@ -299,128 +318,171 @@ export const buildProfileStyles = (theme) => {
             opacity: 0.9,
         },
         scrollContent: {
-            paddingBottom: 40,
+            paddingBottom: 60,
         },
+        
+        // --- HERO SECTION ---
         imageContainer: {
-            height: 380,
-            backgroundColor: theme.coverPlaceholder,
-            borderRadius: 50,
+            height: 320, 
+            backgroundColor: theme.coverPlaceholder || '#EACCA5',
+            borderBottomLeftRadius: 32,
+            borderBottomRightRadius: 32,
             overflow: 'hidden',
-            shadowColor: theme.shadowBase,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 1,
-            shadowRadius: 10,
-            elevation: 5,
-            position: 'relative',
         },
         profileImage: {
             width: '100%',
             height: '100%',
-            borderBottomLeftRadius: 32,
-            borderBottomRightRadius: 32,
         },
+        placeholderBackground: {
+            flex: 1,
+            backgroundColor: '#D1BFAe', 
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+
+        // --- INFO SECTION ---
         infoContainer: {
             paddingHorizontal: 24,
-            marginTop: 24,
+            paddingTop: 24,
+            paddingBottom: 16,
         },
-        nameRow: {
+        headerRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+        },
+        nameWrapper: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 8,
+            flex: 1,
+            paddingRight: 16,
         },
         name: {
-            fontSize: 30,
-            fontWeight: '700',
+            fontSize: 28,
+            fontFamily: Fonts.inter_bold || 'System',
+            fontWeight: '800',
             color: theme.textDisplay,
+            letterSpacing: -0.5,
         },
         bio: {
-            fontSize: 16,
-            lineHeight: 24,
+            fontSize: 15,
+            lineHeight: 22,
+            fontFamily: Fonts.inter_regular || 'System',
             color: theme.subtext,
-            marginBottom: 20,
-        },
-        statsRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
             marginBottom: 24,
         },
+
+        // --- PREMIUM STATS CARD ---
+        statsCard: {
+            flexDirection: 'row',
+            backgroundColor: theme.cardBackground || '#F8F9FA',
+            borderRadius: 20,
+            paddingVertical: 16,
+            paddingHorizontal: 24,
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: theme.borderLight || '#F0F0F0',
+        },
         statItem: {
+            flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
-            marginRight: 20,
         },
-        statText: {
-            fontFamily: Fonts.inter_semi,
-            fontSize: 20,
+        statIconContainer: {
+            width: 45,
+            height: 45,
+            borderRadius: 14,
+            backgroundColor: withOpacity( theme.primary, 0.085 ),
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginRight: 12,
+        },
+        statNumber: {
+            fontFamily: Fonts.inter_bold || 'System',
+            fontSize: 18,
+            fontWeight: '700',
             color: theme.textItemTitle,
-            marginLeft: 10,
         },
+        statLabel: {
+            fontFamily: Fonts.inter_regular || 'System',
+            fontSize: 14,
+            color: theme.textAuthor,
+            marginTop: 2,
+        },
+        statDivider: {
+            width: 1,
+            height: 36,
+            backgroundColor: theme.borderLight || '#E5E5E5',
+            marginHorizontal: 16,
+        },
+
+        // --- BUTTONS ---
         followButton: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center', // Keeps text and icon perfectly centered
             backgroundColor: theme.primary, 
-            paddingVertical: 14,
-            paddingHorizontal: 28,
-            borderRadius: 26,
-            borderWidth: 1.5,
-            borderColor: 'rgba(255, 255, 255, 0.35)', 
-            shadowColor: theme.shadowBase || '#000000',
-            shadowOffset: { width: 0, height: 6 }, // Pushes the shadow down
-            shadowOpacity: 0.25,                   // Keeps the shadow soft and diffused
-            shadowRadius: 10,                      // Blurs the shadow wide like glass
-            elevation: 8,                          // Replicates the shadow on Android
+            paddingVertical: 10,
+            paddingHorizontal: 22,
+            borderRadius: 100, 
+            shadowColor: theme.primary,
+            shadowOffset: { width: 0, height: 4 }, 
+            shadowOpacity: 0.3,                 
+            shadowRadius: 8,                    
+            elevation: 4,                       
         },
         followButtonText: {
             color: '#FFFFFF',
-            fontSize: 16,
-            fontWeight: '600',
-            marginRight: 8,
-            // Optional: Add a tiny text shadow to make the white text pop off the glassy background
-            textShadowColor: 'rgba(0, 0, 0, 0.1)',
-            textShadowOffset: { width: 0, height: 1 },
-            textShadowRadius: 2,
+            fontSize: 14,
+            fontFamily: Fonts.inter_semi || 'System',
+            fontWeight: '700',
         },
         followingButton: {
-            // When following, lower the button so it feels "pressed" or inactive
-            backgroundColor: theme.background, // Or 'transparent'
-            borderColor: theme.primary,
+            backgroundColor: 'transparent', 
+            borderColor: theme.borderLight || '#E5E5E5',
             borderWidth: 1.5,
-            shadowOffset: { width: 0, height: 2 }, // Flattens the shadow
-            shadowOpacity: 0.1,
-            shadowRadius: 3,
-            elevation: 2,
+            shadowOpacity: 0, 
+            elevation: 0,
         },
         followingButtonText: {
-            color: theme.primary,
-            textShadowOpacity: 0, // Remove text shadow when inactive
+            color: theme.textDisplay,
         },
+
+        // --- TABS ---
         tabContainer: {
             flexDirection: 'row',
-            borderBottomWidth: 1,
-            borderBottomColor: theme.borderLight,
             paddingHorizontal: 24,
+            marginTop: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.borderLight || '#F0F0F0',
         },
         tab: {
-            paddingVertical: 14,
+            paddingVertical: 12,
             marginRight: 32,
-        },
-        activeTab: {
-            borderBottomWidth: 3,
-            borderBottomColor: theme.primary,
+            position: 'relative',
         },
         tabText: {
-            fontFamily: Fonts.inter_regular,
-            fontSize: 16,
+            fontFamily: Fonts.inter_semi || 'System',
+            fontWeight: '600',
+            fontSize: 15,
             color: theme.textMuted,
         },
         activeTabText: {
-            fontFamily: Fonts.inter_semi,
             color: theme.textItemTitle,
         },
+        activeIndicator: {
+            position: 'absolute',
+            bottom: -1,
+            left: 0,
+            right: 0,
+            height: 3,
+            backgroundColor: theme.primary,
+            borderTopLeftRadius: 3,
+            borderTopRightRadius: 3,
+        },
+
+        // --- GRID CONTENT ---
         tabContentContainer: {
             paddingHorizontal: 20,
-            paddingTop: 20,
+            paddingTop: 24,
         },
         gridContainer: {
             flexDirection: 'row',
@@ -428,39 +490,47 @@ export const buildProfileStyles = (theme) => {
             justifyContent: 'space-between',
         },
         publicationCard: {
-            width: '48%',
-            backgroundColor: theme.cardBackground || '#F9F9FB',
-            borderRadius: 16,
-            padding: 8,
-            marginBottom: 16,
+            width: '47.5%',
+            marginBottom: 20,
         },
         bookCoverPlaceholder: {
             width: '100%',
-            height: 180,
-            backgroundColor: theme.coverPlaceholder || '#EBEBEB',
-            borderRadius: 12,
+            aspectRatio: 3 / 4, 
+            backgroundColor: theme.coverPlaceholder || '#F4F4F5',
+            borderRadius: 16,
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 10,
             overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.03)',
         },
         bookCoverImage: {
             width: '100%',
             height: '100%',
         },
-        bookTitle: {
-            fontFamily: Fonts.inter_semi,
-            fontSize: 14,
-            color: theme.textItemTitle || '#333333',
+        bookInfo: {
+            paddingHorizontal: 4,
         },
-        reviewsContainer: {
-            padding: 40,
+        bookTitle: {
+            fontFamily: Fonts.inter_semi || 'System',
+            fontWeight: '600',
+            fontSize: 14,
+            color: theme.textItemTitle || '#1C1C1E',
+        },
+
+        // --- EMPTY STATE ---
+        emptyStateContainer: {
+            paddingTop: 48,
+            paddingBottom: 48,
             alignItems: 'center',
+            justifyContent: 'center',
         },
         emptyStateText: {
-            fontFamily: Fonts.inter_regular,
+            fontFamily: Fonts.inter_regular || 'System',
             color: theme.textMuted || '#999999',
             fontSize: 15,
+            marginTop: 16,
         }
     });
 };
