@@ -17,6 +17,7 @@
     "@readme/shared": "*",
     "algoliasearch": "^5.55.0",
     "expo": "^55.0.17",
+    "expo-blur": "~55.0.15",
     "expo-build-properties": "~55.0.14",
     "expo-camera": "~55.0.19",
     "expo-constants": "~55.0.16",

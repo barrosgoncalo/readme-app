@@ -1,4 +1,4 @@
-import { db, storage } from "./firebase";
+import { auth, db, storage } from "./firebase";
 import { 
     collection, 
     doc, 
@@ -10,19 +10,54 @@ import {
     documentId,
     arrayUnion,
     arrayRemove,
-    increment
+    increment,
+    writeBatch,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getFollowId, createFollow } from '../models/follow';
 
 const USERS_COLLECTION = 'users';
 
 /**
- * Fetches a single user's profile data by their UID.
+ * Fetches a user's profile and checks if the current user is following them.
+ * @param {string} userId - The ID of the profile being viewed
  */
-export const fetchUserProfile = async (uid) => {
-    const docRef = doc(db, USERS_COLLECTION, uid);
-    const snap = await getDoc(docRef);
-    return snap.exists() ? snap.data() : null;
+export const fetchUserProfile = async (userId) => {
+    if (!userId) throw new Error("User ID is required to fetch profile.");
+
+    try {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            return null;
+        }
+
+        const userData = userSnap.data();
+        let isCurrentUserFollowing = false;
+        
+        const currentUserId = auth?.currentUser?.uid;
+        
+        if (currentUserId && currentUserId !== userId) {
+            const followDocId = getFollowId(currentUserId, userId);
+            const followRef = doc(db, 'follows', followDocId);
+            const followSnap = await getDoc(followRef);
+            
+            isCurrentUserFollowing = followSnap.exists();
+        }
+
+        return {
+            id: userSnap.id,
+            ...userData,
+            followers: userData.followersCount || 0,
+            following: userData.followingCount || 0,
+            isCurrentUserFollowing: isCurrentUserFollowing
+        };
+
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        throw error;
+    }
 };
 
 /**
@@ -120,4 +155,44 @@ export const uploadProfilePicture = async (userId, imageUri) => {
         console.error("Erro fatal no uploadProfilePicture:", error);
         throw error;
     }
+};
+
+/**
+ * Toggles the follow status between the current logged-in user and a target user.
+ * @param {string} targetUserId - The ID of the profile being followed (passed from UI)
+ * @param {boolean} shouldFollow - True to follow, False to unfollow (passed from UI)
+ */
+export const toggleFollowUser = async (targetUserId, shouldFollow) => {
+    const currentUserId = auth?.currentUser?.uid; 
+
+    // Guard rails to make sure nothing is undefined or a boolean
+    if (!currentUserId) throw new Error("Authentication required to follow users.");
+    if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
+
+    const batch = writeBatch(db);
+    
+    // Use the model to generate the composite ID string cleanly
+    const followDocId = getFollowId(currentUserId, targetUserId);
+    const followRef = doc(db, 'follows', followDocId);
+
+    const currentUserRef = doc(db, 'users', currentUserId);
+    const targetUserRef = doc(db, 'users', targetUserId);
+
+    if (shouldFollow) {
+        // Create the follow link using the model dictionary template
+        batch.set(followRef, createFollow(currentUserId, targetUserId));
+
+        // Increment counts (make sure these field names match your Firestore fields exactly)
+        batch.update(currentUserRef, { followingCount: increment(1) });
+        batch.update(targetUserRef, { followersCount: increment(1) });
+    } else {
+        // Delete the follow link
+        batch.delete(followRef);
+
+        // Decrement counts
+        batch.update(currentUserRef, { followingCount: increment(-1) });
+        batch.update(targetUserRef, { followersCount: increment(-1) });
+    }
+
+    await batch.commit();
 };

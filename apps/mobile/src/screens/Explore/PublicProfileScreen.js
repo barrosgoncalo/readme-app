@@ -74,9 +74,6 @@ export default function PublicProfileScreen({ navigation, route }) {
         loadProfileData();
     }, [userId]);
 
-    console.log("EXACT IMAGE VALUE:", profile?.photoURL);
-    console.log("IS IT A STRING?", typeof profile?.photoURL);
-
     // --- ACTIONS ---
     const handleFollowToggle = async () => {
         // Optimistic UI Update
@@ -146,6 +143,14 @@ export default function PublicProfileScreen({ navigation, route }) {
     );
 
     // Global loading handler
+    let displayedFollowers = profile?.followers || 0;
+    if (profile) {
+        if (isFollowing && !profile.isCurrentUserFollowing) {
+            displayedFollowers += 1;
+        } else if (!isFollowing && profile.isCurrentUserFollowing) {
+            displayedFollowers -= 1;
+        }
+    }
     if (loading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -211,9 +216,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                     <View style={styles.statsRow}>
                         <View style={styles.statItem}>
                             <Iconify icon="lucide:user" size={25} color={theme.subtext} />
-                            <Text style={styles.statText}>
-                                {((profile?.followers || 0) + (isFollowing && !profile?.isCurrentUserFollowing ? 1 : 0))}
-                            </Text>
+                            <Text style={styles.statText}>{displayedFollowers}</Text>
                         </View>
                         <View style={styles.statItem}>
                             <Iconify icon="lucide:copy-check" size={25} color={theme.subtext} />
@@ -232,7 +235,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                             </Text>
                             <Iconify 
                                 icon={isFollowing ? "lucide:check" : "lucide:plus"} 
-                                size={18} 
+                                size={24} 
                                 color={isFollowing ? theme.primary : '#FFFFFF'} 
                             />
                         </TouchableOpacity>
@@ -355,24 +358,42 @@ export const buildProfileStyles = (theme) => {
         followButton: {
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'center', // Keeps text and icon perfectly centered
             backgroundColor: theme.primary, 
-            paddingVertical: 10,
-            paddingHorizontal: 20,
-            borderRadius: 20,
-            borderWidth: 1,
-            borderColor: theme.primary,
+            paddingVertical: 14,
+            paddingHorizontal: 28,
+            borderRadius: 26,
+            borderWidth: 1.5,
+            borderColor: 'rgba(255, 255, 255, 0.35)', 
+            shadowColor: theme.shadowBase || '#000000',
+            shadowOffset: { width: 0, height: 6 }, // Pushes the shadow down
+            shadowOpacity: 0.25,                   // Keeps the shadow soft and diffused
+            shadowRadius: 10,                      // Blurs the shadow wide like glass
+            elevation: 8,                          // Replicates the shadow on Android
         },
         followButtonText: {
             color: '#FFFFFF',
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: '600',
-            marginRight: 6,
+            marginRight: 8,
+            // Optional: Add a tiny text shadow to make the white text pop off the glassy background
+            textShadowColor: 'rgba(0, 0, 0, 0.1)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 2,
         },
         followingButton: {
-            backgroundColor: 'transparent',
+            // When following, lower the button so it feels "pressed" or inactive
+            backgroundColor: theme.background, // Or 'transparent'
+            borderColor: theme.primary,
+            borderWidth: 1.5,
+            shadowOffset: { width: 0, height: 2 }, // Flattens the shadow
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+            elevation: 2,
         },
         followingButtonText: {
             color: theme.primary,
+            textShadowOpacity: 0, // Remove text shadow when inactive
         },
         tabContainer: {
             flexDirection: 'row',

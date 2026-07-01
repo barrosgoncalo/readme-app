@@ -26,6 +26,9 @@ service cloud.firestore {
       allow update: if (isOwner(userId) 
                         && isActive() 
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accountStatus'])) 
+                    || (isAuthenticated() 
+                        && isActive() 
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount']))
                     || isAdmin();
       
       allow delete: if isOwner(userId) || isAdmin();
@@ -137,6 +140,22 @@ service cloud.firestore {
 
       allow delete: if isAuthenticated() && resource.data.blockerUid == request.auth.uid;
       allow update: if false;
+    }
+
+    match /follows/{followId} {
+      allow read: if isAuthenticated() && isActive();
+
+      // Only the follower can create the document, and the ID must match the schema
+      allow create: if isAuthenticated() && isActive()
+        && request.resource.data.followerUid == request.auth.uid
+        && request.resource.data.followingUid is string
+        && request.resource.data.followerUid != request.resource.data.followingUid
+        && followId == request.resource.data.followerUid + '_' + request.resource.data.followingUid;
+
+      // Only the follower can delete the document (unfollow)
+      allow delete: if isAuthenticated() && isActive() && resource.data.followerUid == request.auth.uid;
+      
+      allow update: if false; // Follows are binary (exist or don't), no updating needed
     }
   }
 }
