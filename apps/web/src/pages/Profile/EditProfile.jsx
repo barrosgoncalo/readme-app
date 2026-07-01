@@ -143,7 +143,7 @@ export default function EditProfile() {
 
                 <section className={styles.section}>
                     <p className={styles.sectionLabel}>Security</p>
-                    <div className={styles.navCard} onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD)}>
+                    <div className={styles.navCard} onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, { state: { from: WEB_ROUTES.PROFILE_EDIT } })}>
                         <span className={styles.navLeft}>
                             <span className={styles.navIcon}><KeyRound size={18} /></span>
                             <span className={styles.navLabel}>Change password</span>
