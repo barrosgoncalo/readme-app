@@ -163,8 +163,9 @@ export default function PublicationDetailsScreen({ route, navigation }) {
                     <TouchableOpacity
                         style={styles.sellerCard}
                         onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { 
-                            targetUserId: seller.uid
-                        })}                    >
+                            sellerUserId: book?.uid
+                        })}
+                    >
                         <View style={styles.sellerInfoLeft}>
                             <Image 
                                 source={seller.avatarUrl ? { uri: seller.avatarUrl } : null} 

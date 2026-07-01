@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     View, 
     Text, 
@@ -8,6 +8,8 @@ import {
     Dimensions,
     Alert,
     StatusBar,
+    ActivityIndicator,
+    RefreshControl,
     useColorScheme
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,52 +17,142 @@ import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
 
 import { Colors, Fonts } from '@readme/shared/src/constants/theme';
+// --- SERVICE IMPORTS ---
+import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
+import { fetchUserPublications } from '@readme/shared/src/services/publications';
 
 const { width } = Dimensions.get('window');
 
-const MOCK_PROFILE = {
-    name: "Sophie Bennett",
-    isVerified: true,
-    bio: "Product Designer who focuses on simplicity & usability.",
-    followers: 312,
-    completedTrades: 48,
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
-};
-
 export default function PublicProfileScreen({ navigation, route }) {
+    const userId = route.params?.sellerUserId;
+
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildProfileStyles(theme);
 
+    // --- STATE MANAGEMENT ---
+    const [profile, setProfile] = useState(null);
+    const [publications, setPublications] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('publications');
     const [isFollowing, setIsFollowing] = useState(false);
 
+    const isValidPhoto = profile?.photoURL && profile.photoURL !== 'null' && profile.photoURL.trim() !== '';
+
+    // --- DATA FETCHING ---
+    const loadProfileData = async (showRefreshIndicator = false) => {
+        if (!userId) {
+            Alert.alert("Error", "User ID not found.");
+            setLoading(false);
+            return;
+        }
+
+        if (showRefreshIndicator) setRefreshing(true);
+        else setLoading(true);
+
+        try {
+            // Fetch profile data and publications concurrently
+            const [profileData, publicationsData] = await Promise.all([
+                fetchUserProfile(userId),
+                fetchUserPublications(userId)
+            ]);
+
+            setProfile(profileData);
+            setPublications(publicationsData || []);
+            setIsFollowing(profileData?.isCurrentUserFollowing || false);
+        } catch (error) {
+            console.error("Error loading profile data:", error);
+            Alert.alert("Error", "Failed to load profile details. Please try again.");
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        loadProfileData();
+    }, [userId]);
+
+    console.log("EXACT IMAGE VALUE:", profile?.photoURL);
+    console.log("IS IT A STRING?", typeof profile?.photoURL);
+
+    // --- ACTIONS ---
+    const handleFollowToggle = async () => {
+        // Optimistic UI Update
+        const previousFollowingState = isFollowing;
+        setIsFollowing(!previousFollowingState);
+
+        try {
+            await toggleFollowUser(userId, !previousFollowingState);
+        } catch (error) {
+            console.error("Error updating follow status:", error);
+            // Revert on error
+            setIsFollowing(previousFollowingState);
+            Alert.alert("Error", "Could not update follow status.");
+        }
+    };
+
     const handleOpenOptions = () => {
-        Alert.alert("User Options", "What would you like to do?", [
+        Alert.alert("User Options", `What would you like to do with ${profile?.username || 'this user'}?`, [
             { text: "Cancel", style: "cancel" },
             { text: "Report User", onPress: () => console.log("Report") },
             { text: "Block User", onPress: () => console.log("Block"), style: "destructive" }
         ]);
     };
 
-    const renderPublications = () => (
-        <View style={styles.gridContainer}>
-            {[1, 2, 3, 4].map((item) => (
-                <View key={item} style={styles.publicationCard}>
-                    <View style={styles.bookCoverPlaceholder}>
-                        <Iconify icon="lucide:book" size={32} color={theme.textMuted || "#A0A0A0"} />
-                    </View>
-                    <Text style={styles.bookTitle} numberOfLines={1}>Book Title {item}</Text>
+    // --- RENDER SECTIONS ---
+    const renderPublications = () => {
+        if (publications.length === 0) {
+            return (
+                <View style={styles.reviewsContainer}>
+                    <Text style={styles.emptyStateText}>No publications listed yet.</Text>
                 </View>
-            ))}
-        </View>
-    );
+            );
+        }
+
+        return (
+            <View style={styles.gridContainer}>
+                {publications.map((item) => (
+                    <TouchableOpacity 
+                        key={item.id} 
+                        style={styles.publicationCard}
+                        onPress={() => navigation.navigate('PublicationDetails', { publicationId: item.id })}
+                    >
+                        <View style={styles.bookCoverPlaceholder}>
+                            {item.book?.images && item.book.images.length > 0 ? (
+                                <Image 
+                                    source={{ uri: item.book.images[0] }} 
+                                    style={styles.bookCoverImage}
+                                    contentFit="cover"
+                                />
+                            ) : (
+                                    <Iconify icon="lucide:book" size={32} color={theme.textMuted || "#A0A0A0"} />
+                                )}
+                        </View>
+                        <Text style={styles.bookTitle} numberOfLines={1}>
+                            {item.book?.title || 'Untitled Book'}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        );
+    };
 
     const renderReviews = () => (
         <View style={styles.reviewsContainer}>
             <Text style={styles.emptyStateText}>No reviews yet.</Text>
         </View>
     );
+
+    // Global loading handler
+    if (loading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -77,38 +169,55 @@ export default function PublicProfileScreen({ navigation, route }) {
                 </TouchableOpacity>
             </SafeAreaView>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false} 
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={() => loadProfileData(true)} tintColor={theme.primary} />
+                }
+            >
                 
                 {/* --- IMAGE AT THE VERY TOP --- */}
-                <View style={styles.imageContainer}>
-                    <Image 
-                        source={{ uri: MOCK_PROFILE.avatarUrl }} 
-                        style={styles.profileImage}
-                        contentFit="cover"
-                        transition={300}
-                    />
+                <View style={[styles.imageContainer, {
+                        backgroundColor: '#EACCA5',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                    }]}
+                >
+                    {isValidPhoto ? (
+                        <Image 
+                            source={{ uri: profile.photoURL }} 
+                            style={styles.profileImage}
+                            contentFit="cover"
+                            transition={300}
+                        />
+                    ) : (
+                        <Iconify icon="lucide:user" size={80} color="#FFFFFF" />
+                    )}
                 </View>
 
                 {/* --- PROFILE INFO & BIO --- */}
                 <View style={styles.infoContainer}>
                     <View style={styles.nameRow}>
-                        <Text style={styles.name}>{MOCK_PROFILE.name}</Text>
-                        {MOCK_PROFILE.isVerified && (
+                        <Text style={styles.name}>{profile?.username || 'Unknown User'}</Text>
+                        {profile?.isVerified && (
                             <Iconify icon="mdi:check-decagram" size={24} color="#22C55E" style={{ marginLeft: 6 }} />
                         )}
                     </View>
                     
-                    <Text style={styles.bio}>{MOCK_PROFILE.bio}</Text>
+                    <Text style={styles.bio}>{profile?.bio || 'No bio available.'}</Text>
 
                     {/* --- STATS ROW --- */}
                     <View style={styles.statsRow}>
                         <View style={styles.statItem}>
-                            <Iconify icon="lucide:user" size={18} color={theme.subtext || "#666666"} />
-                            <Text style={styles.statText}>{MOCK_PROFILE.followers + (isFollowing ? 1 : 0)}</Text>
+                            <Iconify icon="lucide:user" size={25} color={theme.subtext} />
+                            <Text style={styles.statText}>
+                                {((profile?.followers || 0) + (isFollowing && !profile?.isCurrentUserFollowing ? 1 : 0))}
+                            </Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Iconify icon="lucide:copy-check" size={18} color={theme.subtext || "#666666"} />
-                            <Text style={styles.statText}>{MOCK_PROFILE.completedTrades}</Text>
+                            <Iconify icon="lucide:copy-check" size={25} color={theme.subtext} />
+                            <Text style={styles.statText}>{publications.length}</Text>
                         </View>
 
                         <View style={{ flex: 1 }} /> 
@@ -116,7 +225,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                         {/* --- FOLLOW BUTTON --- */}
                         <TouchableOpacity 
                             style={[styles.followButton, isFollowing && styles.followingButton]}
-                            onPress={() => setIsFollowing(!isFollowing)}
+                            onPress={handleFollowToggle}
                         >
                             <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
                                 {isFollowing ? "Following" : "Follow"}
@@ -124,7 +233,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                             <Iconify 
                                 icon={isFollowing ? "lucide:check" : "lucide:plus"} 
                                 size={18} 
-                                color={isFollowing ? theme.primary : theme.pureWhite} 
+                                color={isFollowing ? theme.primary : '#FFFFFF'} 
                             />
                         </TouchableOpacity>
                     </View>
@@ -180,7 +289,7 @@ export const buildProfileStyles = (theme) => {
         iconButton: {
             width: 44,
             height: 44,
-            backgroundColor: theme.headerBackground || 'rgba(0, 0, 0, 0.35)',
+            backgroundColor: theme.headerBackground,
             borderRadius: 12,
             justifyContent: 'center',
             alignItems: 'center',
@@ -190,8 +299,16 @@ export const buildProfileStyles = (theme) => {
             paddingBottom: 40,
         },
         imageContainer: {
-            width: width,
-            height: 380, 
+            height: 380,
+            backgroundColor: theme.coverPlaceholder,
+            borderRadius: 50,
+            overflow: 'hidden',
+            shadowColor: theme.shadowBase,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 10,
+            elevation: 5,
+            position: 'relative',
         },
         profileImage: {
             width: '100%',
@@ -209,7 +326,7 @@ export const buildProfileStyles = (theme) => {
             marginBottom: 8,
         },
         name: {
-            fontSize: 28,
+            fontSize: 30,
             fontWeight: '700',
             color: theme.textDisplay,
         },
@@ -230,10 +347,10 @@ export const buildProfileStyles = (theme) => {
             marginRight: 20,
         },
         statText: {
-            fontSize: 16,
-            fontWeight: '600',
+            fontFamily: Fonts.inter_semi,
+            fontSize: 20,
             color: theme.textItemTitle,
-            marginLeft: 6,
+            marginLeft: 10,
         },
         followButton: {
             flexDirection: 'row',
@@ -269,16 +386,16 @@ export const buildProfileStyles = (theme) => {
         },
         activeTab: {
             borderBottomWidth: 3,
-            borderBottomColor: theme.quaternary,
+            borderBottomColor: theme.primary,
         },
         tabText: {
+            fontFamily: Fonts.inter_regular,
             fontSize: 16,
-            fontWeight: '500',
             color: theme.textMuted,
         },
         activeTabText: {
+            fontFamily: Fonts.inter_semi,
             color: theme.textItemTitle,
-            fontWeight: '700',
         },
         tabContentContainer: {
             paddingHorizontal: 20,
@@ -304,10 +421,15 @@ export const buildProfileStyles = (theme) => {
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 10,
+            overflow: 'hidden',
+        },
+        bookCoverImage: {
+            width: '100%',
+            height: '100%',
         },
         bookTitle: {
+            fontFamily: Fonts.inter_semi,
             fontSize: 14,
-            fontWeight: '600',
             color: theme.textItemTitle || '#333333',
         },
         reviewsContainer: {
@@ -315,6 +437,7 @@ export const buildProfileStyles = (theme) => {
             alignItems: 'center',
         },
         emptyStateText: {
+            fontFamily: Fonts.inter_regular,
             color: theme.textMuted || '#999999',
             fontSize: 15,
         }

@@ -19,7 +19,7 @@ export const createPublicationModel = (uid, sellerName, sellerAvatar, bookData, 
         book: {
             title: bookData?.title || "Unknown Title",
             author: bookData?.author || "Unknown Author",
-            images: bookData?.images || bookData?.coverImages || [],
+            images: bookData?.images || [],
             bookId: bookData?.bookId || null,
             condition: bookData?.condition || "Not specified",
             subject: bookData?.subject || "Not specified"

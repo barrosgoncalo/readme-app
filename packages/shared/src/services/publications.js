@@ -4,7 +4,7 @@ import { db } from './firebase';
 /**
  * Fetches all books belonging to a specific user UID
  */
-export const fetchBooksByUserId = async (userId) => {
+export const fetchUserPublications = async (userId) => {
     const q = query(
         collection(db, 'publications'), 
         where('uid', '==', userId) 
