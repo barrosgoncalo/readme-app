@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
     View, 
     Text, 
@@ -6,9 +6,9 @@ import {
     ScrollView, 
     StatusBar, 
     Dimensions, 
-    useColorScheme
+    useColorScheme,
+    TouchableWithoutFeedback
 } from 'react-native';
-import { TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 
 // External Libraries
@@ -16,27 +16,18 @@ import { Image } from 'expo-image';
 import ImageViewing from 'react-native-image-viewing';
 import { Iconify } from 'react-native-iconify';
 
-// Firebase Imports
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { db } from '@readme/shared/src/services/firebase'; 
-
 // Internal Architecture Imports
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildBookDetailsStyles } from '../../../styles/publicationDetailsStyles';
 import { GalleryImageWrapper } from '../../../components/ui/GalleryImageWrapper';
+import { usePublicationDetails } from '@readme/shared/src/hooks/use-publication-details';
 
 const { width } = Dimensions.get('window');
 
 // ==========================================
 // HELPER FUNCTIONS
 // ==========================================
-
-/**
- * Safely extracts and normalizes book data from the messy route params.
- * Moving this outside the component prevents reallocation on every render.
- */
 const extractBookDetails = (passedBook) => {
     const pubData = passedBook?.publicationData || {};
     const bookData = pubData.book || {};
@@ -44,7 +35,7 @@ const extractBookDetails = (passedBook) => {
 
     return {
         id: passedBook?.id,
-        uid: pubData.uid, // publisher's ID
+        uid: pubData.uid,
         title: bookData.title || 'Unknown Title',
         author: bookData.author || 'Unknown Author',
         description: pubData.detailsText || "No description provided for this book.",
@@ -58,127 +49,32 @@ const extractBookDetails = (passedBook) => {
 // ==========================================
 // MAIN COMPONENT
 // ==========================================
-
 export default function PublicationDetailsScreen({ route, navigation }) {
     // --- Theme & Styles ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildBookDetailsStyles(theme);
 
-    // --- Authentication & Route Params ---
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    const passedSeller = route?.params?.seller;
-    
-    // Parse the book data once using our helper
+    // --- Route Parsing ---
     const book = extractBookDetails(route?.params?.book);
+    const passedSeller = route?.params?.seller;
 
-    // --- Local State ---
+    // --- Data & Logic Layer ---
+    const { seller, isFavorited, handleToggleFavorite } = usePublicationDetails(book, passedSeller);
+
+    // --- Visual State Layer ---
     const [isGalleryVisible, setIsGalleryVisible] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [isFavorited, setIsFavorited] = useState(false);
-    
-    // Default seller state based on initial params, updates later via Firebase
-    const [seller, setSeller] = useState({
-        name: passedSeller?.name || 'Loading...',
-        rating: passedSeller?.rating || 0,
-        reviews: passedSeller?.reviews || 0,
-        avatarUrl: passedSeller?.avatarUrl || null,
-    });
-
-    // ==========================================
-    // EFFECTS
-    // ==========================================
-
-    // Check if the current user has this book in their favorites
-    useEffect(() => {
-        const checkFavoriteStatus = async () => {
-            if (!currentUser || !book.id) return;
-            try {
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                
-                if (userDocSnap.exists()) {
-                    const favorites = userDocSnap.data().favoriteBooks || [];
-                    setIsFavorited(favorites.includes(book.id));
-                }
-            } catch (error) {
-                console.error('[BookDetailsScreen] Failed to verify user favorite records:', error);
-            }
-        };
-        checkFavoriteStatus();
-    }, [book.id, currentUser]);
-
-    // Fetch the latest seller profile details from Firestore
-    useEffect(() => {
-        const fetchSellerProfile = async () => {
-            if (!book.uid) return;
-
-            try {
-                const sellerDocRef = doc(db, 'users', book.uid);
-                const sellerDocSnap = await getDoc(sellerDocRef);
-
-                if (sellerDocSnap.exists()) {
-                    const sellerData = sellerDocSnap.data();
-                    
-                    // Fallbacks for various name structures
-                    const displayName = sellerData.username || sellerData.fullName || sellerData.name || 'Anonymous Swapper';
-                    const fetchedAvatar = sellerData.photoURL || sellerData.profilePicture || sellerData.avatar;
-
-                    setSeller({
-                        name: displayName,
-                        rating: sellerData.rating || 0, 
-                        reviews: sellerData.reviewCount || 0, 
-                        // Generate a placeholder avatar if they don't have one
-                        avatarUrl: fetchedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=EACCA5&color=333`,
-                    });
-                }
-            } catch (error) {
-                console.error('[BookDetailsScreen] Failed to retrieve seller profile:', error);
-            }
-        };
-        fetchSellerProfile();
-    }, [book.uid]);
 
     // ==========================================
     // HANDLERS
     // ==========================================
-
-    // Tracks horizontal scrolling to update the pagination dots
     const handleScroll = (event) => {
         const scrollPosition = event.nativeEvent.contentOffset.x;
         const index = Math.round(scrollPosition / width);
         setCurrentImageIndex(index);
     };
 
-    // Optimistically toggles the favorite state and updates Firestore
-    const handleToggleFavorite = async () => {
-        if (!currentUser || !book.id) return;
-        
-        // Save current state for rollback if network fails
-        const baselineState = isFavorited;
-        setIsFavorited(!baselineState); // Optimistic UI update
-
-        try {
-            const userDocRef = doc(db, 'users', currentUser.uid);
-            const publicationDocRef = doc(db, 'publications', book.id); 
-
-            // Run both updates simultaneously
-            await Promise.all([
-                updateDoc(userDocRef, { 
-                    favoriteBooks: !baselineState ? arrayUnion(book.id) : arrayRemove(book.id) 
-                }),
-                updateDoc(publicationDocRef, { 
-                    "stats.likesCount": increment(!baselineState ? 1 : -1) 
-                })
-            ]);
-        } catch (error) {
-            console.error('[BookDetailsScreen] Failed to toggle favorite:', error);
-            setIsFavorited(baselineState); // Rollback on failure
-        }
-    };
-
-    // Proceeds to the offer flow, passing context forward
     const handleMakeOffer = () => {
         navigation.navigate(ROUTES.STEP_ONE_OFFER, { 
             targetBook: book, 
@@ -189,7 +85,6 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     // ==========================================
     // RENDER
     // ==========================================
-
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />

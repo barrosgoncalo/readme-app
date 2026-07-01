@@ -7,7 +7,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doSignOut, doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { buildProfileStyles } from '../../styles/profileStyles';
-import { uploadProfilePicture } from '@readme/shared/src/services/user';
+import { uploadProfilePicture } from '@readme/shared/src/services/users';
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
 
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';

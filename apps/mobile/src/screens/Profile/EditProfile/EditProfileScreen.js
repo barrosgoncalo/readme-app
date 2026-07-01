@@ -24,7 +24,7 @@ import CountryPicker from 'react-native-country-picker-modal';
 import { buildEditProfileStyles } from '../../../styles/editProfileStyles';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadProfilePicture } from '@readme/shared/src/services/user';
+import { uploadProfilePicture } from '@readme/shared/src/services/users';
 
 export default function EditProfileScreen({ navigation, route }) {
     const existing = route?.params?.userData ?? {};
