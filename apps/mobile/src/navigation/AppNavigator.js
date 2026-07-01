@@ -27,6 +27,7 @@ import PublicationDetailsScreen from '../screens/Explore/PublicationDetails/Publ
 import StepOneOffer from '../screens/Explore/PublicationDetails/StepOneOfferScreen';
 import StepTwoOffer from '../screens/Explore/PublicationDetails/StepTwoOfferScreen';
 import PublicProfileScreen from '../screens/Explore/PublicProfileScreen';
+import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -137,6 +138,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.PUBLIC_PROFILE_SCREEN} 
                             component={PublicProfileScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.FAVORITES} 
+                            component={FavoritesScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

@@ -159,6 +159,7 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="lucide:heart"
                             label="Favorites"
+                            onPress={() => navigation.navigate(ROUTES.FAVORITES)}
                         />
                         <MenuItem
                             styles={styles}

@@ -86,6 +86,7 @@ export const buildBookDetailsStyles = (theme) => {
             color: theme.textDisplay,
             marginBottom: 8,
             textTransform: 'capitalize',
+            letterSpacing: 0.5,
         },
         author: {
             fontFamily: Fonts.inter_regular,
