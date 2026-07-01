@@ -21,7 +21,7 @@ import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 
 // --- SERVICE IMPORTS ---
 import { auth } from '@readme/shared/src/services/firebase';
-import { doBlockUser } from '@readme/shared/src/services/blockUser';
+import { doBlockUser } from '@readme/shared/src/services/block';
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
 import { fetchUserPublications } from '@readme/shared/src/services/publications';
 

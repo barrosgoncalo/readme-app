@@ -67,3 +67,18 @@ export const doGetBlockedUsers = async (blockerUid) => {
 
     return profiles;
 };
+
+export const doGetBlockedUids = async (blockerUid) => {
+    if (!blockerUid) return [];
+    
+    try {
+        const q = query(collection(db, "blocks"), where("blockerUid", "==", blockerUid));
+        const snapshot = await getDocs(q);
+        
+        // Return a simple array of strings: ['uid1', 'uid2', ...]
+        return snapshot.docs.map(doc => doc.data().blockedUid);
+    } catch (error) {
+        console.error("Error fetching blocked UIDs:", error);
+        return [];
+    }
+};

@@ -32,6 +32,8 @@ import {
     increment 
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
+// --- ADDED IMPORT ---
+import { doGetBlockedUids } from '@readme/shared/src/services/block';
 
 const MOCK_SWAPS = [
     { id: '1', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/12/oplanodeimagem_capa.png', status: 'giving' },
@@ -56,6 +58,12 @@ export default function ExploreScreen({navigation}) {
     // Fetch publications
     const fetchPublications = async () => {
         try {
+            // 1. Fetch blocked UIDs first
+            let blockedUids = [];
+            if (currentUser?.uid) {
+                blockedUids = await doGetBlockedUids(currentUser.uid);
+            }
+
             const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
 
@@ -77,7 +85,8 @@ export default function ExploreScreen({navigation}) {
                     publicationData: data
                 };
             })
-            .filter( book => book.uid !== currentUser?.uid);
+            // 2. Filter out own books AND books from blocked users
+            .filter(book => book.uid !== currentUser?.uid && !blockedUids.includes(book.uid));
 
             setBooks(fetchedBooks);
         } catch (error) {

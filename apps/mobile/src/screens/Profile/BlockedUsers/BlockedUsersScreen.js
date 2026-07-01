@@ -12,7 +12,7 @@ import { Iconify } from 'react-native-iconify';
 
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildBlockedUsersStyles } from '../../../styles/blockedUsersStyles';
-import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/blockUser';
+import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/block';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 
 export default function BlockedUsersScreen({ navigation }) {
