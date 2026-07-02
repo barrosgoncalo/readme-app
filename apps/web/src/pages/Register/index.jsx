@@ -7,7 +7,7 @@ import StepDots from './StepDots.jsx';
 import Step1Credentials from './Step1Credentials.jsx';
 import Step2Personal from './Step2Personal.jsx';
 import Step3Address from './Step3Address.jsx';
-import { doCreateUserWithEmailAndPassword } from '@readme/shared/src/services/auth.web';
+import { doCreateUserWithEmailAndPassword } from '@readme/shared/src/services/auth';
 
 const RegisterBg = '/login-bg.jpeg';
 

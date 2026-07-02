@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { getUpcomingEvents, createEvent as createEventService } from '@readme/shared/src/services/events';
-import { doGetBlockedUids } from '@readme/shared/src/services/blockUser.web';
+import { doGetBlockedUids } from '@readme/shared/src/services/blockUser';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';

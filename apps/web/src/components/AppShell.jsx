@@ -1,7 +1,7 @@
 import {Link, NavLink, Outlet, useNavigate} from 'react-router-dom';
 import {Sun, Moon, BookOpen, ArrowLeftRight, CalendarDays, Map, User} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
-import {doSignOut} from '@readme/shared/src/services/auth.web';
+import {doSignOut} from '@readme/shared/src/services/auth';
 import {useTheme} from '../contexts/ThemeContext';
 import {WEB_ROUTES} from '../constants/webRoutes';
 import styles from './AppShell.module.css';

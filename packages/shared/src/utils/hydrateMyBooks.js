@@ -1,8 +1,22 @@
-// Mobile variant — mirrors hydrateMyBooks.web.js but uses the RN Firebase entry.
-// Keep in sync when changing the hydration logic.
 import { getBook, getBookByIsbn, getBooksByIds } from '../services/booksCatalog';
 import { mapGoogleBook } from '../models/book';
 
+/**
+ * Hydrates raw myBooks subcollection docs into display-ready book objects.
+ *
+ * Pipeline:
+ *   1. Batch-fetch catalog metadata for all IDs.
+ *   2. Individual getDoc fallback for any still missing.
+ *   3. ISBN repair: for legacy books with ISBN-shaped IDs and no title,
+ *      try the global cache then Google Books API.
+ *
+ * @param {object[]} myBookDocs  Raw docs from myBooksService.getBooksData()
+ * @param {object}  [options]
+ * @param {string}  [options.apiKey]    Google Books API key (skips API step if absent)
+ * @param {function} [options.onRepair] Called after each ISBN repair with (bookId, {title,authors,coverUrl,description}).
+ *                                      Errors from this callback are swallowed — use it for best-effort backfills.
+ * @returns {Promise<object[]>}
+ */
 export async function hydrateMyBooks(myBookDocs, { apiKey, onRepair } = {}) {
     const myIds = myBookDocs.map(d => d.id);
     const myBooksMap = Object.fromEntries(myBookDocs.map(m => [m.id, m]));

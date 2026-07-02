@@ -5,8 +5,8 @@ import {
     BookOpen, Pencil, Ban, Lock, Moon, Users, Award, Heart, LogOut, ChevronRight, Camera,
 } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
-import { doSignOut } from '@readme/shared/src/services/auth.web';
-import { uploadProfilePicture } from '@readme/shared/src/services/user.web';
+import { doSignOut } from '@readme/shared/src/services/auth';
+import { uploadProfilePicture } from '@readme/shared/src/services/user';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';

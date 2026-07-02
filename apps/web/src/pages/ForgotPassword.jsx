@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout.jsx';
 import Field from '../components/Field.jsx';
 import Button from '../components/Button.jsx';
-import { doPasswordReset } from '@readme/shared/src/services/auth.web';
+import { doPasswordReset } from '@readme/shared/src/services/auth';
 
 const ForgotPassBg = '/login-bg.jpeg';
 

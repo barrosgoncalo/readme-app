@@ -20,6 +20,13 @@ export default defineConfig({
       // preventing the "multiple React instances" hook error in monorepos.
       'react': path.resolve(__dirname, '../../node_modules/react'),
       'react-dom': path.resolve(__dirname, '../../node_modules/react-dom'),
+      // RN-only native module used by shared/books.js for cover-color extraction.
+      // The stub rejects; books.js catches and falls back to a default color.
+      'react-native-image-colors': path.resolve(__dirname, 'src/shims/react-native-image-colors.js'),
+      // RN-only native module used by shared/services/auth.js for Google sign-in.
+      // Web uses Firebase's signInWithPopup (doSignInWithGoogle) instead, so the
+      // stub is never exercised on web — it just keeps the static import valid.
+      '@react-native-google-signin/google-signin': path.resolve(__dirname, 'src/shims/google-signin.js'),
     },
   },
 })

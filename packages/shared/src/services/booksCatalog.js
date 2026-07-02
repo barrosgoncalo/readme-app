@@ -26,9 +26,22 @@ export async function createBookIfMissing(bookId, data) {
         title: data.title,
         authors: data.authors,
         coverUrl: data.coverUrl || null,
+        description: data.description || null,
         addedBy: data.addedBy,
         createdAt: new Date().toISOString(),
     });
+}
+
+// Look up a catalog entry by ISBN-10 or ISBN-13. Returns null if not found.
+export async function getBookByIsbn(isbn) {
+    if (!isbn) return null;
+    const cleanIsbn = String(isbn).replace(/[- ]/g, '');
+    const targetField = cleanIsbn.length === 13 ? 'isbn13' : 'isbn10';
+    const q = query(collection(db, COLLECTION), where(targetField, '==', cleanIsbn));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    return { id: d.id, ...d.data() };
 }
 
 // Firestore's `in` operator is capped at 10 values — chunk and merge.

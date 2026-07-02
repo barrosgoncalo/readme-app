@@ -7,7 +7,7 @@ import ErrorAlert from '../components/ErrorAlert.jsx';
 import {
     doSignInWithEmailAndPassword,
     doSignInWithGoogle,
-} from '@readme/shared/src/services/auth.web';
+} from '@readme/shared/src/services/auth';
 
 // A tua imagem de fundo.
 // Como começa por '/', o Vite vai procurar um ficheiro 'login-bg.jpeg' dentro da pasta 'apps/web/public/'

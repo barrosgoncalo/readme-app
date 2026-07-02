@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ArrowLeft, Shield, MapPin, Bell, KeyRound, UserX, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
-import { doDeleteAccount } from '@readme/shared/src/services/auth.web';
+import { doDeleteAccount } from '@readme/shared/src/services/auth';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Button from '../../components/Button.jsx';

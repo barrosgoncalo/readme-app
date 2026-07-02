@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { getAvailableTradeBooks, getIncomingTrades, getOutgoingTrades, createTrade as createTradeService, updateTradeStatus } from '@readme/shared/src/services/trades.web';
-import { getBooksByIds } from '@readme/shared/src/services/booksCatalog.web';
-import { getUsersByIds } from '@readme/shared/src/services/users.web';
-import { doGetBlockedUids } from '@readme/shared/src/services/blockUser.web';
+import { getAvailableTradeBooks, getIncomingTrades, getOutgoingTrades, createTrade as createTradeService, updateTradeStatus } from '@readme/shared/src/services/trades';
+import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
+import { getUsersByIds } from '@readme/shared/src/services/users';
+import { doGetBlockedUids } from '@readme/shared/src/services/blockUser';
 import { TRADE_STATUS } from '@readme/shared/src/constants/trade';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';

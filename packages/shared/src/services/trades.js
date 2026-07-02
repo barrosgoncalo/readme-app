@@ -1,7 +1,8 @@
 import { db } from './firebase';
 import {
-    collection, addDoc, getDocs, query, where, updateDoc, doc,
+    collection, addDoc, getDocs, query, where, updateDoc, doc, collectionGroup,
 } from 'firebase/firestore';
+import { TRADE_STATUS } from '../constants/trade';
 
 const TRADES_COLLECTION = 'trades';
 
@@ -11,7 +12,7 @@ export async function createTrade({ bookId, offeredBy, requestedFrom }) {
         bookId,
         offeredBy,
         requestedFrom,
-        status: 'pending',
+        status: TRADE_STATUS.PENDING,
         createdAt: now,
         updatedAt: now,
     });
@@ -43,25 +44,29 @@ export async function updateTradeStatus(tradeId, status) {
     });
 }
 
+// Returns all books currently flagged as available for trade across every user
+// (excluding `excludeUid`'s own books). One collectionGroup query instead of
+// N per-user queries.
 export async function getAvailableTradeBooks(excludeUid) {
-    const booksRef = collection(db, 'users');
-    const snapshot = await getDocs(booksRef);
+    const myBooksGroup = collectionGroup(db, 'myBooks');
+    const snapshot = await getDocs(myBooksGroup);
     const results = [];
 
-    for (const userDoc of snapshot.docs) {
-        const uid = userDoc.id;
-        if (uid === excludeUid) continue;
+    for (const bookDoc of snapshot.docs) {
+        const ownerId = bookDoc.ref.parent.parent.id;
+        if (ownerId === excludeUid) continue;
 
-        const myBooksRef = collection(userDoc.ref, 'myBooks');
-        const myBooksSnapshot = await getDocs(myBooksRef);
+        const data = bookDoc.data();
+        if (!data.availableForTrade) continue;
 
-        for (const bookDoc of myBooksSnapshot.docs) {
-            results.push({
-                bookId: bookDoc.id,
-                ownerId: uid,
-                addedAt: bookDoc.data().addedAt,
-            });
-        }
+        results.push({
+            bookId: data.bookId || bookDoc.id,
+            ownerId,
+            addedAt: data.addedAt,
+            title: data.title || null,
+            authors: data.authors || [],
+            coverUrl: data.coverUrl || null,
+        });
     }
 
     return results;

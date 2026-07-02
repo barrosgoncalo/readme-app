@@ -5,11 +5,11 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import {
     myBooksService,
     favoriteBooksService,
-} from '@readme/shared/src/services/books.web';
+} from '@readme/shared/src/services/books';
 import {
     createBookIfMissing,
-} from '@readme/shared/src/services/booksCatalog.web';
-import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks.web';
+} from '@readme/shared/src/services/booksCatalog';
+import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { sanitizeIsbn } from '@readme/shared/src/utils/isbn';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
@@ -56,7 +56,7 @@ export default function Books() {
         try {
             const [rawMyBooks, favIds] = await Promise.all([
                 myBooksService.getBooksData(uid),
-                favoriteBooksService.getBooks(uid),
+                favoriteBooksService.getBookIds(uid),
             ]);
             const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
             const hydrated = await hydrateMyBooks(rawMyBooks, {

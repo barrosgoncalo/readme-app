@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, UserPlus, UserCheck, Ban, Repeat } from 'lucide-react';
-import { getUserById } from '@readme/shared/src/services/users.web';
-import { myBooksService } from '@readme/shared/src/services/books.web';
-import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks.web';
+import { getUserById } from '@readme/shared/src/services/users';
+import { myBooksService } from '@readme/shared/src/services/books';
+import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { doAddFriend, doRemoveFriend, doIsFriend } from '@readme/shared/src/services/friendUser';
-import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser.web';
+import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';

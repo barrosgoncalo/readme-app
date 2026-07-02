@@ -1,6 +1,4 @@
-// @readme/shared/src/services/block.js
-
-import { db, auth } from "./firebase";
+import { db } from "./firebase";
 import {
     doc, setDoc, deleteDoc, getDoc,
     collection, query, where, getDocs
@@ -25,12 +23,18 @@ export const doIsBlocked = async (uidA, uidB) => {
     return aBlockedB.exists() || bBlockedA.exists();
 };
 
-/**
- * Returns the blocked users as ready-to-render profile objects,
- * not just their uids — fetches the `blocks` docs, then resolves
- * each blockedUid against the `users` collection in parallel.
- * Any uid that no longer has a user doc (deleted account) is dropped.
- */
+// Lightweight version — returns just the set of blocked UIDs. Use when you only
+// need to filter content, not render profiles.
+export const doGetBlockedUids = async (blockerUid) => {
+    const q = query(collection(db, "blocks"), where("blockerUid", "==", blockerUid));
+    const snapshot = await getDocs(q);
+    return new Set(snapshot.docs.map(d => d.data().blockedUid));
+};
+
+// Returns the blocked users as ready-to-render profile objects,
+// not just their uids — fetches the `blocks` docs, then resolves
+// each blockedUid against the `users` collection in parallel.
+// Any uid that no longer has a user doc (deleted account) is dropped.
 export const doGetBlockedUsers = async (blockerUid) => {
     const q = query(collection(db, "blocks"), where("blockerUid", "==", blockerUid));
     const snapshot = await getDocs(q);
@@ -61,6 +65,7 @@ export const doGetBlockedUsers = async (blockerUid) => {
                 username,
                 fullName,
                 avatarUrl,
+                createdAt: blockData.createdAt || null,
             };
         })
     );
