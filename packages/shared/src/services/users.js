@@ -10,6 +10,9 @@ export async function getUserById(uid) {
     return { id: snap.id, ...snap.data() };
 }
 
+// Client-side search across users. Matches case-insensitively on username and
+// fullName. Excludes the calling user and any user whose profile is private.
+// Capped to `limit` results.
 export async function searchUsers(queryStr, { excludeUid, limit = 20 } = {}) {
     const q = String(queryStr || '').trim().toLowerCase();
     if (!q) return [];
@@ -53,6 +56,7 @@ export async function getUsersByIds(uids) {
                 map[d.id] = {
                     username: d.data().username,
                     fullName: d.data().fullName,
+                    photoURL: d.data().photoURL || null,
                 };
             });
             return map;

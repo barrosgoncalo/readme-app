@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { searchUsers } from '@readme/shared/src/services/users.web';
+import { searchUsers } from '@readme/shared/src/services/users';
+import { doGetBlockedUids } from '@readme/shared/src/services/blockUser';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
@@ -26,8 +27,11 @@ export default function Explore() {
         let cancelled = false;
         const timer = setTimeout(async () => {
             try {
-                const found = await searchUsers(q, { excludeUid: currentUser?.uid });
-                if (!cancelled) setResults(found);
+                const [found, blockedUids] = await Promise.all([
+                    searchUsers(q, { excludeUid: currentUser?.uid }),
+                    currentUser ? doGetBlockedUids(currentUser.uid).catch(() => new Set()) : Promise.resolve(new Set()),
+                ]);
+                if (!cancelled) setResults(found.filter(u => !blockedUids.has(u.id)));
             } finally {
                 if (!cancelled) setLoading(false);
             }
