@@ -14,16 +14,19 @@ export default function Explore() {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [touched, setTouched] = useState(false);
+    const [searchError, setSearchError] = useState(false);
 
     useEffect(() => {
         const q = search.trim();
         if (!q) {
             setResults([]);
             setTouched(false);
+            setSearchError(false);
             return;
         }
         setTouched(true);
         setLoading(true);
+        setSearchError(false);
         let cancelled = false;
         const timer = setTimeout(async () => {
             try {
@@ -32,6 +35,8 @@ export default function Explore() {
                     currentUser ? doGetBlockedUids(currentUser.uid).catch(() => new Set()) : Promise.resolve(new Set()),
                 ]);
                 if (!cancelled) setResults(found.filter(u => !blockedUids.has(u.id)));
+            } catch {
+                if (!cancelled) setSearchError(true);
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -58,7 +63,11 @@ export default function Explore() {
 
             {loading && <p className={styles.status}>Searching…</p>}
 
-            {!loading && touched && results.length === 0 && (
+            {!loading && searchError && (
+                <p className={styles.status}>Search failed. Please try again.</p>
+            )}
+
+            {!loading && !searchError && touched && results.length === 0 && (
                 <p className={styles.status}>No users found for &ldquo;{search.trim()}&rdquo;.</p>
             )}
 
