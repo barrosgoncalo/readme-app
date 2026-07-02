@@ -8,12 +8,12 @@ import {
     TouchableOpacity,
     useColorScheme 
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // <-- Added this
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { buildExploreStyles } from '../../styles/exploreStyles'; // Reusing your grid styles
+import { buildExploreStyles } from '../../styles/exploreStyles';
 
 import { BookGridItem } from '../../components/ui/BookGridItem';
 import { 
@@ -42,7 +42,6 @@ export default function FavoritesScreen({ navigation }) {
         setIsLoading(true);
 
         try {
-            // 1. Get the array of favorite book IDs from the user's profile
             const userDocRef = doc(db, 'users', currentUser.uid);
             const userDocSnap = await getDoc(userDocRef);
             
@@ -60,13 +59,11 @@ export default function FavoritesScreen({ navigation }) {
                 return;
             }
 
-            // 2. Fetch all corresponding publication documents simultaneously
             const fetchPromises = favoriteIds.map(id => getDoc(doc(db, 'publications', id)));
             const documentSnapshots = await Promise.all(fetchPromises);
 
-            // 3. Map the data into the structure your BookGridItem expects
             const fetchedFavorites = documentSnapshots
-                .filter(snap => snap.exists()) // Filter out any deleted publications
+                .filter(snap => snap.exists())
                 .map(snap => {
                     const data = snap.data();
                     return {
@@ -83,7 +80,7 @@ export default function FavoritesScreen({ navigation }) {
                         },
                         favoriteCount: data.stats?.likesCount || 0,
                         publicationData: data,
-                        isFavorite: true // By definition, everything here is a favorite initially
+                        isFavorite: true
                     };
                 });
 
@@ -96,9 +93,7 @@ export default function FavoritesScreen({ navigation }) {
         }
     };
 
-    // Allows users to un-favorite items directly from this screen
     const handleRemoveFavorite = async (bookId, currentIsFavorite, currentCount) => {
-        // Optimistically remove it from the screen immediately so the user feels the app is fast
         setFavorites(prev => prev.filter(book => book.id !== bookId));
 
         try {
@@ -115,13 +110,11 @@ export default function FavoritesScreen({ navigation }) {
             ]);
         } catch (error) {
             console.error("Failed to remove favorite:", error);
-            // If it fails, you might want to fetch favorites again to restore the UI
             fetchFavoriteBooks(); 
         }
     };
 
     useEffect(() => {
-        // Refetch favorites every time the user navigates to this screen
         const unsubscribe = navigation.addListener('focus', () => {
             fetchFavoriteBooks();
         });
@@ -140,7 +133,6 @@ export default function FavoritesScreen({ navigation }) {
                 flexDirection: 'row', 
                 alignItems: 'center', 
                 paddingHorizontal: 16, 
-                // Add the inset top to the padding so it clears the notch perfectly
                 paddingTop: insets.top + 12, 
                 paddingBottom: 16,
             }}>

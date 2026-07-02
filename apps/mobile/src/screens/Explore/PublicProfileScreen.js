@@ -259,12 +259,12 @@ export default function PublicProfileScreen({ navigation, route }) {
                                 <Iconify icon="mdi:check-decagram" size={22} color="#22C55E" style={{ marginLeft: 6, marginTop: 2 }} />
                             )}
                         </View>
-                        
+
                         <TouchableOpacity 
-                            style={[styles.followButton, isFollowing && styles.followingButton]}
-                            onPress={handleFollowToggle}
+                            style={[styles.followButton, isFollowing && styles.followingButton]} 
+                            onPress={handleFollowToggle} 
                             activeOpacity={0.8}
-                        >
+                        > 
                             <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
                                 {isFollowing ? "Following" : "Follow"}
                             </Text>

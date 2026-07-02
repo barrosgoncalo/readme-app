@@ -10,6 +10,7 @@ export default function (api) {
                     icons: [
                         'material-symbols:verified',
                         'lucide:book',
+                        'lucide:book-dashed',
                         'lucide:book-open',
                         'lucide:edit',
                         'lucide:user',
