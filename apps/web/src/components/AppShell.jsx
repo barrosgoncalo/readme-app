@@ -45,7 +45,7 @@ export default function AppShell() {
         <div className={styles.shell}>
             <aside className={styles.sidebar}>
                 <h1 className={styles.wordmark}>
-                    <Link to={WEB_ROUTES.BOOKS} style={{color: 'inherit', textDecoration: 'none'}}>
+                    <Link to={WEB_ROUTES.MAP} style={{color: 'inherit', textDecoration: 'none'}}>
                         README
                     </Link>
                 </h1>
