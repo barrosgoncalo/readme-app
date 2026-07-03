@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, ArrowLeftRight } from 'lucide-react';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { myBooksService } from '@readme/shared/src/services/books.web';
-import { getBook } from '@readme/shared/src/services/booksCatalog.web';
+import {useState, useEffect, useRef} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
+import {ArrowLeft, BookOpen, ArrowLeftRight} from 'lucide-react';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
+import {myBooksService} from '@readme/shared/src/services/books.web';
+import {getBook} from '@readme/shared/src/services/booksCatalog.web';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
-import { WEB_ROUTES } from '../../constants/webRoutes.js';
+import {WEB_ROUTES} from '../../constants/webRoutes.js';
 import styles from './BookDetail.module.css';
 
-function StarRating({ rating, onRate, disabled }) {
+function StarRating({rating, onRate, disabled}) {
     const [hovered, setHovered] = useState(null);
     const active = hovered ?? rating ?? 0;
 
@@ -41,9 +41,9 @@ function StarRating({ rating, onRate, disabled }) {
 }
 
 export default function BookDetail() {
-    const { bookId } = useParams();
+    const {bookId} = useParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
     const uid = currentUser?.uid;
 
     const [catalog, setCatalog] = useState(null);
@@ -56,10 +56,16 @@ export default function BookDetail() {
     const [savingNotes, setSavingNotes] = useState(false);
     const notesTimer = useRef(null);
 
+    const [currentPage, setCurrentPage] = useState('');
+    const [savingProgress, setSavingProgress] = useState(false);
+    const progressTimer = useRef(null);
+
     useEffect(() => {
         if (!uid || !bookId) return;
+
         setLoading(true);
         setError(null);
+
         Promise.all([
             getBook(bookId),
             myBooksService.getBookData(uid, bookId),
@@ -67,37 +73,38 @@ export default function BookDetail() {
             setCatalog(cat);
             setMyBook(my);
             setNotes(my?.notes || '');
+            setCurrentPage(my?.currentPage ?? 0);
         }).catch(err => {
             setError(err.message || 'Could not load book.');
         }).finally(() => setLoading(false));
     }, [uid, bookId]);
 
     async function handleStatusChange(status) {
-        setMyBook(prev => ({ ...prev, status }));
+        setMyBook(prev => ({...prev, status}));
         try {
-            await myBooksService.updateBook(uid, bookId, { status });
+            await myBooksService.updateBook(uid, bookId, {status});
         } catch {
-            setMyBook(prev => ({ ...prev, status: myBook?.status }));
+            setMyBook(prev => ({...prev, status: myBook?.status}));
         }
     }
 
     async function handleRate(rating) {
         const newRating = rating === 0 ? null : rating;
-        setMyBook(prev => ({ ...prev, rating: newRating }));
+        setMyBook(prev => ({...prev, rating: newRating}));
         try {
-            await myBooksService.updateBook(uid, bookId, { rating: newRating });
+            await myBooksService.updateBook(uid, bookId, {rating: newRating});
         } catch {
-            setMyBook(prev => ({ ...prev, rating: myBook?.rating }));
+            setMyBook(prev => ({...prev, rating: myBook?.rating}));
         }
     }
 
     async function handleTradeToggle() {
         const next = !myBook?.availableForTrade;
-        setMyBook(prev => ({ ...prev, availableForTrade: next }));
+        setMyBook(prev => ({...prev, availableForTrade: next}));
         try {
-            await myBooksService.updateBook(uid, bookId, { availableForTrade: next });
+            await myBooksService.updateBook(uid, bookId, {availableForTrade: next});
         } catch {
-            setMyBook(prev => ({ ...prev, availableForTrade: myBook?.availableForTrade }));
+            setMyBook(prev => ({...prev, availableForTrade: myBook?.availableForTrade}));
         }
     }
 
@@ -109,13 +116,56 @@ export default function BookDetail() {
         notesTimer.current = setTimeout(async () => {
             setSavingNotes(true);
             try {
-                await myBooksService.updateBook(uid, bookId, { notes: val });
+                await myBooksService.updateBook(uid, bookId, {notes: val});
                 setNotesSaved(true);
                 setTimeout(() => setNotesSaved(false), 2000);
             } finally {
                 setSavingNotes(false);
             }
         }, 800);
+    }
+
+    function handleProgressChange(val) {
+        let newPage = val;
+
+        if (val !== '') {
+            newPage = parseInt(val, 10);
+            if (isNaN(newPage)) return;
+
+            const pageCount = catalog?.pageCount || 0;
+            if (pageCount > 0 && newPage > pageCount) newPage = pageCount;
+            if (newPage < 0) newPage = 0;
+        }
+
+        setCurrentPage(newPage);
+        clearTimeout(progressTimer.current);
+
+        progressTimer.current = setTimeout(async () => {
+            const finalPage = newPage === '' ? 0 : newPage;
+            setSavingProgress(true);
+
+            try {
+                const pageCount = catalog?.pageCount || 0;
+
+                const pct = pageCount > 0 ? Math.round((finalPage / pageCount) * 100) : Math.min(finalPage, 100);
+
+                const updates = {currentPage: finalPage, progress: pct};
+                let newStatus = status;
+
+                if (pageCount > 0 && finalPage >= pageCount && status !== 'done') {
+                    updates.status = 'done';
+                    newStatus = 'done';
+                } else if (pageCount === 0 && finalPage >= 100 && status !== 'done') {
+                    updates.status = 'done';
+                    newStatus = 'done';
+                }
+
+                await myBooksService.updateBook(uid, bookId, updates);
+                setMyBook(prev => ({...prev, currentPage: finalPage, progress: pct, status: newStatus}));
+            } finally {
+                setSavingProgress(false);
+            }
+        }, 600);
     }
 
     const status = myBook?.status || 'reading';
@@ -127,12 +177,12 @@ export default function BookDetail() {
     return (
         <div className={styles.page}>
             <button type="button" className={styles.backBtn} onClick={() => navigate(WEB_ROUTES.BOOKS)}>
-                <ArrowLeft size={18} />
+                <ArrowLeft size={18}/>
                 My Books
             </button>
 
             {loading ? (
-                <Spinner center label="Loading book" />
+                <Spinner center label="Loading book"/>
             ) : error ? (
                 <ErrorAlert>{error}</ErrorAlert>
             ) : (
@@ -140,10 +190,10 @@ export default function BookDetail() {
                     {/* Hero */}
                     <div className={styles.hero}>
                         {catalog?.coverUrl ? (
-                            <img src={catalog.coverUrl} alt="" className={styles.cover} />
+                            <img src={catalog.coverUrl} alt="" className={styles.cover}/>
                         ) : (
                             <div className={`${styles.cover} ${styles.coverPlaceholder}`}>
-                                <BookOpen size={48} />
+                                <BookOpen size={48}/>
                             </div>
                         )}
                         <h1 className={styles.title}>{catalog?.title || 'Untitled'}</h1>
@@ -181,6 +231,39 @@ export default function BookDetail() {
                         </div>
                     </div>
 
+                    {/* Reading Progress */}
+                    {status === 'reading' && (
+                        <div className={styles.section}>
+                            <div className={styles.sectionLabelRow}>
+                                <p className={styles.sectionLabel}>Reading progress</p>
+                                {savingProgress && <span className={styles.saveStatus}>Saving...</span>}
+                            </div>
+                            <div className={styles.progressContainer}>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max={catalog?.pageCount || 100}
+                                    value={currentPage === '' ? 0 : currentPage}
+                                    onChange={(e) => handleProgressChange(e.target.value)}
+                                    className={styles.slider}
+                                />
+                                <div className={styles.progressInputs}>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max={catalog?.pageCount || undefined}
+                                        value={currentPage}
+                                        onChange={(e) => handleProgressChange(e.target.value)}
+                                        className={styles.pageInput}
+                                    />
+                                    <span className={styles.pageTotal}>
+                                        / {catalog?.pageCount ? `${catalog.pageCount} pages` : (catalog?.pageCount === 0 ? '% (Estimated)' : '? pages')}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Trade toggle */}
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Trading</p>
@@ -191,7 +274,7 @@ export default function BookDetail() {
                             aria-pressed={availableForTrade}
                         >
                             <span className={styles.tradeToggleIcon}>
-                                <ArrowLeftRight size={16} />
+                                <ArrowLeftRight size={16}/>
                             </span>
                             <span className={styles.tradeToggleBody}>
                                 <span className={styles.tradeToggleLabel}>
@@ -212,7 +295,7 @@ export default function BookDetail() {
                     {/* Rating */}
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Your rating</p>
-                        <StarRating rating={myBook?.rating ?? null} onRate={handleRate} />
+                        <StarRating rating={myBook?.rating ?? null} onRate={handleRate}/>
                     </div>
 
                     {/* Notes */}
@@ -220,7 +303,8 @@ export default function BookDetail() {
                         <div className={styles.sectionLabelRow}>
                             <p className={styles.sectionLabel}>Your notes</p>
                             {savingNotes && <span className={styles.saveStatus}>Saving…</span>}
-                            {notesSaved && <span className={`${styles.saveStatus} ${styles.saveStatusDone}`}>Saved</span>}
+                            {notesSaved &&
+                                <span className={`${styles.saveStatus} ${styles.saveStatusDone}`}>Saved</span>}
                         </div>
                         <textarea
                             className={styles.textarea}
