@@ -28,13 +28,13 @@ const { width } = Dimensions.get('window');
 // ==========================================
 // HELPER FUNCTIONS
 // ==========================================
-const extractBookDetails = (passedBook) => {
-    const pubData = passedBook?.publicationData || {};
+const extractBookDetails = (passedItem) => {
+    const pubData = passedItem?.publicationData || passedItem || {}; 
     const bookData = pubData.book || {};
     const images = bookData.images?.length > 0 ? bookData.images : ['https://via.placeholder.com/400x600'];
 
     return {
-        id: passedBook?.id,
+        id: passedItem?.id,
         uid: pubData.uid,
         title: bookData.title || 'Unknown Title',
         author: bookData.author || 'Unknown Author',
@@ -56,7 +56,9 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const styles = buildBookDetailsStyles(theme);
 
     // --- Route Parsing ---
-    const book = extractBookDetails(route?.params?.book);
+    const passedData = route?.params?.publication;
+    const book = extractBookDetails(passedData);
+
     const passedSeller = route?.params?.seller;
 
     // --- Data & Logic Layer ---

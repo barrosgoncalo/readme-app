@@ -12,6 +12,7 @@ import {
     RefreshControl,
     useColorScheme
 } from 'react-native';
+import { ROUTES } from '@readme/shared/src/constants/routes'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
@@ -159,7 +160,10 @@ export default function PublicProfileScreen({ navigation, route }) {
                     <TouchableOpacity 
                         key={item.id} 
                         style={styles.publicationCard}
-                        onPress={() => navigation.navigate('PublicationDetails', { publicationId: item.id })}
+                        onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
+                            publicationId: item.id,
+                            publication: item
+                        })}
                         activeOpacity={0.8}
                     >
                         <View style={styles.bookCoverPlaceholder}>

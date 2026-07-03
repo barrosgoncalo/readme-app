@@ -239,7 +239,7 @@ export default function ExploreScreen({navigation}) {
                                     isFavorite={item.isFavorite ?? userFavorites.includes(item.id)}
                                     favoriteCount={item.favoriteCount}
                                     onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
-                                        book: item,
+                                        publication: item, 
                                         seller: item.seller
                                     })}
                                     onToggleFavorite={handleToggleFavorite}
