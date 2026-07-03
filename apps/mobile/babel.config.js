@@ -21,6 +21,8 @@ export default function (api) {
                         'lucide:log-out',
                         'lucide:chevron-right',
                         'lucide:arrow-left',
+                        'lucide:arrow-left-right',
+                        'lucide:arrow-down-left',
                         'lucide:calendar',
                         'lucide:chevron-down',
                         'lucide:globe',

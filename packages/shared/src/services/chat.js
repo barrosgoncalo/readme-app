@@ -71,10 +71,14 @@ export const ChatService = {
         const offerPayload = createOfferModel(targetBook.id, offeredBooks.map(b => b.id), location);
         const messagePayload = createMessageModel(currentUserId, `Sent an offer for "${targetBook.title}"`, 'offer', offerPayload);
 
+        const firstImage = targetBook?.book?.images?.[0] || targetBook?.images?.[0] || null;
+
         await Promise.all([
             addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
             updateDoc(doc(db, 'chats', chatId), {
-                lastMessage: `Swap Offer: ${targetBook.title}`,
+                lastMessage: `Swap Offer: ${targetBook.title || 'Book'}`,
+                targetBookImage: firstImage, // <--- Saves the image directly to the chat
+                buyerId: currentUserId,      // <--- Saves who initiated to fix the arrows!
                 updatedAt: new Date().toISOString()
             })
         ]);
