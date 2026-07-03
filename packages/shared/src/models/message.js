@@ -13,7 +13,7 @@ export const createMessageModel = (senderId, text, type = "text", offerPayload =
         senderId: senderId,
         text: text.trim(),
         type: type,
-        // If an offer payload is provided, attach it; otherwise, omit it.
+
         ...(type === 'offer' && offerPayload ? { offerDetails: offerPayload } : {}),
         
         // -- Timestamps & Status --

@@ -16,7 +16,7 @@ export const createOfferModel = (targetBookId, offeredBookIds = [], locationData
             title: locationData.title || "Unknown Location",
             address: locationData.address || ""
         },
-        status: 'pending', // Can transition to 'accepted', 'declined', or 'countered'
+        status: 'pending',
         createdAt: new Date().toISOString()
     };
 };
