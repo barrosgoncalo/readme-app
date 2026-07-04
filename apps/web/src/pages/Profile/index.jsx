@@ -11,6 +11,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
+import Toggle from '../../components/Toggle.jsx';
 import styles from './Profile.module.css';
 
 function initials(userData) {
@@ -169,14 +170,5 @@ export default function Profile() {
             </div>
 
         </div>
-    );
-}
-
-function Toggle({ checked, onChange, disabled }) {
-    return (
-        <label className={styles.toggle} onClick={e => e.stopPropagation()}>
-            <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} disabled={disabled} />
-            <span className={styles.toggleTrack} />
-        </label>
     );
 }

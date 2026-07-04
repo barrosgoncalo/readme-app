@@ -9,6 +9,7 @@ import { WEB_ROUTES } from '../../constants/webRoutes';
 import Button from '../../components/Button.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Spinner from '../../components/Spinner.jsx';
+import Toggle from '../../components/Toggle.jsx';
 import styles from './PrivacySecurity.module.css';
 
 export default function PrivacySecurity() {
@@ -189,14 +190,5 @@ function ToggleRow({ icon, label, checked, onChange, disabled }) {
             </span>
             <Toggle checked={checked} onChange={onChange} disabled={disabled} />
         </div>
-    );
-}
-
-function Toggle({ checked, onChange, disabled }) {
-    return (
-        <label className={styles.toggle} onClick={e => e.stopPropagation()}>
-            <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} disabled={disabled} />
-            <span className={styles.toggleTrack} />
-        </label>
     );
 }
