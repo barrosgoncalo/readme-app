@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Link, NavLink, Outlet, useNavigate} from 'react-router-dom';
+import {Link, NavLink, Outlet, useNavigate, useLocation} from 'react-router-dom';
 import {doc, onSnapshot} from 'firebase/firestore';
 import {ArrowLeftRight, BookOpen, CalendarDays, Map, Moon, Sun, User} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
@@ -21,7 +21,7 @@ export default function AppShell() {
     const {currentUser} = useAuth();
     const {theme, toggle} = useTheme();
     const navigate = useNavigate();
-
+    const location = useLocation();
     const [username, setUsername] = useState('');
 
     useEffect(() => {
@@ -41,6 +41,25 @@ export default function AppShell() {
         navigate(WEB_ROUTES.LOGIN, {replace: true});
     }
 
+    function checkIsActive(to) {
+        const searchParams = new URLSearchParams(location.search);
+        const ownerParam = searchParams.get('owner');
+        const isVisitingOtherUser = ownerParam && currentUser && ownerParam !== currentUser.uid;
+
+        if (to === WEB_ROUTES.BOOKS)
+            return location.pathname.startsWith(WEB_ROUTES.BOOKS) && !isVisitingOtherUser;
+
+        if (to === WEB_ROUTES.MAP) {
+            const isMap = location.pathname.startsWith(WEB_ROUTES.MAP);
+            const isUsersProfile = location.pathname.startsWith('/users');
+            const isOtherUserBook = location.pathname.startsWith(WEB_ROUTES.BOOKS) && isVisitingOtherUser;
+
+            return isMap || isUsersProfile || isOtherUserBook;
+        }
+
+        return location.pathname.startsWith(to);
+    }
+
     return (
         <div className={styles.shell}>
             <aside className={styles.sidebar}>
@@ -55,8 +74,8 @@ export default function AppShell() {
                         <NavLink
                             key={to}
                             to={to}
-                            className={({isActive}) =>
-                                isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+                            className={() =>
+                                checkIsActive(to) ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
                             }
                         >
                             <Icon size={18} aria-hidden/>
