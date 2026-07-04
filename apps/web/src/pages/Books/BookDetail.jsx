@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { myBooksService } from '@readme/shared/src/services/books';
 import { getBook } from '@readme/shared/src/services/booksCatalog';
 import { getUserById } from '@readme/shared/src/services/users';
+import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
+import { BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
+import BookCover from '../../components/BookCover.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes.js';
 import styles from './BookDetail.module.css';
 
@@ -151,8 +154,7 @@ export default function BookDetail() {
     const displayTitle = catalog?.title || myBook?.title || 'Untitled';
     const displayCoverUrl = catalog?.coverUrl || myBook?.coverUrl || null;
     const displayDescription = catalog?.description || null;
-    const rawAuthors = catalog?.authors || myBook?.authors || [];
-    const authors = Array.isArray(rawAuthors) ? rawAuthors.join(', ') : (rawAuthors || '');
+    const authors = formatAuthors(catalog?.authors || myBook?.authors || []);
 
     return (
         <div className={styles.page}>
@@ -169,13 +171,12 @@ export default function BookDetail() {
                 // ── Owner view: full editing controls ──
                 <>
                     <div className={styles.hero}>
-                        {displayCoverUrl ? (
-                            <img src={displayCoverUrl} alt="" className={styles.cover} />
-                        ) : (
-                            <div className={`${styles.cover} ${styles.coverPlaceholder}`}>
-                                <BookOpen size={48} />
-                            </div>
-                        )}
+                        <BookCover
+                            coverUrl={displayCoverUrl}
+                            imgClassName={styles.cover}
+                            placeholderClassName={`${styles.cover} ${styles.coverPlaceholder}`}
+                            iconSize={48}
+                        />
                         <h1 className={styles.title}>{displayTitle}</h1>
                         {authors && <p className={styles.authors}>{authors}</p>}
                         {displayDescription && (
@@ -186,9 +187,9 @@ export default function BookDetail() {
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Reading status</p>
                         <div className={styles.statusToggle}>
-                            <button type="button" className={`${styles.statusBtn} ${status === 'reading' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('reading')}>Reading</button>
-                            <button type="button" className={`${styles.statusBtn} ${status === 'done' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('done')}>Finished</button>
-                            <button type="button" className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('want')}>Want to read</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === 'reading' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('reading')}>{BOOK_STATUS_LABELS.reading}</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === 'done' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('done')}>{BOOK_STATUS_LABELS.done}</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('want')}>{BOOK_STATUS_LABELS.want}</button>
                         </div>
                     </div>
 
@@ -241,13 +242,12 @@ export default function BookDetail() {
                 // ── Read-only view: cover + meta + owner's rating & notes ──
                 <>
                     <div className={styles.hero}>
-                        {displayCoverUrl ? (
-                            <img src={displayCoverUrl} alt="" className={styles.cover} />
-                        ) : (
-                            <div className={`${styles.cover} ${styles.coverPlaceholder}`}>
-                                <BookOpen size={48} />
-                            </div>
-                        )}
+                        <BookCover
+                            coverUrl={displayCoverUrl}
+                            imgClassName={styles.cover}
+                            placeholderClassName={`${styles.cover} ${styles.coverPlaceholder}`}
+                            iconSize={48}
+                        />
                         <h1 className={styles.title}>{displayTitle}</h1>
                         {authors && <p className={styles.authors}>{authors}</p>}
                         {displayDescription && (

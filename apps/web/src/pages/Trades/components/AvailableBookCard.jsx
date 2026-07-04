@@ -1,19 +1,19 @@
-import { BookOpen } from 'lucide-react';
+import BookCover from '../../../components/BookCover.jsx';
 import Button from '../../../components/Button.jsx';
+import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import styles from './AvailableBookCard.module.css';
 
 export default function AvailableBookCard({ book, ownerName, onRequestTrade, busy, disableRequest }) {
-    const authors = Array.isArray(book.authors) ? book.authors.join(', ') : book.authors;
+    const authors = formatAuthors(book.authors);
 
     return (
         <div className={styles.card}>
-            {book.coverUrl ? (
-                <img src={book.coverUrl} alt="" className={styles.cover} />
-            ) : (
-                <div className={`${styles.cover} ${styles.placeholder}`} aria-hidden>
-                    <BookOpen size={24} />
-                </div>
-            )}
+            <BookCover
+                coverUrl={book.coverUrl}
+                imgClassName={styles.cover}
+                placeholderClassName={`${styles.cover} ${styles.placeholder}`}
+                iconSize={24}
+            />
 
             <div className={styles.body}>
                 <div>

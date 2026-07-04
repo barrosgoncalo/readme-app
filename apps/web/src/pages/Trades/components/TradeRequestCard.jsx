@@ -1,5 +1,6 @@
-import { BookOpen } from 'lucide-react';
 import { TRADE_STATUS } from '@readme/shared/src/constants/trade';
+import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
+import BookCover from '../../../components/BookCover.jsx';
 import Button from '../../../components/Button.jsx';
 import styles from './TradeRequestCard.module.css';
 
@@ -13,18 +14,17 @@ const STATUS_LABEL = {
 export default function TradeRequestCard({
     trade, book, otherPartyName, isIncoming, onAccept, onDecline, onComplete, busy,
 }) {
-    const authors = Array.isArray(book.authors) ? book.authors.join(', ') : book.authors;
+    const authors = formatAuthors(book.authors);
     const statusLabel = STATUS_LABEL[trade.status] || trade.status;
 
     return (
         <div className={styles.card}>
-            {book.coverUrl ? (
-                <img src={book.coverUrl} alt="" className={styles.cover} />
-            ) : (
-                <div className={`${styles.cover} ${styles.placeholder}`} aria-hidden>
-                    <BookOpen size={24} />
-                </div>
-            )}
+            <BookCover
+                coverUrl={book.coverUrl}
+                imgClassName={styles.cover}
+                placeholderClassName={`${styles.cover} ${styles.placeholder}`}
+                iconSize={24}
+            />
 
             <div className={styles.body}>
                 <div>

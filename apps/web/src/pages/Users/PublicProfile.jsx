@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, BookOpen, UserPlus, UserCheck, Ban, Repeat } from 'lucide-react';
+import { ArrowLeft, UserPlus, UserCheck, Ban, Repeat } from 'lucide-react';
 import { getUserById } from '@readme/shared/src/services/users';
 import { myBooksService } from '@readme/shared/src/services/books';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { doAddFriend, doRemoveFriend, doIsFriend } from '@readme/shared/src/services/friendUser';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser';
+import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
 import UserAvatar from '../../components/UserAvatar.jsx';
+import BookCover from '../../components/BookCover.jsx';
 import { useToast } from '../../hooks/useToast';
 import styles from './PublicProfile.module.css';
 
@@ -20,14 +22,17 @@ function BookRow({ book, ownerUid }) {
             className={styles.bookRow}
         >
             <div className={styles.coverWrap}>
-                {book.coverUrl
-                    ? <img src={book.coverUrl} alt="" className={styles.cover} />
-                    : <div className={styles.coverPlaceholder}><BookOpen size={22} /></div>}
+                <BookCover
+                    coverUrl={book.coverUrl}
+                    imgClassName={styles.cover}
+                    placeholderClassName={styles.coverPlaceholder}
+                    iconSize={22}
+                />
             </div>
             <div className={styles.bookInfo}>
                 <span className={styles.bookTitle}>{book.title || 'Untitled'}</span>
                 <span className={styles.bookAuthors}>
-                    {Array.isArray(book.authors) ? book.authors.join(', ') : (book.authors || 'Unknown author')}
+                    {formatAuthors(book.authors) || 'Unknown author'}
                 </span>
             </div>
             {book.availableForTrade && (

@@ -1,4 +1,7 @@
-import { Heart, Trash2, BookOpen, SquarePen } from 'lucide-react';
+import { Heart, Trash2, SquarePen } from 'lucide-react';
+import { BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
+import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
+import BookCover from '../../../components/BookCover.jsx';
 import styles from './BookCard.module.css';
 
 function Stars({ rating }) {
@@ -18,14 +21,8 @@ const STATUS_COLORS = {
     done: styles.dotDone,
 };
 
-const STATUS_LABELS = {
-    reading: 'Reading',
-    want: 'Want to read',
-    done: 'Finished',
-};
-
 export default function BookCard({ book, variant = 'row', isFavorite, onToggleFavorite, onRemove, onEdit, busy }) {
-    const authors = Array.isArray(book.authors) ? book.authors.join(', ') : (book.authors || '');
+    const authors = formatAuthors(book.authors);
     const status = book.status || 'reading';
     const day = book.addedAt ? new Date(book.addedAt).getDate() : null;
 
@@ -33,13 +30,12 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
         return (
             <div className={styles.featured}>
                 <div className={styles.featuredCoverWrap}>
-                    {book.coverUrl ? (
-                        <img src={book.coverUrl} alt="" className={styles.featuredCover} />
-                    ) : (
-                        <div className={`${styles.featuredCover} ${styles.coverPlaceholder}`}>
-                            <BookOpen size={28} />
-                        </div>
-                    )}
+                    <BookCover
+                        coverUrl={book.coverUrl}
+                        imgClassName={styles.featuredCover}
+                        placeholderClassName={`${styles.featuredCover} ${styles.coverPlaceholder}`}
+                        iconSize={28}
+                    />
                 </div>
                 <div className={styles.featuredBody}>
                     <p className={styles.featuredTitle}>{book.title || 'Untitled'}</p>
@@ -48,7 +44,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                     <div className={styles.featuredActions}>
                         <span className={styles.statusPill}>
                             <span className={`${styles.dot} ${STATUS_COLORS[status]}`} />
-                            {STATUS_LABELS[status]}
+                            {BOOK_STATUS_LABELS[status]}
                         </span>
                         <div className={styles.iconRow}>
                             <button
@@ -90,20 +86,19 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
             {day !== null && <span className={styles.day}>{String(day).padStart(2, '0')}</span>}
             <span
                 className={`${styles.dot} ${STATUS_COLORS[status]}`}
-                title={STATUS_LABELS[status]}
+                title={BOOK_STATUS_LABELS[status]}
             />
             <div className={styles.rowInfo}>
                 <span className={styles.rowTitle}>{book.title || 'Untitled'}</span>
                 {authors && <span className={styles.rowAuthors}>{authors}</span>}
                 {book.rating > 0 && <Stars rating={book.rating} />}
             </div>
-            {book.coverUrl ? (
-                <img src={book.coverUrl} alt="" className={styles.rowThumb} />
-            ) : (
-                <div className={`${styles.rowThumb} ${styles.coverPlaceholder}`}>
-                    <BookOpen size={14} />
-                </div>
-            )}
+            <BookCover
+                coverUrl={book.coverUrl}
+                imgClassName={styles.rowThumb}
+                placeholderClassName={`${styles.rowThumb} ${styles.coverPlaceholder}`}
+                iconSize={14}
+            />
             <div className={styles.rowActions}>
                 <button
                     type="button"
