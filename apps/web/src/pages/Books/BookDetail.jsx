@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef} from 'react';
-import {useParams, useNavigate} from 'react-router-dom';
+import {useParams, useNavigate, useSearchParams} from 'react-router-dom';
 import {ArrowLeft, BookOpen, ArrowLeftRight} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {myBooksService} from '@readme/shared/src/services/books.web';
@@ -46,6 +46,10 @@ export default function BookDetail() {
     const {currentUser} = useAuth();
     const uid = currentUser?.uid;
 
+    const [searchParams] = useSearchParams();
+    const ownerUid = searchParams.get('owner') || uid;
+    const isMyBook = uid === ownerUid;
+
     const [catalog, setCatalog] = useState(null);
     const [myBook, setMyBook] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -61,14 +65,14 @@ export default function BookDetail() {
     const progressTimer = useRef(null);
 
     useEffect(() => {
-        if (!uid || !bookId) return;
+        if (!ownerUid || !bookId) return;
 
         setLoading(true);
         setError(null);
 
         Promise.all([
             getBook(bookId),
-            myBooksService.getBookData(uid, bookId),
+            myBooksService.getBookData(ownerUid, bookId),
         ]).then(([cat, my]) => {
             setCatalog(cat);
             setMyBook(my);
@@ -77,7 +81,7 @@ export default function BookDetail() {
         }).catch(err => {
             setError(err.message || 'Could not load book.');
         }).finally(() => setLoading(false));
-    }, [uid, bookId]);
+    }, [ownerUid, bookId]);
 
     async function handleStatusChange(status) {
         setMyBook(prev => ({...prev, status}));
@@ -168,6 +172,14 @@ export default function BookDetail() {
         }, 600);
     }
 
+    function handleBack() {
+        if (!isMyBook) {
+            navigate(-1);
+        } else {
+            navigate(WEB_ROUTES.BOOKS);
+        }
+    }
+
     const status = myBook?.status || 'reading';
     const availableForTrade = myBook?.availableForTrade ?? false;
     const authors = Array.isArray(catalog?.authors)
@@ -176,7 +188,7 @@ export default function BookDetail() {
 
     return (
         <div className={styles.page}>
-            <button type="button" className={styles.backBtn} onClick={() => navigate(WEB_ROUTES.BOOKS)}>
+            <button type="button" className={styles.backBtn} onClick={() => handleBack()}>
                 <ArrowLeft size={18}/>
                 My Books
             </button>
@@ -202,118 +214,135 @@ export default function BookDetail() {
                             <p className={styles.heroDescription}>{catalog.description}</p>
                         )}
                     </div>
+                    {/* Shows info depending on which profile user is viewing */}
+                    {isMyBook ? (
+                        <div className="ferramentas-de-edicao">
 
-                    {/* Status toggle */}
-                    <div className={styles.section}>
-                        <p className={styles.sectionLabel}>Reading status</p>
-                        <div className={styles.statusToggle}>
-                            <button
-                                type="button"
-                                className={`${styles.statusBtn} ${status === 'reading' ? styles.statusBtnActive : ''}`}
-                                onClick={() => handleStatusChange('reading')}
-                            >
-                                Reading
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.statusBtn} ${status === 'done' ? styles.statusBtnActive : ''}`}
-                                onClick={() => handleStatusChange('done')}
-                            >
-                                Finished
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`}
-                                onClick={() => handleStatusChange('want')}
-                            >
-                                Want to read
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Reading Progress */}
-                    {status === 'reading' && (
+                        {/* Status toggle */}
                         <div className={styles.section}>
-                            <div className={styles.sectionLabelRow}>
-                                <p className={styles.sectionLabel}>Reading progress</p>
-                                {savingProgress && <span className={styles.saveStatus}>Saving...</span>}
+                            <p className={styles.sectionLabel}>Reading status</p>
+                            <div className={styles.statusToggle}>
+                                <button
+                                    type="button"
+                                    className={`${styles.statusBtn} ${status === 'reading' ? styles.statusBtnActive : ''}`}
+                                    onClick={() => handleStatusChange('reading')}
+                                >
+                                    Reading
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.statusBtn} ${status === 'done' ? styles.statusBtnActive : ''}`}
+                                    onClick={() => handleStatusChange('done')}
+                                >
+                                    Finished
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`}
+                                    onClick={() => handleStatusChange('want')}
+                                >
+                                    Want to read
+                                </button>
                             </div>
-                            <div className={styles.progressContainer}>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max={catalog?.pageCount || 100}
-                                    value={currentPage === '' ? 0 : currentPage}
-                                    onChange={(e) => handleProgressChange(e.target.value)}
-                                    className={styles.slider}
-                                />
-                                <div className={styles.progressInputs}>
+                        </div>
+
+                        {/* Reading Progress */}
+                        {status === 'reading' && (
+                            <div className={styles.section}>
+                                <div className={styles.sectionLabelRow}>
+                                    <p className={styles.sectionLabel}>Reading progress</p>
+                                    {savingProgress && <span className={styles.saveStatus}>Saving...</span>}
+                                </div>
+                                <div className={styles.progressContainer}>
                                     <input
-                                        type="number"
+                                        type="range"
                                         min="0"
-                                        max={catalog?.pageCount || undefined}
-                                        value={currentPage}
+                                        max={catalog?.pageCount || 100}
+                                        value={currentPage === '' ? 0 : currentPage}
                                         onChange={(e) => handleProgressChange(e.target.value)}
-                                        className={styles.pageInput}
+                                        className={styles.slider}
                                     />
-                                    <span className={styles.pageTotal}>
-                                        / {catalog?.pageCount ? `${catalog.pageCount} pages` : (catalog?.pageCount === 0 ? '% (Estimated)' : '? pages')}
-                                    </span>
+                                    <div className={styles.progressInputs}>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max={catalog?.pageCount || undefined}
+                                            value={currentPage}
+                                            onChange={(e) => handleProgressChange(e.target.value)}
+                                            className={styles.pageInput}
+                                        />
+                                        <span className={styles.pageTotal}>
+                                            / {catalog?.pageCount ? `${catalog.pageCount} pages` : (catalog?.pageCount === 0 ? '% (Estimated)' : '? pages')}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+                        )}
+
+                        {/* Trade toggle */}
+                        <div className={styles.section}>
+                            <p className={styles.sectionLabel}>Trading</p>
+                            <button
+                                type="button"
+                                className={`${styles.tradeToggle} ${availableForTrade ? styles.tradeToggleOn : ''}`}
+                                onClick={handleTradeToggle}
+                                aria-pressed={availableForTrade}
+                            >
+                                <span className={styles.tradeToggleIcon}>
+                                    <ArrowLeftRight size={16}/>
+                                </span>
+                                <span className={styles.tradeToggleBody}>
+                                    <span className={styles.tradeToggleLabel}>
+                                        {availableForTrade ? 'Available for trade' : 'Not available for trade'}
+                                    </span>
+                                    <span className={styles.tradeToggleSub}>
+                                        {availableForTrade
+                                            ? 'This book is listed on the Trades page.'
+                                            : 'Enable to list this book for others to request.'}
+                                    </span>
+                                </span>
+                                <span className={`${styles.pill} ${availableForTrade ? styles.pillOn : ''}`}>
+                                    {availableForTrade ? 'On' : 'Off'}
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* Rating */}
+                        <div className={styles.section}>
+                            <p className={styles.sectionLabel}>Your rating</p>
+                            <StarRating rating={myBook?.rating ?? null} onRate={handleRate}/>
+                        </div>
+
+                        {/* Notes */}
+                        <div className={styles.section}>
+                            <div className={styles.sectionLabelRow}>
+                                <p className={styles.sectionLabel}>Your notes</p>
+                                {savingNotes && <span className={styles.saveStatus}>Saving…</span>}
+                                {notesSaved &&
+                                    <span className={`${styles.saveStatus} ${styles.saveStatusDone}`}>Saved</span>}
+                            </div>
+                            <textarea
+                                className={styles.textarea}
+                                placeholder="What did you think? Any memorable moments, quotes, or thoughts…"
+                                value={notes}
+                                onChange={handleNotesChange}
+                                rows={5}
+                            />
+                        </div>
+                        </div>
+                    ) : (
+                        <div className={styles.visitorSection}>
+                            <h3>Owner's Review</h3>
+                            {myBook?.rating ? (
+                                <div>
+                                    <StarRating rating={myBook.rating} disabled={true} />
+                                    <p>{myBook.review || "No review provided."}</p>
+                                </div>
+                            ) : (
+                                <p>This user hasn't rated or reviewed this book yet.</p>
+                            )}
                         </div>
                     )}
-
-                    {/* Trade toggle */}
-                    <div className={styles.section}>
-                        <p className={styles.sectionLabel}>Trading</p>
-                        <button
-                            type="button"
-                            className={`${styles.tradeToggle} ${availableForTrade ? styles.tradeToggleOn : ''}`}
-                            onClick={handleTradeToggle}
-                            aria-pressed={availableForTrade}
-                        >
-                            <span className={styles.tradeToggleIcon}>
-                                <ArrowLeftRight size={16}/>
-                            </span>
-                            <span className={styles.tradeToggleBody}>
-                                <span className={styles.tradeToggleLabel}>
-                                    {availableForTrade ? 'Available for trade' : 'Not available for trade'}
-                                </span>
-                                <span className={styles.tradeToggleSub}>
-                                    {availableForTrade
-                                        ? 'This book is listed on the Trades page.'
-                                        : 'Enable to list this book for others to request.'}
-                                </span>
-                            </span>
-                            <span className={`${styles.pill} ${availableForTrade ? styles.pillOn : ''}`}>
-                                {availableForTrade ? 'On' : 'Off'}
-                            </span>
-                        </button>
-                    </div>
-
-                    {/* Rating */}
-                    <div className={styles.section}>
-                        <p className={styles.sectionLabel}>Your rating</p>
-                        <StarRating rating={myBook?.rating ?? null} onRate={handleRate}/>
-                    </div>
-
-                    {/* Notes */}
-                    <div className={styles.section}>
-                        <div className={styles.sectionLabelRow}>
-                            <p className={styles.sectionLabel}>Your notes</p>
-                            {savingNotes && <span className={styles.saveStatus}>Saving…</span>}
-                            {notesSaved &&
-                                <span className={`${styles.saveStatus} ${styles.saveStatusDone}`}>Saved</span>}
-                        </div>
-                        <textarea
-                            className={styles.textarea}
-                            placeholder="What did you think? Any memorable moments, quotes, or thoughts…"
-                            value={notes}
-                            onChange={handleNotesChange}
-                            rows={5}
-                        />
-                    </div>
                 </>
             )}
         </div>
