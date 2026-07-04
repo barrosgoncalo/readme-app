@@ -156,7 +156,7 @@
 
 .actionBtnDanger {
     background: var(--bg-elem);
-    color: #D32F2F;
+    color: var(--error);
     border: 1px solid rgba(211, 47, 47, 0.3);
 }
 
@@ -165,7 +165,7 @@
 }
 
 .blockedNotice {
-    color: #D32F2F;
+    color: var(--error);
     background: rgba(211, 47, 47, 0.08);
     border: 1px solid rgba(211, 47, 47, 0.2);
     border-radius: var(--radius-lg);
@@ -181,7 +181,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--secondary, #E08545);
+    background: var(--secondary);
     color: #fff;
     flex-shrink: 0;
 }

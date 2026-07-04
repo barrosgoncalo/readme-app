@@ -88,7 +88,7 @@
 
 .uploadError {
     font-size: 0.8rem;
-    color: var(--error, #D32F2F);
+    color: var(--error);
     margin: 0;
 }
 
@@ -174,7 +174,7 @@
 }
 
 .danger .itemLabel {
-    color: #D32F2F;
+    color: var(--error);
 }
 
 .danger .iconBox {
@@ -262,7 +262,7 @@
 }
 
 .errorText {
-    color: #D32F2F;
+    color: var(--error);
     font-size: 0.85rem;
 }
 
@@ -367,7 +367,7 @@
 
 .pwSuccess {
     font-size: 0.85rem;
-    color: #4CAF50;
+    color: var(--success);
     margin: 0;
 }
 

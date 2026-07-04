@@ -129,7 +129,7 @@
 
 .successMsg {
     font-size: 0.88rem;
-    color: #4CAF50;
+    color: var(--success);
     margin: 0;
     text-align: center;
 }

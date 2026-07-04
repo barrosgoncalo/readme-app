@@ -3,7 +3,7 @@
 
 :root {
     color-scheme: light;
-    --bg: #F4EFE8;
+    --bg: #F2F0EF;
     --bg-elem: #FFFFFF;
     --bg-selected: #D6D3D1;
     --text: #1C1A19;
@@ -33,6 +33,12 @@
 
     --error: #D32F2F;
     --error-bg: rgba(211, 47, 47, 0.10);
+    --success: #388E3C;
+    --success-bg: rgba(76, 175, 80, 0.10);
+
+    /* Fixed dark sidebar/nav — does not switch with the light/dark theme. */
+    --sidebar-bg: #2C2C2E;
+    --sidebar-text: #FFFFFF;
 }
 
 :root[data-theme="dark"] {
@@ -53,4 +59,6 @@
 
     --error: #F28B82;
     --error-bg: rgba(242, 139, 130, 0.14);
+    --success: #81C995;
+    --success-bg: rgba(129, 201, 149, 0.14);
 }

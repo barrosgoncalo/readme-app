@@ -169,12 +169,12 @@
 }
 
 .dangerIcon {
-    background: rgba(211, 47, 47, 0.12);
-    color: #D32F2F;
+    background: var(--error-bg);
+    color: var(--error);
 }
 
 .dangerLabel {
-    color: #D32F2F;
+    color: var(--error);
 }
 
 /* ── Delete confirmation ── */
@@ -188,7 +188,7 @@
 
 .deleteWarning {
     font-size: 0.88rem;
-    color: var(--error, #D32F2F);
+    color: var(--error);
     margin: 0;
 }
 
