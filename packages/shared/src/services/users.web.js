@@ -1,7 +1,14 @@
 import { db } from './firebase.web';
-import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, doc, getDoc } from 'firebase/firestore';
 
 const USERS_COLLECTION = 'users';
+
+export async function getUserById(uid) {
+    if (!uid) return null;
+    const snap = await getDoc(doc(db, USERS_COLLECTION, uid));
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() };
+}
 
 export async function getUsersByIds(uids) {
     if (!uids || uids.length === 0) return {};

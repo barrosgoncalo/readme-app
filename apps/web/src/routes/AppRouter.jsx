@@ -26,6 +26,7 @@ import BlockedUsers from '../pages/Profile/BlockedUsers.jsx';
 import BookDetail from '../pages/Books/BookDetail.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
+import UserProfile from '../pages/Users/UserProfile.jsx';
 import { WEB_ROUTES } from '../constants/webRoutes.js';
 
 const ALREADY_LAUNCHED_KEY = 'alreadyLaunched';
@@ -90,6 +91,7 @@ export default function AppRouter() {
                 <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
                 <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
                 <Route path={WEB_ROUTES.PROFILE_BLOCKED_USERS} element={<BlockedUsers />} />
+                <Route path="/users/:userId" element={<UserProfile />} />
             </Route>
             <Route
                 path="*"
