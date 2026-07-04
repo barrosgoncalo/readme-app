@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { searchUsers } from '@readme/shared/src/services/users';
-import { doGetBlockedUids } from '@readme/shared/src/services/blockUser';
+import { searchUsers } from '@readme/shared/src/services/search';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
@@ -30,11 +29,8 @@ export default function Explore() {
         let cancelled = false;
         const timer = setTimeout(async () => {
             try {
-                const [found, blockedUids] = await Promise.all([
-                    searchUsers(q, { excludeUid: currentUser?.uid }),
-                    currentUser ? doGetBlockedUids(currentUser.uid).catch(() => new Set()) : Promise.resolve(new Set()),
-                ]);
-                if (!cancelled) setResults(found.filter(u => !blockedUids.has(u.id)));
+                const found = await searchUsers(q, currentUser?.uid);
+                if (!cancelled) setResults(found);
             } catch {
                 if (!cancelled) setSearchError(true);
             } finally {
@@ -74,9 +70,9 @@ export default function Explore() {
             {results.length > 0 && (
                 <div className={styles.list}>
                     {results.map((u, i) => (
-                        <div key={u.id}>
+                        <div key={u.uid}>
                             {i > 0 && <div className={styles.divider} />}
-                            <Link to={WEB_ROUTES.userProfile(u.id)} className={styles.row}>
+                            <Link to={WEB_ROUTES.userProfile(u.uid)} className={styles.row}>
                                 <UserAvatar user={u} />
                                 <div className={styles.info}>
                                     <span className={styles.name}>{u.fullName || u.username || 'Unknown'}</span>

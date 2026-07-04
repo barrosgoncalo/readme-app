@@ -2,13 +2,11 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 // 1. Import the Algolia 'lite' client (optimized for frontend search)
 import { liteClient } from "algoliasearch/lite";
-
-const API_APP_ID_KEY = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID;
-const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
+import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY } from "./env";
 
 // 2. Initialize the client.
 // CRITICAL: Only use your Search-Only API Key here. NEVER put your Admin Key in frontend code.
-const algoliaClient = liteClient(API_APP_ID_KEY, API_SEARCH_KEY);
+const algoliaClient = liteClient(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
 
 
 
