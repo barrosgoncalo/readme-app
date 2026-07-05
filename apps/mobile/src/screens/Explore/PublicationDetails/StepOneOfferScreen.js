@@ -28,15 +28,17 @@ import { BookCard } from '../../../components/ui/BookCard';
 // ==========================================
 
 /**
- * Normalizes raw Firebase document data into a clean object for the UI.
- * Doing this here prevents repetitive parsing during the render cycle.
+ * STRICT DATA CONTRACT
+ * No fallbacks. We expect the publications collection to strictly follow this shape.
  */
 const normalizeBookData = (doc) => {
     const data = doc.data();
+    
     return {
         id: doc.id,
-        title: data.book?.title || data.title || 'Unknown Title',
-        imageUrl: data.book?.images?.[0] || 'https://via.placeholder.com/150',
+        title: data.book.title,         // Single source of truth
+        imageUrl: data.book.images[0],  // Single source of truth
+        ownerId: data.uid,              // Explicit owner ID mapping
         rawDocData: data
     };
 };
@@ -49,6 +51,8 @@ export default function StepOneOfferScreen({ route, navigation }) {
     // --- Theme & Navigation Context ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
+    
+    // targetBook is now 100% pristine coming from PublicationDetailsScreen!
     const { targetBook, targetSeller } = route.params;
 
     // --- Local State ---
@@ -73,6 +77,7 @@ export default function StepOneOfferScreen({ route, navigation }) {
                 );
                 const querySnapshot = await getDocs(q);
 
+                // Data is perfectly mapped at the moment of fetching
                 const books = querySnapshot.docs.map(normalizeBookData);
                 setMyBooks(books);
             } catch (error) {
@@ -89,8 +94,6 @@ export default function StepOneOfferScreen({ route, navigation }) {
     // HANDLERS
     // ==========================================
 
-    // Toggles the selection state of a specific book
-    // Wrapped in useCallback so the memoized BookCard doesn't unnecessarily re-render
     const handleBookPress = useCallback((book) => {
         setSelectedBooks((prevSelected) => {
             const isAlreadySelected = prevSelected.some((item) => item.id === book.id);
@@ -102,10 +105,10 @@ export default function StepOneOfferScreen({ route, navigation }) {
         });
     }, []);
 
-    // Proceeds to the map/location phase of the offer
     const handleNext = () => {
         if (selectedBooks.length === 0) return;
         
+        // Passing the pristine targetBook and perfectly mapped selectedBooks forward
         navigation.navigate(ROUTES.STEP_TWO_OFFER, { 
             targetBook, 
             targetSeller, 
@@ -215,15 +218,8 @@ const styles = StyleSheet.create({
     emptyText: { fontSize: 16, textAlign: 'center', lineHeight: 24 },
     
     // List & Grid
-    listContainer: { padding: 16, paddingBottom: 120 }, // Ensures content isn't hidden behind the floating bar
+    listContainer: { padding: 16, paddingBottom: 120 }, 
     row: { justifyContent: 'space-between', marginBottom: 16 },
-    
-    // Book Card
-    bookCard: { width: '48%', borderRadius: 12, overflow: 'hidden', padding: 8, position: 'relative' },
-    bookImage: { width: '100%', aspectRatio: 0.7, borderRadius: 8, backgroundColor: '#EAEAEA' },
-    bookInfo: { marginTop: 8 },
-    bookTitle: { fontSize: 14, fontWeight: '600' },
-    checkBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
     
     // Bottom Floating Dock
     bottomBar: { 

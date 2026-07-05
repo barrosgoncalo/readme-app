@@ -18,6 +18,7 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 
 import { SwapCard } from '../../components/ui/SwapCard';
 import { BookGridItem } from '../../components/ui/BookGridItem';
+import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 import { 
     collection, 
@@ -65,66 +66,24 @@ export default function ExploreScreen({ navigation }) {
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const fetchedChats = querySnapshot.docs.map(doc => {
                 const data = doc.data();
-                const targetBook = data.targetBook;
-                
-                // 1. COMPREHENSIVE DIRECTION CHECK (Prevents false positives from undefined fields)
-                const sellerUid = data.sellerUid || 
-                                  data.sellerId || 
-                                  data.ownerUid || 
-                                  data.ownerId || 
-                                  targetBook?.uid || 
-                                  targetBook?.seller?.uid || 
-                                  targetBook?.publicationData?.uid ||
-                                  targetBook?.publicationData?.ownerUid;
 
-                const buyerUid = data.buyerUid || 
-                                 data.buyerId || 
-                                 data.initiatorUid || 
-                                 data.proposerUid || 
-                                 data.createdBy;
+                const isOutgoing = data.proposerId === currentUser.uid;
 
-                let isOutgoing = false; // Default to incoming/receiving to prevent the permanent green bug
-
-                if (buyerUid) {
-                    // If a buyer/initiator field exists, it's outgoing only if we started it
-                    isOutgoing = buyerUid === currentUser.uid;
-                } else if (sellerUid) {
-                    // If only a seller field exists, it's outgoing if the book belongs to someone else
-                    isOutgoing = sellerUid !== currentUser.uid;
-                }
-                
-                // 2. ULTRA-SAFE IMAGE EXTRACTION
-                const imageUrl = targetBook?.imageUrl || 
-                                 targetBook?.publicationData?.imageUrl ||
-                                 targetBook?.images?.[0] || 
-                                 targetBook?.book?.images?.[0] || 
-                                 targetBook?.publicationData?.book?.images?.[0] || 
-                                 data.targetBookImage || 
-                                 'https://via.placeholder.com/150';
-
-                // 3. IDENTIFY THE OTHER PARTICIPANT
                 const otherParticipantUid = data.participants?.find(uid => uid !== currentUser.uid);
 
                 return {
                     id: doc.id,
-                    imageUrl,
+                    imageUrl: data.targetBookImage || 'https://via.placeholder.com/150',
                     status: isOutgoing ? 'giving' : 'receiving', 
                     targetSeller: {
                         uid: otherParticipantUid,
-                        name: data.sellerName || 
-                              targetBook?.seller?.name || 
-                              targetBook?.publicationData?.sellerName || 
-                              'Swapper', 
-                        avatarUrl: data.sellerAvatar || 
-                                   targetBook?.seller?.avatarUrl || 
-                                   targetBook?.publicationData?.sellerAvatar || 
-                                   null
+                        name: data.receiverName || 'Swapper',
+                        avatarUrl: data.receiverAvatar || null
                     },
                     updatedAt: data.updatedAt || data.createdAt
                 };
             });
 
-            // Sort by most recently updated
             fetchedChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
             setActiveChats(fetchedChats);
         });
@@ -163,8 +122,11 @@ export default function ExploreScreen({ navigation }) {
                     publicationData: data
                 };
             })
-            .filter(book => book.uid !== currentUser?.uid && !blockedUids.includes(book.uid));
-
+            .filter(book =>
+                book.uid !== currentUser?.uid &&
+                !blockedUids.includes(book.uid) &&
+                (!book.publicationData?.status || book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE)
+            );
             setBooks(fetchedBooks);
         } catch (error) {
             console.error("Erro a carregar publicações:", error);

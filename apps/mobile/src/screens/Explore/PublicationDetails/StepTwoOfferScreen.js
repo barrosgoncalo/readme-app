@@ -30,13 +30,16 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     // --- Theme & Context Routing ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
+    
+    // targetBook is our pristine object from the Details screen
     const { targetBook, targetSeller, offeredBooks = [] } = route.params;
 
     // --- Component Architectural Anchors ---
     const mapRef = useRef(null);
 
     // --- Core Data Query Layer ---
-    const { sellerLocations, loading } = useSellerLocations(targetBook?.uid);
+    // NO MORE GUESSING: We know exactly what the ID key is called
+    const { sellerLocations, loading } = useSellerLocations(targetBook.ownerId);
 
     // --- Combined Core Logic Layer ---
     const {
@@ -66,19 +69,19 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         try {
             const chatId = await ChatService.sendInitialOffer(
                 currentUserId,
-                targetBook.uid,
+                targetBook.ownerId,
                 targetBook,
                 offeredBooks,
                 activeLocationSelection
             );
 
-            // Pipe the avatarUrl and name seamlessly into the Chat Room
+            // NO MORE FALLBACKS: We pipe the exact, guaranteed UI data into the Chat Room
             navigation.navigate(ROUTES.CHAT_ROOM, { 
                 chatId, 
                 targetSeller: { 
-                    name: targetBook.seller?.name || targetBook.sellerName || "Anonymous Swapper", 
-                    uid: targetBook.uid,
-                    avatarUrl: targetBook.seller?.avatarUrl || targetBook.sellerAvatar || null
+                    name: targetBook.ownerName, 
+                    uid: targetBook.ownerId,
+                    avatarUrl: targetBook.ownerAvatar
                 }
             });
         } catch (error) {

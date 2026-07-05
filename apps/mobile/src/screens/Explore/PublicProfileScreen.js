@@ -29,7 +29,7 @@ import { fetchUserPublications } from '@readme/shared/src/services/publications'
 const { width } = Dimensions.get('window');
 
 export default function PublicProfileScreen({ navigation, route }) {
-    const userId = route.params?.sellerUserId;
+    const userId = route.params?.ownerId;
 
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
@@ -218,7 +218,7 @@ export default function PublicProfileScreen({ navigation, route }) {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            {/* --- TOP BUTTONS CONTAINER (Reverted to Original) --- */}
+            {/* --- TOP BUTTONS CONTAINER --- */}
             <SafeAreaView edges={['top']} style={styles.topButtonsContainer}>
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
                     <Iconify icon="lucide:arrow-left" size={24} color="#FFFFFF" />
@@ -255,7 +255,6 @@ export default function PublicProfileScreen({ navigation, route }) {
 
                 {/* --- PROFILE INFO --- */}
                 <View style={styles.infoContainer}>
-                    {/* Header Row: Name & Button together for premium layout */}
                     <View style={styles.headerRow}>
                         <View style={styles.nameWrapper}>
                             <Text style={styles.name} numberOfLines={1}>{profile?.username || 'Unknown User'}</Text>
@@ -345,7 +344,6 @@ export const buildProfileStyles = (theme) => {
             justifyContent: 'center',
             alignItems: 'center'
         },
-        // Reverted to original
         topButtonsContainer: {
             position: 'absolute',
             top: 5,
@@ -357,7 +355,6 @@ export const buildProfileStyles = (theme) => {
             paddingHorizontal: 20,
             paddingTop: 10,
         },
-        // Reverted to original
         iconButton: {
             width: 44,
             height: 44,

@@ -15,13 +15,11 @@ import {
 import { 
     collection, 
     query, 
-    where, 
     orderBy, 
     onSnapshot, 
-    addDoc, 
     doc, 
-    updateDoc,
-    getDoc
+    getDoc,
+    updateDoc
 } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
@@ -29,6 +27,7 @@ import { db } from '@readme/shared/src/services/firebase';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 export default function ChatRoomScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -48,6 +47,7 @@ export default function ChatRoomScreen({ route, navigation }) {
     );
     const [otherUserAvatar, setOtherUserAvatar] = useState(targetSeller?.avatarUrl || null);
     const [bookImage, setBookImage] = useState(null);
+    const [publicationId, setPublicationId] = useState(null);
 
     // --- SAFE METADATA FETCH LAYER ---
     useEffect(() => {
@@ -61,25 +61,27 @@ export default function ChatRoomScreen({ route, navigation }) {
                 if (chatSnap.exists()) {
                     const chatData = chatSnap.data();
 
-                    // 1. Safely pull down the book image aspect
+                    const pubId = chatData.publicationId ||
+                        chatData.targetBook?.id ||
+                        chatData.targetBook?.publicationData?.id;
+
+                    if (pubId) setPublicationId(pubId);
+
                     const resolvedImg = chatData.targetBook?.imageUrl || 
-                                         chatData.targetBook?.images?.[0] || 
-                                         chatData.targetBook?.book?.images?.[0] || 
-                                         chatData.targetBookImage || 
-                                         null;
+                        chatData.targetBook?.images?.[0] || 
+                        chatData.targetBook?.book?.images?.[0] || 
+                        chatData.targetBookImage || 
+                        null;
                     setBookImage(resolvedImg);
 
-                    // 2. Identify target participant's UID
                     const otherUid = targetSeller?.uid || chatData.participants?.find(uid => uid !== currentUserId);
 
-                    // 3. Check if we already have perfect, valid piped data to save database reads
                     const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
-                    
-                    // Only read from the users collection if the incoming data was completely blank
+
                     if (otherUid && !hasPipedData) {
                         const userRef = doc(db, 'users', otherUid);
                         const userSnap = await getDoc(userRef);
-                        
+
                         if (userSnap.exists()) {
                             const userData = userSnap.data();
                             setOtherUserName(userData.username || userData.name || "Swapper");
@@ -93,8 +95,8 @@ export default function ChatRoomScreen({ route, navigation }) {
         };
 
         fetchChatMetadata();
-    // CRITICAL: Depend on the string primitive targetSeller?.uid, NOT the targetSeller object.
-    // This absolutely guarantees that object-reference infinite loops cannot happen.
+        // CRITICAL: Depend on the string primitive targetSeller?.uid, NOT the targetSeller object.
+        // This absolutely guarantees that object-reference infinite loops cannot happen.
     }, [chatId, currentUserId, targetSeller?.uid]);
 
 
@@ -116,9 +118,9 @@ export default function ChatRoomScreen({ route, navigation }) {
             setMessages(fetchedMessages);
             setLoading(false);
         }, (error) => {
-            console.error("Error loading chat room messages:", error);
-            setLoading(false);
-        });
+                console.error("Error loading chat room messages:", error);
+                setLoading(false);
+            });
 
         return () => unsubscribe();
     }, [chatId]);
@@ -137,9 +139,25 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
     };
 
-    const handleResolveOffer = async (messageId, newStatus) => {
+    const handleResolveOffer = async (messageId, newStatus, bookId = null) => {
         try {
+            // Update the message status (pending -> accepted/declined)
             await ChatService.updateOfferStatus(chatId, messageId, newStatus);
+
+            if (newStatus === 'accepted') {
+                // Use the bookId passed from the card, fallback to publicationId from metadata if available
+                const targetBookId = bookId || publicationId;
+
+                if (targetBookId) {
+                    const publicationRef = doc(db, 'publications', targetBookId);
+                    await updateDoc(publicationRef, { 
+                        status: PUBLICATION_STATUS.RESERVED 
+                    });
+                    console.log(`Success: Publication ${targetBookId} is now reserved.`);
+                } else {
+                    console.warn("Offer accepted, but no book ID could be resolved to update feed status.");
+                }
+            }
         } catch (error) {
             console.error("Failed to update trade workflow context:", error);
         }
@@ -169,7 +187,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                         </View>
                     </View>
                 )}
-                
+
                 {/* 3. OFFER DETAILS */}
                 <Text style={[styles.offerText, { color: theme.subtext, marginTop: 12 }]}>
                     Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>{offer?.location?.title || 'Not specified'}</Text>
@@ -190,9 +208,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                         >
                             <Text style={styles.declineButtonText}>Decline</Text>
                         </TouchableOpacity>
+
                         <TouchableOpacity 
                             style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
-                            onPress={() => handleResolveOffer(item.id, 'accepted')}
+                            onPress={() => handleResolveOffer(item.id, 'accepted', offer?.targetBookId)} 
                         >
                             <Text style={styles.acceptButtonText}>Accept Swap</Text>
                         </TouchableOpacity>
@@ -259,15 +278,15 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                <FlatList
-                    data={messages}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderMessageItem}
-                    inverted
-                    contentContainerStyle={styles.listContainer}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+                    <FlatList
+                        data={messages}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderMessageItem}
+                        inverted
+                        contentContainerStyle={styles.listContainer}
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
                 <SafeAreaView edges={['bottom']} style={[styles.inputContainer, { backgroundColor: theme.background, borderTopColor: theme.borderLight }]}>
@@ -304,7 +323,7 @@ const styles = StyleSheet.create({
     headerSubtitle: { fontSize: 12, marginTop: 2 },
     headerSpacer: { width: 40 },
     centerLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    
+
     listContainer: { paddingHorizontal: 16, paddingVertical: 12 },
     messageRow: { flexDirection: 'row', marginVertical: 4, width: '100%' },
     bubble: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, maxWidth: '75%' },

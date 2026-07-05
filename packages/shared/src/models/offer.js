@@ -7,9 +7,10 @@
  * @param {object} locationData - Raw location object from your map selection
  * @returns {object} The formatted offer payload
  */
-export const createOfferModel = (targetBookId, offeredBookIds = [], locationData = {}) => {
+export const createOfferModel = (targetBookId, targetBookImage, offeredBookIds = [], locationData = {}) => {
     return {
         targetBookId: targetBookId,
+        targetBookImage: targetBookImage || null,
         offeredBookIds: offeredBookIds,
         location: {
             id: locationData.id || null,

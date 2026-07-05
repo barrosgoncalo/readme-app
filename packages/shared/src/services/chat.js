@@ -7,7 +7,7 @@ import { createOfferModel } from '../models/offer';
 import { createMessageModel } from '../models/message';
 
 export const ChatService = {
-    
+
     /**
      * Subscribes to real-time messages for a specific chat.
      */
@@ -26,7 +26,7 @@ export const ChatService = {
      */
     sendTextMessage: async (chatId, currentUserId, text) => {
         const messagePayload = createMessageModel(currentUserId, text, 'text');
-        
+
         await Promise.all([
             addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
             updateDoc(doc(db, 'chats', chatId), {
@@ -55,30 +55,46 @@ export const ChatService = {
 
         const q = query(chatsRef, where('participants', 'array-contains', currentUserId));
         const querySnapshot = await getDocs(q);
-        
+
         querySnapshot.forEach((doc) => {
             if (doc.data().participants.includes(sellerId)) {
                 chatId = doc.id;
             }
         });
 
+        // 1. Extract the UI data safely
+        const firstImage = targetBook?.imageUrl || targetBook?.book?.images?.[0] || targetBook?.images?.[0] || null;
+        const receiverName = targetBook?.seller?.name || targetBook?.sellerName || "Swapper";
+
         if (!chatId) {
-            const newChatData = createChatModel([currentUserId, sellerId], `Offered swap for ${targetBook.title}`);
+            // 2. Pass all 6 arguments exactly as createChatModel expects them
+            const newChatData = createChatModel(
+                [currentUserId, sellerId],              // participants
+                currentUserId,                          // proposerId
+                sellerId,                               // receiverId
+                receiverName,                           // receiverName
+                firstImage,                             // targetBookImage
+                `Offered swap for ${targetBook.title}`  // lastMessage
+            );
             const newChatRef = await addDoc(chatsRef, newChatData);
             chatId = newChatRef.id;
         }
 
-        const offerPayload = createOfferModel(targetBook.id, offeredBooks.map(b => b.id), location);
-        const messagePayload = createMessageModel(currentUserId, `Sent an offer for "${targetBook.title}"`, 'offer', offerPayload);
+        // 3. FIXED: Pass `firstImage` as the 2nd argument so the order matches your model!
+        const offerPayload = createOfferModel(
+            targetBook.id, 
+            firstImage, // <-- Inserted here!
+            offeredBooks.map(b => b.id), 
+            location
+        );
 
-        const firstImage = targetBook?.book?.images?.[0] || targetBook?.images?.[0] || null;
+        const messagePayload = createMessageModel(currentUserId, `Sent an offer for "${targetBook.title}"`, 'offer', offerPayload);
 
         await Promise.all([
             addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
             updateDoc(doc(db, 'chats', chatId), {
                 lastMessage: `Swap Offer: ${targetBook.title || 'Book'}`,
-                targetBookImage: firstImage, // <--- Saves the image directly to the chat
-                buyerId: currentUserId,      // <--- Saves who initiated to fix the arrows!
+                targetBookImage: firstImage, // <-- Added this! Ensures reused chats update their cover image for the Explore Screen
                 updatedAt: new Date().toISOString()
             })
         ]);

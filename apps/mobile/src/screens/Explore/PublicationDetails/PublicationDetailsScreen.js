@@ -34,9 +34,11 @@ const extractBookDetails = (passedItem) => {
     const images = bookData.images?.length > 0 ? bookData.images : ['https://via.placeholder.com/400x600'];
 
     return {
-        id: passedItem?.id,
-        uid: pubData.uid,
+        id: passedItem?.id || pubData.id,
+        ownerId: pubData.uid,
         title: bookData.title || 'Unknown Title',
+        imageUrl: images[0],
+
         author: bookData.author || 'Unknown Author',
         description: pubData.detailsText || "No description provided for this book.",
         condition: bookData.condition || 'Condition not specified',
@@ -78,8 +80,14 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     };
 
     const handleMakeOffer = () => {
+        const perfectlyCleanBook = {
+            ...book,
+            ownerName: seller.username || "Anonymous Swapper",
+            ownerAvatar: seller.photoURL || null
+        };
+
         navigation.navigate(ROUTES.STEP_ONE_OFFER, { 
-            targetBook: book, 
+            targetBook: perfectlyCleanBook,
             targetSeller: seller
         });
     };
@@ -165,7 +173,7 @@ export default function PublicationDetailsScreen({ route, navigation }) {
                     <TouchableOpacity
                         style={styles.sellerCard}
                         onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { 
-                            sellerUserId: book?.uid
+                            ownerId: book?.ownerId
                         })}
                     >
                         <View style={styles.sellerInfoLeft}>
