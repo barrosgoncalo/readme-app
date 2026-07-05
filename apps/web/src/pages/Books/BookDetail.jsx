@@ -190,7 +190,7 @@ export default function BookDetail() {
         <div className={styles.page}>
             <button type="button" className={styles.backBtn} onClick={() => handleBack()}>
                 <ArrowLeft size={18}/>
-                My Books
+                {isMyBook ? 'My Books' : 'Back'}
             </button>
 
             {loading ? (

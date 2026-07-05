@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Heart, Trash2, BookOpen, SquarePen } from 'lucide-react';
+import {useState} from 'react';
+import {Heart, Trash2, BookOpen, SquarePen} from 'lucide-react';
 import styles from './BookCard.module.css';
 
 const STATUS_COLORS = {
@@ -14,7 +14,7 @@ const STATUS_LABELS = {
     done: 'Finished',
 };
 
-function StarRating({ rating, onRate, size = 'md', disabled }) {
+function StarRating({rating, onRate, size = 'md', disabled}) {
     const [hovered, setHovered] = useState(null);
     const active = hovered ?? rating ?? 0;
 
@@ -42,7 +42,16 @@ function StarRating({ rating, onRate, size = 'md', disabled }) {
     );
 }
 
-export default function BookCard({ book, variant = 'row', isFavorite, onToggleFavorite, onRemove, onRate, onEdit, busy }) {
+export default function BookCard({
+                                     book,
+                                     variant = 'row',
+                                     isFavorite,
+                                     onToggleFavorite,
+                                     onRemove,
+                                     onRate,
+                                     onEdit,
+                                     busy
+                                 }) {
     const authors = Array.isArray(book.authors) ? book.authors.join(', ') : (book.authors || '');
     const status = book.status || 'reading';
     const day = book.addedAt ? new Date(book.addedAt).getDate() : null;
@@ -52,28 +61,29 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
             <div className={styles.featured}>
                 <div className={styles.featuredCoverWrap}>
                     {book.coverUrl ? (
-                        <img src={book.coverUrl} alt="" className={styles.featuredCover} />
+                        <img src={book.coverUrl} alt="" className={styles.featuredCover}/>
                     ) : (
                         <div className={`${styles.featuredCover} ${styles.coverPlaceholder}`}>
-                            <BookOpen size={28} />
+                            <BookOpen size={28}/>
                         </div>
                     )}
                 </div>
                 <div className={styles.featuredBody}>
-                    <p className={styles.featuredTitle}>{book.title || 'Untitled'}</p>
-                    <p className={styles.featuredAuthors}>{authors || 'Unknown author'}</p>
-                    <StarRating rating={book.rating} onRate={onRate} size="md" disabled={busy} />
+                    <p className={styles.featuredTitle} onClick={onEdit} title="View details">
+                        {book.title || 'Untitled'}
+                    </p>                    <p className={styles.featuredAuthors}>{authors || 'Unknown author'}</p>
+                    <StarRating rating={book.rating} onRate={onRate} size="md" disabled={busy}/>
                     {typeof book.progress === 'number' && (
                         <div className={styles.progressWrap}>
                             <div className={styles.progressBar}>
-                                <div className={styles.progressFill} style={{ width: `${book.progress}%` }} />
+                                <div className={styles.progressFill} style={{width: `${book.progress}%`}}/>
                             </div>
                             <span className={styles.progressLabel}>{book.progress}%</span>
                         </div>
                     )}
                     <div className={styles.featuredActions}>
                         <span className={styles.statusPill}>
-                            <span className={`${styles.dot} ${STATUS_COLORS[status]}`} />
+                            <span className={`${styles.dot} ${STATUS_COLORS[status]}`}/>
                             {STATUS_LABELS[status]}
                         </span>
                         <div className={styles.iconRow}>
@@ -83,7 +93,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                                 onClick={onEdit}
                                 title="Edit book"
                             >
-                                <SquarePen size={16} />
+                                <SquarePen size={16}/>
                             </button>
                             <button
                                 type="button"
@@ -92,7 +102,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                                 disabled={busy}
                                 title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                             >
-                                <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+                                <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'}/>
                             </button>
                             <button
                                 type="button"
@@ -101,7 +111,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                                 disabled={busy}
                                 title="Remove from shelf"
                             >
-                                <Trash2 size={16} />
+                                <Trash2 size={16}/>
                             </button>
                         </div>
                     </div>
@@ -119,14 +129,16 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                 title={STATUS_LABELS[status]}
             />
             <div className={styles.rowInfo}>
-                <span className={styles.rowTitle}>{book.title || 'Untitled'}</span>
-                <StarRating rating={book.rating} onRate={onRate} size="sm" disabled={busy} />
+                <span className={styles.rowTitle} onClick={onEdit} title="View details">
+                    {book.title || 'Untitled'}
+                </span>
+                <StarRating rating={book.rating} onRate={onRate} size="sm" disabled={busy}/>
             </div>
             {book.coverUrl ? (
-                <img src={book.coverUrl} alt="" className={styles.rowThumb} />
+                <img src={book.coverUrl} alt="" className={styles.rowThumb}/>
             ) : (
                 <div className={`${styles.rowThumb} ${styles.coverPlaceholder}`}>
-                    <BookOpen size={14} />
+                    <BookOpen size={14}/>
                 </div>
             )}
             <div className={styles.rowActions}>
@@ -136,7 +148,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                     onClick={onEdit}
                     title="Edit book"
                 >
-                    <SquarePen size={16} />
+                    <SquarePen size={16}/>
                 </button>
                 <button
                     type="button"
@@ -145,7 +157,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                     disabled={busy}
                     title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                 >
-                    <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+                    <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'}/>
                 </button>
                 <button
                     type="button"
@@ -154,7 +166,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, onToggleFa
                     disabled={busy}
                     title="Remove from shelf"
                 >
-                    <Trash2 size={16} />
+                    <Trash2 size={16}/>
                 </button>
             </div>
         </div>
