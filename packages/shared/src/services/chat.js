@@ -100,5 +100,50 @@ export const ChatService = {
         ]);
 
         return chatId;
-    }
+    },
+
+    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, selectedBookId) => {
+        try {
+            // 1. Update the old message to 'countered' so it locks in the UI
+            const originalMessageRef = doc(db, 'chats', chatId, 'messages', originalMessageId);
+            await updateDoc(originalMessageRef, {
+                'offerDetails.status': 'countered'
+            });
+
+            // 2. Build the Counter-Offer Payload
+            const counterOfferPayload = {
+                targetBookId: originalOffer.targetBookId,
+                targetBookImage: originalOffer.targetBookImage || null,
+                offeredBookIds: originalOffer.offeredBookIds, 
+                selectedBookId: selectedBookId, // The specific book they chose!
+                location: originalOffer.location || {},
+                isCounter: true,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+
+            // 3. Create the new message payload
+            // Assuming you have createMessageModel imported in your service
+            const messagePayload = createMessageModel(
+                currentUserId, 
+                "Sent a counter proposal", 
+                "offer", 
+                counterOfferPayload
+            );
+
+            // 4. Save the new message and update the root chat
+            await Promise.all([
+                addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
+                updateDoc(doc(db, 'chats', chatId), {
+                    lastMessage: "Counter Proposal Sent",
+                    updatedAt: new Date().toISOString()
+                })
+            ]);
+
+            return true;
+        } catch (error) {
+            console.error("Error sending counter offer:", error);
+            throw error;
+        }
+    },
 };

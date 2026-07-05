@@ -29,6 +29,7 @@ import StepTwoOffer from '../screens/Explore/PublicationDetails/StepTwoOfferScre
 import PublicProfileScreen from '../screens/Explore/PublicProfileScreen';
 import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
 import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
+import SelectSwapBookScreen from '../screens/Chat/SelectSwapBookScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -149,6 +150,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.CHAT_ROOM} 
                             component={ChatRoomScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.SELECT_SWAP} 
+                            component={SelectSwapBookScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

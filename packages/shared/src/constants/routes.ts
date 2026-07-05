@@ -23,4 +23,5 @@ export const ROUTES = {
     PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen',
     FAVORITES: 'Favorites',
     CHAT_ROOM: 'ChatRoom',
+    SELECT_SWAP: 'SelectSwapBook'
 } as const;

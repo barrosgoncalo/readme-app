@@ -141,21 +141,26 @@ export default function ChatRoomScreen({ route, navigation }) {
 
     const handleResolveOffer = async (messageId, newStatus, bookId = null) => {
         try {
-            // Update the message status (pending -> accepted/declined)
+            // 1. This updates the message status in the chat room (Always do this first)
             await ChatService.updateOfferStatus(chatId, messageId, newStatus);
+            console.log("Chat offer status updated successfully.");
 
+            // 2. Safely attempt to reserve the book on the main feed
             if (newStatus === 'accepted') {
-                // Use the bookId passed from the card, fallback to publicationId from metadata if available
                 const targetBookId = bookId || publicationId;
 
                 if (targetBookId) {
-                    const publicationRef = doc(db, 'publications', targetBookId);
-                    await updateDoc(publicationRef, { 
-                        status: PUBLICATION_STATUS.RESERVED 
-                    });
-                    console.log(`Success: Publication ${targetBookId} is now reserved.`);
+                    try {
+                        const publicationRef = doc(db, 'publications', targetBookId);
+                        await updateDoc(publicationRef, { 
+                            status: PUBLICATION_STATUS.RESERVED 
+                        });
+                        console.log(`Success: Publication ${targetBookId} is now reserved.`);
+                    } catch (permError) {
+                        console.error("Rules blocked reserving the book, check Firestore Rules:", permError);
+                    }
                 } else {
-                    console.warn("Offer accepted, but no book ID could be resolved to update feed status.");
+                    console.warn("Offer accepted, but no book ID could be resolved.");
                 }
             }
         } catch (error) {
@@ -167,12 +172,17 @@ export default function ChatRoomScreen({ route, navigation }) {
         const offer = item.offerDetails;
         const isReceivedOffer = item.senderId !== currentUserId;
         const isPending = offer?.status === 'pending';
+        
+        // Define if this is the first proposal or the counter-proposal
+        const isCounterOffer = offer?.isCounter === true; 
 
         return (
             <View style={[styles.offerCard, { backgroundColor: theme.backgroundElement, borderColor: theme.borderLight }]}>
                 <View style={styles.offerHeader}>
                     <Iconify icon="lucide:arrow-left-right" size={18} color={theme.primary} />
-                    <Text style={[styles.offerTitle, { color: theme.textItemTitle }]}>Swap Proposal</Text>
+                    <Text style={[styles.offerTitle, { color: theme.textItemTitle }]}>
+                        {isCounterOffer ? "Counter Proposal" : "Swap Proposal"}
+                    </Text>
                 </View>
 
                 {/* 2. BOOK COVER INTEGRATION */}
@@ -193,6 +203,12 @@ export default function ChatRoomScreen({ route, navigation }) {
                     Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>{offer?.location?.title || 'Not specified'}</Text>
                 </Text>
 
+                {isCounterOffer && offer?.selectedBookId && (
+                     <Text style={[styles.offerText, { color: theme.subtext, marginTop: 4 }]}>
+                     Requested: <Text style={{ fontWeight: '600', color: theme.primary }}>1 Book Selected</Text>
+                 </Text>
+                )}
+
                 <View style={[styles.statusBadge, { backgroundColor: offer?.status === 'accepted' ? '#E1F7EC' : offer?.status === 'declined' ? '#FEE2E2' : '#FEF3C7' }]}>
                     <Text style={{ color: offer?.status === 'accepted' ? '#065F46' : offer?.status === 'declined' ? '#991B1B' : '#92400E', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>
                         {offer?.status || 'Pending'}
@@ -209,12 +225,28 @@ export default function ChatRoomScreen({ route, navigation }) {
                             <Text style={styles.declineButtonText}>Decline</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
-                            onPress={() => handleResolveOffer(item.id, 'accepted', offer?.targetBookId)} 
-                        >
-                            <Text style={styles.acceptButtonText}>Accept Swap</Text>
-                        </TouchableOpacity>
+                        {/* SPLIT LOGIC: Initial Offer vs Counter Offer */}
+                        {!isCounterOffer ? (
+                            <TouchableOpacity 
+                                style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
+                                // Navigate to a new screen where they can pick from `offer.offeredBookIds`
+                                onPress={() => navigation.navigate('SelectSwapBook', { 
+                                    messageId: item.id, 
+                                    chatId: chatId,
+                                    offerDetails: offer 
+                                })} 
+                            >
+                                <Text style={styles.acceptButtonText}>Review & Choose</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity 
+                                style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
+                                // This is the FINAL accept by the original proposer
+                                onPress={() => handleResolveOffer(item.id, 'accepted', offer?.targetBookId)} 
+                            >
+                                <Text style={styles.acceptButtonText}>Final Accept</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
             </View>
@@ -251,7 +283,7 @@ export default function ChatRoomScreen({ route, navigation }) {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <SafeAreaView edges={['top']} style={[styles.header, { borderBottomColor: theme.borderLight }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <TouchableOpacity onPress={() => navigation.popToTop()} style={styles.backButton}>
                     <Iconify icon="lucide:arrow-left" size={24} color={theme.textItemTitle} />
                 </TouchableOpacity>
 

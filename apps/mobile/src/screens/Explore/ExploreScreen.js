@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import {
     View,
@@ -93,9 +94,10 @@ export default function ExploreScreen({ navigation }) {
 
 
     // --- FETCH PUBLICATIONS & FAVORITES ---
-    const fetchPublications = async () => {
+    const fetchPublications = async (showSpinner = true) => {
         try {
-            setIsLoadingBooks(true);
+            if (showSpinner) setIsLoadingBooks(true); 
+            
             let blockedUids = [];
             if (currentUser?.uid) {
                 blockedUids = await doGetBlockedUids(currentUser.uid);
@@ -127,11 +129,12 @@ export default function ExploreScreen({ navigation }) {
                 !blockedUids.includes(book.uid) &&
                 (!book.publicationData?.status || book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE)
             );
+            
             setBooks(fetchedBooks);
         } catch (error) {
             console.error("Erro a carregar publicações:", error);
         } finally {
-            setIsLoadingBooks(false);
+            if (showSpinner) setIsLoadingBooks(false);
         }
     };
 
@@ -150,10 +153,15 @@ export default function ExploreScreen({ navigation }) {
     };
 
     // Trigger the data fetches when the user logs in/changes
-    useEffect(() => {
-        fetchPublications();
-        fetchUserFavorites();
-    }, [currentUser?.uid]);
+    useFocusEffect(
+        useCallback(() => {
+            if (currentUser?.uid) {
+                const isInitialLoad = books.length === 0;
+                fetchPublications(isInitialLoad);
+                fetchUserFavorites();
+            }
+        }, [currentUser?.uid, books.length])
+    );
 
 
     // --- ACTIONS ---
