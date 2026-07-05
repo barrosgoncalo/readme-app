@@ -126,8 +126,3 @@
     font-size: 0.8rem;
     font-weight: bold;
 }
-
-.status {
-    font-size: 0.85rem;
-    color: var(--subtext, #888);
-}

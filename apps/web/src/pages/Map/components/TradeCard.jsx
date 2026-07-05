@@ -7,7 +7,7 @@ export default function TradeCard({trade}) {
 
     const {
         bookId, coverUrl, ownerUid, ownerUsername, ownerAvatar,
-        title, authors, pages, status
+        title, authors, pages
     } = trade;
 
     const handleUserClick = (e) => {
@@ -56,7 +56,6 @@ export default function TradeCard({trade}) {
                             </div>
                         )}
                     </div>
-                    <span className={styles.status}>Status: {status}</span>
                 </div>
             </div>
         </div>
