@@ -1,0 +1,63 @@
+.tradeCard {
+    width: 150px; /* Podes ajustar a largura, a altura vai ser automática! */
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* --- Secção do User --- */
+.userRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.userRow:hover .username {
+    text-decoration: underline;
+}
+
+.avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--primary);
+    flex-shrink: 0;
+}
+
+.username {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Secção da Capa do Livro --- */
+.bookCoverContainer {
+    width: 100%;
+    aspect-ratio: 2 / 3; /* Garante que TODAS as capas têm a mesma proporção! */
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--bg-selected); /* Placeholder enquanto carrega */
+    position: relative;
+}
+
+.bookCover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Corta a imagem sem a espalmar/distorcer */
+    transition: transform 0.2s ease;
+}
+
+.bookCoverContainer:hover .bookCover {
+    transform: scale(1.05); /* Pequeno efeito hover para perceberem que é clicável */
+}

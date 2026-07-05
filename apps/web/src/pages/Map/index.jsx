@@ -5,7 +5,9 @@ import {searchUsers} from '@readme/shared/src/services/search.web';
 import {doGetBlockedUsers} from '@readme/shared/src/services/blockUser.web';
 import {getAvailableTradeBooks} from '@readme/shared/src/services/trades.web';
 import {getBooksByIds} from '@readme/shared/src/services/booksCatalog.web';
+import {getUsersByIds} from '@readme/shared/src/services/users.web';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
+import TradeCard from './components/TradeCard.jsx';
 import {WEB_ROUTES} from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Spinner from '../../components/Spinner.jsx';
@@ -14,7 +16,6 @@ import styles from './Map.module.css';
 export default function Explore() {
     const {currentUser} = useAuth();
     const uid = currentUser?.uid;
-    const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState('books');
     const [search, setSearch] = useState('');
@@ -24,6 +25,7 @@ export default function Explore() {
     const [touchedUsers, setTouchedUsers] = useState(false);
     const [searchUserError, setSearchUserError] = useState(false);
 
+    const [userDetails, setUserDetails] = useState({});
     const [availableBooks, setAvailableBooks] = useState([]);
     const [bookDetails, setBookDetails] = useState({});
     const [loadingTrades, setLoadingTrades] = useState(true);
@@ -40,31 +42,24 @@ export default function Explore() {
             setAvailableBooks(available);
 
             const bookIds = new Set();
-            const embeddedMap = {};
+            const ownerIds = new Set();
 
             available.forEach((item) => {
                 bookIds.add(item.bookId);
-                embeddedMap[item.bookId] = {
-                    id: item.bookId,
-                    title: item.title,
-                    authors: item.authors,
-                    coverUrl: item.coverUrl,
-                };
+                ownerIds.add(item.ownerId);
             });
 
-            if (bookIds.size > 0) {
-                try {
-                    const books = await getBooksByIds(Array.from(bookIds));
-                    const booksMap = {...embeddedMap};
-                    books.forEach((b) => {
-                        booksMap[b.id] = {...embeddedMap[b.id], ...b};
-                    });
-                    setBookDetails(booksMap);
-                } catch {
-                    setBookDetails(embeddedMap);
-                }
-            } else
-                setBookDetails(embeddedMap);
+            const [books, users] = await Promise.all([
+                bookIds.size > 0 ? getBooksByIds(Array.from(bookIds)) : Promise.resolve([]),
+                ownerIds.size > 0 ? getUsersByIds(Array.from(ownerIds)) : Promise.resolve({})
+            ]);
+
+            const booksMap = {};
+            books.forEach((b) => booksMap[b.id] = b);
+
+            setBookDetails(booksMap);
+            setUserDetails(users);
+
         } catch (err) {
             setTradesError(err.message || 'Could not load available trades.');
         } finally {
@@ -210,35 +205,29 @@ export default function Explore() {
                             {search.trim() ? "No books match your search." : "No books available for trade right now."}
                         </p>
                     ) : (
-                        <div className={styles.grid}>
+                        <div style={{display: 'flex', gap: '16px', flexWrap: 'wrap'}}>
                             {filteredTrades.map((item, index) => {
                                 const book = bookDetails[item.bookId] || {
                                     id: item.bookId,
                                     title: 'Untitled',
                                     authors: []
                                 };
-                                const authors = Array.isArray(book.authors) ? book.authors.join(', ') : book.authors;
+
+                                const owner = userDetails[item.ownerId] || {};
+                                
+                                const tradeData = {
+                                    bookId: item.bookId,
+                                    coverUrl: book.coverUrl,
+                                    ownerUid: item.ownerId,
+                                    ownerUsername: owner.username || 'user',
+                                    ownerAvatar: owner.photoURL || null
+                                };
 
                                 return (
-                                    <div
+                                    <TradeCard
                                         key={`${item.bookId}-${item.ownerId}-${index}`}
-                                        className={styles.card}
-                                        onClick={() => navigate(WEB_ROUTES.bookDetail(book.id))}
-                                    >
-                                        <div className={styles.coverWrap}>
-                                            {book.coverUrl ? (
-                                                <img src={book.coverUrl} alt={book.title} className={styles.cover}/>
-                                            ) : (
-                                                <div className={`${styles.cover} ${styles.placeholder}`}>
-                                                    <BookOpen size={32}/>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className={styles.bookInfo}>
-                                            <p className={styles.bookTitle}>{book.title}</p>
-                                            <p className={styles.bookAuthor}>{authors || 'Unknown author'}</p>
-                                        </div>
-                                    </div>
+                                        trade={tradeData}
+                                    />
                                 );
                             })}
                         </div>
