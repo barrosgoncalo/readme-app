@@ -24,6 +24,24 @@ export default function AppShell() {
     const location = useLocation();
     const [username, setUsername] = useState('');
 
+    const isExplorePage = location.pathname.startsWith(WEB_ROUTES.MAP);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(!isExplorePage);
+
+    useEffect(() => {
+        if (isExplorePage) {
+            setIsSidebarOpen(false);
+        } else {
+            setIsSidebarOpen(true);
+        }
+    }, [isExplorePage]);
+
+    const handleLogoClick = (e) => {
+        if (isExplorePage) {
+            e.preventDefault();
+            setIsSidebarOpen(!isSidebarOpen);
+        }
+    };
+
     useEffect(() => {
         if (!currentUser?.uid) return;
 
@@ -62,40 +80,44 @@ export default function AppShell() {
 
     return (
         <div className={styles.shell}>
-            <aside className={styles.sidebar}>
+            <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
                 <h1 className={styles.wordmark}>
-                    <Link to={WEB_ROUTES.MAP} style={{color: 'inherit', textDecoration: 'none'}}>
+                    <Link to={WEB_ROUTES.MAP} onClick={handleLogoClick} style={{color: 'inherit', textDecoration: 'none'}}>
                         README
                     </Link>
                 </h1>
 
-                <nav className={styles.nav}>
-                    {NAV_ITEMS.map(({to, label, Icon}) => (
-                        <NavLink
-                            key={to}
-                            to={to}
-                            className={() =>
-                                checkIsActive(to) ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
-                            }
-                        >
-                            <Icon size={18} aria-hidden/>
-                            <span>{label}</span>
-                        </NavLink>
-                    ))}
-                </nav>
-                <div className={styles.userFooter}>
-                    <span className={styles.userName}>
-                        {username || currentUser?.email || 'Reader'}
-                    </span>
-                    <div className={styles.footerActions}>
-                        <button type="button" className={styles.iconBtn} onClick={toggle} title="Toggle theme">
-                            {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
-                        </button>
-                        <button type="button" className={styles.signOutBtn} onClick={onSignOut}>
-                            Sign out
-                        </button>
-                    </div>
-                </div>
+                {isSidebarOpen && (
+                    <>
+                        <nav className={styles.nav}>
+                            {NAV_ITEMS.map(({to, label, Icon}) => (
+                                <NavLink
+                                    key={to}
+                                    to={to}
+                                    className={() =>
+                                        checkIsActive(to) ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+                                    }
+                                >
+                                    <Icon size={18} aria-hidden/>
+                                    <span>{label}</span>
+                                </NavLink>
+                            ))}
+                        </nav>
+                        <div className={styles.userFooter}>
+                            <span className={styles.userName}>
+                                {username || currentUser?.email || 'Reader'}
+                            </span>
+                            <div className={styles.footerActions}>
+                                <button type="button" className={styles.iconBtn} onClick={toggle} title="Toggle theme">
+                                    {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
+                                </button>
+                                <button type="button" className={styles.signOutBtn} onClick={onSignOut}>
+                                    Sign out
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </aside>
             <main className={styles.content}>
                 <Outlet/>

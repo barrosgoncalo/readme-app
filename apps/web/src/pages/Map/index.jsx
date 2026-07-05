@@ -205,7 +205,7 @@ export default function Explore() {
                             {search.trim() ? "No books match your search." : "No books available for trade right now."}
                         </p>
                     ) : (
-                        <div style={{display: 'flex', gap: '16px', flexWrap: 'wrap'}}>
+                        <div className={styles.tradeGrid}>
                             {filteredTrades.map((item, index) => {
                                 const book = bookDetails[item.bookId] || {
                                     id: item.bookId,
@@ -220,7 +220,10 @@ export default function Explore() {
                                     coverUrl: book.coverUrl,
                                     ownerUid: item.ownerId,
                                     ownerUsername: owner.username || 'user',
-                                    ownerAvatar: owner.photoURL || null
+                                    ownerAvatar: owner.photoURL || null,
+                                    title: book.title || 'Untitled',
+                                    authors: Array.isArray(book.authors) ? book.authors.join(', ') : book.authors || 'Unknown author',
+                                    pages: book.pageCount || book.pages || 'N/A'
                                 };
 
                                 return (

@@ -1,6 +1,6 @@
 .page {
-    max-width: var(--max-content-width);
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     padding: var(--space-5) var(--space-4);
     display: flex;
     flex-direction: column;
@@ -171,4 +171,17 @@
     color: var(--primary);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
     border: 1px solid var(--bg-selected);
+}
+
+.tradeGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .tradeGrid {
+        grid-template-columns: 1fr;
+    }
 }
