@@ -9,10 +9,12 @@ import {
     ActivityIndicator,
     Keyboard
 } from 'react-native';
+import { db, auth } from '@readme/shared/src/services/firebase'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes'; 
 
 // Consolidated Domain Architectures
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
@@ -21,11 +23,14 @@ import MapSearchBar from '../../../components/ui/MapSearchBar';
 import SelectedLocationCard from '../../../components/ui/SelectedLocationCard';
 import OfferBottomDock from '../../../components/ui/OfferBottomDock';
 
+// Services
+import { ChatService } from '@readme/shared/src/services/chat';
+
 export default function StepTwoOfferScreen({ route, navigation }) {
     // --- Theme & Context Routing ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const { targetBook, offeredBooks = [] } = route.params;
+    const { targetBook, targetSeller, offeredBooks = [] } = route.params;
 
     // --- Component Architectural Anchors ---
     const mapRef = useRef(null);
@@ -50,21 +55,35 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     } = useLocationProposal(sellerLocations, mapRef);
 
     // --- Final Context Routing Action ---
-    const handleSendOffer = () => {
-        if (!activeLocationSelection) return;
+    const handleSendOffer = async () => {
+        const currentUserId = auth.currentUser?.uid;
 
-        const offeredTitles = offeredBooks
-        .map(item => item.book?.title || item.title || 'Unknown Title')
-        .join(', ');
+        if (!activeLocationSelection || !currentUserId) {
+            console.warn("Missing location selection or user is not logged in.");
+            return;
+        }
 
-        Alert.alert(
-            "Offer Ready to Send!",
-            `Offering: ${offeredTitles}\nFor: ${targetBook.title}\nAt: ${activeLocationSelection.title}\n(${activeLocationSelection.address})`,
-            [
-                { text: "Send to Chat", onPress: () => navigation.popToTop() },
-                { text: "Cancel", style: "cancel" }
-            ]
-        );
+        try {
+            const chatId = await ChatService.sendInitialOffer(
+                currentUserId,
+                targetBook.uid,
+                targetBook,
+                offeredBooks,
+                activeLocationSelection
+            );
+
+            // Pipe the avatarUrl and name seamlessly into the Chat Room
+            navigation.navigate(ROUTES.CHAT_ROOM, { 
+                chatId, 
+                targetSeller: { 
+                    name: targetBook.seller?.name || targetBook.sellerName || "Anonymous Swapper", 
+                    uid: targetBook.uid,
+                    avatarUrl: targetBook.seller?.avatarUrl || targetBook.sellerAvatar || null
+                }
+            });
+        } catch (error) {
+            console.error("Failed to execute swap transaction pipeline:", error);
+        }
     };
 
     return (

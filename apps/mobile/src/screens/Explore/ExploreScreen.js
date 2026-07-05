@@ -29,36 +29,114 @@ import {
     updateDoc, 
     arrayUnion, 
     arrayRemove, 
-    increment 
+    increment,
+    where,
+    onSnapshot 
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
-// --- ADDED IMPORT ---
 import { doGetBlockedUids } from '@readme/shared/src/services/block';
 
-const MOCK_SWAPS = [
-    { id: '1', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/12/oplanodeimagem_capa.png', status: 'giving' },
-    { id: '2', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2026/03/burroughscapa.png', status: 'giving' },
-    { id: '3', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/12/oplanodeimagem_capa.png', status: 'receiving' },
-    { id: '4', imageUrl: 'https://livraria.zedosbois.org/wp-content/uploads/2025/02/pentangulo5capa.png', status: 'receiving' },
-];
-
-export default function ExploreScreen({navigation}) {
+export default function ExploreScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildExploreStyles(theme);
     const handleScroll = useScrollTabBarControl();
 
-    const { currentUser, refreshUser } = useAuth(); 
+    const { currentUser } = useAuth(); 
 
     const [books, setBooks] = useState([]);
     const [userFavorites, setUserFavorites] = useState([]);
+    const [activeChats, setActiveChats] = useState([]); 
     const [isLoadingBooks, setIsLoadingBooks] = useState(true);
-    const [focusKey, setFocusKey] = useState(0);
 
-    // Fetch publications
+    // --- REAL-TIME ACTIVE CHATS DATABASE FEED ---
+    useEffect(() => {
+        if (!currentUser?.uid) {
+            setActiveChats([]);
+            return;
+        }
+
+        const chatsRef = collection(db, 'chats');
+        const q = query(
+            chatsRef,
+            where('participants', 'array-contains', currentUser.uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const fetchedChats = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                const targetBook = data.targetBook;
+                
+                // 1. COMPREHENSIVE DIRECTION CHECK (Prevents false positives from undefined fields)
+                const sellerUid = data.sellerUid || 
+                                  data.sellerId || 
+                                  data.ownerUid || 
+                                  data.ownerId || 
+                                  targetBook?.uid || 
+                                  targetBook?.seller?.uid || 
+                                  targetBook?.publicationData?.uid ||
+                                  targetBook?.publicationData?.ownerUid;
+
+                const buyerUid = data.buyerUid || 
+                                 data.buyerId || 
+                                 data.initiatorUid || 
+                                 data.proposerUid || 
+                                 data.createdBy;
+
+                let isOutgoing = false; // Default to incoming/receiving to prevent the permanent green bug
+
+                if (buyerUid) {
+                    // If a buyer/initiator field exists, it's outgoing only if we started it
+                    isOutgoing = buyerUid === currentUser.uid;
+                } else if (sellerUid) {
+                    // If only a seller field exists, it's outgoing if the book belongs to someone else
+                    isOutgoing = sellerUid !== currentUser.uid;
+                }
+                
+                // 2. ULTRA-SAFE IMAGE EXTRACTION
+                const imageUrl = targetBook?.imageUrl || 
+                                 targetBook?.publicationData?.imageUrl ||
+                                 targetBook?.images?.[0] || 
+                                 targetBook?.book?.images?.[0] || 
+                                 targetBook?.publicationData?.book?.images?.[0] || 
+                                 data.targetBookImage || 
+                                 'https://via.placeholder.com/150';
+
+                // 3. IDENTIFY THE OTHER PARTICIPANT
+                const otherParticipantUid = data.participants?.find(uid => uid !== currentUser.uid);
+
+                return {
+                    id: doc.id,
+                    imageUrl,
+                    status: isOutgoing ? 'giving' : 'receiving', 
+                    targetSeller: {
+                        uid: otherParticipantUid,
+                        name: data.sellerName || 
+                              targetBook?.seller?.name || 
+                              targetBook?.publicationData?.sellerName || 
+                              'Swapper', 
+                        avatarUrl: data.sellerAvatar || 
+                                   targetBook?.seller?.avatarUrl || 
+                                   targetBook?.publicationData?.sellerAvatar || 
+                                   null
+                    },
+                    updatedAt: data.updatedAt || data.createdAt
+                };
+            });
+
+            // Sort by most recently updated
+            fetchedChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            setActiveChats(fetchedChats);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser?.uid]);
+
+
+    // --- FETCH PUBLICATIONS & FAVORITES ---
     const fetchPublications = async () => {
         try {
-            // 1. Fetch blocked UIDs first
+            setIsLoadingBooks(true);
             let blockedUids = [];
             if (currentUser?.uid) {
                 blockedUids = await doGetBlockedUids(currentUser.uid);
@@ -85,7 +163,6 @@ export default function ExploreScreen({navigation}) {
                     publicationData: data
                 };
             })
-            // 2. Filter out own books AND books from blocked users
             .filter(book => book.uid !== currentUser?.uid && !blockedUids.includes(book.uid));
 
             setBooks(fetchedBooks);
@@ -96,7 +173,6 @@ export default function ExploreScreen({navigation}) {
         }
     };
 
-    // Fetch user favorites once to prevent excessive DB reads
     const fetchUserFavorites = async () => {
         if (!currentUser) return;
         try {
@@ -111,13 +187,20 @@ export default function ExploreScreen({navigation}) {
         }
     };
 
+    // Trigger the data fetches when the user logs in/changes
+    useEffect(() => {
+        fetchPublications();
+        fetchUserFavorites();
+    }, [currentUser?.uid]);
+
+
+    // --- ACTIONS ---
     const handleToggleFavorite = async (bookId, currentIsFavorite, currentCount) => {
         if (!currentUser) {
             console.warn("User must be logged in to favorite a book.");
             return;
         }
 
-        // 1. Optimistically update the UI list state immediately
         setBooks(prevBooks => 
             prevBooks.map(book => {
                 if (book.id === bookId) {
@@ -131,7 +214,6 @@ export default function ExploreScreen({navigation}) {
             })
         );
 
-        // 2. Do the Firebase update in the background
         try {
             const userDocRef = doc(db, 'users', currentUser.uid); 
             const publicationDocRef = doc(db, 'publications', bookId);
@@ -140,7 +222,6 @@ export default function ExploreScreen({navigation}) {
                 updateDoc(userDocRef, {
                     favoriteBooks: !currentIsFavorite ? arrayUnion(bookId) : arrayRemove(bookId)
                 }),
-                // FIX: Use dot notation to safely update a nested object
                 updateDoc(publicationDocRef, {
                     "stats.likesCount": increment(!currentIsFavorite ? 1 : -1)
                 })
@@ -150,26 +231,12 @@ export default function ExploreScreen({navigation}) {
         }
     };
 
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', async () => {
-            setFocusKey(prev => prev + 1);
-
-            if (refreshUser) {
-                await refreshUser(); 
-            }
-
-            // Fetch both lists parallelly
-            fetchUserFavorites();
-            fetchPublications();
-        });
-        return unsubscribe;
-    }, [navigation, refreshUser, currentUser]);
-
+    // --- RENDER METHODS ---
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <View style={{ maxWidth: '90%', marginRight: 12 }}>
                 <Text style={styles.headerTitle} numberOfLines={2} ellipsizeMode="tail">
-                    Hello, {currentUser?.username}
+                    Hello, {currentUser?.username || 'Swapper'}
                 </Text>
                 <Text style={styles.headerSubtitle}>Let's start swapping</Text>
             </View>
@@ -182,24 +249,46 @@ export default function ExploreScreen({navigation}) {
         </View>
     );
 
-    const renderSwapSection = () => (
-        <View style={styles.swapSectionContainer}> 
-            <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.swapList}
-            >
-                {MOCK_SWAPS.map((swap) => (
-                    <SwapCard 
-                        key={swap.id} 
-                        imageUrl={swap.imageUrl} 
-                        status={swap.status} 
-                        styles={styles} 
-                    />
-                ))}
-            </ScrollView>
-        </View>
-    );
+    const renderSwapSection = () => {
+        if (activeChats.length === 0) return null; 
+
+        return (
+            <View style={styles.swapSectionContainer}> 
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.swapList}
+                >
+                    {activeChats.map((chat) => (
+                        <TouchableOpacity 
+                            key={chat.id}
+                            activeOpacity={0.8}
+                            onPress={() => navigation.navigate(ROUTES.CHAT_ROOM, {
+                                chatId: chat.id,
+                                targetSeller: chat.targetSeller
+                            })}
+                            style={{
+                                // iOS Layer Shadows
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: colorScheme === 'dark' ? 0.32 : 0.12,
+                                shadowRadius: 4.5,
+                                // Android Layer Shadow
+                                elevation: 5,
+                                backgroundColor: 'transparent',
+                            }}
+                        >
+                            <SwapCard 
+                                imageUrl={chat.imageUrl} 
+                                status={chat.status} 
+                                styles={styles} 
+                            />
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+        );
+    };
 
     return (
         <View style={styles.container}>
@@ -213,47 +302,45 @@ export default function ExploreScreen({navigation}) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                    <FlatList
-                        data={books}
-                        keyExtractor={(item) => item.id}
-                        numColumns={2}
-                        columnWrapperStyle={styles.row}
-                        contentContainerStyle={styles.gridContainer}
-                        onScroll={handleScroll}
-                        scrollEventThrottle={16}
-                        ListHeaderComponent={
-                            <>
-                                {renderHeader()}
-                                {renderSwapSection()}
-                            </>
-                        }
-                        renderItem={({ item }) => {
-                            return (
-                                <BookGridItem 
-                                    bookId={item.id}
-                                    title={item.title}
-                                    author={item.author}
-                                    imageUrl={item.imageUrl}
-                                    styles={styles} 
-                                    theme={theme}
-                                    isFavorite={item.isFavorite ?? userFavorites.includes(item.id)}
-                                    favoriteCount={item.favoriteCount}
-                                    onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
-                                        publication: item, 
-                                        seller: item.seller
-                                    })}
-                                    onToggleFavorite={handleToggleFavorite}
-                                />
-                            );
-                        }}
-                        ListEmptyComponent={
-                            <Text style={{ textAlign: 'center', color: theme.subtext, marginTop: 40 }}>
-                                No books published yet. Be the first to swap!
-                            </Text>
-                        }
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
+                <FlatList
+                    data={books}
+                    keyExtractor={(item) => item.id}
+                    numColumns={2}
+                    columnWrapperStyle={styles.row}
+                    contentContainerStyle={styles.gridContainer}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
+                    ListHeaderComponent={
+                        <>
+                            {renderHeader()}
+                            {renderSwapSection()}
+                        </>
+                    }
+                    renderItem={({ item }) => (
+                        <BookGridItem 
+                            bookId={item.id}
+                            title={item.title}
+                            author={item.author}
+                            imageUrl={item.imageUrl}
+                            styles={styles} 
+                            theme={theme}
+                            isFavorite={item.isFavorite ?? userFavorites.includes(item.id)}
+                            favoriteCount={item.favoriteCount}
+                            onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
+                                publication: item, 
+                                seller: item.seller
+                            })}
+                            onToggleFavorite={handleToggleFavorite}
+                        />
+                    )}
+                    ListEmptyComponent={
+                        <Text style={{ textAlign: 'center', color: theme.subtext, marginTop: 40 }}>
+                            No books published yet. Be the first to swap!
+                        </Text>
+                    }
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
         </View>
     );
 }

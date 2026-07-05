@@ -22,4 +22,5 @@ export const ROUTES = {
     STEP_TWO_OFFER: 'StepTwoOffer',
     PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen',
     FAVORITES: 'Favorites',
+    CHAT_ROOM: 'ChatRoom',
 } as const;
