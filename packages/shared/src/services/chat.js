@@ -102,9 +102,9 @@ export const ChatService = {
         return chatId;
     },
 
-    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, selectedBookId) => {
+    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, selectedBookId, newLocation) => {
         try {
-            // 1. Update the old message to 'countered' so it locks in the UI
+            // 1. Update the old message to 'countered'
             const originalMessageRef = doc(db, 'chats', chatId, 'messages', originalMessageId);
             await updateDoc(originalMessageRef, {
                 'offerDetails.status': 'countered'
@@ -115,15 +115,14 @@ export const ChatService = {
                 targetBookId: originalOffer.targetBookId,
                 targetBookImage: originalOffer.targetBookImage || null,
                 offeredBookIds: originalOffer.offeredBookIds, 
-                selectedBookId: selectedBookId, // The specific book they chose!
-                location: originalOffer.location || {},
+                selectedBookId: selectedBookId, 
+                location: newLocation || originalOffer.location || {}, // 👈 Include the new negotiated location
                 isCounter: true,
                 status: 'pending',
                 createdAt: new Date().toISOString()
             };
 
             // 3. Create the new message payload
-            // Assuming you have createMessageModel imported in your service
             const messagePayload = createMessageModel(
                 currentUserId, 
                 "Sent a counter proposal", 

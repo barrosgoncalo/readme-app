@@ -27,6 +27,7 @@ import { db } from '@readme/shared/src/services/firebase';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { ROUTES } from '@readme/shared/src/constants/routes'
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 export default function ChatRoomScreen({ route, navigation }) {
@@ -230,10 +231,11 @@ export default function ChatRoomScreen({ route, navigation }) {
                             <TouchableOpacity 
                                 style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
                                 // Navigate to a new screen where they can pick from `offer.offeredBookIds`
-                                onPress={() => navigation.navigate('SelectSwapBook', { 
+                                onPress={() => navigation.navigate(ROUTES.SELECT_SWAP, { 
                                     messageId: item.id, 
                                     chatId: chatId,
-                                    offerDetails: offer 
+                                    offerDetails: offer,
+                                    targetSellerUid: targetSeller.uid
                                 })} 
                             >
                                 <Text style={styles.acceptButtonText}>Review & Choose</Text>
