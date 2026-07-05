@@ -85,17 +85,31 @@ export default function SelectSwapBookScreen({ route, navigation }) {
 
     // --- Final Submission ---
     const handleSendCounter = async () => {
+        if (isSubmitting) return; 
+        
         if (!selectedBookId || !locationIsValid || !currentUser?.uid) return;
         
         setIsSubmitting(true);
         try {
+            // 2. IMAGE FIX: Find the book the user selected from the state array
+            const selectedBook = offeredBooks.find(b => b.id === selectedBookId);
+            
+            // Extract the image using the exact same logic you use in `renderBookItem`
+            const imageUrl = selectedBook?.book?.images?.[0] || selectedBook?.imageUrl || null;
+
+            // Inject the image URL into the offerDetails payload
+            const updatedOfferDetails = {
+                ...offerDetails,
+                selectedBookImage: imageUrl
+            };
+
             await ChatService.sendCounterOffer(
                 chatId, 
                 messageId, 
                 currentUser.uid, 
-                offerDetails, 
+                updatedOfferDetails,
                 selectedBookId,
-                activeLocationSelection // 👈 Pumping the new location to Firebase
+                activeLocationSelection
             );
             navigation.goBack(); 
         } catch (error) {
@@ -181,11 +195,9 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                                 onRegionChangeComplete={setCurrentRegion}
                                 onPress={(e) => isProposingAlternative && handleReverseGeocode(e.nativeEvent.coordinate)}
                                 onPanDrag={Keyboard.dismiss}
-                                // 👇 3. Use the fallback region here
                                 initialRegion={defaultRegion} 
                                 region={defaultRegion} 
                             >
-                                {/* 👇 4. Always show the originally proposed location so they have context */}
                                 {!isProposingAlternative && originalLocation?.latitude && (
                                     <Marker
                                         key="original-offer-location"

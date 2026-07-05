@@ -173,12 +173,29 @@ export default function ChatRoomScreen({ route, navigation }) {
         const offer = item.offerDetails;
         const isReceivedOffer = item.senderId !== currentUserId;
         const isPending = offer?.status === 'pending';
-        
-        // Define if this is the first proposal or the counter-proposal
         const isCounterOffer = offer?.isCounter === true; 
 
+        // Clean status colors
+        let statusBg = '#FEF3C7'; 
+        let statusTextColor = '#92400E';
+        if (offer?.status === 'accepted') {
+            statusBg = '#E1F7EC'; 
+            statusTextColor = '#065F46';
+        } else if (offer?.status === 'declined' || offer?.status === 'countered') {
+            statusBg = '#FEE2E2'; 
+            statusTextColor = '#991B1B';
+        }
+
         return (
-            <View style={[styles.offerCard, { backgroundColor: theme.backgroundElement, borderColor: theme.borderLight }]}>
+            <View style={[
+                styles.offerCard, 
+                { 
+                    backgroundColor: theme.backgroundElement, 
+                    borderColor: isPending && isCounterOffer ? theme.primary : theme.borderLight,
+                    borderWidth: isPending && isCounterOffer ? 2 : 1
+                }
+            ]}>
+                {/* HEADER */}
                 <View style={styles.offerHeader}>
                     <Iconify icon="lucide:arrow-left-right" size={18} color={theme.primary} />
                     <Text style={[styles.offerTitle, { color: theme.textItemTitle }]}>
@@ -186,37 +203,63 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </Text>
                 </View>
 
-                {/* 2. BOOK COVER INTEGRATION */}
-                {bookImage && (
-                    <View style={styles.offerBookContainer}>
-                        <Image source={{ uri: bookImage }} style={styles.offerBookImage} />
-                        <View style={styles.offerBookDetails}>
-                            <Text style={[styles.offerText, { color: theme.subtext, marginBottom: 2 }]}>Target Book</Text>
-                            <Text style={{ fontWeight: '600', color: theme.textItemTitle, fontSize: 13 }}>
-                                Tap to view details
-                            </Text>
-                        </View>
+                {/* SIDE-BY-SIDE TRADE CONTAINER */}
+                <View style={styles.tradeContainer}>
+                    {/* Left Side: Target Book */}
+                    <View style={styles.bookColumn}>
+                        <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
+                            Target Book
+                        </Text>
+                        {bookImage ? (
+                            <Image source={{ uri: bookImage }} style={styles.tradeBookImage} />
+                        ) : (
+                            <View style={[styles.tradeBookImage, styles.placeholderBg]}>
+                                <Iconify icon="lucide:book" size={20} color={theme.subtext} />
+                            </View>
+                        )}
                     </View>
-                )}
 
-                {/* 3. OFFER DETAILS */}
+                    {/* Middle: Exchange Icon */}
+                    <Iconify icon="lucide:arrow-right-left" size={20} color={theme.subtext} style={{ marginHorizontal: 8 }} />
+
+                    {/* Right Side: Offered Book(s) */}
+                    <View style={styles.bookColumn}>
+                        <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
+                            {isCounterOffer ? "Offered Book" : "Options"}
+                        </Text>
+                        
+                        {/* Try to show the offered book image, otherwise show a clean minimal badge */}
+                        {offer?.selectedBookImage ? (
+                            <Image source={{ uri: offer.selectedBookImage }} style={styles.tradeBookImage} />
+                        ) : (
+                            <View style={[styles.tradeBookImage, styles.placeholderBg]}>
+                                {isCounterOffer ? (
+                                    <Iconify icon="lucide:book-open" size={20} color={theme.primary} />
+                                ) : (
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textItemTitle }}>
+                                        {offer?.offeredBookIds?.length || 1}
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* LOCATION DETAILS */}
                 <Text style={[styles.offerText, { color: theme.subtext, marginTop: 12 }]}>
-                    Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>{offer?.location?.title || 'Not specified'}</Text>
+                    Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>
+                        {offer?.location?.title || offer?.location?.address || 'Not specified'}
+                    </Text>
                 </Text>
 
-                {isCounterOffer && offer?.selectedBookId && (
-                     <Text style={[styles.offerText, { color: theme.subtext, marginTop: 4 }]}>
-                     Requested: <Text style={{ fontWeight: '600', color: theme.primary }}>1 Book Selected</Text>
-                 </Text>
-                )}
-
-                <View style={[styles.statusBadge, { backgroundColor: offer?.status === 'accepted' ? '#E1F7EC' : offer?.status === 'declined' ? '#FEE2E2' : '#FEF3C7' }]}>
-                    <Text style={{ color: offer?.status === 'accepted' ? '#065F46' : offer?.status === 'declined' ? '#991B1B' : '#92400E', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>
+                {/* STATUS BADGE */}
+                <View style={[styles.statusBadge, { backgroundColor: statusBg, marginTop: 12 }]}>
+                    <Text style={{ color: statusTextColor, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>
                         {offer?.status || 'Pending'}
                     </Text>
                 </View>
 
-                {/* 4. ACTIONS FOR RECEIVER */}
+                {/* 3-BUTTON ACTION FLOW */}
                 {isReceivedOffer && isPending && (
                     <View style={styles.offerActions}>
                         <TouchableOpacity 
@@ -226,29 +269,39 @@ export default function ChatRoomScreen({ route, navigation }) {
                             <Text style={styles.declineButtonText}>Decline</Text>
                         </TouchableOpacity>
 
-                        {/* SPLIT LOGIC: Initial Offer vs Counter Offer */}
-                        {!isCounterOffer ? (
+                        {isCounterOffer && (
                             <TouchableOpacity 
-                                style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
-                                // Navigate to a new screen where they can pick from `offer.offeredBookIds`
+                                style={[styles.actionButton, styles.counterBackButton, { borderColor: theme.primary || '#E58A1F' }]}
                                 onPress={() => navigation.navigate(ROUTES.SELECT_SWAP, { 
                                     messageId: item.id, 
                                     chatId: chatId,
                                     offerDetails: offer,
-                                    targetSellerUid: targetSeller.uid
+                                    targetSellerUid: targetSeller?.uid || item.senderId
                                 })} 
                             >
-                                <Text style={styles.acceptButtonText}>Review & Choose</Text>
-                            </TouchableOpacity>
-                        ) : (
-                            <TouchableOpacity 
-                                style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
-                                // This is the FINAL accept by the original proposer
-                                onPress={() => handleResolveOffer(item.id, 'accepted', offer?.targetBookId)} 
-                            >
-                                <Text style={styles.acceptButtonText}>Final Accept</Text>
+                                <Text style={[styles.counterBackText, { color: theme.primary || '#E58A1F' }]}>Counter</Text>
                             </TouchableOpacity>
                         )}
+
+                        <TouchableOpacity 
+                            style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
+                            onPress={() => {
+                                if (!isCounterOffer) {
+                                    navigation.navigate(ROUTES.SELECT_SWAP, { 
+                                        messageId: item.id, 
+                                        chatId: chatId,
+                                        offerDetails: offer,
+                                        targetSellerUid: targetSeller?.uid || item.senderId
+                                    });
+                                } else {
+                                    handleResolveOffer(item.id, 'accepted', offer?.targetBookId);
+                                }
+                            }} 
+                        >
+                            <Text style={styles.acceptButtonText}>
+                                {isCounterOffer ? "Accept" : "Review"}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 )}
             </View>
@@ -387,23 +440,44 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         justifyContent: 'center' 
     },
-    offerBookContainer: { 
+    tradeContainer: { 
         flexDirection: 'row', 
         alignItems: 'center', 
-        gap: 12, 
-        backgroundColor: 'rgba(150, 150, 150, 0.1)', // Subtle contrast background 
-        padding: 8, 
+        justifyContent: 'space-between', 
+        backgroundColor: 'rgba(150, 150, 150, 0.08)', // Very subtle gray background
+        padding: 12, 
         borderRadius: 8, 
         marginTop: 4 
     },
-    offerBookImage: { 
-        width: 40, 
-        height: 56, 
-        borderRadius: 4, 
+    bookColumn: { 
+        alignItems: 'center', 
+        flex: 1 
+    },
+    bookMiniLabel: { 
+        fontSize: 11, 
+        fontWeight: '600', 
+        marginBottom: 6,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5
+    },
+    tradeBookImage: { 
+        width: 48, 
+        height: 68, 
+        borderRadius: 6, 
         backgroundColor: '#EAEAEA' 
     },
-    offerBookDetails: { 
-        flex: 1, 
-        justifyContent: 'center' 
+    placeholderBg: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(150, 150, 150, 0.2)',
+    },
+    counterBackButton: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+    },
+    counterBackText: {
+        fontWeight: '600',
+        fontSize: 14,
     },
 });

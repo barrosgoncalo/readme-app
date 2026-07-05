@@ -116,7 +116,8 @@ export const ChatService = {
                 targetBookImage: originalOffer.targetBookImage || null,
                 offeredBookIds: originalOffer.offeredBookIds, 
                 selectedBookId: selectedBookId, 
-                location: newLocation || originalOffer.location || {}, // 👈 Include the new negotiated location
+                selectedBookImage: originalOffer.selectedBookImage || null,
+                location: newLocation || originalOffer.location || {},
                 isCounter: true,
                 status: 'pending',
                 createdAt: new Date().toISOString()

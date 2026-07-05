@@ -38,6 +38,7 @@ export default function (api) {
                         'lucide:library',
                         'lucide:arrow-right',
                         'lucide:arrow-left',
+                        'lucide:arrow-right-left',
                         'lucide:home',
                         'lucide:x',
                         'lucide:plus-circle',
