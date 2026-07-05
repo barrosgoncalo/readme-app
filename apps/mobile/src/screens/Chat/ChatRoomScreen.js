@@ -10,7 +10,9 @@ import {
     Platform,
     ActivityIndicator,
     useColorScheme,
-    Image
+    Image,
+    Linking,
+    Alert
 } from 'react-native';
 import { 
     collection, 
@@ -169,6 +171,33 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
     };
 
+    const handleOpenNavigation = (location) => {
+        if (!location || !location.latitude || !location.longitude) {
+            Alert.alert("Location Error", "Coordinates are unavailable for this location.");
+            return;
+        }
+
+        const { latitude, longitude, title, address } = location;
+        const label = encodeURIComponent(title || address || "Book Exchange Spot");
+
+        // Deep Link URLs
+        const appleMapsUrl = `maps://?q=${label}&ll=${latitude},${longitude}`;
+        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+        const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
+
+        Alert.alert(
+            "Navigate to Spot",
+            "Open this location with your preferred navigation app:",
+            [
+                ...(Platform.OS === 'ios' ? [{ text: "Apple Maps", onPress: () => Linking.openURL(appleMapsUrl) }] : []),
+                { text: "Google Maps", onPress: () => Linking.openURL(googleMapsUrl) },
+                { text: "Waze", onPress: () => Linking.openURL(wazeUrl) },
+                { text: "Cancel", style: "cancel" }
+            ],
+            { cancelable: true }
+        );
+    };
+
     const renderOfferCard = (item) => {
         const offer = item.offerDetails;
         const isReceivedOffer = item.senderId !== currentUserId;
@@ -245,12 +274,24 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </View>
                 </View>
 
-                {/* LOCATION DETAILS */}
-                <Text style={[styles.offerText, { color: theme.subtext, marginTop: 12 }]}>
-                    Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>
-                        {offer?.location?.title || offer?.location?.address || 'Not specified'}
+                {/* LOCATION DETAILS (CLICKABLE) */}
+                {offer?.location ? (
+                    <TouchableOpacity 
+                        style={styles.clickableLocationRow} 
+                        onPress={() => handleOpenNavigation(offer.location)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.offerText, { color: theme.subtext, flex: 1, marginTop: 0 }]}>
+                            Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle, textDecorationLine: 'underline' }}>
+                                {offer?.location?.title || offer?.location?.address || 'Not specified'}
+                            </Text>
+                        </Text>
+                    </TouchableOpacity>
+                ) : (
+                    <Text style={[styles.offerText, { color: theme.subtext, marginTop: 12 }]}>
+                        Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>Not specified</Text>
                     </Text>
-                </Text>
+                )}
 
                 {/* STATUS BADGE */}
                 <View style={[styles.statusBadge, { backgroundColor: statusBg, marginTop: 12 }]}>
@@ -480,4 +521,10 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 14,
     },
+    clickableLocationRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginTop: 12,
+        paddingVertical: 2,
+    }
 });
