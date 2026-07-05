@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import {BookOpen, Search, Users} from 'lucide-react';
 import {searchUsers} from '@readme/shared/src/services/search.web';
 import {doGetBlockedUsers} from '@readme/shared/src/services/blockUser.web';
@@ -214,7 +214,7 @@ export default function Explore() {
                                 };
 
                                 const owner = userDetails[item.ownerId] || {};
-                                
+
                                 const tradeData = {
                                     bookId: item.bookId,
                                     coverUrl: book.coverUrl,
