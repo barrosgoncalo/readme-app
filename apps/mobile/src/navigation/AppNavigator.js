@@ -30,6 +30,8 @@ import PublicProfileScreen from '../screens/Explore/PublicProfileScreen';
 import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
 import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
 import SelectSwapBookScreen from '../screens/Chat/SelectSwapBookScreen';
+import ShowQrCodeScreen from '../screens/Chat/Code/ShowQrCodeScreen';
+import SwapScannerScreen from '../screens/Chat/Code/SwapScannerScreen';
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -155,6 +157,16 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.SELECT_SWAP} 
                             component={SelectSwapBookScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.QR_DISPLAY} 
+                            component={ShowQrCodeScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.QR_SCANNER} 
+                            component={SwapScannerScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

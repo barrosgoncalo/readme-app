@@ -24,6 +24,13 @@ export const createUserModel = (uid, profileData, provider) => {
         reviewCount: 0,
         favoriteBooks: [],
 
+        gamification: {
+            xp: 0,
+            rank: 'Novice',
+            completedSwapsCount: 0,
+            badges: []
+        },
+
         createdAt: new Date().toISOString(),
         photoURL: profileData.photoURL || null,
         role: 'user',

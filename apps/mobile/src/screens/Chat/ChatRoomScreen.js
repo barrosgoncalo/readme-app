@@ -10,8 +10,7 @@ import {
     Platform,
     ActivityIndicator,
     useColorScheme,
-    Image,
-    Linking,
+    Image, Linking,
     Alert
 } from 'react-native';
 import { 
@@ -142,16 +141,33 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
     };
 
-    const handleResolveOffer = async (messageId, newStatus, bookId = null) => {
+    const handleShowQRCode = (code) => {
+        navigation.navigate(ROUTES.QR_DISPLAY, { 
+            verificationCode: code 
+        });
+    };
+
+    const handleOpenScanner = (expectedCode, messageId) => {
+        navigation.navigate(ROUTES.QR_SCANNER, {
+            expectedCode: expectedCode,
+            messageId: messageId,
+            chatId: chatId
+        });
+    };
+
+    const handleResolveOffer = async (messageId, newStatus, bookId = null, senderIdOfOffer = null) => {
         try {
-            // 1. This updates the message status in the chat room (Always do this first)
-            await ChatService.updateOfferStatus(chatId, messageId, newStatus);
+            // If the user accepts, explicitly define the roles
+            let displayerId = senderIdOfOffer; // The person who originally sent the proposal
+            let scannerId = currentUserId;     // The person who is pressing "Accept" right now
+
+            // 1. Update the message status in the chat room
+            await ChatService.updateOfferStatus(chatId, messageId, newStatus, displayerId, scannerId);
             console.log("Chat offer status updated successfully.");
 
             // 2. Safely attempt to reserve the book on the main feed
             if (newStatus === 'accepted') {
                 const targetBookId = bookId || publicationId;
-
                 if (targetBookId) {
                     try {
                         const publicationRef = doc(db, 'publications', targetBookId);
@@ -213,6 +229,9 @@ export default function ChatRoomScreen({ route, navigation }) {
         } else if (offer?.status === 'declined' || offer?.status === 'countered') {
             statusBg = '#FEE2E2'; 
             statusTextColor = '#991B1B';
+        } else if (offer?.status === 'completed') {
+            statusBg = '#DCFCE7'; 
+            statusTextColor = '#166534';
         }
 
         return (
@@ -335,12 +354,76 @@ export default function ChatRoomScreen({ route, navigation }) {
                                         targetSellerUid: targetSeller?.uid || item.senderId
                                     });
                                 } else {
-                                    handleResolveOffer(item.id, 'accepted', offer?.targetBookId);
+                                    handleResolveOffer(item.id, 'accepted', offer?.targetBookId, item.senderId);
                                 }
                             }} 
                         >
                             <Text style={styles.acceptButtonText}>
                                 {isCounterOffer ? "Accept" : "Review"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+                {/* --- VERIFICATION HANDSHAKE UI --- */}
+                {offer?.status === 'accepted' && (
+                    <View style={styles.offerActions}>
+                        {/* DISPLAYER (Show QR): Uses your Primary Dark Brown */}
+                        {offer.verificationDisplayerId === currentUserId && (
+                            <TouchableOpacity 
+                                style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                                onPress={() => handleShowQRCode(offer.verificationCode)}
+                            >
+                                <Iconify icon="lucide:qr-code" size={18} color={theme.primaryText} style={{ marginRight: 8 }} />
+                                <Text style={[styles.acceptButtonText, { color: theme.primaryText }]}>
+                                    Show Swap Code
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {offer.verificationScannerId === currentUserId && (
+                            <TouchableOpacity 
+                                style={[styles.actionButton, { backgroundColor: theme.textItemTitle }]}
+                                onPress={() => handleOpenScanner(offer.verificationCode, item.id)}
+                            >
+                                <Iconify 
+                                    icon="lucide:scan" 
+                                    size={18} 
+                                    // White for light mode, rich dark brown for dark mode beige background
+                                    color={colorScheme === 'dark' ? '#1C0E05' : '#FFFFFF'} 
+                                    style={{ marginRight: 8 }} 
+                                />
+                                <Text style={[
+                                    styles.acceptButtonText, 
+                                    { color: colorScheme === 'dark' ? '#1C0E05' : '#FFFFFF' }
+                                ]}>
+                                    Scan Code
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+
+                {/* --- COMPLETED SWAP UI --- */}
+                {offer?.status === 'completed' && (
+                    <View style={styles.completedContainer}>
+                        <View style={styles.completedHeader}>
+                            <Iconify icon="lucide:party-popper" size={24} color="#10B981" />
+                            <Text style={styles.completedText}>Troca Concluída!</Text>
+                        </View>
+                        
+                        <TouchableOpacity 
+                            style={[styles.actionButton, { backgroundColor: theme.textItemTitle, width: '100%' }]}
+                            onPress={() => {
+                                // Redireciona para o ecrã de reviews (Adiciona esta rota aos teus ROUTES se ainda não existir)
+                                navigation.navigate('REVIEW_SWAPPER', { 
+                                    targetUserId: targetSeller?.uid || item.senderId,
+                                    chatId: chatId 
+                                });
+                            }}
+                        >
+                            <Iconify icon="lucide:star" size={18} color={theme.background} style={{ marginRight: 8 }} />
+                            <Text style={[styles.acceptButtonText, { color: theme.background }]}>
+                                Avaliar Utilizador
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -466,7 +549,7 @@ const styles = StyleSheet.create({
     offerText: { fontSize: 14, marginBottom: 8 },
     statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginBottom: 12 },
     offerActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
-    actionButton: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    actionButton: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
     declineButton: { backgroundColor: '#F3F4F6' },
     declineButtonText: { color: '#374151', fontWeight: '600', fontSize: 14 },
     acceptButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
@@ -485,7 +568,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
-        backgroundColor: 'rgba(150, 150, 150, 0.08)', // Very subtle gray background
+        backgroundColor: 'rgba(150, 150, 150, 0.08)',
         padding: 12, 
         borderRadius: 8, 
         marginTop: 4 
@@ -526,5 +609,31 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         marginTop: 12,
         paddingVertical: 2,
+    },
+    clickableLocationRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginTop: 12,
+        paddingVertical: 2,
+    },
+    // NOVOS ESTILOS AQUI:
+    completedContainer: { 
+        marginTop: 16, 
+        alignItems: 'center', 
+        width: '100%', 
+        borderTopWidth: 1, 
+        borderTopColor: 'rgba(150, 150, 150, 0.2)', 
+        paddingTop: 16 
+    },
+    completedHeader: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        marginBottom: 16 
+    },
+    completedText: { 
+        marginLeft: 8, 
+        fontSize: 16, 
+        fontWeight: '700', 
+        color: '#10B981' 
     }
 });

@@ -3,8 +3,9 @@
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { createChatModel } from '../models/chat';
-import { createOfferModel } from '../models/offer';
+import { createOfferModel, generateVerificationCode } from '../models/offer';
 import { createMessageModel } from '../models/message';
+import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status'
 
 export const ChatService = {
 
@@ -37,12 +38,23 @@ export const ChatService = {
     },
 
     /**
-     * Updates the status of an offer (e.g., 'accepted' or 'declined').
+     * Updates the status of an offer (e.g., 'accepted' or 'declined') 
+     * and initializes verification data if accepted.
      */
-    updateOfferStatus: async (chatId, messageId, newStatus) => {
-        await updateDoc(doc(db, `chats/${chatId}/messages`, messageId), {
+    updateOfferStatus: async (chatId, messageId, newStatus, proposerId = null, receiverId = null) => {
+        const messageRef = doc(db, `chats/${chatId}/messages`, messageId);
+        
+        const updatePayload = {
             'offerDetails.status': newStatus
-        });
+        };
+
+        if (newStatus === NEGOTIATION_STATUS.ACCEPTED) {
+            updatePayload['offerDetails.verificationCode'] = generateVerificationCode();
+            updatePayload['offerDetails.verificationDisplayerId'] = proposerId;
+            updatePayload['offerDetails.verificationScannerId'] = receiverId;
+        }
+
+        await updateDoc(messageRef, updatePayload);
     },
 
     /**
