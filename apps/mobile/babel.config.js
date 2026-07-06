@@ -92,6 +92,7 @@ export default function (api) {
                         'ic:round-plus',
                         'ph:star',
                         'ph:star-fill',
+                        'ph:star-half-fill',
                     ],
                 },
             ],

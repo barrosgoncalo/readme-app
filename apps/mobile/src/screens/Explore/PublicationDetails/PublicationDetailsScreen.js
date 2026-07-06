@@ -17,6 +17,7 @@ import ImageViewing from 'react-native-image-viewing';
 import { Iconify } from 'react-native-iconify';
 
 // Internal Architecture Imports
+import { GranularRating } from '../../../components/ui/GranularRating';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildBookDetailsStyles } from '../../../styles/publicationDetailsStyles';
@@ -195,28 +196,7 @@ export default function PublicationDetailsScreen({ route, navigation }) {
                             <View>
                                 <Text style={styles.sellerName}>{sellerName}</Text>
                                 <View style={styles.ratingContainer}>
-                                    {[1, 2, 3, 4, 5].map((star) => {
-                                        let iconName = "ph:star";
-                                        let iconColor = theme.textMuted || '#A0A0A0';
-
-                                        if (sellerRating >= star) {
-                                            iconName = "ph:star-fill";
-                                            iconColor = theme.secondary || '#E58A1F';
-                                        } else if (sellerRating >= star - 0.5) {
-                                            iconName = "ph:star-half-fill";
-                                            iconColor = theme.secondary || '#E58A1F';
-                                        }
-
-                                        return (
-                                            <Iconify 
-                                                key={star} 
-                                                icon={iconName} 
-                                                size={14} 
-                                                color={iconColor} 
-                                                style={styles.starIcon} 
-                                            />
-                                        );
-                                    })}
+                                    <GranularRating rating={sellerRating} theme={theme} />
                                     <Text style={styles.reviewsCount}>
                                         {sellerReviewCount > 0 ? `(${sellerReviewCount})` : 'No reviews yet'}
                                     </Text>
