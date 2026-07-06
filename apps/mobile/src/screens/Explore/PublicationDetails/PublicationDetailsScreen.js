@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { 
     View, 
     Text, 
@@ -64,11 +64,21 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const passedSeller = route?.params?.seller;
 
     // --- Data & Logic Layer ---
+    // NOTE: Ensure this hook fetches live data using onSnapshot for db, 'users', book.ownerId
+    // If it only takes passedSeller, it will contain stale data from the previous screen.
     const { seller, isFavorited, handleToggleFavorite } = usePublicationDetails(book, passedSeller);
 
     // --- Visual State Layer ---
     const [isGalleryVisible, setIsGalleryVisible] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // ==========================================
+    // EXTRACT LIVE SELLER METRICS SAFELY
+    // ==========================================
+    const sellerRating = Number(seller?.rating) || 0;
+    const sellerReviewCount = Number(seller?.reviewCount ?? seller?.reviews) || 0;
+    const sellerName = seller?.username || "Anonymous Swapper";
+    const sellerAvatar = seller?.photoURL || null;
 
     // ==========================================
     // HANDLERS
@@ -82,8 +92,8 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const handleMakeOffer = () => {
         const perfectlyCleanBook = {
             ...book,
-            ownerName: seller.username || "Anonymous Swapper",
-            ownerAvatar: seller.photoURL || null
+            ownerName: sellerName,
+            ownerAvatar: sellerAvatar
         };
 
         navigation.navigate(ROUTES.STEP_ONE_OFFER, { 
@@ -178,24 +188,37 @@ export default function PublicationDetailsScreen({ route, navigation }) {
                     >
                         <View style={styles.sellerInfoLeft}>
                             <Image 
-                                source={seller.avatarUrl ? { uri: seller.avatarUrl } : null} 
+                                source={sellerAvatar ? { uri: sellerAvatar } : null} 
                                 style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]} 
                                 contentFit="cover" 
                             />
                             <View>
-                                <Text style={styles.sellerName}>{seller.name}</Text>
+                                <Text style={styles.sellerName}>{sellerName}</Text>
                                 <View style={styles.ratingContainer}>
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <Iconify 
-                                            key={star} 
-                                            icon={star <= Math.round(seller.rating) ? "mdi:star" : "mdi:star-outline"} 
-                                            size={14} 
-                                            color="#E58A1F" 
-                                            style={styles.starIcon} 
-                                        />
-                                    ))}
+                                    {[1, 2, 3, 4, 5].map((star) => {
+                                        let iconName = "ph:star";
+                                        let iconColor = theme.textMuted || '#A0A0A0';
+
+                                        if (sellerRating >= star) {
+                                            iconName = "ph:star-fill";
+                                            iconColor = theme.secondary || '#E58A1F';
+                                        } else if (sellerRating >= star - 0.5) {
+                                            iconName = "ph:star-half-fill";
+                                            iconColor = theme.secondary || '#E58A1F';
+                                        }
+
+                                        return (
+                                            <Iconify 
+                                                key={star} 
+                                                icon={iconName} 
+                                                size={14} 
+                                                color={iconColor} 
+                                                style={styles.starIcon} 
+                                            />
+                                        );
+                                    })}
                                     <Text style={styles.reviewsCount}>
-                                        {seller.reviews > 0 ? `(${seller.reviews})` : 'No reviews yet'}
+                                        {sellerReviewCount > 0 ? `(${sellerReviewCount})` : 'No reviews yet'}
                                     </Text>
                                 </View>
                             </View>

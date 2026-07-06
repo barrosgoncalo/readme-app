@@ -32,6 +32,8 @@ import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
 import SelectSwapBookScreen from '../screens/Chat/SelectSwapBookScreen';
 import ShowQrCodeScreen from '../screens/Chat/Code/ShowQrCodeScreen';
 import SwapScannerScreen from '../screens/Chat/Code/SwapScannerScreen';
+import ReviewSwapperScreen from '../screens/Chat/ReviewSwapperScreen';
+
 
 
 import AppTabs from '../components/app-tabs'; 
@@ -167,6 +169,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.QR_SCANNER} 
                             component={SwapScannerScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.REVIEW_SWAPPER} 
+                            component={ReviewSwapperScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

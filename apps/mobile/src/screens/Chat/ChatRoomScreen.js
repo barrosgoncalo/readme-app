@@ -36,7 +36,6 @@ export default function ChatRoomScreen({ route, navigation }) {
     const theme = Colors[colorScheme];
     const { chatId, targetSeller } = route.params;
 
-
     const { currentUser } = useAuth();
     const currentUserId = currentUser?.uid;
 
@@ -50,6 +49,8 @@ export default function ChatRoomScreen({ route, navigation }) {
     const [otherUserAvatar, setOtherUserAvatar] = useState(targetSeller?.avatarUrl || null);
     const [bookImage, setBookImage] = useState(null);
     const [publicationId, setPublicationId] = useState(null);
+
+    const [hasReviewed, setHasReviewed] = useState(false);
 
     // --- SAFE METADATA FETCH LAYER ---
     useEffect(() => {
@@ -126,6 +127,19 @@ export default function ChatRoomScreen({ route, navigation }) {
 
         return () => unsubscribe();
     }, [chatId]);
+
+    useEffect(() => {
+        if (!chatId || !currentUserId) return;
+
+        // Escuta diretamente o documento de review gerado por este utilizador para este chat
+        const reviewRef = doc(db, 'reviews', `${chatId}_${currentUserId}`);
+
+        const unsubscribe = onSnapshot(reviewRef, (docSnap) => {
+            setHasReviewed(docSnap.exists());
+        });
+
+        return () => unsubscribe();
+    }, [chatId, currentUserId]);
 
     const handleSendMessage = async () => {
         if (!inputText.trim() || !currentUserId) return;
@@ -406,24 +420,44 @@ export default function ChatRoomScreen({ route, navigation }) {
                 {/* --- COMPLETED SWAP UI --- */}
                 {offer?.status === 'completed' && (
                     <View style={styles.completedContainer}>
+                        {/* O título celebra sempre o facto de a troca ter terminado */}
                         <View style={styles.completedHeader}>
                             <Iconify icon="lucide:party-popper" size={24} color="#10B981" />
                             <Text style={styles.completedText}>Troca Concluída!</Text>
                         </View>
-                        
+
+                        {/* O botão gere a ação de avaliar */}
                         <TouchableOpacity 
-                            style={[styles.actionButton, { backgroundColor: theme.textItemTitle, width: '100%' }]}
+                            style={[
+                                styles.actionButton, 
+                                { 
+                                    backgroundColor: hasReviewed ? theme.backgroundElement : theme.textItemTitle, 
+                                    borderColor: hasReviewed ? theme.borderLight : 'transparent',
+                                    borderWidth: hasReviewed ? 1 : 0,
+                                    width: '100%' 
+                                }
+                            ]}
                             onPress={() => {
-                                // Redireciona para o ecrã de reviews (Adiciona esta rota aos teus ROUTES se ainda não existir)
-                                navigation.navigate('REVIEW_SWAPPER', { 
+                                navigation.navigate(ROUTES.REVIEW_SWAPPER, { 
                                     targetUserId: targetSeller?.uid || item.senderId,
                                     chatId: chatId 
                                 });
                             }}
+                            disabled={hasReviewed}
                         >
-                            <Iconify icon="lucide:star" size={18} color={theme.background} style={{ marginRight: 8 }} />
-                            <Text style={[styles.acceptButtonText, { color: theme.background }]}>
-                                Avaliar Utilizador
+                            <Iconify 
+                                icon={hasReviewed ? "lucide:check-circle" : "lucide:star"} 
+                                size={18} 
+                                // Dá um tom verde ao ícone se já foi avaliado para reforçar o sucesso
+                                color={hasReviewed ? "#10B981" : theme.background} 
+                                style={{ marginRight: 8 }} 
+                            />
+                            <Text style={[
+                                styles.acceptButtonText, 
+                                // Muda a cor do texto para condizer
+                                { color: hasReviewed ? theme.subtext : theme.background }
+                            ]}>
+                                {hasReviewed ? "Avaliação Enviada" : "Avaliar Utilizador"}
                             </Text>
                         </TouchableOpacity>
                     </View>

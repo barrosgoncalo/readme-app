@@ -25,6 +25,7 @@ import { auth } from '@readme/shared/src/services/firebase';
 import { doBlockUser } from '@readme/shared/src/services/block';
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
 import { fetchUserPublications } from '@readme/shared/src/services/publications';
+import { fetchUserReviews } from '@readme/shared/src/services/reviews';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +39,7 @@ export default function PublicProfileScreen({ navigation, route }) {
     // --- STATE MANAGEMENT ---
     const [profile, setProfile] = useState(null);
     const [publications, setPublications] = useState([]);
+    const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('publications');
@@ -54,16 +56,19 @@ export default function PublicProfileScreen({ navigation, route }) {
         }
 
         if (showRefreshIndicator) setRefreshing(true);
-        else setLoading(true);
+            else setLoading(true);
 
         try {
-            const [profileData, publicationsData] = await Promise.all([
+            // Adiciona a chamada de fetchUserReviews ao Promise.all
+            const [profileData, publicationsData, reviewsData] = await Promise.all([
                 fetchUserProfile(userId),
-                fetchUserPublications(userId)
+                fetchUserPublications(userId),
+                fetchUserReviews(userId) 
             ]);
 
             setProfile(profileData);
             setPublications(publicationsData || []);
+            setReviews(reviewsData || []); // Guarda o resultado no estado
             setIsFollowing(profileData?.isCurrentUserFollowing || false);
         } catch (error) {
             console.error("Error loading profile data:", error);
@@ -94,7 +99,7 @@ export default function PublicProfileScreen({ navigation, route }) {
 
     const handleBlockUser = async () => {
         const currentUserUid = auth?.currentUser?.uid;
-        
+
         if (!currentUserUid) {
             Alert.alert("Error", "You must be logged in to block a user.");
             return;
@@ -102,7 +107,7 @@ export default function PublicProfileScreen({ navigation, route }) {
 
         try {
             await doBlockUser(currentUserUid, userId);
-            
+
             Alert.alert(
                 "User Blocked", 
                 `You have blocked ${profile?.username || 'this user'}. You will no longer see their content.`,
@@ -175,8 +180,8 @@ export default function PublicProfileScreen({ navigation, route }) {
                                     transition={200}
                                 />
                             ) : (
-                                <Iconify icon="lucide:book" size={28} color={theme.textMuted || "#A0A0A0"} />
-                            )}
+                                    <Iconify icon="lucide:book" size={28} color={theme.textMuted || "#A0A0A0"} />
+                                )}
                         </View>
                         <View style={styles.bookInfo}>
                             <Text style={styles.bookTitle} numberOfLines={1}>
@@ -189,12 +194,53 @@ export default function PublicProfileScreen({ navigation, route }) {
         );
     };
 
-    const renderReviews = () => (
-        <View style={styles.emptyStateContainer}>
-            <Iconify icon="lucide:message-square-dashed" size={48} color={theme.borderLight} />
-            <Text style={styles.emptyStateText}>No reviews yet.</Text>
-        </View>
-    );
+    const renderReviews = () => {
+        if (reviews.length === 0) {
+            return (
+                <View style={styles.emptyStateContainer}>
+                    <Iconify icon="lucide:message-square-dashed" size={48} color={theme.borderLight} />
+                    <Text style={styles.emptyStateText}>No reviews yet.</Text>
+                </View>
+            );
+        }
+
+        return (
+            <View style={styles.reviewsListContainer}>
+                {reviews.map((review) => (
+                    <View key={review.id} style={styles.reviewCard}>
+                        <View style={styles.reviewHeader}>
+                            <Text style={styles.reviewAuthor}>{review.authorName}</Text>
+
+                            <View style={styles.ratingContainer}>
+                                {[1, 2, 3, 4, 5].map((star) => {
+                                    const isFilled = star <= review.rating;
+                                    return (
+                                        <Iconify 
+                                            key={star} 
+                                            // 'ph:' (Phosphor) matches Lucide's aesthetic perfectly
+                                            icon={isFilled ? "ph:star-fill" : "ph:star"} 
+                                            size={16} 
+                                            // Uses theme.textMuted for outlines so they have clear contrast in light mode
+                                            color={isFilled ? theme.secondary : (theme.textMuted || '#A0A0A0')} 
+                                        />
+                                    );
+                                })}
+                            </View>
+                        </View>
+
+                        {/* Render comment if it exists */}
+                        {review.comment && review.comment.trim() !== "" && (
+                            <Text style={styles.reviewText}>{review.comment}</Text>
+                        )}
+
+                        <Text style={styles.reviewDate}>
+                            {new Date(review.createdAt).toLocaleDateString()}
+                        </Text>
+                    </View>
+                ))}
+            </View>
+        );
+    };
 
     // --- OPTIMISTIC UI STATE ---
     let displayedFollowers = profile?.followers || 0;
@@ -236,7 +282,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                     <RefreshControl refreshing={refreshing} onRefresh={() => loadProfileData(true)} tintColor={theme.primary} />
                 }
             >
-                
+
                 {/* --- HERO IMAGE --- */}
                 <View style={styles.imageContainer}>
                     {isValidPhoto ? (
@@ -247,10 +293,10 @@ export default function PublicProfileScreen({ navigation, route }) {
                             transition={300}
                         />
                     ) : (
-                        <View style={styles.placeholderBackground}>
-                            <Iconify icon="lucide:user" size={64} color="rgba(255,255,255,0.8)" />
-                        </View>
-                    )}
+                            <View style={styles.placeholderBackground}>
+                                <Iconify icon="lucide:user" size={64} color="rgba(255,255,255,0.8)" />
+                            </View>
+                        )}
                 </View>
 
                 {/* --- PROFILE INFO --- */}
@@ -273,7 +319,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                             </Text>
                         </TouchableOpacity>
                     </View>
-                    
+
                     <Text style={styles.bio}>{profile?.bio || 'No bio available.'}</Text>
 
                     {/* --- STATS CARD --- */}
@@ -287,7 +333,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                                 <Text style={styles.statLabel}>Followers</Text>
                             </View>
                         </View>
-                        
+
                         <View style={styles.statDivider} />
 
                         <View style={styles.statItem}>
@@ -367,7 +413,7 @@ export const buildProfileStyles = (theme) => {
         scrollContent: {
             paddingBottom: 60,
         },
-        
+
         // --- HERO SECTION ---
         imageContainer: {
             height: 320, 
@@ -578,6 +624,47 @@ export const buildProfileStyles = (theme) => {
             color: theme.textMuted || '#999999',
             fontSize: 15,
             marginTop: 16,
-        }
+        },
+        reviewsListContainer: {
+            width: '100%',
+            paddingBottom: 20,
+        },
+        reviewCard: {
+            backgroundColor: theme.cardBackground || '#FFFFFF',
+            padding: 16,
+            borderRadius: 16,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: theme.borderLight || '#F0F0F0',
+        },
+        reviewHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        reviewAuthor: {
+            fontFamily: Fonts.inter_semi || 'System',
+            fontWeight: '600',
+            fontSize: 15,
+            color: theme.textItemTitle || '#1C1C1E',
+        },
+        ratingContainer: {
+            flexDirection: 'row',
+            gap: 2,
+        },
+        reviewText: {
+            fontFamily: Fonts.inter_regular || 'System',
+            fontSize: 14,
+            lineHeight: 20,
+            color: theme.subtext || '#666666',
+            marginBottom: 12,
+        },
+        reviewDate: {
+            fontFamily: Fonts.inter_regular || 'System',
+            fontSize: 12,
+            color: theme.textMuted || '#999999',
+            textAlign: 'right',
+        },
     });
 };
