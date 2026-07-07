@@ -6,6 +6,7 @@ import { doGetBlockedUsers } from '@readme/shared/src/services/blockUser';
 import { getAvailableTradeBooks } from '@readme/shared/src/services/trades';
 import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
 import { getUsersByIds } from '@readme/shared/src/services/users';
+import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import TradeCard from './components/TradeCard.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -13,11 +14,16 @@ import UserAvatar from '../../components/UserAvatar.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import styles from './Map.module.css';
 
+const EXPLORE_TAB = {
+    BOOKS: 'books',
+    USERS: 'users',
+};
+
 export default function Explore() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
 
-    const [activeTab, setActiveTab] = useState('books');
+    const [activeTab, setActiveTab] = useState(EXPLORE_TAB.BOOKS);
     const [search, setSearch] = useState('');
 
     const [userResults, setUserResults] = useState([]);
@@ -72,7 +78,7 @@ export default function Explore() {
     }, [loadTrades]);
 
     useEffect(() => {
-        if (activeTab !== 'users') return;
+        if (activeTab !== EXPLORE_TAB.USERS) return;
 
         const q = search.trim();
         if (!q) {
@@ -114,7 +120,7 @@ export default function Explore() {
     const filteredTrades = availableBooks.filter((item) => {
         const book = bookDetails[item.bookId] || {};
         const title = (book.title || '').toLowerCase();
-        const author = (Array.isArray(book.authors) ? book.authors.join(', ') : (book.authors || '')).toLowerCase();
+        const author = formatAuthors(book.authors).toLowerCase();
         const q = search.toLowerCase();
 
         return title.includes(q) || author.includes(q);
@@ -130,7 +136,7 @@ export default function Explore() {
                 <input
                     className={styles.searchInput}
                     type="text"
-                    placeholder={activeTab === 'books' ? "Search books or authors..." : "Search users by name or username..."}
+                    placeholder={activeTab === EXPLORE_TAB.BOOKS ? "Search books or authors..." : "Search users by name or username..."}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     autoFocus
@@ -142,25 +148,25 @@ export default function Explore() {
                 <button
                     type="button"
                     role="tab"
-                    aria-selected={activeTab === 'books'}
-                    className={`${styles.tab} ${activeTab === 'books' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('books')}
+                    aria-selected={activeTab === EXPLORE_TAB.BOOKS}
+                    className={`${styles.tab} ${activeTab === EXPLORE_TAB.BOOKS ? styles.tabActive : ''}`}
+                    onClick={() => setActiveTab(EXPLORE_TAB.BOOKS)}
                 >
                     <BookOpen size={16} /> Books
                 </button>
                 <button
                     type="button"
                     role="tab"
-                    aria-selected={activeTab === 'users'}
-                    className={`${styles.tab} ${activeTab === 'users' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('users')}
+                    aria-selected={activeTab === EXPLORE_TAB.USERS}
+                    className={`${styles.tab} ${activeTab === EXPLORE_TAB.USERS ? styles.tabActive : ''}`}
+                    onClick={() => setActiveTab(EXPLORE_TAB.USERS)}
                 >
                     <Users size={16} /> Users
                 </button>
             </div>
 
             {/* TAB: USERS */}
-            {activeTab === 'users' && (
+            {activeTab === EXPLORE_TAB.USERS && (
                 <div className={styles.section}>
                     {loadingUsers && <p className={styles.status}>Searching users...</p>}
                     {!loadingUsers && searchUserError && (
@@ -193,7 +199,7 @@ export default function Explore() {
             )}
 
             {/* TAB: BOOKS */}
-            {activeTab === 'books' && (
+            {activeTab === EXPLORE_TAB.BOOKS && (
                 <div className={styles.section}>
                     {loadingTrades ? (
                         <Spinner center label="Loading books..." />
@@ -221,7 +227,7 @@ export default function Explore() {
                                     ownerUsername: owner.username || 'user',
                                     ownerAvatar: owner.photoURL || null,
                                     title: book.title || 'Untitled',
-                                    authors: Array.isArray(book.authors) ? book.authors.join(', ') : book.authors || 'Unknown author',
+                                    authors: formatAuthors(book.authors) || 'Unknown author',
                                     pages: book.pageCount || book.pages || 'N/A'
                                 };
 

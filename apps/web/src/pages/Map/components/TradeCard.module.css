@@ -1,8 +1,8 @@
 .tradeCard {
     display: flex;
     flex-direction: row;
-    background: var(--bg-elem, #f4f2ee); /* Fundo um pouco mais creme, ajusta à tua paleta */
-    border-radius: var(--radius-lg, 12px);
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
     padding: 12px;
     gap: 16px;
     cursor: pointer;
@@ -36,7 +36,7 @@
 .coverPlaceholder {
     width: 100%;
     aspect-ratio: 2 / 3;
-    background: var(--bg-selected, #e0e0e0);
+    background: var(--bg-selected);
 }
 
 /* --- LADO DIREITO (INFORMAÇÕES) --- */
@@ -59,7 +59,7 @@
 .title {
     font-size: 1.15rem;
     font-weight: 600;
-    color: var(--text, #111);
+    color: var(--text);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -72,7 +72,7 @@
     align-items: center;
     gap: 12px;
     font-size: 0.95rem;
-    color: var(--subtext, #555);
+    color: var(--subtext);
 }
 
 .author {
@@ -99,7 +99,7 @@
     align-items: center;
     gap: 8px;
     font-size: 1rem;
-    color: var(--text, #222);
+    color: var(--text);
 }
 
 .swapRow:hover .swapText {
@@ -118,8 +118,8 @@
 }
 
 .avatarFallback {
-    background: var(--primary, #d88b64);
-    color: #fff;
+    background: var(--primary);
+    color: var(--primary-text);
     display: flex;
     align-items: center;
     justify-content: center;

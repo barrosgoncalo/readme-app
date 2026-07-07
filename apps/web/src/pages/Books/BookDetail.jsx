@@ -6,7 +6,7 @@ import { myBooksService } from '@readme/shared/src/services/books';
 import { getBook } from '@readme/shared/src/services/booksCatalog';
 import { getUserById } from '@readme/shared/src/services/users';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
-import { BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
+import { BOOK_STATUS, BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import BookCover from '../../components/BookCover.jsx';
@@ -180,12 +180,12 @@ export default function BookDetail() {
                 const updates = { currentPage: finalPage, progress: pct };
                 let newStatus = status;
 
-                if (pageCount > 0 && finalPage >= pageCount && status !== 'done') {
-                    updates.status = 'done';
-                    newStatus = 'done';
-                } else if (pageCount === 0 && finalPage >= 100 && status !== 'done') {
-                    updates.status = 'done';
-                    newStatus = 'done';
+                if (pageCount > 0 && finalPage >= pageCount && status !== BOOK_STATUS.DONE) {
+                    updates.status = BOOK_STATUS.DONE;
+                    newStatus = BOOK_STATUS.DONE;
+                } else if (pageCount === 0 && finalPage >= 100 && status !== BOOK_STATUS.DONE) {
+                    updates.status = BOOK_STATUS.DONE;
+                    newStatus = BOOK_STATUS.DONE;
                 }
 
                 await myBooksService.updateBook(uid, bookId, updates);
@@ -196,7 +196,7 @@ export default function BookDetail() {
         }, 600);
     }
 
-    const status = myBook?.status || 'reading';
+    const status = myBook?.status || BOOK_STATUS.READING;
     const availableForTrade = myBook?.availableForTrade ?? false;
     const displayTitle = catalog?.title || myBook?.title || 'Untitled';
     const displayCoverUrl = catalog?.coverUrl || myBook?.coverUrl || null;
@@ -234,13 +234,13 @@ export default function BookDetail() {
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Reading status</p>
                         <div className={styles.statusToggle}>
-                            <button type="button" className={`${styles.statusBtn} ${status === 'reading' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('reading')}>{BOOK_STATUS_LABELS.reading}</button>
-                            <button type="button" className={`${styles.statusBtn} ${status === 'done' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('done')}>{BOOK_STATUS_LABELS.done}</button>
-                            <button type="button" className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('want')}>{BOOK_STATUS_LABELS.want}</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === BOOK_STATUS.READING ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange(BOOK_STATUS.READING)}>{BOOK_STATUS_LABELS[BOOK_STATUS.READING]}</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === BOOK_STATUS.DONE ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange(BOOK_STATUS.DONE)}>{BOOK_STATUS_LABELS[BOOK_STATUS.DONE]}</button>
+                            <button type="button" className={`${styles.statusBtn} ${status === BOOK_STATUS.WANT ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange(BOOK_STATUS.WANT)}>{BOOK_STATUS_LABELS[BOOK_STATUS.WANT]}</button>
                         </div>
                     </div>
 
-                    {status === 'reading' && (
+                    {status === BOOK_STATUS.READING && (
                         <div className={styles.section}>
                             <div className={styles.sectionLabelRow}>
                                 <p className={styles.sectionLabel}>Reading progress</p>

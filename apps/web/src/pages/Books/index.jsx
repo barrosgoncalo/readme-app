@@ -11,6 +11,7 @@ import {
 } from '@readme/shared/src/services/booksCatalog';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { sanitizeIsbn } from '@readme/shared/src/utils/isbn';
+import { BOOK_STATUS } from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
@@ -86,7 +87,7 @@ export default function Books() {
             const bookId = sanitizeIsbn(data.isbn) || crypto.randomUUID();
             await createBookIfMissing(bookId, { ...data, isbn: sanitizeIsbn(data.isbn), addedBy: uid });
             await myBooksService.addBook(uid, bookId, {
-                status: 'reading',
+                status: BOOK_STATUS.READING,
                 progress: 0,
                 title: data.title || null,
                 authors: data.authors || [],
@@ -148,8 +149,8 @@ export default function Books() {
         }
     }
 
-    const currentlyReading = books.filter(b => (b.status || 'reading') === 'reading');
-    const rest = books.filter(b => (b.status || 'reading') !== 'reading');
+    const currentlyReading = books.filter(b => (b.status || BOOK_STATUS.READING) === BOOK_STATUS.READING);
+    const rest = books.filter(b => (b.status || BOOK_STATUS.READING) !== BOOK_STATUS.READING);
     const monthGroups = groupByMonth(rest);
 
     return (

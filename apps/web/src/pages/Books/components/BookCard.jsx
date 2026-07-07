@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Heart, Trash2, SquarePen } from 'lucide-react';
-import { BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
+import { BOOK_STATUS, BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import BookCover from '../../../components/BookCover.jsx';
 import styles from './BookCard.module.css';
 
 const STATUS_COLORS = {
-    reading: styles.dotReading,
-    want: styles.dotWant,
-    done: styles.dotDone,
+    [BOOK_STATUS.READING]: styles.dotReading,
+    [BOOK_STATUS.WANT]: styles.dotWant,
+    [BOOK_STATUS.DONE]: styles.dotDone,
 };
 
 function StarRating({ rating, onRate, size = 'md', disabled }) {
@@ -41,7 +41,7 @@ function StarRating({ rating, onRate, size = 'md', disabled }) {
 
 export default function BookCard({ book, variant = 'row', isFavorite, onToggleFavorite, onRemove, onRate, onEdit, busy }) {
     const authors = formatAuthors(book.authors);
-    const status = book.status || 'reading';
+    const status = book.status || BOOK_STATUS.READING;
     const day = book.addedAt ? new Date(book.addedAt).getDate() : null;
 
     if (variant === 'featured') {
