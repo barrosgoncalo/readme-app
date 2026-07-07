@@ -84,6 +84,10 @@ export default function BookDetail() {
     const [savingNotes, setSavingNotes] = useState(false);
     const notesTimer = useRef(null);
 
+    const [currentPage, setCurrentPage] = useState('');
+    const [savingProgress, setSavingProgress] = useState(false);
+    const progressTimer = useRef(null);
+
     useEffect(() => {
         if (!uid || !bookId) return;
         setLoading(true);
@@ -98,6 +102,7 @@ export default function BookDetail() {
             setMyBook(my);
             setOwnerProfile(owner);
             setNotes(my?.notes || '');
+            setCurrentPage(my?.currentPage ?? 0);
         }).catch(err => {
             setError(err.message || 'Could not load book.');
         }).finally(() => setLoading(false));
@@ -149,6 +154,48 @@ export default function BookDetail() {
         }, 800);
     }
 
+    function handleProgressChange(val) {
+        let newPage = val;
+
+        if (val !== '') {
+            newPage = parseInt(val, 10);
+            if (isNaN(newPage)) return;
+
+            const pageCount = catalog?.pageCount || 0;
+            if (pageCount > 0 && newPage > pageCount) newPage = pageCount;
+            if (newPage < 0) newPage = 0;
+        }
+
+        setCurrentPage(newPage);
+        clearTimeout(progressTimer.current);
+
+        progressTimer.current = setTimeout(async () => {
+            const finalPage = newPage === '' ? 0 : newPage;
+            setSavingProgress(true);
+
+            try {
+                const pageCount = catalog?.pageCount || 0;
+                const pct = pageCount > 0 ? Math.round((finalPage / pageCount) * 100) : Math.min(finalPage, 100);
+
+                const updates = { currentPage: finalPage, progress: pct };
+                let newStatus = status;
+
+                if (pageCount > 0 && finalPage >= pageCount && status !== 'done') {
+                    updates.status = 'done';
+                    newStatus = 'done';
+                } else if (pageCount === 0 && finalPage >= 100 && status !== 'done') {
+                    updates.status = 'done';
+                    newStatus = 'done';
+                }
+
+                await myBooksService.updateBook(uid, bookId, updates);
+                setMyBook(prev => ({ ...prev, currentPage: finalPage, progress: pct, status: newStatus }));
+            } finally {
+                setSavingProgress(false);
+            }
+        }, 600);
+    }
+
     const status = myBook?.status || 'reading';
     const availableForTrade = myBook?.availableForTrade ?? false;
     const displayTitle = catalog?.title || myBook?.title || 'Untitled';
@@ -192,6 +239,38 @@ export default function BookDetail() {
                             <button type="button" className={`${styles.statusBtn} ${status === 'want' ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange('want')}>{BOOK_STATUS_LABELS.want}</button>
                         </div>
                     </div>
+
+                    {status === 'reading' && (
+                        <div className={styles.section}>
+                            <div className={styles.sectionLabelRow}>
+                                <p className={styles.sectionLabel}>Reading progress</p>
+                                {savingProgress && <span className={styles.saveStatus}>Saving...</span>}
+                            </div>
+                            <div className={styles.progressContainer}>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max={catalog?.pageCount || 100}
+                                    value={currentPage === '' ? 0 : currentPage}
+                                    onChange={(e) => handleProgressChange(e.target.value)}
+                                    className={styles.slider}
+                                />
+                                <div className={styles.progressInputs}>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max={catalog?.pageCount || undefined}
+                                        value={currentPage}
+                                        onChange={(e) => handleProgressChange(e.target.value)}
+                                        className={styles.pageInput}
+                                    />
+                                    <span className={styles.pageTotal}>
+                                        / {catalog?.pageCount ? `${catalog.pageCount} pages` : (catalog?.pageCount === 0 ? '% (Estimated)' : '? pages')}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Trading</p>

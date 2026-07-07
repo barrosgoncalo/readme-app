@@ -132,3 +132,56 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* --- Explore tabs (Books / Users) --- */
+.tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-elem);
+    padding: 6px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--bg-selected);
+    margin-bottom: var(--space-2);
+    width: fit-content;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: var(--subtext);
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.tab:hover:not(.tabActive) {
+    color: var(--text);
+    background: var(--bg-selected);
+}
+
+.tabActive {
+    background: var(--bg);
+    color: var(--primary);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--bg-selected);
+}
+
+.tradeGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .tradeGrid {
+        grid-template-columns: 1fr;
+    }
+}

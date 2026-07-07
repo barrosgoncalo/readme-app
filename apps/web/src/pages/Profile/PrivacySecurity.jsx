@@ -120,7 +120,7 @@ export default function PrivacySecurity() {
             <section className={styles.section}>
                 <p className={styles.sectionLabel}>Security</p>
                 <div className={styles.card}>
-                    <button className={styles.navRow} onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD)}>
+                    <button className={styles.navRow} onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, { state: { from: WEB_ROUTES.PROFILE_PRIVACY_SECURITY } })}>
                         <span className={styles.rowLeft}>
                             <span className={styles.iconBox}><KeyRound size={18} /></span>
                             <span className={styles.rowLabel}>Change Password</span>

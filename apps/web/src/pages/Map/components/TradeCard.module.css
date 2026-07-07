@@ -1,0 +1,128 @@
+.tradeCard {
+    display: flex;
+    flex-direction: row;
+    background: var(--bg-elem, #f4f2ee); /* Fundo um pouco mais creme, ajusta à tua paleta */
+    border-radius: var(--radius-lg, 12px);
+    padding: 12px;
+    gap: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
+}
+
+.tradeCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* --- LADO ESQUERDO (CAPA) --- */
+.coverContainer {
+    width: 120px; /* Largura fixa para a zona da capa */
+    flex-shrink: 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 3;
+    object-fit: contain; /* Contain garante que não corta as margens do livro */
+}
+
+.coverPlaceholder {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    background: var(--bg-selected, #e0e0e0);
+}
+
+/* --- LADO DIREITO (INFORMAÇÕES) --- */
+.infoContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    min-width: 0; /* Previne que texto grande empurre o layout */
+    padding: 4px 0;
+}
+
+/* Tipografia do Livro */
+.bookInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text, #111);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.metaRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: var(--subtext, #555);
+}
+
+.author {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.pages {
+    white-space: nowrap;
+}
+
+/* Tipografia do Utilizador */
+.tradeInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+}
+
+.swapRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    color: var(--text, #222);
+}
+
+.swapRow:hover .swapText {
+    text-decoration: underline;
+}
+
+.avatar, .avatarFallback {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.avatar {
+    object-fit: cover;
+}
+
+.avatarFallback {
+    background: var(--primary, #d88b64);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}

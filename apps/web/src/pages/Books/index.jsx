@@ -116,6 +116,21 @@ export default function Books() {
         }
     }
 
+    async function handleRate(bookId, rating) {
+        if (!uid) return;
+        const newRating = rating === 0 ? null : rating;
+        const prev = books;
+        setBooks(b => b.map(book => book.id === bookId ? { ...book, rating: newRating } : book));
+        setBusyId(bookId);
+        try {
+            await myBooksService.updateBook(uid, bookId, { rating: newRating });
+        } catch {
+            setBooks(prev);
+        } finally {
+            setBusyId(null);
+        }
+    }
+
     async function handleToggleFavorite(bookId) {
         if (!uid) return;
         const wasFav = favoriteIds.has(bookId);
@@ -184,8 +199,7 @@ export default function Books() {
                                         isFavorite={favoriteIds.has(book.id)}
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
-
-
+                                        onRate={(rating) => handleRate(book.id, rating)}
                                         onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
                                         busy={busyId === book.id}
                                     />
@@ -206,8 +220,7 @@ export default function Books() {
                                         isFavorite={favoriteIds.has(book.id)}
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
-
-
+                                        onRate={(rating) => handleRate(book.id, rating)}
                                         onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
                                         busy={busyId === book.id}
                                     />

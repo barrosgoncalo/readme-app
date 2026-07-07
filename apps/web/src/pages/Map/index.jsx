@@ -1,86 +1,239 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { BookOpen, Search, Users } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/search';
+import { doGetBlockedUsers } from '@readme/shared/src/services/blockUser';
+import { getAvailableTradeBooks } from '@readme/shared/src/services/trades';
+import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
+import { getUsersByIds } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import TradeCard from './components/TradeCard.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
+import Spinner from '../../components/Spinner.jsx';
 import styles from './Map.module.css';
 
 export default function Explore() {
     const { currentUser } = useAuth();
+    const uid = currentUser?.uid;
+
+    const [activeTab, setActiveTab] = useState('books');
     const [search, setSearch] = useState('');
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [touched, setTouched] = useState(false);
-    const [searchError, setSearchError] = useState(false);
+
+    const [userResults, setUserResults] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [touchedUsers, setTouchedUsers] = useState(false);
+    const [searchUserError, setSearchUserError] = useState(false);
+
+    const [userDetails, setUserDetails] = useState({});
+    const [availableBooks, setAvailableBooks] = useState([]);
+    const [bookDetails, setBookDetails] = useState({});
+    const [loadingTrades, setLoadingTrades] = useState(true);
+    const [tradesError, setTradesError] = useState(null);
+
+    const loadTrades = useCallback(async () => {
+        if (!uid) return;
+
+        setLoadingTrades(true);
+        setTradesError(null);
+
+        try {
+            const available = await getAvailableTradeBooks(uid);
+            setAvailableBooks(available);
+
+            const bookIds = new Set();
+            const ownerIds = new Set();
+
+            available.forEach((item) => {
+                bookIds.add(item.bookId);
+                ownerIds.add(item.ownerId);
+            });
+
+            const [books, users] = await Promise.all([
+                bookIds.size > 0 ? getBooksByIds(Array.from(bookIds)) : Promise.resolve([]),
+                ownerIds.size > 0 ? getUsersByIds(Array.from(ownerIds)) : Promise.resolve({})
+            ]);
+
+            const booksMap = {};
+            books.forEach((b) => booksMap[b.id] = b);
+
+            setBookDetails(booksMap);
+            setUserDetails(users);
+
+        } catch (err) {
+            setTradesError(err.message || 'Could not load available trades.');
+        } finally {
+            setLoadingTrades(false);
+        }
+    }, [uid]);
 
     useEffect(() => {
+        loadTrades();
+    }, [loadTrades]);
+
+    useEffect(() => {
+        if (activeTab !== 'users') return;
+
         const q = search.trim();
         if (!q) {
-            setResults([]);
-            setTouched(false);
-            setSearchError(false);
+            setUserResults([]);
+            setTouchedUsers(false);
+            setSearchUserError(false);
             return;
         }
-        setTouched(true);
-        setLoading(true);
-        setSearchError(false);
+
+        setTouchedUsers(true);
+        setLoadingUsers(true);
+        setSearchUserError(false);
+
         let cancelled = false;
+
         const timer = setTimeout(async () => {
             try {
-                const found = await searchUsers(q, currentUser?.uid);
-                if (!cancelled) setResults(found);
+                const [found, blockedProfiles] = await Promise.all([
+                    searchUsers(q, currentUser?.uid),
+                    currentUser ? doGetBlockedUsers(currentUser.uid).catch(() => []) : Promise.resolve([]),
+                ]);
+
+                const blockedUids = new Set(blockedProfiles.map(p => p.id));
+
+                if (!cancelled) setUserResults(found.filter(u => !blockedUids.has(u.uid)));
             } catch {
-                if (!cancelled) setSearchError(true);
+                if (!cancelled) setSearchUserError(true);
             } finally {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) setLoadingUsers(false);
             }
         }, 250);
-        return () => { cancelled = true; clearTimeout(timer); };
-    }, [search, currentUser?.uid]);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [search, currentUser?.uid, activeTab]);
+
+    const filteredTrades = availableBooks.filter((item) => {
+        const book = bookDetails[item.bookId] || {};
+        const title = (book.title || '').toLowerCase();
+        const author = (Array.isArray(book.authors) ? book.authors.join(', ') : (book.authors || '')).toLowerCase();
+        const q = search.toLowerCase();
+
+        return title.includes(q) || author.includes(q);
+    });
 
     return (
         <div className={styles.page}>
-            <h1 className={styles.title}>Explore</h1>
-            <p className={styles.subtitle}>Find other readers by username or name.</p>
+            <h1 className={styles.title}>Explore, Swap & Discover</h1>
+            <p className={styles.subtitle}>Find other readers or discover books available for trade.</p>
 
             <div className={styles.searchRow}>
                 <Search size={16} className={styles.searchIcon} />
                 <input
                     className={styles.searchInput}
                     type="text"
-                    placeholder="Search users"
+                    placeholder={activeTab === 'books' ? "Search books or authors..." : "Search users by name or username..."}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     autoFocus
                 />
             </div>
 
-            {loading && <p className={styles.status}>Searching…</p>}
+            {/* Filtros (Tabs) */}
+            <div className={styles.tabs} role="tablist">
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'books'}
+                    className={`${styles.tab} ${activeTab === 'books' ? styles.tabActive : ''}`}
+                    onClick={() => setActiveTab('books')}
+                >
+                    <BookOpen size={16} /> Books
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'users'}
+                    className={`${styles.tab} ${activeTab === 'users' ? styles.tabActive : ''}`}
+                    onClick={() => setActiveTab('users')}
+                >
+                    <Users size={16} /> Users
+                </button>
+            </div>
 
-            {!loading && searchError && (
-                <p className={styles.status}>Search failed. Please try again.</p>
-            )}
+            {/* TAB: USERS */}
+            {activeTab === 'users' && (
+                <div className={styles.section}>
+                    {loadingUsers && <p className={styles.status}>Searching users...</p>}
+                    {!loadingUsers && searchUserError && (
+                        <p className={styles.status}>Search failed. Please try again.</p>
+                    )}
+                    {!loadingUsers && !searchUserError && touchedUsers && userResults.length === 0 && (
+                        <p className={styles.status}>No users found for &ldquo;{search.trim()}&rdquo;.</p>
+                    )}
+                    {!search.trim() && !touchedUsers && (
+                        <p className={styles.status}>Type a username or name to find someone.</p>
+                    )}
 
-            {!loading && !searchError && touched && results.length === 0 && (
-                <p className={styles.status}>No users found for &ldquo;{search.trim()}&rdquo;.</p>
-            )}
-
-            {results.length > 0 && (
-                <div className={styles.list}>
-                    {results.map((u, i) => (
-                        <div key={u.uid}>
-                            {i > 0 && <div className={styles.divider} />}
-                            <Link to={WEB_ROUTES.userProfile(u.uid)} className={styles.row}>
-                                <UserAvatar user={u} />
-                                <div className={styles.info}>
-                                    <span className={styles.name}>{u.fullName || u.username || 'Unknown'}</span>
-                                    {u.username && <span className={styles.username}>@{u.username}</span>}
+                    {userResults.length > 0 && (
+                        <div className={styles.list}>
+                            {userResults.map((u, i) => (
+                                <div key={u.uid}>
+                                    {i > 0 && <div className={styles.divider} />}
+                                    <Link to={WEB_ROUTES.userProfile(u.uid)} className={styles.row}>
+                                        <UserAvatar user={u} />
+                                        <div className={styles.info}>
+                                            <span className={styles.name}>{u.fullName || u.username || 'Unknown'}</span>
+                                            {u.username && <span className={styles.username}>@{u.username}</span>}
+                                        </div>
+                                    </Link>
                                 </div>
-                            </Link>
+                            ))}
                         </div>
-                    ))}
+                    )}
+                </div>
+            )}
+
+            {/* TAB: BOOKS */}
+            {activeTab === 'books' && (
+                <div className={styles.section}>
+                    {loadingTrades ? (
+                        <Spinner center label="Loading books..." />
+                    ) : tradesError ? (
+                        <p className={styles.status}>{tradesError}</p>
+                    ) : filteredTrades.length === 0 ? (
+                        <p className={styles.status}>
+                            {search.trim() ? "No books match your search." : "No books available for trade right now."}
+                        </p>
+                    ) : (
+                        <div className={styles.tradeGrid}>
+                            {filteredTrades.map((item, index) => {
+                                const book = bookDetails[item.bookId] || {
+                                    id: item.bookId,
+                                    title: 'Untitled',
+                                    authors: []
+                                };
+
+                                const owner = userDetails[item.ownerId] || {};
+
+                                const tradeData = {
+                                    bookId: item.bookId,
+                                    coverUrl: book.coverUrl,
+                                    ownerUid: item.ownerId,
+                                    ownerUsername: owner.username || 'user',
+                                    ownerAvatar: owner.photoURL || null,
+                                    title: book.title || 'Untitled',
+                                    authors: Array.isArray(book.authors) ? book.authors.join(', ') : book.authors || 'Unknown author',
+                                    pages: book.pageCount || book.pages || 'N/A'
+                                };
+
+                                return (
+                                    <TradeCard
+                                        key={`${item.bookId}-${item.ownerId}-${index}`}
+                                        trade={tradeData}
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

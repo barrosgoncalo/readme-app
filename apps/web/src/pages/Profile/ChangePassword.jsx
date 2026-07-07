@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { doUpdateUserPassword } from '@readme/shared/src/services/auth';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -9,7 +9,16 @@ import styles from './ChangePassword.module.css';
 
 export default function ChangePassword() {
     const navigate = useNavigate();
-    const back = () => navigate(WEB_ROUTES.PROFILE_PRIVACY_SECURITY);
+    const location = useLocation();
+
+    const backPath = location.state?.from || WEB_ROUTES.PROFILE_PRIVACY_SECURITY;
+
+    const back = () => navigate(backPath, {
+        state: {
+            draftForm: location.state?.draftForm,
+            draftPhoneCountry: location.state?.draftPhoneCountry
+        }
+    });
 
     const [form, setForm] = useState({ current: '', next: '', confirm: '' });
     const [show, setShow] = useState({ current: false, next: false, confirm: false });
