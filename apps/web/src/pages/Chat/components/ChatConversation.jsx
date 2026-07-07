@@ -66,6 +66,7 @@ export default function ChatConversation({ chat, messages, loading, currentUserI
                                         isOwn={msg.senderId === currentUserId}
                                         currentUserId={currentUserId}
                                         chatId={chat.id}
+                                        otherUserId={chat.participants?.find(p => p !== currentUserId)}
                                     />
                                 ) : (
                                     <div

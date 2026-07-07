@@ -286,3 +286,45 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.reviewList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.reviewItem {
+    padding: var(--space-3);
+    background: var(--bg-elem);
+    border-radius: var(--radius);
+    border: 1px solid var(--bg-selected);
+}
+
+.reviewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.reviewAuthor {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.reviewRating {
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+.reviewComment {
+    margin: var(--space-2) 0;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.reviewDate {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--subtext);
+}

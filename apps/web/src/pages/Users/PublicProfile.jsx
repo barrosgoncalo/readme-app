@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, UserPlus, UserCheck, Ban, Repeat } from 'lucide-react';
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users';
+import { fetchUserReviews } from '@readme/shared/src/services/reviews';
 import { myBooksService } from '@readme/shared/src/services/books';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser';
@@ -50,6 +51,7 @@ export default function PublicProfile() {
 
     const [user, setUser] = useState(null);
     const [books, setBooks] = useState([]);
+    const [reviews, setReviews] = useState([]);
     const [isFollowing, setIsFollowing] = useState(false);
     const [followers, setFollowers] = useState(0);
     const [following, setFollowing] = useState(0);
@@ -89,7 +91,11 @@ export default function PublicProfile() {
                 const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
                 const hydrated = await hydrateMyBooks(myBookDocs, { apiKey });
 
-                if (!cancelled) setBooks(hydrated);
+                if (cancelled) return;
+                setBooks(hydrated);
+
+                const userReviews = await fetchUserReviews(uid).catch(() => []);
+                if (!cancelled) setReviews(userReviews);
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -185,6 +191,11 @@ export default function PublicProfile() {
                         <span className={styles.stat}>
                             <strong>{following}</strong> following
                         </span>
+                        {user.reviewCount > 0 && (
+                            <span className={styles.stat}>
+                                ★ <strong>{user.rating?.toFixed(1) || 'N/A'}</strong> ({user.reviewCount} review{user.reviewCount === 1 ? '' : 's'})
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -230,6 +241,34 @@ export default function PublicProfile() {
                 <div className={styles.bookList}>
                     {books.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
                 </div>
+            )}
+
+            {reviews.length > 0 && (
+                <>
+                    <h2 className={styles.section}>Reviews</h2>
+                    <div className={styles.reviewList}>
+                        {reviews.map(review => (
+                            <div key={review.id} className={styles.reviewItem}>
+                                <div className={styles.reviewHeader}>
+                                    <span className={styles.reviewAuthor}>{review.reviewerName || 'Anonymous'}</span>
+                                    <span className={styles.reviewRating}>
+                                        {Array(5).fill(0).map((_, i) => (
+                                            <span key={i} style={{ color: i < review.rating ? 'var(--primary)' : 'var(--bg-elem)' }}>
+                                                ★
+                                            </span>
+                                        ))}
+                                    </span>
+                                </div>
+                                {review.comment && (
+                                    <p className={styles.reviewComment}>{review.comment}</p>
+                                )}
+                                <p className={styles.reviewDate}>
+                                    {new Date(review.createdAt).toLocaleDateString()}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
         </div>
     );

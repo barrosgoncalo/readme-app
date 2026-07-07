@@ -1,18 +1,24 @@
 import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { ChatService } from '@readme/shared/src/services/chat';
+import { submitReview } from '@readme/shared/src/services/reviews';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
+import VerificationUI from './VerificationUI.jsx';
+import ReviewUI from './ReviewUI.jsx';
 import styles from './OfferMessage.module.css';
 
 const STATUS_COLORS = {
     pending: 'var(--secondary)',
     accepted: 'var(--success)',
     declined: 'var(--error)',
+    completed: 'var(--primary)',
     countered: 'var(--bg-elem)',
 };
 
-export default function OfferMessage({ message, isOwn, currentUserId, chatId }) {
+export default function OfferMessage({ message, isOwn, currentUserId, chatId, otherUserId }) {
     const [busy, setBusy] = useState(false);
+    const [verificationError, setVerificationError] = useState('');
+    const [hasReviewed, setHasReviewed] = useState(false);
     const offer = message.offerDetails;
 
     if (!offer) return null;
@@ -30,12 +36,46 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId }) 
         }
     }
 
+    async function handleCompleteSwap(code) {
+        setBusy(true);
+        setVerificationError('');
+        try {
+            if (code.toUpperCase() !== offer.verificationCode?.toUpperCase()) {
+                setVerificationError('Incorrect code. Try again.');
+                setBusy(false);
+                return;
+            }
+            await ChatService.completeSwap(chatId, message.id);
+        } catch (err) {
+            console.error('Error completing swap:', err);
+            setVerificationError('Failed to complete swap.');
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function handleSubmitReview(rating, comment) {
+        setBusy(true);
+        try {
+            await submitReview(message.id, chatId, currentUserId, otherUserId, rating, comment);
+            setHasReviewed(true);
+        } catch (err) {
+            console.error('Error submitting review:', err);
+        } finally {
+            setBusy(false);
+        }
+    }
+
     const statusLabel = {
         [NEGOTIATION_STATUS.PENDING]: 'Pending',
         [NEGOTIATION_STATUS.ACCEPTED]: 'Accepted',
         [NEGOTIATION_STATUS.DECLINED]: 'Declined',
+        completed: 'Completed',
         countered: 'Countered',
     }[offer.status] || offer.status;
+
+    const isAccepted = offer.status === NEGOTIATION_STATUS.ACCEPTED;
+    const isCompleted = offer.status === 'completed';
 
     return (
         <div className={`${styles.card} ${isOwn ? styles.own : styles.other}`}>
@@ -83,6 +123,22 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId }) 
                     )}
                 </div>
             </div>
+
+            {isAccepted && offer.verificationCode && (
+                <VerificationUI
+                    code={offer.verificationCode}
+                    displayerId={offer.verificationDisplayerId}
+                    scannerId={offer.verificationScannerId}
+                    currentUserId={currentUserId}
+                    onComplete={handleCompleteSwap}
+                    error={verificationError}
+                    busy={busy}
+                />
+            )}
+
+            {isCompleted && !hasReviewed && !isOwn && (
+                <ReviewUI onSubmit={handleSubmitReview} busy={busy} />
+            )}
         </div>
     );
 }
