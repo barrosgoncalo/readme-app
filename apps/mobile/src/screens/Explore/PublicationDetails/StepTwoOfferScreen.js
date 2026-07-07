@@ -31,14 +31,12 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     
-    // targetBook is our pristine object from the Details screen
     const { targetBook, targetSeller, offeredBooks = [] } = route.params;
 
     // --- Component Architectural Anchors ---
     const mapRef = useRef(null);
 
     // --- Core Data Query Layer ---
-    // NO MORE GUESSING: We know exactly what the ID key is called
     const { sellerLocations, loading } = useSellerLocations(targetBook.ownerId);
 
     // --- Combined Core Logic Layer ---
@@ -125,8 +123,6 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                                 <Marker
                                     key={loc.id}
                                     coordinate={loc}
-                                    title={loc.title}
-                                    description={loc.address}
                                     pinColor={selectedLocation?.id === loc.id ? (theme.primary || "#E58A1F") : "#A35C37"}
                                     onPress={() => setSelectedLocation(loc)}
                                 />
@@ -137,8 +133,6 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                                 <Marker
                                     draggable
                                     coordinate={customLocation}
-                                    title="Your Custom Proposal"
-                                    description="Drag me or tap somewhere else!"
                                     pinColor="#E53E3E" 
                                     onMarkerDragEnd={(e) => handleReverseGeocode(e.nativeEvent.coordinate)}
                                 />

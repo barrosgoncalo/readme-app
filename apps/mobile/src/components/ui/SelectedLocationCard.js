@@ -36,7 +36,7 @@ export default function SelectedLocationCard({ theme, location, isLoading, isAlt
 const styles = StyleSheet.create({
     actionCard: { 
         position: 'absolute', 
-        bottom: 140, 
+        bottom: 170, 
         left: 20, 
         right: 20, 
         padding: 16, 

@@ -24,6 +24,7 @@ export const createUserModel = (uid, profileData, provider) => {
 
         rating: 0,
         reviewCount: 0,
+
         favoriteBooks: [],
 
         gamification: {

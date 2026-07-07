@@ -205,8 +205,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                                             latitude: originalLocation.latitude,
                                             longitude: originalLocation.longitude
                                         }}
-                                        title="Original Proposal"
-                                        description={originalLocation.address || "They suggested this spot"}
                                         pinColor={selectedLocation?.id === originalLocation.id ? theme.primary : "#4A90E2"}
                                         onPress={() => setSelectedLocation(originalLocation)}
                                     />
@@ -221,7 +219,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                                         <Marker
                                             key={loc.id}
                                             coordinate={loc}
-                                            title={loc.title}
                                             pinColor={selectedLocation?.id === loc.id ? theme.primary : "#A35C37"}
                                             onPress={() => setSelectedLocation(loc)}
                                         />
@@ -233,7 +230,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                                     <Marker
                                         draggable
                                         coordinate={customLocation}
-                                        title="Custom Spot"
                                         pinColor="#E53E3E" 
                                         onMarkerDragEnd={(e) => handleReverseGeocode(e.nativeEvent.coordinate)}
                                     />

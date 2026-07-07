@@ -59,7 +59,7 @@ export const ChatService = {
 
     /**
      * Creates a new chat (if needed) and sends an initial offer.
-     * Returns the chatId so the UI can navigate to it.
+     * Returns the chatId so the UI can navigate to it.verificationDispl
      */
     sendInitialOffer: async (currentUserId, sellerId, targetBook, offeredBooks, location) => {
         const chatsRef = collection(db, 'chats');
