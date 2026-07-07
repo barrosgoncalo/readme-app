@@ -297,8 +297,11 @@ and 1+ **images**.
 `apps/web/src/pages/Map/index.jsx` (Explore). Replace the "Books" tab's data
 source: instead of `getAvailableTradeBooks`, call `fetchAllPublications()`
 (0.3) and render publication cards.
-- New card `apps/web/src/pages/Map/components/PublicationCard.jsx` (replaces
-  `TradeCard`): first image (`pub.book.images[0]` via `BookCover` fallback),
+- New card `apps/web/src/pages/Map/components/PublicationCard.jsx` — **adapt
+  from the existing `apps/web/src/pages/Trades/components/AvailableBookCard.jsx`**
+  (same `BookCover` + title + authors + owner-line + action-button skeleton and
+  CSS; swap the data source to a publication and the button to a like/view
+  action): first image (`pub.book.images[0]` via `BookCover` fallback),
   `pub.book.title`, `formatAuthors(pub.book.author)`, seller name+avatar
   (links to `WEB_ROUTES.userProfile(pub.uid)`), like count
   (`pub.stats.likesCount`) + heart toggle (`toggleFavoriteStatus`), and a
@@ -375,9 +378,15 @@ non-me participant uids, once per snapshot), `targetBookImage` thumbnail,
 newest at bottom). Text composer → `sendTextMessage`. Bubbles: mine right
 (`--primary`/`--primary-text`), theirs left (`--bg-elem`).
 - **Offer messages** (`msg.type === 'offer'`): render an offer card, not a
-  bubble — target image, "Offered: N book(s)", location title/address, status
-  pill (pending `--secondary`, accepted `--success`, declined `--error`,
-  countered neutral). If I'm the receiver and pending: Accept/Decline →
+  bubble. **Adapt the status-badge + action-button machinery from the existing
+  `apps/web/src/pages/Trades/components/TradeRequestCard.jsx`** — its
+  `STATUS_LABEL` map, `badge${status}` colored pill (already tokenized to
+  `--success`/`--error`), and the Accept/Decline/Complete button gating map
+  almost 1:1 onto offers; only the status source changes (`TRADE_STATUS` →
+  `NEGOTIATION_STATUS` + `completed`/`countered`) and the body shows target
+  image + "Offered: N book(s)" + location instead of a single book. Status pill
+  colors: pending `--secondary`, accepted `--success`, declined `--error`,
+  countered neutral. If I'm the receiver and pending: Accept/Decline →
   `updateOfferStatus(chatId, msg.id, NEGOTIATION_STATUS.ACCEPTED, msg.senderId, myUid)`
   / `.DECLINED`. Accepted offers show the verification UI in Phase 6.
 
@@ -451,9 +460,14 @@ phase where a rules/functions deploy may be needed — ASK USER.)
 
 ## Phase 7 — Retire the old "available for trade" + Trades system  (⚠️ confirm with user)
 
-Publications + the chat offer flow fully replace the old mechanism. This phase
-removes now-dead UI/paths. **Because it deletes working pages, confirm with the
-user before executing.**
+Publications + the chat offer flow fully replace the old mechanism. **By the
+time this phase runs, the valuable parts of the Trades UI have already been
+salvaged:** `AvailableBookCard` was adapted into `PublicationCard` (Phase 2.2)
+and `TradeRequestCard`'s status-badge + accept/decline/complete machinery into
+the chat offer card (Phase 4.2). This phase only removes what is genuinely dead
+— the page wiring that round-trips the `trades` collection. `trades.js` service
+stays. **Because it deletes a working page, confirm with the user before
+executing.**
 - `apps/web/src/pages/Books/BookDetail.jsx`: remove the "Trading" toggle
   (`availableForTrade` / `handleTradeToggle`). Optionally add a
   "Create publication for this book" link to `/publications/new` prefilled.
