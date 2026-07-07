@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, UserPlus, UserCheck, Ban, Repeat } from 'lucide-react';
-import { getUserById } from '@readme/shared/src/services/users';
+import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users';
 import { myBooksService } from '@readme/shared/src/services/books';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
-import { doAddFriend, doRemoveFriend, doIsFriend } from '@readme/shared/src/services/friendUser';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
@@ -51,9 +50,11 @@ export default function PublicProfile() {
 
     const [user, setUser] = useState(null);
     const [books, setBooks] = useState([]);
-    const [isFriend, setIsFriend] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followers, setFollowers] = useState(0);
+    const [following, setFollowing] = useState(0);
     const [isBlocked, setIsBlocked] = useState(false);
-    const [friendBusy, setFriendBusy] = useState(false);
+    const [followBusy, setFollowBusy] = useState(false);
     const [blockBusy, setBlockBusy] = useState(false);
     const [toast, showToast] = useToast(3000);
     const [loading, setLoading] = useState(true);
@@ -68,19 +69,18 @@ export default function PublicProfile() {
         let cancelled = false;
         (async () => {
             try {
-                const u = await getUserById(uid);
+                const u = await fetchUserProfile(uid);
                 if (cancelled) return;
                 if (!u) { setNotFound(true); return; }
                 setUser(u);
+                setIsFollowing(u.isCurrentUserFollowing);
+                setFollowers(u.followers);
+                setFollowing(u.following);
 
-                // Load social status and books independently so a permissions error
+                // Load block status and books independently so a permissions error
                 // on one does not prevent the other from rendering.
-                const [friend, blocked] = await Promise.all([
-                    currentUser ? doIsFriend(currentUser.uid, uid).catch(() => false) : false,
-                    currentUser ? doIsBlocked(currentUser.uid, uid).catch(() => false) : false,
-                ]);
+                const blocked = await (currentUser ? doIsBlocked(currentUser.uid, uid).catch(() => false) : false);
                 if (cancelled) return;
-                setIsFriend(friend);
                 setIsBlocked(blocked);
 
                 const myBookDocs = await myBooksService.getBooksData(uid).catch(() => []);
@@ -97,24 +97,20 @@ export default function PublicProfile() {
         return () => { cancelled = true; };
     }, [uid, currentUser, navigate]);
 
-    async function handleFriendToggle() {
-        if (!currentUser || friendBusy) return;
-        setFriendBusy(true);
+    async function handleFollowToggle() {
+        if (!currentUser || followBusy) return;
+        setFollowBusy(true);
         try {
-            if (isFriend) {
-                await doRemoveFriend(currentUser.uid, uid);
-                setIsFriend(false);
-                showToast(`Removed ${user.username ? '@' + user.username : 'user'} from friends.`);
-            } else {
-                await doAddFriend(currentUser.uid, uid);
-                setIsFriend(true);
-                showToast(`Added ${user.username ? '@' + user.username : 'user'} to friends.`);
-            }
+            await toggleFollowUser(uid, !isFollowing);
+            const newFollowing = !isFollowing;
+            setIsFollowing(newFollowing);
+            setFollowers(followers + (newFollowing ? 1 : -1));
+            showToast(newFollowing ? `Followed @${user.username || 'user'}.` : `Unfollowed @${user.username || 'user'}.`);
         } catch (e) {
             showToast('Action failed. Please try again.');
             console.error(e);
         } finally {
-            setFriendBusy(false);
+            setFollowBusy(false);
         }
     }
 
@@ -125,10 +121,11 @@ export default function PublicProfile() {
         }
         setBlockBusy(true);
         try {
-            // If they were on your friends list, drop them first.
-            if (isFriend) {
-                await doRemoveFriend(currentUser.uid, uid).catch(() => { });
-                setIsFriend(false);
+            // If currently following, unfollow first.
+            if (isFollowing) {
+                await toggleFollowUser(uid, false).catch(() => { });
+                setIsFollowing(false);
+                setFollowers(followers - 1);
             }
             await doBlockUser(currentUser.uid, uid);
             setIsBlocked(true);
@@ -182,6 +179,12 @@ export default function PublicProfile() {
                         <span className={styles.stat}>
                             <strong>{tradeBooks.length}</strong> for trade
                         </span>
+                        <span className={styles.stat}>
+                            <strong>{followers}</strong> follower{followers === 1 ? '' : 's'}
+                        </span>
+                        <span className={styles.stat}>
+                            <strong>{following}</strong> following
+                        </span>
                     </div>
                 </div>
             </div>
@@ -189,12 +192,12 @@ export default function PublicProfile() {
             {!isBlocked && (
                 <div className={styles.actions}>
                     <button
-                        className={`${styles.actionBtn} ${isFriend ? styles.actionBtnSecondary : styles.actionBtnPrimary}`}
-                        onClick={handleFriendToggle}
-                        disabled={friendBusy}
+                        className={`${styles.actionBtn} ${isFollowing ? styles.actionBtnSecondary : styles.actionBtnPrimary}`}
+                        onClick={handleFollowToggle}
+                        disabled={followBusy}
                     >
-                        {isFriend ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                        {isFriend ? 'Friends' : 'Add friend'}
+                        {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                        {isFollowing ? 'Following' : 'Follow'}
                     </button>
                     <button
                         className={`${styles.actionBtn} ${styles.actionBtnDanger}`}

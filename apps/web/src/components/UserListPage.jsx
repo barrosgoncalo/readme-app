@@ -48,6 +48,7 @@ export default function UserListPage({
     }, [currentUser, loadUsers]);
 
     async function handleAction(uid) {
+        if (!onAction) return;
         setBusy(uid);
         try {
             const user = users.find(u => u.id === uid);
@@ -116,13 +117,15 @@ export default function UserListPage({
                                     <span className={styles.name}>{user.fullName || user.username || 'Unknown'}</span>
                                     {user.username && <span className={styles.username}>@{user.username}</span>}
                                 </div>
-                                <button
-                                    className={styles.actionBtn}
-                                    onClick={e => { e.stopPropagation(); handleAction(user.id); }}
-                                    disabled={busy === user.id}
-                                >
-                                    {busy === user.id ? '…' : actionLabel}
-                                </button>
+                                {onAction && (
+                                    <button
+                                        className={styles.actionBtn}
+                                        onClick={e => { e.stopPropagation(); handleAction(user.id); }}
+                                        disabled={busy === user.id}
+                                    >
+                                        {busy === user.id ? '…' : actionLabel}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}

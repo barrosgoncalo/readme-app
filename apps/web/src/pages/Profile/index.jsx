@@ -136,10 +136,17 @@ export default function Profile() {
 
             {/* ── Group 3: Preferences ── */}
             <div className={styles.group}>
-                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_FRIENDS)}>
+                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_FOLLOWING)}>
                     <span className={styles.itemLeft}>
                         <span className={styles.iconBox}><Users size={20} /></span>
-                        <span className={styles.itemLabel}>Friends</span>
+                        <span className={styles.itemLabel}>Following</span>
+                    </span>
+                    <ChevronRight size={18} className={styles.chevron} />
+                </button>
+                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_FOLLOWERS)}>
+                    <span className={styles.itemLeft}>
+                        <span className={styles.iconBox}><Users size={20} /></span>
+                        <span className={styles.itemLabel}>Followers</span>
                     </span>
                     <ChevronRight size={18} className={styles.chevron} />
                 </button>
