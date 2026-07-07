@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus, UserCheck, Ban, Repeat } from 'lucide-react';
+import { ArrowLeft, UserPlus, UserCheck, Ban } from 'lucide-react';
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users';
 import { fetchUserReviews } from '@readme/shared/src/services/reviews';
 import { myBooksService } from '@readme/shared/src/services/books';
@@ -35,11 +35,6 @@ function BookRow({ book, ownerUid }) {
                     {formatAuthors(book.authors) || 'Unknown author'}
                 </span>
             </div>
-            {book.availableForTrade && (
-                <span className={styles.tradeBadge} title="Available for trade">
-                    <Repeat size={14} />
-                </span>
-            )}
         </Link>
     );
 }
@@ -160,8 +155,6 @@ export default function PublicProfile() {
         );
     }
 
-    const tradeBooks = books.filter(b => b.availableForTrade);
-
     return (
         <div className={styles.page}>
             {toast && <div className={styles.toast}>{toast}</div>}
@@ -225,16 +218,7 @@ export default function PublicProfile() {
                 <p className={styles.blockedNotice}>You have blocked this user.</p>
             )}
 
-            <h2 className={styles.section}>Available for trade</h2>
-            {tradeBooks.length === 0 ? (
-                <p className={styles.empty}>No books available for trade.</p>
-            ) : (
-                <div className={styles.bookList}>
-                    {tradeBooks.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
-                </div>
-            )}
-
-            <h2 className={styles.section}>All books</h2>
+            <h2 className={styles.section}>Books</h2>
             {books.length === 0 ? (
                 <p className={styles.empty}>This user hasn&rsquo;t added any books yet.</p>
             ) : (

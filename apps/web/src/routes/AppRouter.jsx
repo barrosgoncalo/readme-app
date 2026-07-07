@@ -13,7 +13,6 @@ import ForgotPassword from '../pages/ForgotPassword.jsx';
 import Register from '../pages/Register/index.jsx';
 import Books from '../pages/Books/index.jsx';
 import BooksScan from '../pages/Books/Scan.jsx';
-import Trades from '../pages/Trades/index.jsx';
 import Events from '../pages/Events/index.jsx';
 import MapPage from '../pages/Map/index.jsx';
 import EventDetails from '../pages/Events/Details.jsx';
@@ -87,7 +86,6 @@ export default function AppRouter() {
                 <Route path={WEB_ROUTES.BOOKS} element={<Books />} />
                 <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan />} />
                 <Route path="/books/:bookId" element={<BookDetail />} />
-                <Route path={WEB_ROUTES.TRADES} element={<Trades />} />
                 <Route path={WEB_ROUTES.EVENTS} element={<Events />} />
                 <Route path={WEB_ROUTES.MAP} element={<MapPage />} />
                 <Route path="/events/:eventId" element={<EventDetails />} />

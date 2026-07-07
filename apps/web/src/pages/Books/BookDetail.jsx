@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { myBooksService } from '@readme/shared/src/services/books';
 import { getBook } from '@readme/shared/src/services/booksCatalog';
@@ -127,16 +127,6 @@ export default function BookDetail() {
         }
     }
 
-    async function handleTradeToggle() {
-        const next = !myBook?.availableForTrade;
-        setMyBook(prev => ({ ...prev, availableForTrade: next }));
-        try {
-            await myBooksService.updateBook(uid, bookId, { availableForTrade: next });
-        } catch {
-            setMyBook(prev => ({ ...prev, availableForTrade: myBook?.availableForTrade }));
-        }
-    }
-
     function handleNotesChange(e) {
         const val = e.target.value;
         setNotes(val);
@@ -197,7 +187,6 @@ export default function BookDetail() {
     }
 
     const status = myBook?.status || BOOK_STATUS.READING;
-    const availableForTrade = myBook?.availableForTrade ?? false;
     const displayTitle = catalog?.title || myBook?.title || 'Untitled';
     const displayCoverUrl = catalog?.coverUrl || myBook?.coverUrl || null;
     const displayDescription = catalog?.description || null;
@@ -271,31 +260,6 @@ export default function BookDetail() {
                             </div>
                         </div>
                     )}
-
-                    <div className={styles.section}>
-                        <p className={styles.sectionLabel}>Trading</p>
-                        <button
-                            type="button"
-                            className={`${styles.tradeToggle} ${availableForTrade ? styles.tradeToggleOn : ''}`}
-                            onClick={handleTradeToggle}
-                            aria-pressed={availableForTrade}
-                        >
-                            <span className={styles.tradeToggleIcon}><ArrowLeftRight size={16} /></span>
-                            <span className={styles.tradeToggleBody}>
-                                <span className={styles.tradeToggleLabel}>
-                                    {availableForTrade ? 'Available for trade' : 'Not available for trade'}
-                                </span>
-                                <span className={styles.tradeToggleSub}>
-                                    {availableForTrade
-                                        ? 'This book is listed on the Trades page.'
-                                        : 'Enable to list this book for others to request.'}
-                                </span>
-                            </span>
-                            <span className={`${styles.pill} ${availableForTrade ? styles.pillOn : ''}`}>
-                                {availableForTrade ? 'On' : 'Off'}
-                            </span>
-                        </button>
-                    </div>
 
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Your rating</p>

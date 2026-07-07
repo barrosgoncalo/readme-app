@@ -7,7 +7,6 @@ export const WEB_ROUTES = {
     FORGOT_PASSWORD: '/forgot-password',
     BOOKS: '/books',
     BOOKS_SCAN: '/books/scan',
-    TRADES: '/trades',
     EVENTS: '/events',
     MAP: '/map',
     CHAT: '/chat',
