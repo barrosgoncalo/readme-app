@@ -9,17 +9,23 @@
  * @param {string} detailsText - The text content of the user's publication
  * @returns {object} The formatted data payload for Firestore
  */
+
+import { PUBLICATION_STATUS } from '../constants/status';
+
 export const createPublicationModel = (uid, sellerName, sellerAvatar, bookData, detailsText = "") => {
     return {
         uid: uid,
         sellerName: sellerName || "Anonymous Swapper",
         sellerAvatar: sellerAvatar || null,
+        
+        // -- Publication State --
+        status: PUBLICATION_STATUS.AVAILABLE,
 
         // -- Book Details --
         book: {
             title: bookData?.title || "Unknown Title",
             author: bookData?.author || "Unknown Author",
-            images: bookData?.images || bookData?.coverImages || [],
+            images: bookData?.images || [],
             bookId: bookData?.bookId || null,
             condition: bookData?.condition || "Not specified",
             subject: bookData?.subject || "Not specified"

@@ -165,5 +165,43 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.blockerUid == request.auth.uid;
       allow update: if false;
     }
+
+    // ─── FOLLOWS ───
+    match /follows/{followId} {
+      allow read: if isAuthenticated() && isActive();
+
+      allow create: if isAuthenticated() && isActive()
+        && request.resource.data.followerUid == request.auth.uid
+        && request.resource.data.followingUid is string
+        && request.resource.data.followerUid != request.resource.data.followingUid
+        && followId == request.resource.data.followerUid + '_' + request.resource.data.followingUid;
+
+      allow delete: if isAuthenticated() && isActive() && resource.data.followerUid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ─── CHATS & MESSAGES ───
+    match /chats/{chatId} {
+      allow read, update: if isAuthenticated() && isActive()
+                          && request.auth.uid in resource.data.participants;
+
+      allow create: if isAuthenticated() && isActive()
+                    && request.auth.uid in request.resource.data.participants;
+
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated() && isActive()
+                           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+
+    // ─── REVIEWS ───
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated() && isActive();
+
+      allow create: if isAuthenticated() && isActive()
+                    && request.resource.data.reviewerId == request.auth.uid;
+
+      allow update, delete: if isAdmin();
+    }
   }
 }
