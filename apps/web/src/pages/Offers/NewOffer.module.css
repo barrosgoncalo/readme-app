@@ -1,0 +1,138 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--bg-elem);
+}
+
+.backBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2);
+    border-radius: var(--radius);
+    transition: background-color 0.2s;
+}
+
+.backBtn:hover {
+    background-color: var(--bg-elem);
+}
+
+.title {
+    flex: 1;
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.steps {
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-elem);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    color: var(--subtext);
+}
+
+.container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-3);
+}
+
+.footer {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-top: 1px solid var(--bg-elem);
+    background: var(--bg);
+}
+
+.backButton {
+    flex: 1;
+    padding: var(--space-3);
+    background: var(--bg-elem);
+    color: var(--text);
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    transition: opacity 0.2s;
+}
+
+.backButton:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.backButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.nextButton,
+.submitButton {
+    flex: 2;
+    padding: var(--space-3);
+    background: var(--primary);
+    color: var(--primary-text);
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    transition: opacity 0.2s;
+}
+
+.nextButton:hover:not(:disabled),
+.submitButton:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.nextButton:disabled,
+.submitButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .title {
+        flex: none;
+    }
+
+    .container {
+        padding: var(--space-2);
+    }
+
+    .footer {
+        flex-direction: column-reverse;
+    }
+
+    .backButton,
+    .nextButton,
+    .submitButton {
+        flex: 1;
+    }
+}

@@ -206,10 +206,7 @@ export default function PublicationDetails() {
                                 </Button>
                                 <Button
                                     className={styles.offerBtn}
-                                    onClick={() => {
-                                        // TODO: Navigate to offer flow with this pub
-                                        showToast('Offer flow coming in Phase 5');
-                                    }}
+                                    onClick={() => navigate(`${WEB_ROUTES.OFFERS_NEW}?pub=${pubId}`)}
                                 >
                                     Make an Offer
                                 </Button>

@@ -30,6 +30,7 @@ import PublicProfile from '../pages/Users/PublicProfile.jsx';
 import BookDetail from '../pages/Books/BookDetail.jsx';
 import CreatePublication from '../pages/Publications/CreatePublication.jsx';
 import PublicationDetails from '../pages/Publications/PublicationDetails.jsx';
+import NewOffer from '../pages/Offers/NewOffer.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
 import { WEB_ROUTES } from '../constants/webRoutes.js';
@@ -101,6 +102,7 @@ export default function AppRouter() {
                 <Route path={WEB_ROUTES.PROFILE_FAVORITES} element={<Favorites />} />
                 <Route path={WEB_ROUTES.PUBLICATION_NEW} element={<CreatePublication />} />
                 <Route path="/publications/:pubId" element={<PublicationDetails />} />
+                <Route path={WEB_ROUTES.OFFERS_NEW} element={<NewOffer />} />
                 <Route path="/users/:uid" element={<PublicProfile />} />
             </Route>
             <Route

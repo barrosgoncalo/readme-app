@@ -20,6 +20,7 @@ export const WEB_ROUTES = {
     PROFILE_FOLLOWERS: '/profile/followers',
     PROFILE_FAVORITES: '/profile/favorites',
     PUBLICATION_NEW: '/publications/new',
+    OFFERS_NEW: '/offers/new',
     eventDetails: (eventId) => `/events/${eventId}`,
     bookDetail: (bookId) => `/books/${bookId}`,
     publicationDetail: (pubId) => `/publications/${pubId}`,
