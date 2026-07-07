@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Search, Users } from 'lucide-react';
+import { BookOpen, Search, Users, Plus } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/search';
-import { doGetBlockedUsers } from '@readme/shared/src/services/blockUser';
-import { getAvailableTradeBooks } from '@readme/shared/src/services/trades';
-import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
-import { getUsersByIds } from '@readme/shared/src/services/users';
-import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
+import { doGetBlockedUids } from '@readme/shared/src/services/blockUser';
+import { fetchAllPublications } from '@readme/shared/src/services/publications';
+import { toggleFavoriteStatus } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import TradeCard from './components/TradeCard.jsx';
+import PublicationCard from './components/PublicationCard.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes';
+import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Spinner from '../../components/Spinner.jsx';
+import Button from '../../components/Button.jsx';
 import styles from './Map.module.css';
 
 const EXPLORE_TAB = {
@@ -31,51 +31,63 @@ export default function Explore() {
     const [touchedUsers, setTouchedUsers] = useState(false);
     const [searchUserError, setSearchUserError] = useState(false);
 
-    const [userDetails, setUserDetails] = useState({});
-    const [availableBooks, setAvailableBooks] = useState([]);
-    const [bookDetails, setBookDetails] = useState({});
-    const [loadingTrades, setLoadingTrades] = useState(true);
-    const [tradesError, setTradesError] = useState(null);
+    const [publications, setPublications] = useState([]);
+    const [favoriteIds, setFavoriteIds] = useState(new Set());
+    const [loadingPubs, setLoadingPubs] = useState(true);
+    const [pubsError, setPubsError] = useState(null);
+    const [favoriteBusy, setFavoriteBusy] = useState(null);
 
-    const loadTrades = useCallback(async () => {
+    const loadPublications = useCallback(async () => {
         if (!uid) return;
 
-        setLoadingTrades(true);
-        setTradesError(null);
+        setLoadingPubs(true);
+        setPubsError(null);
 
         try {
-            const available = await getAvailableTradeBooks(uid);
-            setAvailableBooks(available);
-
-            const bookIds = new Set();
-            const ownerIds = new Set();
-
-            available.forEach((item) => {
-                bookIds.add(item.bookId);
-                ownerIds.add(item.ownerId);
-            });
-
-            const [books, users] = await Promise.all([
-                bookIds.size > 0 ? getBooksByIds(Array.from(bookIds)) : Promise.resolve([]),
-                ownerIds.size > 0 ? getUsersByIds(Array.from(ownerIds)) : Promise.resolve({})
+            const [allPubs, blockedUids] = await Promise.all([
+                fetchAllPublications(),
+                doGetBlockedUids(uid).catch(() => new Set())
             ]);
 
-            const booksMap = {};
-            books.forEach((b) => booksMap[b.id] = b);
+            // Filter: exclude blocked users, user's own pubs, non-available
+            const filtered = allPubs.filter(pub =>
+                pub.uid !== uid &&
+                !blockedUids.has(pub.uid) &&
+                pub.status === PUBLICATION_STATUS.AVAILABLE
+            );
 
-            setBookDetails(booksMap);
-            setUserDetails(users);
-
+            setPublications(filtered);
+            // TODO: load user's favoriteBooks from their doc when favorites phase runs
+            setFavoriteIds(new Set());
         } catch (err) {
-            setTradesError(err.message || 'Could not load available trades.');
+            setPubsError(err.message || 'Could not load publications.');
         } finally {
-            setLoadingTrades(false);
+            setLoadingPubs(false);
         }
     }, [uid]);
 
     useEffect(() => {
-        loadTrades();
-    }, [loadTrades]);
+        loadPublications();
+    }, [loadPublications]);
+
+    async function handleToggleFavorite(pubId) {
+        if (!uid) return;
+        setFavoriteBusy(pubId);
+        try {
+            const isFav = favoriteIds.has(pubId);
+            await toggleFavoriteStatus(uid, pubId, isFav);
+            setFavoriteIds(prev => {
+                const next = new Set(prev);
+                if (isFav) next.delete(pubId);
+                else next.add(pubId);
+                return next;
+            });
+        } catch (err) {
+            console.error('Failed to toggle favorite:', err);
+        } finally {
+            setFavoriteBusy(null);
+        }
+    }
 
     useEffect(() => {
         if (activeTab !== EXPLORE_TAB.USERS) return;
@@ -117,10 +129,9 @@ export default function Explore() {
         };
     }, [search, currentUser?.uid, activeTab]);
 
-    const filteredTrades = availableBooks.filter((item) => {
-        const book = bookDetails[item.bookId] || {};
-        const title = (book.title || '').toLowerCase();
-        const author = formatAuthors(book.authors).toLowerCase();
+    const filteredPubs = publications.filter((pub) => {
+        const title = (pub.book?.title || '').toLowerCase();
+        const author = (pub.book?.author || '').toLowerCase();
         const q = search.toLowerCase();
 
         return title.includes(q) || author.includes(q);
@@ -201,43 +212,31 @@ export default function Explore() {
             {/* TAB: BOOKS */}
             {activeTab === EXPLORE_TAB.BOOKS && (
                 <div className={styles.section}>
-                    {loadingTrades ? (
-                        <Spinner center label="Loading books..." />
-                    ) : tradesError ? (
-                        <p className={styles.status}>{tradesError}</p>
-                    ) : filteredTrades.length === 0 ? (
+                    <Link to={WEB_ROUTES.PUBLICATION_NEW}>
+                        <Button style={{ marginBottom: 'var(--space-3)' }}>
+                            <Plus size={16} /> New Publication
+                        </Button>
+                    </Link>
+
+                    {loadingPubs ? (
+                        <Spinner center label="Loading publications..." />
+                    ) : pubsError ? (
+                        <p className={styles.status}>{pubsError}</p>
+                    ) : filteredPubs.length === 0 ? (
                         <p className={styles.status}>
-                            {search.trim() ? "No books match your search." : "No books available for trade right now."}
+                            {search.trim() ? "No publications match your search." : "No publications available right now."}
                         </p>
                     ) : (
-                        <div className={styles.tradeGrid}>
-                            {filteredTrades.map((item, index) => {
-                                const book = bookDetails[item.bookId] || {
-                                    id: item.bookId,
-                                    title: 'Untitled',
-                                    authors: []
-                                };
-
-                                const owner = userDetails[item.ownerId] || {};
-
-                                const tradeData = {
-                                    bookId: item.bookId,
-                                    coverUrl: book.coverUrl,
-                                    ownerUid: item.ownerId,
-                                    ownerUsername: owner.username || 'user',
-                                    ownerAvatar: owner.photoURL || null,
-                                    title: book.title || 'Untitled',
-                                    authors: formatAuthors(book.authors) || 'Unknown author',
-                                    pages: book.pageCount || book.pages || 'N/A'
-                                };
-
-                                return (
-                                    <TradeCard
-                                        key={`${item.bookId}-${item.ownerId}-${index}`}
-                                        trade={tradeData}
-                                    />
-                                );
-                            })}
+                        <div className={styles.pubGrid}>
+                            {filteredPubs.map((pub) => (
+                                <PublicationCard
+                                    key={pub.id}
+                                    pub={pub}
+                                    isFavorite={favoriteIds.has(pub.id)}
+                                    onToggleFavorite={() => handleToggleFavorite(pub.id)}
+                                    busy={favoriteBusy === pub.id}
+                                />
+                            ))}
                         </div>
                     )}
                 </div>

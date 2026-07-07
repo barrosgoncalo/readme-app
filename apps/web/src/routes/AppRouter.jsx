@@ -27,6 +27,8 @@ import Following from '../pages/Profile/Following.jsx';
 import Followers from '../pages/Profile/Followers.jsx';
 import PublicProfile from '../pages/Users/PublicProfile.jsx';
 import BookDetail from '../pages/Books/BookDetail.jsx';
+import CreatePublication from '../pages/Publications/CreatePublication.jsx';
+import PublicationDetails from '../pages/Publications/PublicationDetails.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
 import { WEB_ROUTES } from '../constants/webRoutes.js';
@@ -95,6 +97,8 @@ export default function AppRouter() {
                 <Route path={WEB_ROUTES.PROFILE_BLOCKED_USERS} element={<BlockedUsers />} />
                 <Route path={WEB_ROUTES.PROFILE_FOLLOWING} element={<Following />} />
                 <Route path={WEB_ROUTES.PROFILE_FOLLOWERS} element={<Followers />} />
+                <Route path={WEB_ROUTES.PUBLICATION_NEW} element={<CreatePublication />} />
+                <Route path="/publications/:pubId" element={<PublicationDetails />} />
                 <Route path="/users/:uid" element={<PublicProfile />} />
             </Route>
             <Route

@@ -180,8 +180,19 @@
     width: 100%;
 }
 
+.pubGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 100%;
+}
+
 @media (max-width: 768px) {
     .tradeGrid {
         grid-template-columns: 1fr;
+    }
+
+    .pubGrid {
+        gap: var(--space-2);
     }
 }
