@@ -30,8 +30,10 @@ import PublicProfileScreen from '../screens/Explore/PublicProfileScreen';
 import MyBooksScreen from '../screens/Profile/MyBooks/MyBooksScreen';
 import MyPublicationDetailsScreen from '../screens/Profile/MyBooks/MyPublicationDetailsScreen';
 import FavoritesScreen from '../screens/Profile/Favorites/FavoritesScreen';
+import ReviewsScreen from '../screens/Profile/Reviews/ReviewsScreen';
 import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
 import SelectSwapBookScreen from '../screens/Chat/SelectSwapBookScreen';
+import SelectSwapLocationScreen from '../screens/Chat/Code/SelectSwapLocationScreen';
 import ShowQrCodeScreen from '../screens/Chat/Code/ShowQrCodeScreen';
 import SwapScannerScreen from '../screens/Chat/Code/SwapScannerScreen';
 import ReviewSwapperScreen from '../screens/Chat/ReviewSwapperScreen';
@@ -159,8 +161,13 @@ export default function AppNavigator() {
                             options={{ headerShown: false }} 
                         />
                         <Stack.Screen 
-                            name={ROUTES.SELECT_SWAP} 
+                            name={ROUTES.SELECT_SWAP_BOOK} 
                             component={SelectSwapBookScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.SELECT_SWAP_LOCATION} 
+                            component={SelectSwapLocationScreen} 
                             options={{ headerShown: false }} 
                         />
                         <Stack.Screen 
@@ -186,6 +193,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.MY_PUBLICATION_DETAILS} 
                             component={MyPublicationDetailsScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.REVIEWS} 
+                            component={ReviewsScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

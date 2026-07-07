@@ -348,7 +348,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                         {isCounterOffer && (
                             <TouchableOpacity 
                                 style={[styles.actionButton, styles.counterBackButton, { borderColor: theme.primary || '#E58A1F' }]}
-                                onPress={() => navigation.navigate(ROUTES.SELECT_SWAP, { 
+                                onPress={() => navigation.navigate(ROUTES.SELECT_SWAP_BOOK, { 
                                     messageId: item.id, 
                                     chatId: chatId,
                                     offerDetails: offer,
@@ -363,7 +363,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                             style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
                             onPress={() => {
                                 if (!isCounterOffer) {
-                                    navigation.navigate(ROUTES.SELECT_SWAP, { 
+                                    navigation.navigate(ROUTES.SELECT_SWAP_BOOK, { 
                                         messageId: item.id, 
                                         chatId: chatId,
                                         offerDetails: offer,

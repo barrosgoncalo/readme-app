@@ -165,6 +165,13 @@ export default function ProfileScreen({ navigation }) {
                         <MenuItem
                             styles={styles}
                             theme={theme}
+                            icon="lucide:star"
+                            label="Reviews"
+                            onPress={() => navigation.navigate(ROUTES.REVIEWS)}
+                        />
+                        <MenuItem
+                            styles={styles}
+                            theme={theme}
                             icon="solar:medal-star-circle-linear"
                             label="Level"
                         />
