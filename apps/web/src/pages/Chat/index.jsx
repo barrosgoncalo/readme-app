@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChatService } from '@readme/shared/src/services/chat';
-import { getUsersByIds } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import Spinner from '../../components/Spinner.jsx';
 import ChatList from './components/ChatList.jsx';
@@ -16,30 +15,23 @@ export default function Chat() {
     const [chats, setChats] = useState([]);
     const [activeChatId, setActiveChatId] = useState(searchParams.get('c') || null);
     const [messages, setMessages] = useState([]);
-    const [userDetails, setUserDetails] = useState({});
     const [loading, setLoading] = useState(true);
     const [messageLoading, setMessageLoading] = useState(false);
-
-    let unsubChats = null;
-    let unsubMessages = null;
 
     useEffect(() => {
         if (!uid) return;
 
         setLoading(true);
-        unsubChats = ChatService.streamUserChats(uid, setChats, (err) => {
+        const unsubChats = ChatService.streamUserChats(uid, (chats) => {
+            setChats(chats);
+            setLoading(false);
+        }, (err) => {
             console.error('Error loading chats:', err);
             setLoading(false);
         });
 
-        return () => {
-            if (unsubChats) unsubChats();
-        };
+        return () => unsubChats();
     }, [uid]);
-
-    useEffect(() => {
-        setLoading(false);
-    }, [chats]);
 
     useEffect(() => {
         if (!activeChatId) {
@@ -48,32 +40,16 @@ export default function Chat() {
         }
 
         setMessageLoading(true);
-        unsubMessages = ChatService.streamMessages(activeChatId, (msgs) => {
+        const unsubMessages = ChatService.streamMessages(activeChatId, (msgs) => {
             setMessages(msgs);
             setMessageLoading(false);
-
-            // Resolve participant names
-            const otherUids = new Set();
-            chats.forEach(c => {
-                c.participants?.forEach(p => {
-                    if (p !== uid) otherUids.add(p);
-                });
-            });
-
-            if (otherUids.size > 0) {
-                getUsersByIds(Array.from(otherUids))
-                    .then(users => setUserDetails(users))
-                    .catch(err => console.error('Error loading users:', err));
-            }
         }, (err) => {
             console.error('Error loading messages:', err);
             setMessageLoading(false);
         });
 
-        return () => {
-            if (unsubMessages) unsubMessages();
-        };
-    }, [activeChatId, chats, uid]);
+        return () => unsubMessages();
+    }, [activeChatId]);
 
     if (loading) return <Spinner center label="Loading chats" />;
 
@@ -88,7 +64,6 @@ export default function Chat() {
                     setActiveChatId(chatId);
                     setSearchParams({ c: chatId });
                 }}
-                userDetails={userDetails}
             />
 
             {activeChatId && activeChat ? (
@@ -96,7 +71,6 @@ export default function Chat() {
                     chat={activeChat}
                     messages={messages}
                     loading={messageLoading}
-                    userDetails={userDetails}
                     currentUserId={uid}
                 />
             ) : (

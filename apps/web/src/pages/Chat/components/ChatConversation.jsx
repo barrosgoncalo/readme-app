@@ -6,7 +6,7 @@ import Spinner from '../../../components/Spinner.jsx';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
-export default function ChatConversation({ chat, messages, loading, userDetails, currentUserId }) {
+export default function ChatConversation({ chat, messages, loading, currentUserId }) {
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef(null);
@@ -32,8 +32,6 @@ export default function ChatConversation({ chat, messages, loading, userDetails,
             setSending(false);
         }
     }
-
-    const otherUid = chat.participants?.find(p => p !== currentUserId);
 
     return (
         <div className={styles.conversation}>

@@ -1,23 +1,7 @@
-import UserAvatar from '../../../components/UserAvatar.jsx';
+import { timeAgo } from '@readme/shared/src/utils/timeAgo';
 import styles from './ChatList.module.css';
 
-function formatDistanceToNow(date) {
-    const now = Date.now();
-    const time = new Date(date).getTime();
-    const diffMs = now - time;
-    const diffSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffSecs < 60) return 'now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return new Date(date).toLocaleDateString();
-}
-
-export default function ChatList({ chats, activeChatId, onSelectChat, userDetails }) {
+export default function ChatList({ chats, activeChatId, onSelectChat }) {
     return (
         <div className={styles.list}>
             <h2 className={styles.title}>Messages</h2>
@@ -25,9 +9,6 @@ export default function ChatList({ chats, activeChatId, onSelectChat, userDetail
                 <p className={styles.empty}>No messages yet</p>
             ) : (
                 chats.map(chat => {
-                    const otherUid = chat.participants?.find(p => p !== userDetails[p]?.id);
-                    const otherUser = userDetails[otherUid] || {};
-
                     return (
                         <button
                             key={chat.id}
@@ -43,7 +24,7 @@ export default function ChatList({ chats, activeChatId, onSelectChat, userDetail
                             </div>
                             {chat.updatedAt && (
                                 <p className={styles.time}>
-                                    {formatDistanceToNow(new Date(chat.updatedAt), { addSuffix: false })}
+                                    {timeAgo(chat.updatedAt)}
                                 </p>
                             )}
                         </button>

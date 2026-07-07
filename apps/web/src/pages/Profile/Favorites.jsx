@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@readme/shared/src/services/firebase.web';
 import { fetchPublicationById } from '@readme/shared/src/services/publications';
-import { toggleFavoriteStatus } from '@readme/shared/src/services/users';
+import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import PublicationCard from '../Map/components/PublicationCard.jsx';
@@ -27,11 +25,10 @@ export default function Favorites() {
 
         (async () => {
             try {
-                // Get user's favoriteBooks array
-                const userDoc = await getDoc(doc(db, 'users', uid));
+                const profile = await fetchUserProfile(uid);
                 if (cancelled) return;
 
-                const favIds = userDoc.data()?.favoriteBooks || [];
+                const favIds = profile?.favoriteBooks || [];
 
                 // Fetch all publication docs
                 const pubs = await Promise.all(
