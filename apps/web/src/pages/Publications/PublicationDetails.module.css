@@ -7,26 +7,6 @@
     gap: var(--space-4);
 }
 
-.header {
-    display: flex;
-    align-items: center;
-}
-
-.backBtn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: var(--space-1);
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    line-height: 1;
-}
-
-.backBtn:hover {
-    opacity: 0.8;
-}
-
 .container {
     display: grid;
     grid-template-columns: 1fr 1fr;

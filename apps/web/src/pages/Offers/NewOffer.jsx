@@ -3,13 +3,15 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { fetchPublicationById } from '@readme/shared/src/services/publications';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
+import { myBooksService } from '@readme/shared/src/services/books';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
-import BookCover from '../../components/BookCover.jsx';
+import PageHeader from '../../components/PageHeader.jsx';
 import OfferStep1 from './components/OfferStep1.jsx';
 import OfferStep2 from './components/OfferStep2.jsx';
+import { useToast } from '../../hooks/useToast';
 import styles from './NewOffer.module.css';
 
 export default function NewOffer() {
@@ -26,6 +28,7 @@ export default function NewOffer() {
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [toast, showToast] = useToast(3000);
 
     useEffect(() => {
         if (!uid || !pubId) {
@@ -37,9 +40,9 @@ export default function NewOffer() {
 
         (async () => {
             try {
-                const [pub, books] = await Promise.all([
+                const [pub, myBookDocs] = await Promise.all([
                     fetchPublicationById(pubId),
-                    hydrateMyBooks(uid)
+                    myBooksService.getBooksData(uid)
                 ]);
 
                 if (cancelled) return;
@@ -48,6 +51,10 @@ export default function NewOffer() {
                     navigate(WEB_ROUTES.MAP);
                     return;
                 }
+
+                const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+                const books = await hydrateMyBooks(myBookDocs, { apiKey });
+                if (cancelled) return;
 
                 setPublication(pub);
                 setMyBooks(books);
@@ -85,6 +92,7 @@ export default function NewOffer() {
             navigate(`${WEB_ROUTES.CHAT}?c=${chatId}`);
         } catch (err) {
             console.error('Error sending offer:', err);
+            showToast('Failed to send offer. Please try again.');
         } finally {
             setSubmitting(false);
         }
@@ -98,16 +106,14 @@ export default function NewOffer() {
 
     return (
         <div className={styles.page}>
-            <div className={styles.header}>
-                <button
-                    className={styles.backBtn}
-                    onClick={() => navigate(WEB_ROUTES.publicationDetail(pubId))}
-                    aria-label="Back"
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <h1 className={styles.title}>New Offer</h1>
-                <div className={styles.steps}>Step {step} / 2</div>
+            {toast && <div className={styles.toast}>{toast}</div>}
+
+            <div className={styles.headerWrap}>
+                <PageHeader
+                    onBack={() => navigate(WEB_ROUTES.publicationDetail(pubId))}
+                    title="New Offer"
+                    right={<div className={styles.steps}>Step {step} / 2</div>}
+                />
             </div>
 
             <div className={styles.container}>

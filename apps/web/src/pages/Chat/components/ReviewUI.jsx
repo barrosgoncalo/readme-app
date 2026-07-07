@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Star } from 'lucide-react';
+import ActionCard from './ActionCard.jsx';
 import styles from './ReviewUI.module.css';
 
 export default function ReviewUI({ onSubmit, busy }) {
@@ -15,9 +16,7 @@ export default function ReviewUI({ onSubmit, busy }) {
     const canSubmit = rating > 0 && !busy;
 
     return (
-        <div className={styles.review}>
-            <p className={styles.prompt}>Rate this swap</p>
-
+        <ActionCard prompt="Rate this swap">
             <div className={styles.stars}>
                 {[1, 2, 3, 4, 5].map((i) => (
                     <button
@@ -54,6 +53,6 @@ export default function ReviewUI({ onSubmit, busy }) {
             >
                 {busy ? 'Submitting...' : 'Submit Review'}
             </button>
-        </div>
+        </ActionCard>
     );
 }

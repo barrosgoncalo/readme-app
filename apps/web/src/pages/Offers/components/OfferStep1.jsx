@@ -8,9 +8,10 @@ export default function OfferStep1({ publication, myBooks, selectedBooks, onSele
                 <h2 className={styles.sectionTitle}>You are requesting</h2>
                 <div className={styles.targetBook}>
                     <BookCover
-                        book={publication.book}
-                        size="medium"
-                        className={styles.cover}
+                        coverUrl={publication.book.images?.[0]}
+                        imgClassName={styles.targetCover}
+                        placeholderClassName={styles.targetCoverPlaceholder}
+                        iconSize={28}
                     />
                     <div className={styles.details}>
                         <p className={styles.title}>{publication.book.title}</p>
@@ -35,9 +36,10 @@ export default function OfferStep1({ publication, myBooks, selectedBooks, onSele
                                 onClick={() => onSelectBook(book.id)}
                             >
                                 <BookCover
-                                    book={book}
-                                    size="small"
-                                    className={styles.cover}
+                                    coverUrl={book.coverUrl}
+                                    imgClassName={styles.cover}
+                                    placeholderClassName={styles.coverPlaceholder}
+                                    iconSize={20}
                                 />
                                 {selectedBooks.has(book.id) && (
                                     <div className={styles.checkmark}>✓</div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, Trash2 } from 'lucide-react';
+import { Heart, Trash2 } from 'lucide-react';
 import { fetchPublicationById, deletePublication } from '@readme/shared/src/services/publications';
 import { toggleFavoriteStatus } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
@@ -8,6 +8,7 @@ import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Button from '../../components/Button.jsx';
 import Spinner from '../../components/Spinner.jsx';
+import PageHeader from '../../components/PageHeader.jsx';
 import { useToast } from '../../hooks/useToast';
 import styles from './PublicationDetails.module.css';
 
@@ -89,11 +90,7 @@ export default function PublicationDetails() {
     if (notFound) {
         return (
             <div className={styles.page}>
-                <div className={styles.header}>
-                    <button className={styles.backBtn} onClick={() => navigate(-1)}>
-                        <ArrowLeft size={20} />
-                    </button>
-                </div>
+                <PageHeader onBack={() => navigate(-1)} />
                 <p className={styles.notFound}>Publication not found.</p>
             </div>
         );
@@ -108,11 +105,7 @@ export default function PublicationDetails() {
         <div className={styles.page}>
             {toast && <div className={styles.toast}>{toast}</div>}
 
-            <div className={styles.header}>
-                <button className={styles.backBtn} onClick={() => navigate(-1)}>
-                    <ArrowLeft size={20} />
-                </button>
-            </div>
+            <PageHeader onBack={() => navigate(-1)} />
 
             <div className={styles.container}>
                 {/* Gallery */}

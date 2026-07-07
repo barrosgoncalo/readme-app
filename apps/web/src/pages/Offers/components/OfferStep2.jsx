@@ -87,9 +87,10 @@ export default function OfferStep2({ publication, selectedCount, location, onLoc
                 <h2 className={styles.sectionTitle}>Offering {selectedCount} book(s) for</h2>
                 <div className={styles.targetBook}>
                     <BookCover
-                        book={publication.book}
-                        size="medium"
-                        className={styles.cover}
+                        coverUrl={publication.book.images?.[0]}
+                        imgClassName={styles.cover}
+                        placeholderClassName={styles.coverPlaceholder}
+                        iconSize={28}
                     />
                     <div className={styles.details}>
                         <p className={styles.title}>{publication.book.title}</p>

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { fetchPublicationById } from '@readme/shared/src/services/publications';
 import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import PublicationCard from '../Map/components/PublicationCard.jsx';
 import Spinner from '../../components/Spinner.jsx';
+import PageHeader from '../../components/PageHeader.jsx';
 import styles from './Favorites.module.css';
 
 export default function Favorites() {
@@ -66,16 +66,7 @@ export default function Favorites() {
 
     return (
         <div className={styles.page}>
-            <div className={styles.header}>
-                <button
-                    className={styles.backBtn}
-                    onClick={() => navigate(WEB_ROUTES.PROFILE)}
-                    aria-label="Back"
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <h1 className={styles.title}>Favorites</h1>
-            </div>
+            <PageHeader onBack={() => navigate(WEB_ROUTES.PROFILE)} title="Favorites" />
 
             {favorites.length === 0 ? (
                 <p className={styles.empty}>You haven't added any favorites yet.</p>

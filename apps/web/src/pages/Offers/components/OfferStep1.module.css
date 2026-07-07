@@ -19,8 +19,44 @@
     border-radius: var(--radius);
 }
 
-.cover {
+.targetCover {
+    width: 72px;
+    height: 100px;
+    border-radius: var(--radius);
+    object-fit: cover;
     flex-shrink: 0;
+    display: block;
+}
+
+.targetCoverPlaceholder {
+    width: 72px;
+    height: 100px;
+    border-radius: var(--radius);
+    background: var(--bg-selected);
+    color: var(--subtext);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cover {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--radius);
+    object-fit: cover;
+    display: block;
+}
+
+.coverPlaceholder {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--radius);
+    background: var(--bg-selected);
+    color: var(--subtext);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .details {

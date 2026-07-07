@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@readme/shared/src/services/firebase.web';
 import { createPublicationModel } from '@readme/shared/src/models/publication';
@@ -10,6 +10,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
+import PageHeader from '../../components/PageHeader.jsx';
 import { useToast } from '../../hooks/useToast';
 import styles from './CreatePublication.module.css';
 
@@ -90,16 +91,7 @@ export default function CreatePublication() {
         <div className={styles.page}>
             {toast && <div className={styles.toast}>{toast}</div>}
 
-            <div className={styles.header}>
-                <button
-                    className={styles.backBtn}
-                    onClick={() => navigate(-1)}
-                    aria-label="Back"
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <h1 className={styles.title}>New Publication</h1>
-            </div>
+            <PageHeader onBack={() => navigate(-1)} title="New Publication" />
 
             <form className={styles.form} onSubmit={handleSubmit}>
                 <div className={styles.section}>

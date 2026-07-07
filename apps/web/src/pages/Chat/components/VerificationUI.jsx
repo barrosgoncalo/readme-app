@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ActionCard from './ActionCard.jsx';
 import styles from './VerificationUI.module.css';
 
 export default function VerificationUI({ code, displayerId, scannerId, currentUserId, onComplete, error, busy }) {
@@ -10,42 +11,34 @@ export default function VerificationUI({ code, displayerId, scannerId, currentUs
 
     if (isDisplayer) {
         return (
-            <div className={styles.verification}>
-                <p className={styles.prompt}>Show this code at the swap:</p>
+            <ActionCard prompt="Show this code at the swap:">
                 <div className={styles.codeDisplay}>{code}</div>
                 <p className={styles.hint}>Share this code with the other person to verify the swap.</p>
-            </div>
+            </ActionCard>
         );
     }
 
-    if (isScanner) {
-        return (
-            <div className={styles.verification}>
-                <p className={styles.prompt}>Enter the verification code:</p>
-                <div className={styles.inputGroup}>
-                    <input
-                        type="text"
-                        placeholder="Enter code"
-                        value={inputCode}
-                        onChange={(e) => {
-                            setInputCode(e.target.value);
-                        }}
-                        className={styles.codeInput}
-                        disabled={busy}
-                        autoCapitalize="characters"
-                    />
-                    <button
-                        onClick={() => onComplete(inputCode)}
-                        disabled={!inputCode.trim() || busy}
-                        className={styles.confirmBtn}
-                    >
-                        {busy ? 'Verifying...' : 'Confirm'}
-                    </button>
-                </div>
-                {error && <p className={styles.error}>{error}</p>}
+    return (
+        <ActionCard prompt="Enter the verification code:">
+            <div className={styles.inputGroup}>
+                <input
+                    type="text"
+                    placeholder="Enter code"
+                    value={inputCode}
+                    onChange={(e) => setInputCode(e.target.value)}
+                    className={styles.codeInput}
+                    disabled={busy}
+                    autoCapitalize="characters"
+                />
+                <button
+                    onClick={() => onComplete(inputCode)}
+                    disabled={!inputCode.trim() || busy}
+                    className={styles.confirmBtn}
+                >
+                    {busy ? 'Verifying...' : 'Confirm'}
+                </button>
             </div>
-        );
-    }
-
-    return null;
+            {error && <p className={styles.error}>{error}</p>}
+        </ActionCard>
+    );
 }
