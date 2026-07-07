@@ -3,7 +3,8 @@ import { View, TextInput, FlatList, Text, Image, TouchableOpacity, useColorSchem
 import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { searchUsers } from '@readme/shared/src/services/search';
+import { ROUTES } from '@readme/shared/src/constants/routes';
+import { searchUsers } from '@readme/shared/src/services/searchUser';
 import { buildStyles } from '../../styles/searchStyles';
 import UserProfileModal from '../../components/ui/UserProfileModal';
 
@@ -22,8 +23,7 @@ export default function SearchScreen({ navigation }) {
     const [modalVisible, setModalVisible] = useState(false);
 
     const handleUserPress = (user) => {
-        setSelectedUser(user);
-        setModalVisible(true);
+        navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: user.uid });
     };
 
     const handleUserBlocked = (blockedUid) => {
@@ -76,7 +76,7 @@ export default function SearchScreen({ navigation }) {
         <View style={styles.container}>
             <View style={styles.searchBar}>
                 <Iconify icon="lucide:search" size={20} color={theme.subtext} />
-                
+
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search users..."
@@ -86,26 +86,26 @@ export default function SearchScreen({ navigation }) {
                     autoCapitalize="none"
                     autoCorrect={false}
                 />
-                
+
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     {loading && <ActivityIndicator size="small" color={theme.secondary} />}
 
-                    <TouchableOpacity 
-                        onPress={() => navigation.goBack()} 
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
                         style={{
                             width: 18,
                             height: 18,
                             borderRadius: 9,
-                            backgroundColor: theme.backgroundSelected, 
+                            backgroundColor: theme.backgroundSelected,
                             justifyContent: 'center',
                             alignItems: 'center',
                         }}
                         activeOpacity={0.7}
                     >
-                        <Iconify 
-                            icon="lucide:x" 
+                        <Iconify
+                            icon="lucide:x"
                             size={12}
-                            color={theme.subtext} 
+                            color={theme.subtext}
                             strokeWidth={3.5}
                         />
                     </TouchableOpacity>
@@ -126,15 +126,6 @@ export default function SearchScreen({ navigation }) {
                     ) : null
                 }
             />
-
-            <UserProfileModal
-                visible={modalVisible}
-                user={selectedUser}
-                onClose={() => setModalVisible(false)}
-                onBlocked={handleUserBlocked}
-                theme={theme}
-            />
-
         </View>
     );
 }
