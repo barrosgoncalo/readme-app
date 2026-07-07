@@ -60,6 +60,8 @@ export default function (api) {
                         'lucide:check-circle',
                         'lucide:badge-check',
                         'lucide:edit-3',
+                        'lucide:maximize-2',
+                        'lucide:minimize-2',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',
