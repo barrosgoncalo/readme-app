@@ -157,13 +157,13 @@ export default function Profile() {
                     </span>
                     <ChevronRight size={18} className={styles.chevron} />
                 </div>
-                <div className={`${styles.item} ${styles.disabled}`}>
+                <button className={styles.item} onClick={() => navigate(WEB_ROUTES.PROFILE_FAVORITES)}>
                     <span className={styles.itemLeft}>
                         <span className={styles.iconBox}><Heart size={20} /></span>
                         <span className={styles.itemLabel}>Favorites</span>
                     </span>
                     <ChevronRight size={18} className={styles.chevron} />
-                </div>
+                </button>
             </div>
 
             {/* ── Group 4: Sign out ── */}

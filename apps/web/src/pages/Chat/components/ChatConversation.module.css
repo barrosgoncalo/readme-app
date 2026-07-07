@@ -1,0 +1,135 @@
+.conversation {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg);
+}
+
+.header {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--bg-elem);
+}
+
+.headerContent {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.bookImage {
+    width: 40px;
+    height: 60px;
+    border-radius: var(--radius);
+    object-fit: cover;
+}
+
+.name {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--subtext);
+}
+
+.messagesContainer {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.messageRow {
+    display: flex;
+}
+
+.message {
+    max-width: 70%;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+}
+
+.own {
+    align-self: flex-end;
+    background: var(--primary);
+    color: var(--primary-text);
+}
+
+.other {
+    align-self: flex-start;
+    background: var(--bg-elem);
+    color: var(--text);
+}
+
+.text {
+    margin: 0;
+    word-wrap: break-word;
+}
+
+.time {
+    margin: var(--space-1) 0 0 0;
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.empty {
+    color: var(--subtext);
+    text-align: center;
+    padding: var(--space-5);
+}
+
+.composer {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-top: 1px solid var(--bg-elem);
+    background: var(--bg);
+}
+
+.input {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--bg-elem);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.sendBtn {
+    padding: var(--space-2) var(--space-3);
+    background: var(--primary);
+    color: var(--primary-text);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sendBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.sendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+    .message {
+        max-width: 85%;
+    }
+}

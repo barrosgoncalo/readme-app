@@ -1,0 +1,26 @@
+.page {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: calc(100vh - 60px);
+    gap: 0;
+    background: var(--bg);
+}
+
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: var(--subtext);
+    text-align: center;
+}
+
+@media (max-width: 720px) {
+    .page {
+        grid-template-columns: 1fr;
+    }
+
+    .emptyState {
+        min-height: calc(100vh - 200px);
+    }
+}
