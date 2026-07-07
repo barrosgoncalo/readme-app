@@ -153,6 +153,7 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="lucide:book"
                             label="My Books"
+                            onPress={() => navigation.navigate(ROUTES.MY_BOOKS)}
                         />
                         <MenuItem
                             styles={styles}

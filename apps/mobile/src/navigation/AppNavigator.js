@@ -27,7 +27,9 @@ import PublicationDetailsScreen from '../screens/Explore/PublicationDetails/Publ
 import StepOneOffer from '../screens/Explore/PublicationDetails/StepOneOfferScreen';
 import StepTwoOffer from '../screens/Explore/PublicationDetails/StepTwoOfferScreen';
 import PublicProfileScreen from '../screens/Explore/PublicProfileScreen';
-import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
+import MyBooksScreen from '../screens/Profile/MyBooks/MyBooksScreen';
+import MyPublicationDetailsScreen from '../screens/Profile/MyBooks/MyPublicationDetailsScreen';
+import FavoritesScreen from '../screens/Profile/Favorites/FavoritesScreen';
 import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
 import SelectSwapBookScreen from '../screens/Chat/SelectSwapBookScreen';
 import ShowQrCodeScreen from '../screens/Chat/Code/ShowQrCodeScreen';
@@ -174,6 +176,16 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.REVIEW_SWAPPER} 
                             component={ReviewSwapperScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.MY_BOOKS} 
+                            component={MyBooksScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.MY_PUBLICATION_DETAILS} 
+                            component={MyPublicationDetailsScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

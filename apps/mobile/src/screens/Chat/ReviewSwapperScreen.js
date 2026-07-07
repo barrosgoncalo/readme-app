@@ -148,7 +148,6 @@ export default function ReviewSwapperScreen({ route, navigation }) {
                                 activeOpacity={0.7}
                             >
                                 <Iconify 
-                                    // Swapped to Phosphor icons dynamically to provide full star-fill assets beautifully
                                     icon={starPosition <= rating ? "ph:star-fill" : "ph:star"} 
                                     size={48} 
                                     color={starPosition <= rating ? '#F59E0B' : theme.borderLight}

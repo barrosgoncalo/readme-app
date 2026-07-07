@@ -20,6 +20,8 @@ export const createUserModel = (uid, profileData, provider) => {
             country: profileData.country
         },
 
+        // TODO: include chat ids cache
+
         rating: 0,
         reviewCount: 0,
         favoriteBooks: [],

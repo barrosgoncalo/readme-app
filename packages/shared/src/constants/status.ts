@@ -8,4 +8,4 @@ export const NEGOTIATION_STATUS = Object.freeze({
     ACCEPTED: 'accepted',
     PENDING: 'pending',
     DECLINED: 'declined',
-})
+});

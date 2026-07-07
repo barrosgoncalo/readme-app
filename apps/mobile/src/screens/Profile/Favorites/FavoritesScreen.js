@@ -13,9 +13,9 @@ import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { buildExploreStyles } from '../../styles/exploreStyles';
+import { buildExploreStyles } from '../../../styles/exploreStyles';
 
-import { BookGridItem } from '../../components/ui/BookGridItem';
+import { BookGridItem } from '../../../components/ui/BookGridItem';
 import { 
     doc, 
     getDoc, 
@@ -144,7 +144,7 @@ export default function FavoritesScreen({ navigation }) {
                 </TouchableOpacity>
                 
                 <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>
-                    My Favorites
+                    Favorites
                 </Text>
             </View>
 

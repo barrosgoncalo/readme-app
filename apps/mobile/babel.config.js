@@ -59,6 +59,7 @@ export default function (api) {
                         'lucide:party-popper',
                         'lucide:check-circle',
                         'lucide:badge-check',
+                        'lucide:edit-3',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',

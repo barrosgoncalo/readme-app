@@ -47,6 +47,7 @@ export default function ChatRoomScreen({ route, navigation }) {
         targetSeller?.name && targetSeller.name !== "Anonymous Swapper" ? targetSeller.name : "Loading..."
     );
     const [otherUserAvatar, setOtherUserAvatar] = useState(targetSeller?.avatarUrl || null);
+    const [otherUserId, setOtherUserId] = useState(targetSeller?.uid || null);
     const [bookImage, setBookImage] = useState(null);
     const [publicationId, setPublicationId] = useState(null);
 
@@ -78,6 +79,8 @@ export default function ChatRoomScreen({ route, navigation }) {
                     setBookImage(resolvedImg);
 
                     const otherUid = targetSeller?.uid || chatData.participants?.find(uid => uid !== currentUserId);
+
+                    if (otherUid) setOtherUserId(otherUid);
 
                     const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
 
@@ -171,7 +174,6 @@ export default function ChatRoomScreen({ route, navigation }) {
 
     const handleResolveOffer = async (messageId, newStatus, bookId = null, senderIdOfOffer = null) => {
         try {
-            // If the user accepts, explicitly define the roles
             let displayerId = senderIdOfOffer; // The person who originally sent the proposal
             let scannerId = currentUserId;     // The person who is pressing "Accept" right now
 
@@ -500,7 +502,16 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <Iconify icon="lucide:arrow-left" size={24} color={theme.textItemTitle} />
                 </TouchableOpacity>
 
-                <View style={styles.headerProfileInfo}>
+                <TouchableOpacity 
+                    style={styles.headerProfileInfo} 
+                    activeOpacity={0.7}
+                    disabled={!otherUserId}
+                    onPress={() => {
+                        if (otherUserId) {
+                            navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: otherUserId });
+                        }
+                    }}
+                >
                     {otherUserAvatar ? (
                         <Image source={{ uri: otherUserAvatar }} style={styles.headerAvatar} />
                     ) : (
@@ -513,7 +524,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                             {otherUserName}
                         </Text>
                     </View>
-                </View>
+                </TouchableOpacity>
 
                 <View style={styles.headerSpacer} />
             </SafeAreaView>

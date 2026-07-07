@@ -26,5 +26,7 @@ export const ROUTES = {
     SELECT_SWAP: 'SelectSwapBook',
     QR_DISPLAY: 'DisplayQrCode',
     QR_SCANNER: 'ScanQrCode',
-    REVIEW_SWAPPER: 'Review'
+    REVIEW_SWAPPER: 'Review',
+    MY_BOOKS: 'MyBooks',
+    MY_PUBLICATION_DETAILS: 'MyPublicationDetails',
 } as const;

@@ -127,7 +127,8 @@ export default function ExploreScreen({ navigation }) {
             .filter(book =>
                 book.uid !== currentUser?.uid &&
                 !blockedUids.includes(book.uid) &&
-                (!book.publicationData?.status || book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE)
+                // TODO: remove the first condition from OR
+                book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
             );
             
             setBooks(fetchedBooks);
