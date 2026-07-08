@@ -3,16 +3,18 @@ import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
     updateDoc, deleteDoc, serverTimestamp,
-    query, where, getDocs, onSnapshot, orderBy
+    query, where, getDocs, onSnapshot
 } from 'firebase/firestore';
 
 export const DB = {
+
     /**
      * Fetches a single doc by ID (string) OR multiple docs by conditions (array)
      * @param {string} collectionName 
      * @param {string|Array} idOrConditions - A document ID string OR array of query objects
      */
     get: async (collectionPath, queryArgs) => {
+
         try {
             // Fetching a single document by ID (String)
             if (typeof queryArgs === 'string') {
@@ -29,7 +31,6 @@ export const DB = {
                 );
 
                 if (heavyQuery) {
-                    // Chunk the massive array into pieces of 10
                     const chunks = [];
                     for (let i = 0; i < heavyQuery.value.length; i += 10) {
                         chunks.push(heavyQuery.value.slice(i, i + 10));
@@ -92,18 +93,16 @@ export const DB = {
     /**
      * Update a document (automatically adds updatedAt)
      */
-    update: async (collectionName, id, payload) => {
-        try {
-            const ref = doc(db, collectionName, id);
-            await updateDoc(ref, { 
-                ...payload, 
-                updatedAt: serverTimestamp() 
-            });
-            return true;
-        } catch (error) {
-            console.error(`DB.update Error (${collectionName}/${id}):`, error);
-            throw error;
+    update: async (collectionName, docId, data, includeTimestamp = false) => {
+        const docRef = doc(db, collectionName, docId);
+
+        const payload = { ...data };
+
+        if (includeTimestamp) {
+            payload.updatedAt = serverTimestamp(); 
         }
+
+        return await updateDoc(docRef, payload);
     },
 
     /**
@@ -163,37 +162,4 @@ export const DB = {
             }
         );
     },
-
-    /**
-     * Creates a real-time listener on a collection.
-     * @param {string} collectionName - The Firestore collection to listen to
-     * @param {Array} conditions - Array of objects { field, operator, value }
-     * @param {function} onData - Callback triggered with array of formatted documents
-     * @param {function} onError - Callback triggered on failure
-     * @returns {function} Unsubscribe function
-     */
-    subscribe: (collectionName, conditions = [], onData, onError) => {
-        let q = collection(db, collectionName);
-
-        // Apply filters dynamically just like your DB.get() method
-        if (conditions.length > 0) {
-            const constraints = conditions.map(c => where(c.field, c.operator, c.value));
-            q = query(q, ...constraints);
-        }
-
-        // Return the unsubscribe function so components can unmount safely
-        return onSnapshot(
-            q, 
-            (snapshot) => {
-                const data = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                onData(data);
-            },
-            (error) => {
-                if (onError) onError(error);
-            }
-        );
-    }
-};
+}

@@ -1,4 +1,3 @@
-// 🔴 Firebase imports completely removed!
 import { DB } from "./DB";
 import { algoliasearch } from "algoliasearch";
 

@@ -21,20 +21,17 @@ export const createOfferModel = (
     isCounter = false
 ) => {
     return {
-        // What the sender wants
         targetBookId: targetBookId,
         targetBookImage: targetBookImage || null,
         
-        // What the sender is giving (Array of snapshot objects)
         offeredBooks: offeredBooks,
         
-        // Placeholders for the receiver's final choice
         finalSelectedBookId: null,
         finalSelectedBookImage: null,
 
         // Context
         isCounter: isCounter,
-        status: 'pending', // Will progress to 'accepted', then 'completed'
+        status: 'pending',
         
         location: {
             id: locationData.id || null,

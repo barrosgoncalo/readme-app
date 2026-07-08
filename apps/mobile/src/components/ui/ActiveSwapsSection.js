@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SwapCard } from '../../components/ui/SwapCard';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { ChatService } from '@readme/shared/src/services/chat';

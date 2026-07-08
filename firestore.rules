@@ -54,20 +54,17 @@ service cloud.firestore {
 
    // ─── PUBLICATIONS ───
     match /publications/{publicationId} {
-      // Allow anyone to read
+
       allow read: if request.auth != null;
 
-      // Allow create if they are the owner
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
 
-      //    THE FIX   
       allow update: if request.auth != null && (
-        // Condition 1: They are the owner of the book (can change anything)
         request.auth.uid == resource.data.uid ||
 
-        // Condition 2: They are a buyer reserving the book 
-        // (They can ONLY touch the 'status' field, nothing else!)
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) ||
+
+        (isActive() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']))
       );
     }
 

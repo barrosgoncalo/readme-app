@@ -65,8 +65,6 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const passedSeller = route?.params?.seller;
 
     // --- Data & Logic Layer ---
-    // NOTE: Ensure this hook fetches live data using onSnapshot for db, 'users', book.ownerId
-    // If it only takes passedSeller, it will contain stale data from the previous screen.
     const { seller, isFavorited, handleToggleFavorite } = usePublicationDetails(book, passedSeller);
 
     // --- Visual State Layer ---
