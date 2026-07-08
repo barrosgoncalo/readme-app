@@ -2,36 +2,29 @@
 //
 // CRUD for the global books/{bookId} catalog. Per-user shelves (myBooks,
 // favoriteBooks) live in books.js — this module is the shared catalog only.
-import {
-    doc, getDoc, setDoc, collection, getDocs, query, where, documentId,
-} from 'firebase/firestore';
-import { db } from './firebase';
+
+import { documentId } from 'firebase/firestore';
+import { DB } from './DB';
 
 const COLLECTION = 'books';
 
 export async function getBook(bookId) {
-    const snap = await getDoc(doc(db, COLLECTION, bookId));
-    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    return await DB.get(COLLECTION, bookId);
 }
 
-// Idempotent — does nothing if the doc already exists.
-// Caller must pass the uid as addedBy (rules enforce addedBy == request.auth.uid).
 export async function createBookIfMissing(bookId, data) {
-    const ref = doc(db, COLLECTION, bookId);
-    const existing = await getDoc(ref);
-    if (existing.exists()) return;
+    const existing = await DB.get(COLLECTION, bookId);
+    if (existing) return;
 
-    await setDoc(ref, {
+    await DB.create(COLLECTION, {
         isbn: data.isbn || null,
         title: data.title,
         authors: data.authors,
         coverUrl: data.coverUrl || null,
         addedBy: data.addedBy,
-        createdAt: new Date().toISOString(),
-    });
+    }, bookId);
 }
 
-// Firestore's `in` operator is capped at 10 values — chunk and merge.
 export async function getBooksByIds(ids) {
     if (!ids || ids.length === 0) return [];
 
@@ -42,9 +35,9 @@ export async function getBooksByIds(ids) {
 
     const results = await Promise.all(
         chunks.map(async (chunk) => {
-            const q = query(collection(db, COLLECTION), where(documentId(), 'in', chunk));
-            const snap = await getDocs(q);
-            return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            return await DB.get(COLLECTION, [
+                { field: documentId(), operator: 'in', value: chunk }
+            ]);
         })
     );
 
