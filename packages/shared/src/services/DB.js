@@ -2,19 +2,35 @@
 import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
-    updateDoc, deleteDoc, serverTimestamp 
+    updateDoc, deleteDoc, serverTimestamp,
+    query, where, getDocs
 } from 'firebase/firestore';
 
 export const DB = {
     /**
-     * Fetch a single document by ID
+     * Fetches a single doc by ID (string) OR multiple docs by conditions (array)
+     * @param {string} collectionName 
+     * @param {string|Array} idOrConditions - A document ID string OR array of query objects
      */
-    get: async (collectionName, id) => {
+    get: async (collectionName, idOrConditions) => {
         try {
-            const snap = await getDoc(doc(db, collectionName, id));
+            if (Array.isArray(idOrConditions)) {
+                const colRef = collection(db, collectionName);
+                const queryConstraints = idOrConditions.map(c => 
+                    where(c.field, c.operator, c.value)
+                );
+                
+                const q = query(colRef, ...queryConstraints);
+                const snapshot = await getDocs(q);
+                
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+
+            const snap = await getDoc(doc(db, collectionName, idOrConditions));
             return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+
         } catch (error) {
-            console.error(`DB.get Error (${collectionName}/${id}):`, error);
+            console.error(`DB.get Error on collection "${collectionName}":`, error);
             throw error;
         }
     },
