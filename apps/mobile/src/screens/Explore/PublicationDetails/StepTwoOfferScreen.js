@@ -64,22 +64,25 @@ export default function StepTwoOfferScreen({ route, navigation }) {
             return;
         }
 
+        // Determine the correct target ID safely
+        const finalTargetId = targetSeller?.uid || targetBook?.ownerId || targetBook?.userId;
+
         try {
             const chatId = await ChatService.sendInitialOffer(
                 currentUserId,
-                targetBook.ownerId,
+                finalTargetId, 
                 targetBook,
                 offeredBooks,
                 activeLocationSelection
             );
 
-            // NO MORE FALLBACKS: We pipe the exact, guaranteed UI data into the Chat Room
+            // Pipe the exact, guaranteed UI data into the Chat Room
             navigation.navigate(ROUTES.CHAT_ROOM, { 
                 chatId, 
-                targetSeller: { 
-                    name: targetBook.ownerName, 
-                    uid: targetBook.ownerId,
-                    avatarUrl: targetBook.ownerAvatar
+                targetSeller: targetSeller || { 
+                    name: targetBook?.ownerName || "Anonymous Swapper", 
+                    uid: finalTargetId,
+                    avatarUrl: targetBook?.ownerAvatar || null
                 }
             });
         } catch (error) {

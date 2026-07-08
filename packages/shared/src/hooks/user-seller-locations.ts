@@ -54,7 +54,7 @@ export function useSellerLocations(sellerUid) {
                     address1 = `${address1}, ${cityCountry}`;
                 }
                 if (addressData.addressLine1) {
-                    geocodePromises.push(getGeocodedPin(address1, 'primary_loc', 'Primary Location'));
+                    geocodePromises.push(getGeocodedPin(address1, `primary_loc_${sellerUid}`, 'Primary Location'));
                 }
 
                 // Format Address 2
@@ -63,7 +63,7 @@ export function useSellerLocations(sellerUid) {
                     if (!address2.toLowerCase().includes('portugal')) {
                         address2 = /\d{4}-\d{3}/.test(address2) ? `${address2}, Portugal` : `${address2}, ${cityCountry}`;
                     }
-                    geocodePromises.push(getGeocodedPin(address2, 'secondary_loc', 'Alternative Location'));
+                    geocodePromises.push(getGeocodedPin(address2, `secondary_loc_${sellerUid}`, 'Alternative Location'));
                 }
 
                 const resolvedPins = await Promise.all(geocodePromises);

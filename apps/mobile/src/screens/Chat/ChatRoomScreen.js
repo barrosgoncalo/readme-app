@@ -75,7 +75,12 @@ export default function ChatRoomScreen({ route, navigation }) {
                     if (chatData.location) setChatLocation(chatData.location);
 
                     // 2. Resolve the other user's identity
-                    const otherUid = targetSeller?.uid || chatData.participants?.find(uid => uid !== currentUserId);
+                    let otherUid = targetSeller?.uid;
+
+                    if (!otherUid || otherUid === currentUserId) {
+                        otherUid = chatData.participants?.find(uid => uid !== currentUserId);
+                    }
+
                     if (otherUid) setOtherUserId(otherUid);
 
                     const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
@@ -382,7 +387,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                                     messageId: item.id, 
                                     chatId: chatId,
                                     offerDetails: offer,
-                                    targetSellerUid: targetSeller?.uid || item.senderId
+                                    targetSellerUid: item.senderId
                                 })} 
                             >
                                 <Text style={[styles.counterBackText, { color: theme.primary || '#E58A1F' }]}>Counter</Text>
@@ -397,7 +402,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                                         messageId: item.id, 
                                         chatId: chatId,
                                         offerDetails: offer,
-                                        targetSellerUid: targetSeller?.uid || item.senderId
+                                        targetSellerUid: item.senderId
                                     });
                                 } else {
                                     handleResolveOffer(
