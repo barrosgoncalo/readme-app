@@ -1,65 +1,51 @@
-import { db } from './firebase';
-import {
-    collection, addDoc, getDocs, query, where, updateDoc, doc,
-} from 'firebase/firestore';
+import { DB } from './DB';
 
 const TRADES_COLLECTION = 'trades';
 
 export async function createTrade({ bookId, offeredBy, requestedFrom }) {
-    const now = new Date().toISOString();
-    const tradeRef = await addDoc(collection(db, TRADES_COLLECTION), {
+    return await DB.create(TRADES_COLLECTION, {
         bookId,
         offeredBy,
         requestedFrom,
         status: 'pending',
-        createdAt: now,
-        updatedAt: now,
     });
-    return tradeRef.id;
 }
 
 export async function getIncomingTrades(uid) {
-    const q = query(collection(db, TRADES_COLLECTION), where('requestedFrom', '==', uid));
-    const snapshot = await getDocs(q);
-    const trades = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    return trades;
+    const trades = await DB.get(TRADES_COLLECTION, [
+        { field: 'requestedFrom', operator: '==', value: uid }
+    ]);
+    
+    return trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
 export async function getOutgoingTrades(uid) {
-    const q = query(collection(db, TRADES_COLLECTION), where('offeredBy', '==', uid));
-    const snapshot = await getDocs(q);
-    const trades = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    return trades;
+    const trades = await DB.get(TRADES_COLLECTION, [
+        { field: 'offeredBy', operator: '==', value: uid }
+    ]);
+    
+    return trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
 export async function updateTradeStatus(tradeId, status) {
-    const now = new Date().toISOString();
-    const tradeRef = doc(db, TRADES_COLLECTION, tradeId);
-    await updateDoc(tradeRef, {
-        status,
-        updatedAt: now,
-    });
+    await DB.update(TRADES_COLLECTION, tradeId, { status });
 }
 
 export async function getAvailableTradeBooks(excludeUid) {
-    const booksRef = collection(db, 'users');
-    const snapshot = await getDocs(booksRef);
+    const users = await DB.get('users', []);
     const results = [];
 
-    for (const userDoc of snapshot.docs) {
-        const uid = userDoc.id;
+    for (const user of users) {
+        const uid = user.id;
         if (uid === excludeUid) continue;
 
-        const myBooksRef = collection(userDoc.ref, 'myBooks');
-        const myBooksSnapshot = await getDocs(myBooksRef);
+        const myBooks = await DB.get(`users/${uid}/myBooks`, []);
 
-        for (const bookDoc of myBooksSnapshot.docs) {
+        for (const book of myBooks) {
             results.push({
-                bookId: bookDoc.id,
+                bookId: book.id,
                 ownerId: uid,
-                addedAt: bookDoc.data().addedAt,
+                addedAt: book.addedAt,
             });
         }
     }
