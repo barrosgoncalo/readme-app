@@ -17,7 +17,7 @@ import { Iconify } from 'react-native-iconify';
 import { buildExploreStyles } from '../../styles/exploreStyles';
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 
-import { SwapCard } from '../../components/ui/SwapCard';
+import { ActiveSwapsSection } from '../../components/ui/ActiveSwapsSection';
 import { BookGridItem } from '../../components/ui/BookGridItem';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
@@ -97,7 +97,7 @@ export default function ExploreScreen({ navigation }) {
     const fetchPublications = async (showSpinner = true) => {
         try {
             if (showSpinner) setIsLoadingBooks(true); 
-            
+
             let blockedUids = [];
             if (currentUser?.uid) {
                 blockedUids = await doGetBlockedUids(currentUser.uid);
@@ -126,11 +126,11 @@ export default function ExploreScreen({ navigation }) {
             })
             .filter(book =>
                 book.uid !== currentUser?.uid &&
-                !blockedUids.includes(book.uid) &&
-                // TODO: remove the first condition from OR
-                book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
+                    !blockedUids.includes(book.uid) &&
+                    // TODO: remove the first condition from OR
+                    book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
             );
-            
+
             setBooks(fetchedBooks);
         } catch (error) {
             console.error("Erro a carregar publicações:", error);
@@ -220,47 +220,6 @@ export default function ExploreScreen({ navigation }) {
         </View>
     );
 
-    const renderSwapSection = () => {
-        if (activeChats.length === 0) return null; 
-
-        return (
-            <View style={styles.swapSectionContainer}> 
-                <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.swapList}
-                >
-                    {activeChats.map((chat) => (
-                        <TouchableOpacity 
-                            key={chat.id}
-                            activeOpacity={0.8}
-                            onPress={() => navigation.navigate(ROUTES.CHAT_ROOM, {
-                                chatId: chat.id,
-                                targetSeller: chat.targetSeller
-                            })}
-                            style={{
-                                // iOS Layer Shadows
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 4 },
-                                shadowOpacity: colorScheme === 'dark' ? 0.32 : 0.12,
-                                shadowRadius: 4.5,
-                                // Android Layer Shadow
-                                elevation: 5,
-                                backgroundColor: 'transparent',
-                            }}
-                        >
-                            <SwapCard 
-                                imageUrl={chat.imageUrl} 
-                                status={chat.status} 
-                                styles={styles} 
-                            />
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-        );
-    };
-
     return (
         <View style={styles.container}>
             <StatusBar 
@@ -273,45 +232,51 @@ export default function ExploreScreen({ navigation }) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                <FlatList
-                    data={books}
-                    keyExtractor={(item) => item.id}
-                    numColumns={2}
-                    columnWrapperStyle={styles.row}
-                    contentContainerStyle={styles.gridContainer}
-                    onScroll={handleScroll}
-                    scrollEventThrottle={16}
-                    ListHeaderComponent={
-                        <>
-                            {renderHeader()}
-                            {renderSwapSection()}
-                        </>
-                    }
-                    renderItem={({ item }) => (
-                        <BookGridItem 
-                            bookId={item.id}
-                            title={item.title}
-                            author={item.author}
-                            imageUrl={item.imageUrl}
-                            styles={styles} 
-                            theme={theme}
-                            isFavorite={item.isFavorite ?? userFavorites.includes(item.id)}
-                            favoriteCount={item.favoriteCount}
-                            onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
-                                publication: item, 
-                                seller: item.seller
-                            })}
-                            onToggleFavorite={handleToggleFavorite}
-                        />
-                    )}
-                    ListEmptyComponent={
-                        <Text style={{ textAlign: 'center', color: theme.subtext, marginTop: 40 }}>
-                            No books published yet. Be the first to swap!
-                        </Text>
-                    }
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+                    <FlatList
+                        data={books}
+                        keyExtractor={(item) => item.id}
+                        numColumns={2}
+                        columnWrapperStyle={styles.row}
+                        contentContainerStyle={styles.gridContainer}
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                        ListHeaderComponent={
+                            <>
+                                {renderHeader()}
+                                {/* ✨ Isolated component handles its own states and real-time re-renders natively! */}
+                                <ActiveSwapsSection 
+                                    currentUserId={currentUser?.uid} 
+                                    navigation={navigation}
+                                    styles={styles}
+                                    colorScheme={colorScheme}
+                                />
+                            </>
+                        }
+                        renderItem={({ item }) => (
+                            <BookGridItem 
+                                bookId={item.id}
+                                title={item.title}
+                                author={item.author}
+                                imageUrl={item.imageUrl}
+                                styles={styles} 
+                                theme={theme}
+                                isFavorite={item.isFavorite ?? userFavorites.includes(item.id)}
+                                favoriteCount={item.favoriteCount}
+                                onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
+                                    publication: item, 
+                                    seller: item.seller
+                                })}
+                                onToggleFavorite={handleToggleFavorite}
+                            />
+                        )}
+                        ListEmptyComponent={
+                            <Text style={{ textAlign: 'center', color: theme.subtext, marginTop: 40 }}>
+                                No books published yet. Be the first to swap!
+                            </Text>
+                        }
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
         </View>
     );
 }
