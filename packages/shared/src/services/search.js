@@ -1,5 +1,5 @@
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
+// 🔴 Firebase imports completely removed!
+import { DB } from "./DB";
 import { algoliasearch } from "algoliasearch";
 
 const API_APP_ID_KEY = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID;
@@ -8,16 +8,14 @@ const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
 const algoliaClient = algoliasearch(API_APP_ID_KEY, API_SEARCH_KEY);
 
 const getBlockedUserIdSet = async (currentUserUid) => {
-    const blocksRef = collection(db, "blocks");
-
-    const [blockedByMeSnap, blockedMeSnap] = await Promise.all([
-        getDocs(query(blocksRef, where("blockerUid", "==", currentUserUid))),
-        getDocs(query(blocksRef, where("blockedUid", "==", currentUserUid))),
+    const [blockedByMe, blockedMe] = await Promise.all([
+        DB.get("blocks", [{ field: "blockerUid", operator: "==", value: currentUserUid }]),
+        DB.get("blocks", [{ field: "blockedUid", operator: "==", value: currentUserUid }]),
     ]);
 
     const ids = new Set();
-    blockedByMeSnap.docs.forEach((doc) => ids.add(doc.data().blockedUid));
-    blockedMeSnap.docs.forEach((doc) => ids.add(doc.data().blockerUid));
+    blockedByMe.forEach((block) => ids.add(block.blockedUid));
+    blockedMe.forEach((block) => ids.add(block.blockerUid));
 
     return ids;
 };

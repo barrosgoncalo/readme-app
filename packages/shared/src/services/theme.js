@@ -23,11 +23,9 @@ export const ThemeProvider = ({ children }) => {
 
 export const useThemeContext = () => useContext(ThemeContext);
 
-// --- 2. YOUR CUSTOM HOOK (Moved here!) ---
 export function useColorScheme() {
   const [hasHydrated, setHasHydrated] = useState(false);
   
-  // Now it pulls directly from the context initialized in this exact file
   const { isDarkMode } = useThemeContext(); 
 
   useEffect(() => {
