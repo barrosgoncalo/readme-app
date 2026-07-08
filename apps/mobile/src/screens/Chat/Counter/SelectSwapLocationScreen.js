@@ -58,12 +58,14 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
     // --- Final Submission ---
     const handleSendCounter = async () => {
         if (isSubmitting || !locationIsValid || !currentUser?.uid) return;
-        
+
         setIsSubmitting(true);
         try {
+            // Inject the newly selected active location into the details payload
             const updatedOfferDetails = {
                 ...offerDetails,
-                selectedBookImage: selectedBookImage
+                selectedBookImage: selectedBookImage,
+                location: activeLocationSelection
             };
 
             await ChatService.sendCounterOffer(
@@ -71,10 +73,10 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                 messageId, 
                 currentUser.uid, 
                 updatedOfferDetails,
-                selectedBookId,
+                // selectedBookId,
                 activeLocationSelection
             );
-            
+
             // Pop back 2 screens to return to the Chat, closing both Step 1 and Step 2
             navigation.pop(2); 
         } catch (error) {

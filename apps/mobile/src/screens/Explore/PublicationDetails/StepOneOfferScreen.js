@@ -52,7 +52,6 @@ export default function StepOneOfferScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     
-    // targetBook is now 100% pristine coming from PublicationDetailsScreen!
     const { targetBook, targetSeller } = route.params;
 
     // --- Local State ---

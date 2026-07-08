@@ -14,15 +14,18 @@ export const createChatModel = (
     proposerId, 
     receiverId, 
     receiverName, 
-    targetBookId,
-    targetBookImage, 
+    targetBookId,      // Keep this parameter
+    targetBookImage,   // Keep this parameter
     lastMessage = "Started a new conversation"
 ) => {
     return {
         participants: participants,
-        proposerId: proposerId,             // The user who initiated
-        receiverId: receiverId,             // The user receiving the proposal
-        receiverName: receiverName,         // Name for the swap card
+        proposerId: proposerId,
+        receiverId: receiverId,
+        receiverName: receiverName,
+        
+        // --- UI CACHE FIELDS (For the Inbox Screen) ---
+        targetBookId: targetBookId || null, 
         targetBookImage: targetBookImage || null, 
         
         lastMessage: lastMessage,

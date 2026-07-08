@@ -7,6 +7,7 @@ import { createOfferModel, generateVerificationCode } from '../models/offer';
 import { createMessageModel } from '../models/message';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status'
 
+/** gf */
 export const ChatService = {
 
     /**
@@ -39,9 +40,17 @@ export const ChatService = {
 
     /**
      * Updates the status of an offer (e.g., 'accepted' or 'declined') 
-     * and initializes verification data if accepted.
+     * and initializes verification data and chosen book if accepted.
      */
-    updateOfferStatus: async (chatId, messageId, newStatus, proposerId = null, receiverId = null) => {
+    updateOfferStatus: async (
+        chatId, 
+        messageId, 
+        newStatus, 
+        proposerId = null, 
+        receiverId = null,
+        finalSelectedBookId = null,
+        finalSelectedBookImage = null
+    ) => {
         const messageRef = doc(db, `chats/${chatId}/messages`, messageId);
         
         const updatePayload = {
@@ -52,6 +61,12 @@ export const ChatService = {
             updatePayload['offerDetails.verificationCode'] = generateVerificationCode();
             updatePayload['offerDetails.verificationDisplayerId'] = proposerId;
             updatePayload['offerDetails.verificationScannerId'] = receiverId;
+            
+            // Save the receiver's specific choice
+            if (finalSelectedBookId) {
+                updatePayload['offerDetails.finalSelectedBookId'] = finalSelectedBookId;
+                updatePayload['offerDetails.finalSelectedBookImage'] = finalSelectedBookImage;
+            }
         }
 
         await updateDoc(messageRef, updatePayload);
@@ -59,7 +74,6 @@ export const ChatService = {
 
     /**
      * Creates a new chat (if needed) and sends an initial offer.
-     * Returns the chatId so the UI can navigate to it.verificationDispl
      */
     sendInitialOffer: async (currentUserId, sellerId, targetBook, offeredBooks, location) => {
         const chatsRef = collection(db, 'chats');
@@ -74,30 +88,34 @@ export const ChatService = {
             }
         });
 
-        // 1. Extract the UI data safely
-        const firstImage = targetBook?.imageUrl || targetBook?.book?.images?.[0] || targetBook?.images?.[0] || null;
-        const receiverName = targetBook?.seller?.name || targetBook?.sellerName || "Swapper";
+        const firstImage = targetBook?.imageUrl || null;
+        const receiverName = targetBook?.seller?.username || "Swapper";
 
         if (!chatId) {
-            // 2. Pass all 6 arguments exactly as createChatModel expects them
             const newChatData = createChatModel(
-                [currentUserId, sellerId],              // participants
-                currentUserId,                          // proposerId
-                sellerId,                               // receiverId
-                receiverName,                           // receiverName
-                firstImage,                             // targetBookImage
-                `Offered swap for ${targetBook.title}`  // lastMessage
+                [currentUserId, sellerId],
+                currentUserId,
+                sellerId,
+                receiverName,
+                firstImage,
+                `Offered swap for ${targetBook.title}`
             );
             const newChatRef = await addDoc(chatsRef, newChatData);
             chatId = newChatRef.id;
         }
 
-        // 3. FIXED: Pass `firstImage` as the 2nd argument so the order matches your model!
+        const offeredBookSnapshots = offeredBooks.map(b => ({
+            id: b.id,
+            title: b.title || "Unknown Book",
+            image: b.imageUrl || b.book?.images?.[0] || b.images?.[0] || null
+        }));
+
         const offerPayload = createOfferModel(
             targetBook.id, 
-            firstImage, // <-- Inserted here!
-            offeredBooks.map(b => b.id), 
-            location
+            firstImage, 
+            offeredBookSnapshots, 
+            location,
+            false
         );
 
         const messagePayload = createMessageModel(currentUserId, `Sent an offer for "${targetBook.title}"`, 'offer', offerPayload);
@@ -106,7 +124,7 @@ export const ChatService = {
             addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
             updateDoc(doc(db, 'chats', chatId), {
                 lastMessage: `Swap Offer: ${targetBook.title || 'Book'}`,
-                targetBookImage: firstImage, // <-- Added this! Ensures reused chats update their cover image for the Explore Screen
+                targetBookImage: firstImage,
                 updatedAt: new Date().toISOString()
             })
         ]);
@@ -114,7 +132,10 @@ export const ChatService = {
         return chatId;
     },
 
-    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, selectedBookId, newLocation) => {
+    /**
+     * Sends a counter-proposal based on an original offer.
+     */
+    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, newLocation) => {
         try {
             // 1. Update the old message to 'countered'
             const originalMessageRef = doc(db, 'chats', chatId, 'messages', originalMessageId);
@@ -122,18 +143,15 @@ export const ChatService = {
                 'offerDetails.status': 'countered'
             });
 
-            // 2. Build the Counter-Offer Payload
-            const counterOfferPayload = {
-                targetBookId: originalOffer.targetBookId,
-                targetBookImage: originalOffer.targetBookImage || null,
-                offeredBookIds: originalOffer.offeredBookIds, 
-                selectedBookId: selectedBookId, 
-                selectedBookImage: originalOffer.selectedBookImage || null,
-                location: newLocation || originalOffer.location || {},
-                isCounter: true,
-                status: 'pending',
-                createdAt: new Date().toISOString()
-            };
+            // 2. UPDATED: Use createOfferModel cleanly to construct the counter
+            // We reuse the original target and original offered snapshots, just swapping the location.
+            const counterOfferPayload = createOfferModel(
+                originalOffer.targetBookId,
+                originalOffer.targetBookImage,
+                originalOffer.offeredBooks, // Forward the snapshots array perfectly
+                newLocation || originalOffer.location || {},
+                true // isCounter = true
+            );
 
             // 3. Create the new message payload
             const messagePayload = createMessageModel(

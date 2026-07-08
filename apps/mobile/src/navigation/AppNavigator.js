@@ -32,11 +32,11 @@ import MyPublicationDetailsScreen from '../screens/Profile/MyBooks/MyPublication
 import FavoritesScreen from '../screens/Profile/Favorites/FavoritesScreen';
 import ReviewsScreen from '../screens/Profile/Reviews/ReviewsScreen';
 import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
-import SelectSwapBookScreen from '../screens/Chat/SelectSwapBookScreen';
-import SelectSwapLocationScreen from '../screens/Chat/Code/SelectSwapLocationScreen';
+import SelectSwapBookScreen from '../screens/Chat/Counter/SelectSwapBookScreen';
+import SelectSwapLocationScreen from '../screens/Chat/Counter/SelectSwapLocationScreen';
 import ShowQrCodeScreen from '../screens/Chat/Code/ShowQrCodeScreen';
 import SwapScannerScreen from '../screens/Chat/Code/SwapScannerScreen';
-import ReviewSwapperScreen from '../screens/Chat/ReviewSwapperScreen';
+import ReviewSwapperScreen from '../screens/Chat/Review/ReviewSwapperScreen';
 
 
 

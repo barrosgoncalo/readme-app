@@ -10,7 +10,8 @@ import {
     Platform,
     ActivityIndicator,
     useColorScheme,
-    Image, Linking,
+    Image, 
+    Linking,
     Alert
 } from 'react-native';
 import { 
@@ -28,7 +29,7 @@ import { db } from '@readme/shared/src/services/firebase';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { ROUTES } from '@readme/shared/src/constants/routes'
+import { ROUTES } from '@readme/shared/src/constants/routes';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 export default function ChatRoomScreen({ route, navigation }) {
@@ -50,6 +51,9 @@ export default function ChatRoomScreen({ route, navigation }) {
     const [otherUserId, setOtherUserId] = useState(targetSeller?.uid || null);
     const [bookImage, setBookImage] = useState(null);
     const [publicationId, setPublicationId] = useState(null);
+    
+    // Fallback room metadata for counter offers
+    const [chatLocation, setChatLocation] = useState(null);
 
     const [hasReviewed, setHasReviewed] = useState(false);
 
@@ -65,25 +69,18 @@ export default function ChatRoomScreen({ route, navigation }) {
                 if (chatSnap.exists()) {
                     const chatData = chatSnap.data();
 
-                    const pubId = chatData.publicationId ||
-                        chatData.targetBook?.id ||
-                        chatData.targetBook?.publicationData?.id;
+                    // 1. Grab the top-level cached IDs/Images/Locations
+                    if (chatData.targetBookId) setPublicationId(chatData.targetBookId);
+                    setBookImage(chatData.targetBookImage || null);
+                    if (chatData.location) setChatLocation(chatData.location);
 
-                    if (pubId) setPublicationId(pubId);
-
-                    const resolvedImg = chatData.targetBook?.imageUrl || 
-                        chatData.targetBook?.images?.[0] || 
-                        chatData.targetBook?.book?.images?.[0] || 
-                        chatData.targetBookImage || 
-                        null;
-                    setBookImage(resolvedImg);
-
+                    // 2. Resolve the other user's identity
                     const otherUid = targetSeller?.uid || chatData.participants?.find(uid => uid !== currentUserId);
-
                     if (otherUid) setOtherUserId(otherUid);
 
                     const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
 
+                    // 3. Fetch missing user info if necessary
                     if (otherUid && !hasPipedData) {
                         const userRef = doc(db, 'users', otherUid);
                         const userSnap = await getDoc(userRef);
@@ -91,7 +88,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                         if (userSnap.exists()) {
                             const userData = userSnap.data();
                             setOtherUserName(userData.username || userData.name || "Swapper");
-                            setOtherUserAvatar( userData.photoURL || null);
+                            setOtherUserAvatar(userData.photoURL || null);
                         }
                     }
                 }
@@ -101,8 +98,6 @@ export default function ChatRoomScreen({ route, navigation }) {
         };
 
         fetchChatMetadata();
-        // CRITICAL: Depend on the string primitive targetSeller?.uid, NOT the targetSeller object.
-        // This absolutely guarantees that object-reference infinite loops cannot happen.
     }, [chatId, currentUserId, targetSeller?.uid]);
 
 
@@ -124,9 +119,9 @@ export default function ChatRoomScreen({ route, navigation }) {
             setMessages(fetchedMessages);
             setLoading(false);
         }, (error) => {
-                console.error("Error loading chat room messages:", error);
-                setLoading(false);
-            });
+            console.error("Error loading chat room messages:", error);
+            setLoading(false);
+        });
 
         return () => unsubscribe();
     }, [chatId]);
@@ -134,7 +129,6 @@ export default function ChatRoomScreen({ route, navigation }) {
     useEffect(() => {
         if (!chatId || !currentUserId) return;
 
-        // Escuta diretamente o documento de review gerado por este utilizador para este chat
         const reviewRef = doc(db, 'reviews', `${chatId}_${currentUserId}`);
 
         const unsubscribe = onSnapshot(reviewRef, (docSnap) => {
@@ -172,30 +166,61 @@ export default function ChatRoomScreen({ route, navigation }) {
         });
     };
 
-    const handleResolveOffer = async (messageId, newStatus, bookId = null, senderIdOfOffer = null) => {
+    const handleResolveOffer = async (
+        messageId, 
+        newStatus, 
+        bookId = null, 
+        senderIdOfOffer = null,
+        finalSelectedBookId = null,
+        finalSelectedBookImage = null
+    ) => {
         try {
-            let displayerId = senderIdOfOffer; // The person who originally sent the proposal
-            let scannerId = currentUserId;     // The person who is pressing "Accept" right now
+            let displayerId = senderIdOfOffer;
+            let scannerId = currentUserId;
 
             // 1. Update the message status in the chat room
-            await ChatService.updateOfferStatus(chatId, messageId, newStatus, displayerId, scannerId);
+            await ChatService.updateOfferStatus(
+                chatId, 
+                messageId, 
+                newStatus, 
+                displayerId, 
+                scannerId, 
+                finalSelectedBookId,
+                finalSelectedBookImage
+            );
             console.log("Chat offer status updated successfully.");
 
-            // 2. Safely attempt to reserve the book on the main feed
+            // 2. Safely attempt to reserve the books on the main feed
             if (newStatus === 'accepted') {
-                const targetBookId = bookId || publicationId;
-                if (targetBookId) {
+                const targetBookId = bookId || publicationId; 
+
+                if (!targetBookId) {
+                    console.warn("Offer accepted, but no primary book ID could be resolved from message or chat.");
+                    return;
+                }
+
+                // A. Reserve the primary requested book
+                try {
+                    const publicationRef = doc(db, 'publications', targetBookId);
+                    await updateDoc(publicationRef, { 
+                        status: PUBLICATION_STATUS.RESERVED 
+                    });
+                    console.log(`Success: Primary book ${targetBookId} is now reserved.`);
+                } catch (permError) {
+                    console.error("Rules blocked reserving primary book:", permError);
+                }
+
+                // B. Reserve the offered exchange book (if this is a 2-way swap)
+                if (finalSelectedBookId) {
                     try {
-                        const publicationRef = doc(db, 'publications', targetBookId);
-                        await updateDoc(publicationRef, { 
+                        const exchangeRef = doc(db, 'publications', finalSelectedBookId);
+                        await updateDoc(exchangeRef, { 
                             status: PUBLICATION_STATUS.RESERVED 
                         });
-                        console.log(`Success: Publication ${targetBookId} is now reserved.`);
+                        console.log(`Success: Exchange book ${finalSelectedBookId} is now reserved.`);
                     } catch (permError) {
-                        console.error("Rules blocked reserving the book, check Firestore Rules:", permError);
+                        console.error("Rules blocked reserving exchange book:", permError);
                     }
-                } else {
-                    console.warn("Offer accepted, but no book ID could be resolved.");
                 }
             }
         } catch (error) {
@@ -235,6 +260,10 @@ export default function ChatRoomScreen({ route, navigation }) {
         const isReceivedOffer = item.senderId !== currentUserId;
         const isPending = offer?.status === 'pending';
         const isCounterOffer = offer?.isCounter === true; 
+        const bubbleTargetImage = offer?.targetBookImage || bookImage;
+
+        // Resolve Location Fallback Tree
+        const resolvedLocation = offer?.location || item?.location || chatLocation;
 
         // Clean status colors
         let statusBg = '#FEF3C7'; 
@@ -274,8 +303,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                         <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
                             Target Book
                         </Text>
-                        {bookImage ? (
-                            <Image source={{ uri: bookImage }} style={styles.tradeBookImage} />
+
+                        {bubbleTargetImage ? (
+                            <Image source={{ uri: bubbleTargetImage }} style={styles.tradeBookImage} />
                         ) : (
                             <View style={[styles.tradeBookImage, styles.placeholderBg]}>
                                 <Iconify icon="lucide:book" size={20} color={theme.subtext} />
@@ -291,34 +321,32 @@ export default function ChatRoomScreen({ route, navigation }) {
                         <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
                             {isCounterOffer ? "Offered Book" : "Options"}
                         </Text>
-                        
-                        {/* Try to show the offered book image, otherwise show a clean minimal badge */}
-                        {offer?.selectedBookImage ? (
-                            <Image source={{ uri: offer.selectedBookImage }} style={styles.tradeBookImage} />
+
+                        {offer?.finalSelectedBookImage || (isCounterOffer && (offer?.selectedBookImage || offer?.offeredBooks?.[0]?.image)) ? (
+                            <Image 
+                                source={{ uri: offer.finalSelectedBookImage || offer.selectedBookImage || offer.offeredBooks?.[0]?.image }} 
+                                style={styles.tradeBookImage} 
+                            />
                         ) : (
                             <View style={[styles.tradeBookImage, styles.placeholderBg]}>
-                                {isCounterOffer ? (
-                                    <Iconify icon="lucide:book-open" size={20} color={theme.primary} />
-                                ) : (
-                                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textItemTitle }}>
-                                        {offer?.offeredBookIds?.length || 1}
-                                    </Text>
-                                )}
+                                <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textItemTitle }}>
+                                    {offer?.offeredBooks?.length || offer?.offeredBookIds?.length || 1}
+                                </Text>
                             </View>
                         )}
                     </View>
                 </View>
 
-                {/* LOCATION DETAILS (CLICKABLE) */}
-                {offer?.location ? (
+                {/* LOCATION DETAILS (CLICKABLE WITH METADATA FALLBACK) */}
+                {resolvedLocation ? (
                     <TouchableOpacity 
                         style={styles.clickableLocationRow} 
-                        onPress={() => handleOpenNavigation(offer.location)}
+                        onPress={() => handleOpenNavigation(resolvedLocation)}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.offerText, { color: theme.subtext, flex: 1, marginTop: 0 }]}>
                             Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle, textDecorationLine: 'underline' }}>
-                                {offer?.location?.title || offer?.location?.address || 'Not specified'}
+                                {resolvedLocation.title || resolvedLocation.address || 'View on Map'}
                             </Text>
                         </Text>
                     </TouchableOpacity>
@@ -370,7 +398,14 @@ export default function ChatRoomScreen({ route, navigation }) {
                                         targetSellerUid: targetSeller?.uid || item.senderId
                                     });
                                 } else {
-                                    handleResolveOffer(item.id, 'accepted', offer?.targetBookId, item.senderId);
+                                    handleResolveOffer(
+                                        item.id, 
+                                        'accepted', 
+                                        offer?.targetBookId, 
+                                        item.senderId,
+                                        offer?.selectedBookId,
+                                        offer?.selectedBookImage
+                                    );
                                 }
                             }} 
                         >
@@ -380,10 +415,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                         </TouchableOpacity>
                     </View>
                 )}
+                
                 {/* --- VERIFICATION HANDSHAKE UI --- */}
                 {offer?.status === 'accepted' && (
                     <View style={styles.offerActions}>
-                        {/* DISPLAYER (Show QR): Uses your Primary Dark Brown */}
                         {offer.verificationDisplayerId === currentUserId && (
                             <TouchableOpacity 
                                 style={[styles.actionButton, { backgroundColor: theme.primary }]}
@@ -404,7 +439,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                                 <Iconify 
                                     icon="lucide:scan" 
                                     size={18} 
-                                    // White for light mode, rich dark brown for dark mode beige background
                                     color={colorScheme === 'dark' ? '#1C0E05' : '#FFFFFF'} 
                                     style={{ marginRight: 8 }} 
                                 />
@@ -422,13 +456,11 @@ export default function ChatRoomScreen({ route, navigation }) {
                 {/* --- COMPLETED SWAP UI --- */}
                 {offer?.status === 'completed' && (
                     <View style={styles.completedContainer}>
-                        {/* O título celebra sempre o facto de a troca ter terminado */}
                         <View style={styles.completedHeader}>
                             <Iconify icon="lucide:party-popper" size={24} color="#10B981" />
                             <Text style={styles.completedText}>Troca Concluída!</Text>
                         </View>
 
-                        {/* O botão gere a ação de avaliar */}
                         <TouchableOpacity 
                             style={[
                                 styles.actionButton, 
@@ -450,15 +482,13 @@ export default function ChatRoomScreen({ route, navigation }) {
                             <Iconify 
                                 icon={hasReviewed ? "lucide:check-circle" : "lucide:star"} 
                                 size={18} 
-                                // Dá um tom verde ao ícone se já foi avaliado para reforçar o sucesso
                                 color={hasReviewed ? "#10B981" : theme.background} 
                                 style={{ marginRight: 8 }} 
                             />
                             <Text style={[
                                 styles.acceptButtonText, 
-                                // Muda a cor do texto para condizer
                                 { color: hasReviewed ? theme.subtext : theme.background }
-                            ]}>
+                              ]}>
                                 {hasReviewed ? "Avaliação Enviada" : "Avaliar Utilizador"}
                             </Text>
                         </TouchableOpacity>
@@ -515,10 +545,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                     {otherUserAvatar ? (
                         <Image source={{ uri: otherUserAvatar }} style={styles.headerAvatar} />
                     ) : (
-                            <View style={[styles.headerAvatarPlaceholder, { backgroundColor: theme.backgroundElement }]}>
-                                <Iconify icon="lucide:user" size={20} color={theme.subtext} />
-                            </View>
-                        )}
+                        <View style={[styles.headerAvatarPlaceholder, { backgroundColor: theme.backgroundElement }]}>
+                            <Iconify icon="lucide:user" size={20} color={theme.subtext} />
+                        </View>
+                    )}
                     <View style={styles.headerTextGroup}>
                         <Text style={[styles.headerName, { color: theme.textItemTitle }]}>
                             {otherUserName}
@@ -534,15 +564,15 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                    <FlatList
-                        data={messages}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderMessageItem}
-                        inverted
-                        contentContainerStyle={styles.listContainer}
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
+                <FlatList
+                    data={messages}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderMessageItem}
+                    inverted
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
                 <SafeAreaView edges={['bottom']} style={[styles.inputContainer, { backgroundColor: theme.background, borderTopColor: theme.borderLight }]}>
@@ -655,13 +685,6 @@ const styles = StyleSheet.create({
         marginTop: 12,
         paddingVertical: 2,
     },
-    clickableLocationRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginTop: 12,
-        paddingVertical: 2,
-    },
-    // NOVOS ESTILOS AQUI:
     completedContainer: { 
         marginTop: 16, 
         alignItems: 'center', 

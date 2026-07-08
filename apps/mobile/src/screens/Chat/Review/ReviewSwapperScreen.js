@@ -104,7 +104,7 @@ export default function ReviewSwapperScreen({ route, navigation }) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Iconify icon="lucide:x" size={24} color={theme.textItemTitle} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textItemTitle }]}>Avaliar Troca</Text>
+                <Text style={[styles.headerTitle, { color: theme.textItemTitle }]}>Rate Swapper</Text>
                 <View style={styles.backButton} /> {/* Spacer to center title */}
             </View>
 
