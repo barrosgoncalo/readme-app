@@ -1,6 +1,31 @@
 import { StyleSheet } from 'react-native';
 
 export const buildStyles = (theme) => StyleSheet.create({
+    tabButtonsRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 12,
+        paddingHorizontal: 20,
+        marginTop: 16,
+        marginBottom: 12,
+    },
+    pillButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 44,
+        borderRadius: 100,
+        backgroundColor: theme.pillButtonMuted,
+    },
+    tabButtonActive: {
+        backgroundColor: theme.pillButtonActive,
+    },
+    tabButtonText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: theme.textMuted,
+    },
+    tabButtonTextActive: {
+        color: theme.borderLight,
+    },
     container: {
         flex: 1,
         backgroundColor: theme.background,

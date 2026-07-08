@@ -19,6 +19,9 @@ const ALGOLIA_INDEX_NAME = "users";
 // Direct initialization of the v5 client (without initIndex)
 const client = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_ADMIN_KEY);
 
+const ALGOLIA_PUBLICATIONS_INDEX = "publications";
+
+
 // ==========================================
 // ALGOLIA USER SYNC FUNCTION
 // ==========================================
@@ -97,5 +100,41 @@ exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", r
         console.log(`Rating for user ${revieweeId} updated successfully.`);
     } catch (error) {
         console.error("Error processing the rating Cloud Function:", error);
+    }
+});
+
+
+// ==========================================
+// ALGOLIA PUBLICATION SYNC FUNCTION
+// ==========================================
+exports.syncPublicationToAlgolia = onDocumentWritten({ document: "publications/{publicationId}", region: "europe-west1" }, async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.after.data();
+    const objectID = event.params.publicationId;
+
+    try {
+        // If the document was deleted in Firestore, delete it in Algolia
+        if (!data) {
+            await client.deleteObject({
+                indexName: ALGOLIA_PUBLICATIONS_INDEX,
+                objectID: objectID
+            });
+            console.log(`Publication ${objectID} successfully deleted from Algolia.`);
+            return;
+        }
+
+        // If it was created or updated, save it to Algolia
+        await client.saveObject({
+            indexName: ALGOLIA_PUBLICATIONS_INDEX,
+            body: {
+                objectID,
+                ...data
+            }
+        });
+        console.log(`Publication ${objectID} successfully synced to Algolia.`);
+    } catch (error) {
+        console.error("Error syncing publication with Algolia:", error);
     }
 });
