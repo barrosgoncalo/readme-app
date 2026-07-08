@@ -130,10 +130,10 @@ export default function ReviewSwapperScreen({ route, navigation }) {
                                 </View>
                             )}
                             <Text style={[styles.userName, { color: theme.textItemTitle }]}>
-                                {targetUser?.username || targetUser?.fullName || "Swapper Anónimo"}
+                                {targetUser?.username || targetUser?.fullName || "Anonymous Swapper"}
                             </Text>
                             <Text style={[styles.userSubtitle, { color: theme.subtext }]}>
-                                Como correu a tua troca com esta pessoa?
+                                How did your swap with this person go?
                             </Text>
                         </View>
                     )}
@@ -157,17 +157,17 @@ export default function ReviewSwapperScreen({ route, navigation }) {
                     </View>
                     
                     <Text style={[styles.ratingLabel, { color: theme.primary }]}>
-                        {rating === 1 && "Muito Fraca 😞"}
-                        {rating === 2 && "Abaixo das Expectações 😕"}
-                        {rating === 3 && "Razoável 😐"}
-                        {rating === 4 && "Muito Boa 🙂"}
-                        {rating === 5 && "Excelente! 🤩"}
+                        {rating === 1 && "Very Poor 😞"}
+                        {rating === 2 && "Below Expectations 😕"}
+                        {rating === 3 && "Fair 😐"}
+                        {rating === 4 && "Very Good 🙂"}
+                        {rating === 5 && "Excellent! 🤩"}
                     </Text>
 
                     {/* --- COMMENT INPUT BOX --- */}
                     <View style={styles.inputContainer}>
                         <Text style={[styles.inputLabel, { color: theme.textItemTitle }]}>
-                            Deixa um comentário (opcional)
+                            Leave a comment (optional)
                         </Text>
                         <TextInput
                             style={[
@@ -178,7 +178,7 @@ export default function ReviewSwapperScreen({ route, navigation }) {
                                     color: theme.textItemTitle 
                                 }
                             ]}
-                            placeholder="A pessoa foi pontual? O livro estava em bom estado?"
+                            placeholder="Was the person punctual and easy to communicate with?"
                             placeholderTextColor={theme.subtext}
                             value={comment}
                             onChangeText={setComment}
@@ -204,7 +204,7 @@ export default function ReviewSwapperScreen({ route, navigation }) {
                     {isSubmitting ? (
                         <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                        <Text style={styles.submitButtonText}>Submeter Avaliação</Text>
+                        <Text style={styles.submitButtonText}>Submit Review</Text>
                     )}
                 </TouchableOpacity>
             </View>
