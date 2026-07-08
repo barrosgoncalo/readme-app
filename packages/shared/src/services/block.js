@@ -45,3 +45,25 @@ export const doGetBlockedUsers = async (blockerUid) => {
         })
     );
 };
+
+/**
+ * Fetches the list of UIDs blocked by the current user
+ * @param {string} currentUserId - The UID of the currently logged-in user
+ */
+export async function doGetBlockedUids(currentUserId) {
+    if (!currentUserId) return [];
+    
+    try {
+        // 1. You must query 'blockerUid' (matching your rules)
+        // 2. The value must be the logged-in user's UID to satisfy the security rule constraint
+        const blocks = await DB.get('blocks', [
+            { field: 'blockerUid', operator: '==', value: currentUserId }
+        ]);
+
+        // 3. Extract the 'blockedUid' field from your document structure
+        return blocks.map(block => block.blockedUid).filter(Boolean);
+    } catch (error) {
+        console.error("Error fetching blocked UIDs:", error);
+        return [];
+    }
+}
