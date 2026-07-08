@@ -152,9 +152,11 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
     };
 
-    const handleShowQRCode = (code) => {
+    const handleShowQRCode = (code, messageId) => {
         navigation.navigate(ROUTES.QR_DISPLAY, { 
-            verificationCode: code 
+            verificationCode: code,
+            chatId: chatId,
+            messageId: messageId
         });
     };
 
@@ -422,7 +424,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                         {offer.verificationDisplayerId === currentUserId && (
                             <TouchableOpacity 
                                 style={[styles.actionButton, { backgroundColor: theme.primary }]}
-                                onPress={() => handleShowQRCode(offer.verificationCode)}
+                                onPress={() => handleShowQRCode(offer.verificationCode, item.id)}
                             >
                                 <Iconify icon="lucide:qr-code" size={18} color={theme.primaryText} style={{ marginRight: 8 }} />
                                 <Text style={[styles.acceptButtonText, { color: theme.primaryText }]}>

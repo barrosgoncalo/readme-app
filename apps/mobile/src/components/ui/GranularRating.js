@@ -2,10 +2,9 @@ import React from 'react';
 import { View } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 
-
-export const GranularRating = ({ rating, theme }) => {
-    const starSize = 14;
-    const starSpacing = 2;
+export const GranularRating = ({ rating, theme, size = 14 }) => {
+    const starSize = size;
+    const starSpacing = Math.round(size * 0.15); 
     const totalStars = 5;
 
     const fillPercentage = Math.max(0, Math.min(totalStars, rating)) / totalStars;
@@ -24,12 +23,12 @@ export const GranularRating = ({ rating, theme }) => {
 
     return (
         <View style={{ width: containerWidth, height: starSize, position: 'relative' }}>
-            {/* Camada de Fundo: contornos vazios */}
+            {/* Background Layer: empty outlines */}
             <View style={{ flexDirection: 'row', position: 'absolute', top: 0, left: 0 }}>
                 {renderStars("ph:star", theme.textMuted || '#A0A0A0')}
             </View>
 
-            {/* Camada da Frente: preenchidas, cortadas na largura certa */}
+            {/* Foreground Layer: filled shapes, clipped by precision width mask */}
             <View
                 style={{
                     flexDirection: 'row',

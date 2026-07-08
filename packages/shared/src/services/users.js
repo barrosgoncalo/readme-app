@@ -82,6 +82,7 @@ export const toggleFavoriteStatus = async (userId, bookId, isCurrentlyFavorited)
         DB.update(USERS_COLLECTION, userId, { 
             favoriteBooks: !isCurrentlyFavorited ? arrayUnion(bookId) : arrayRemove(bookId) 
         }),
+        
         DB.update('publications', bookId, { 
             "stats.likesCount": increment(!isCurrentlyFavorited ? 1 : -1) 
         })

@@ -87,6 +87,7 @@ export const createUserBookModel = (userId, bookId, status = 'want_to_read', ove
     return {
         userId: userId,
         bookId: bookId,
+        createdAt: serverTimestamp(),
         status: status,
         currentPage: overrides.currentPage || 0,
         progressPercentage: overrides.progressPercentage || 0,

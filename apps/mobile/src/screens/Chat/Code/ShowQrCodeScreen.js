@@ -1,15 +1,47 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
-
 import QRCode from 'react-native-qrcode-svg';
 
-export default function SwapQRCodeScreen({ route, navigation }) {
+// Firestore imports
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+
+export default function ShowQRCodeScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const { verificationCode } = route.params;
+    
+    // Unpack subcollection route parameters
+    const { verificationCode, chatId, messageId } = route.params;
+
+    // --- REAL-TIME LISTEN TO NESTED OFFER STATUS ---
+    useEffect(() => {
+        // Safety check to ensure we have the complete subcollection path
+        if (!chatId || !messageId) return;
+
+        const db = getFirestore();
+        
+        // Target: chats/{chatId}/messages/{messageId}
+        // Note: Change 'chats' if your root collection is named 'threads' or something else
+        const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+
+        const unsubscribe = onSnapshot(messageRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const messageData = snapshot.data();
+                const offerDetails = messageData?.offerDetails;
+
+                // ✨ Inspecting your specific offer model status
+                if (offerDetails && (offerDetails.status === 'completed' || offerDetails.status === 'verified')) {
+                    navigation.goBack();
+                }
+            }
+        }, (error) => {
+            console.error("Error listening to subcollection message updates:", error);
+        });
+
+        return () => unsubscribe();
+    }, [chatId, messageId, navigation]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
@@ -34,7 +66,7 @@ export default function SwapQRCodeScreen({ route, navigation }) {
                     <QRCode 
                         value={verificationCode} 
                         size={200}
-                        color="#1C1A19" // A tua cor de texto escura
+                        color="#1C1A19" 
                         backgroundColor="#FFFFFF"
                     />
                 </View>
