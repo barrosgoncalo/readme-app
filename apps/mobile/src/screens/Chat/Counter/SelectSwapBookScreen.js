@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // <-- Não te esqueças de importar o useEffect
 import { 
     View, Text, StyleSheet, FlatList, TouchableOpacity, 
     useColorScheme, Image 
@@ -14,9 +14,24 @@ export default function SelectSwapBookScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
 
-    // Load the books directly from the route params! No database fetch needed.
     const [offeredBooks] = useState(offerDetails?.offeredBooks || []);
-    const [selectedBookId, setSelectedBookId] = useState(offerDetails?.offeredBooks?.[0]?.id || null);
+    const [selectedBookId, setSelectedBookId] = useState(null);
+
+    // --- ADICIONA ESTE USEEFFECT AQUI ---
+    useEffect(() => {
+        if (offeredBooks.length === 1) {
+            const singleBook = offeredBooks[0];
+            
+            // Usar replace para não deixar este ecrã "fantasma" no histórico do botão voltar
+            navigation.replace(ROUTES.SELECT_SWAP_LOCATION, {
+                ...route.params,
+                selectedBookId: singleBook.id,
+                selectedBookImage: singleBook.image || null
+            });
+        }
+    }, [offeredBooks, navigation, route.params]);
+
+    // ------------------------------------
 
     const handleNext = () => {
         if (!selectedBookId) return;

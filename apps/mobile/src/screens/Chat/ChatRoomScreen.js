@@ -286,6 +286,11 @@ export default function ChatRoomScreen({ route, navigation }) {
             statusTextColor = '#166534';
         }
 
+        // --- LÓGICA DE UI DA IMAGEM ---
+        // Verifica se devemos mostrar a imagem (seja por ser final/selecionada ou se só existe 1 livro na oferta)
+        const hasSingleBookImage = offer?.offeredBooks?.length === 1 && offer?.offeredBooks[0]?.image;
+        const imageToShow = offer?.finalSelectedBookImage || offer?.selectedBookImage || (hasSingleBookImage ? offer.offeredBooks[0].image : null);
+
         return (
             <View style={[
                 styles.offerCard, 
@@ -326,12 +331,14 @@ export default function ChatRoomScreen({ route, navigation }) {
                     {/* Right Side: Offered Book(s) */}
                     <View style={styles.bookColumn}>
                         <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
-                            {isCounterOffer ? "Offered Book" : "Options"}
+                            {/* Altera o label se for apenas 1 livro */}
+                            {(isCounterOffer || offer?.offeredBooks?.length === 1) ? "Offered Book" : "Options"}
                         </Text>
 
-                        {offer?.finalSelectedBookImage || (isCounterOffer && (offer?.selectedBookImage || offer?.offeredBooks?.[0]?.image)) ? (
+                        {/* MOSTRA A IMAGEM SE HOUVER SÓ 1 LIVRO, CASO CONTRÁRIO MOSTRA O NÚMERO */}
+                        {imageToShow ? (
                             <Image 
-                                source={{ uri: offer.finalSelectedBookImage || offer.selectedBookImage || offer.offeredBooks?.[0]?.image }} 
+                                source={{ uri: imageToShow }} 
                                 style={styles.tradeBookImage} 
                             />
                         ) : (
@@ -344,7 +351,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </View>
                 </View>
 
-                {/* LOCATION DETAILS (CLICKABLE WITH METADATA FALLBACK) */}
+                {/* LOCATION DETAILS */}
                 {resolvedLocation ? (
                     <TouchableOpacity 
                         style={styles.clickableLocationRow} 
@@ -398,12 +405,28 @@ export default function ChatRoomScreen({ route, navigation }) {
                             style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
                             onPress={() => {
                                 if (!isCounterOffer) {
-                                    navigation.navigate(ROUTES.SELECT_SWAP_BOOK, { 
-                                        messageId: item.id, 
-                                        chatId: chatId,
-                                        offerDetails: offer,
-                                        targetSellerUid: item.senderId
-                                    });
+                                    // --- LÓGICA DE NAVEGAÇÃO CORRIGIDA AQUI ---
+                                    const offeredBooks = offer?.offeredBooks || [];
+                                    
+                                    if (offeredBooks.length === 1) {
+                                        // Salta diretamente para a localização
+                                        navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, { 
+                                            messageId: item.id, 
+                                            chatId: chatId,
+                                            offerDetails: offer,
+                                            targetSellerUid: item.senderId,
+                                            selectedBookId: offeredBooks[0].id,
+                                            selectedBookImage: offeredBooks[0].image || null
+                                        });
+                                    } else {
+                                        // Vai para a seleção de livros se houver 2 ou mais
+                                        navigation.navigate(ROUTES.SELECT_SWAP_BOOK, { 
+                                            messageId: item.id, 
+                                            chatId: chatId,
+                                            offerDetails: offer,
+                                            targetSellerUid: item.senderId
+                                        });
+                                    }
                                 } else {
                                     handleResolveOffer(
                                         item.id, 
