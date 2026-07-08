@@ -164,8 +164,12 @@ export const ChatService = {
                         status: isOutgoing ? 'giving' : 'receiving', 
                         targetSeller: {
                             uid: otherParticipantUid,
-                            name: data.receiverName || 'Swapper',
-                            avatarUrl: data.receiverAvatar || null
+                            name: isOutgoing 
+                                ? (data.receiverName || 'Swapper') 
+                                : (data.proposerName || 'Swapper'),
+                            avatarUrl: isOutgoing 
+                                ? (data.receiverAvatar || null) 
+                                : (data.proposerAvatar || null)
                         },
                         updatedAt: data.updatedAt || data.createdAt
                     };
