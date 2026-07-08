@@ -1,24 +1,26 @@
-import { auth, db } from "./firebase";
+import { auth } from "./firebase";
 import {
     createUserWithEmailAndPassword,
     deleteUser,
     signInWithEmailAndPassword, 
     sendPasswordResetEmail, 
-    updatePassword ,
+    updatePassword,
     reauthenticateWithCredential,
     signInWithCredential,
     sendEmailVerification,
     GoogleAuthProvider,
     EmailAuthProvider,
-} from "firebase/auth"
-import { doc, setDoc, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
+} from "firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ACCOUNT_STATUS } from "../constants/authConstants";
 import { createUserModel } from '@readme/shared/src/models/user';
 
+import { DB } from '@readme/shared/src/services/DB';
+
 export const saveUserData = async (uid, profileData, provider) => {
     const userData = createUserModel(uid, profileData, provider);
-    await setDoc(doc(db, "users", uid), userData);
+    
+    await DB.create("users", userData, uid);
 };
 
 export const doDeleteUserProfile = async (uid) => {
@@ -29,8 +31,8 @@ export const doDeleteUserProfile = async (uid) => {
             throw new Error("No authenticated user found or UID mismatch.");
         }
 
-        const userRef = doc(db, 'users', uid);
-        await deleteDoc(userRef);
+        // ✨ Replaced deleteDoc with DB.remove
+        await DB.remove('users', uid);
 
         await deleteUser(currentUser);
         
@@ -40,7 +42,6 @@ export const doDeleteUserProfile = async (uid) => {
     }
 };
 
-
 /**
  * Updates general user data in Firestore.
  * @param {string} uid - The user's ID
@@ -48,13 +49,7 @@ export const doDeleteUserProfile = async (uid) => {
  */
 export const doUpdateUserProfile = async (uid, dataToUpdate) => {
     try {
-        const userDocRef = doc(db, "users", uid);
-
-        await updateDoc(userDocRef, {
-            ...dataToUpdate,
-            updatedAt: new Date().toISOString()
-        });
-
+        await DB.update("users", uid, dataToUpdate);
         return true;
     } catch (error) {
         console.error("Error updating profile in Firestore:", error);
@@ -78,14 +73,11 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
         const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
         const user = userCredential.user;
 
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
+        const userData = await DB.get("users", user.uid);
 
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-
+        if (userData) {
             if (userData.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
-                await auth.signOut(); // Force log them back out
+                await auth.signOut();
                 throw new Error("Your account has been suspended. Please contact support.");
             }
 
@@ -129,10 +121,9 @@ export const doSignInWithGoogleCredential = async (idToken, profileData) => {
     const credential = GoogleAuthProvider.credential(idToken);
     const userCredential = await signInWithCredential(auth, credential);
 
-    const userDocRef = doc(db, "users", userCredential.user.uid);
-    const userDoc = await getDoc(userDocRef);
+    const userData = await DB.get("users", userCredential.user.uid);
 
-    if(!userDoc.exists()) {
+    if (!userData) {
         await saveUserData(userCredential.user.uid, profileData, 'google');
     }
 
