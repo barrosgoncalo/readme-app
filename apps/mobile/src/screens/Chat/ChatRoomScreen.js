@@ -185,7 +185,7 @@ export default function ChatRoomScreen({ route, navigation }) {
             let displayerId = senderIdOfOffer;
             let scannerId = currentUserId;
 
-            // 1. Update the message status in the chat room
+            // Update the message status in the chat room
             await ChatService.updateOfferStatus(
                 chatId, 
                 messageId, 
@@ -197,7 +197,7 @@ export default function ChatRoomScreen({ route, navigation }) {
             );
             console.log("Chat offer status updated successfully.");
 
-            // 2. Safely attempt to reserve the books on the main feed
+            // Safely attempt to reserve the books on the main feed
             if (newStatus === 'accepted') {
                 const targetBookId = bookId || publicationId; 
 
@@ -206,7 +206,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                     return;
                 }
 
-                // A. Reserve the primary requested book
+                // Reserve the primary requested book
                 try {
                     const publicationRef = doc(db, 'publications', targetBookId);
                     await updateDoc(publicationRef, { 
@@ -217,7 +217,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                     console.error("Rules blocked reserving primary book:", permError);
                 }
 
-                // B. Reserve the offered exchange book (if this is a 2-way swap)
+                // Reserve the offered exchange book (if this is a 2-way swap)
                 if (finalSelectedBookId) {
                     try {
                         const exchangeRef = doc(db, 'publications', finalSelectedBookId);
@@ -488,7 +488,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <View style={styles.completedContainer}>
                         <View style={styles.completedHeader}>
                             <Iconify icon="lucide:party-popper" size={24} color="#10B981" />
-                            <Text style={styles.completedText}>Troca Concluída!</Text>
+                            <Text style={styles.completedText}>Trade completed!</Text>
                         </View>
 
                         <TouchableOpacity 
@@ -519,7 +519,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                                 styles.acceptButtonText, 
                                 { color: hasReviewed ? theme.subtext : theme.background }
                               ]}>
-                                {hasReviewed ? "Avaliação Enviada" : "Avaliar Utilizador"}
+                                {hasReviewed ? "Review Submitted" : "Review User"}
                             </Text>
                         </TouchableOpacity>
                     </View>
