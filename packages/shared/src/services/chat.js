@@ -111,7 +111,7 @@ export const ChatService = {
     /**
      * Sends a counter-proposal based on an original offer.
      */
-    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, newLocation) => {
+    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, newLocation, selectedBookId = null, selectedBookImage = null) => {
         try {
             await DB.update(`chats/${chatId}/messages`, originalMessageId, {
                 'offerDetails.status': 'countered'
@@ -124,6 +124,11 @@ export const ChatService = {
                 newLocation || originalOffer.location || {},
                 true
             );
+
+            if (selectedBookId) {
+                counterOfferPayload.selectedBookId = selectedBookId;
+                counterOfferPayload.selectedBookImage = selectedBookImage;
+            }
 
             const messagePayload = createMessageModel(
                 currentUserId, 
@@ -143,7 +148,7 @@ export const ChatService = {
             throw error;
         }
     },
-    
+
     /**
      * Uses the new streamQuery because we need to filter by participants
      */

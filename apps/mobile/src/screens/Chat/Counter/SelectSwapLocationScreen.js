@@ -61,20 +61,18 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
 
         setIsSubmitting(true);
         try {
-            // Inject the newly selected active location into the details payload
             const updatedOfferDetails = {
                 ...offerDetails,
-                selectedBookImage: selectedBookImage,
                 location: activeLocationSelection
             };
-
             await ChatService.sendCounterOffer(
                 chatId, 
                 messageId, 
                 currentUser.uid, 
                 updatedOfferDetails,
-                // selectedBookId,
-                activeLocationSelection
+                activeLocationSelection,
+                selectedBookId,
+                selectedBookImage
             );
 
             // Pop back 2 screens to return to the Chat, closing both Step 1 and Step 2
