@@ -234,7 +234,7 @@ export default function PublicProfile() {
                         {reviews.map(review => (
                             <div key={review.id} className={styles.reviewItem}>
                                 <div className={styles.reviewHeader}>
-                                    <span className={styles.reviewAuthor}>{review.reviewerName || 'Anonymous'}</span>
+                                    <span className={styles.reviewAuthor}>{review.authorName || 'Anonymous'}</span>
                                     <span className={styles.reviewRating}>
                                         {Array(5).fill(0).map((_, i) => (
                                             <span key={i} style={{ color: i < review.rating ? 'var(--primary)' : 'var(--bg-elem)' }}>

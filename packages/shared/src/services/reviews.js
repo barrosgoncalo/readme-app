@@ -50,6 +50,15 @@ export const fetchUserReviews = async (revieweeId) => {
 };
 
 /**
+ * Checks whether reviewerId has already reviewed this swap.
+ */
+export const hasUserReviewed = async (swapId, reviewerId) => {
+    const snap = await getDocs(query(collection(db, 'reviews'),
+        where('swapId', '==', swapId), where('reviewerId', '==', reviewerId)));
+    return !snap.empty;
+};
+
+/**
  * Submit a review for a completed swap. Guards against duplicate reviews.
  */
 export const submitReview = async (swapId, chatId, reviewerId, revieweeId, rating, comment = '') => {

@@ -1,16 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
 import BookCover from '../../../components/BookCover.jsx';
 import styles from './OfferStep2.module.css';
 
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIcon2x,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow,
+});
+
 const LISBON = { lat: 38.7223, lng: -9.1393 };
 const DEFAULT_LOCATION = { title: 'Lisbon', address: 'Lisbon, Portugal', ...LISBON };
 
+function RecenterMap({ center }) {
+    const map = useMap();
+    useEffect(() => {
+        map.setView([center.lat, center.lng]);
+    }, [center, map]);
+    return null;
+}
+
+function MapClickHandler({ onMapClick }) {
+    useMapEvents({ click: onMapClick });
+    return null;
+}
+
 export default function OfferStep2({ publication, selectedCount, location, onLocationChange }) {
-    const mapRef = useRef(null);
-    const markerRef = useRef(null);
     const [center, setCenter] = useState(LISBON);
     const [searchQuery, setSearchQuery] = useState('');
     const [searching, setSearching] = useState(false);
@@ -124,19 +145,16 @@ export default function OfferStep2({ publication, selectedCount, location, onLoc
                     <MapContainer
                         center={[center.lat, center.lng]}
                         zoom={13}
-                        ref={mapRef}
-                        onClick={handleMapClick}
                         className={styles.map}
                     >
                         <TileLayer
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         />
+                        <RecenterMap center={center} />
+                        <MapClickHandler onMapClick={handleMapClick} />
                         {location && (
-                            <Marker
-                                position={[location.lat, location.lon]}
-                                ref={markerRef}
-                            >
+                            <Marker position={[location.lat, location.lon]}>
                                 <Popup>{location.title}</Popup>
                             </Marker>
                         )}

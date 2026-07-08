@@ -80,12 +80,12 @@ export default function NewOffer() {
                 imageUrl: publication.book.images?.[0]
             };
 
-            const offeredBookIds = Array.from(selectedBooks);
+            const offeredBooks = myBooks.filter(b => selectedBooks.has(b.id));
             const chatId = await ChatService.sendInitialOffer(
                 uid,
                 publication.uid,
                 targetBook,
-                offeredBookIds,
+                offeredBooks,
                 location
             );
 

@@ -69,3 +69,9 @@
     cursor: not-allowed;
 }
 
+.error {
+    margin: 0;
+    color: var(--error);
+    font-size: 0.85rem;
+}
+

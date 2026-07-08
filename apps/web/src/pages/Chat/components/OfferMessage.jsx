@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { ChatService } from '@readme/shared/src/services/chat';
-import { submitReview } from '@readme/shared/src/services/reviews';
+import { submitReview, hasUserReviewed } from '@readme/shared/src/services/reviews';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
 import VerificationUI from './VerificationUI.jsx';
 import ReviewUI from './ReviewUI.jsx';
@@ -19,7 +19,18 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     const [busy, setBusy] = useState(false);
     const [verificationError, setVerificationError] = useState('');
     const [hasReviewed, setHasReviewed] = useState(false);
+    const [reviewError, setReviewError] = useState('');
     const offer = message.offerDetails;
+    const isCompleted = offer?.status === 'completed';
+
+    useEffect(() => {
+        if (!isCompleted) return;
+        let cancelled = false;
+        hasUserReviewed(message.id, currentUserId)
+            .then(reviewed => { if (!cancelled) setHasReviewed(reviewed); })
+            .catch(err => console.error('Error checking review status:', err));
+        return () => { cancelled = true; };
+    }, [isCompleted, message.id, currentUserId]);
 
     if (!offer) return null;
 
@@ -56,11 +67,17 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
 
     async function handleSubmitReview(rating, comment) {
         setBusy(true);
+        setReviewError('');
         try {
             await submitReview(message.id, chatId, currentUserId, otherUserId, rating, comment);
             setHasReviewed(true);
         } catch (err) {
             console.error('Error submitting review:', err);
+            if (err.message?.includes('already reviewed')) {
+                setHasReviewed(true);
+            } else {
+                setReviewError('Failed to submit review. Please try again.');
+            }
         } finally {
             setBusy(false);
         }
@@ -75,7 +92,6 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     }[offer.status] || offer.status;
 
     const isAccepted = offer.status === NEGOTIATION_STATUS.ACCEPTED;
-    const isCompleted = offer.status === 'completed';
 
     return (
         <div className={`${styles.card} ${isOwn ? styles.own : styles.other}`}>
@@ -136,8 +152,8 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 />
             )}
 
-            {isCompleted && !hasReviewed && !isOwn && (
-                <ReviewUI onSubmit={handleSubmitReview} busy={busy} />
+            {isCompleted && !hasReviewed && (
+                <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError} />
             )}
         </div>
     );

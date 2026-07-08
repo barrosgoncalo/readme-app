@@ -3,7 +3,7 @@ import { Star } from 'lucide-react';
 import ActionCard from './ActionCard.jsx';
 import styles from './ReviewUI.module.css';
 
-export default function ReviewUI({ onSubmit, busy }) {
+export default function ReviewUI({ onSubmit, busy, error }) {
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
@@ -53,6 +53,7 @@ export default function ReviewUI({ onSubmit, busy }) {
             >
                 {busy ? 'Submitting...' : 'Submit Review'}
             </button>
+            {error && <p className={styles.error}>{error}</p>}
         </ActionCard>
     );
 }
