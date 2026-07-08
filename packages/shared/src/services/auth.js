@@ -31,7 +31,6 @@ export const doDeleteUserProfile = async (uid) => {
             throw new Error("No authenticated user found or UID mismatch.");
         }
 
-        // ✨ Replaced deleteDoc with DB.remove
         await DB.remove('users', uid);
 
         await deleteUser(currentUser);
