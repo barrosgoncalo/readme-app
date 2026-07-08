@@ -1,6 +1,5 @@
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@readme/shared/src/services/firebase'; // Ajusta o caminho do 'db' se necessário
-import { fetchUserProfile } from './users'; // Para irmos buscar o nome do autor da review
+import { DB } from './DB'; 
+import { fetchUserProfile } from './users';
 
 /**
  * Vai buscar todas as reviews recebidas por um utilizador específico.
@@ -9,17 +8,11 @@ import { fetchUserProfile } from './users'; // Para irmos buscar o nome do autor
  */
 export const fetchUserReviews = async (revieweeId) => {
     try {
-        // Assume que a tua coleção no Firestore se chama 'reviews'
-        const q = query(
-            collection(db, 'reviews'),
-            where('revieweeId', '==', revieweeId)
-        );
+        const reviews = await DB.get('reviews', [
+            { field: 'revieweeId', operator: '==', value: revieweeId }
+        ]);
         
-        const snapshot = await getDocs(q);
-        const reviewsPromises = snapshot.docs.map(async (doc) => {
-            const reviewData = doc.data();
-            
-            // Opcional mas recomendado: Ir buscar o perfil de quem fez a review para mostrar o nome/foto
+        const reviewsPromises = reviews.map(async (reviewData) => {
             let authorName = "Unknown User";
             try {
                 const reviewerProfile = await fetchUserProfile(reviewData.reviewerId);
@@ -31,15 +24,13 @@ export const fetchUserReviews = async (revieweeId) => {
             }
 
             return {
-                id: doc.id,
                 ...reviewData,
-                authorName // Injetamos o nome resolvido para facilitar na UI
+                authorName
             };
         });
 
         const resolvedReviews = await Promise.all(reviewsPromises);
         
-        // Ordenar da mais recente para a mais antiga
         return resolvedReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         
     } catch (error) {
