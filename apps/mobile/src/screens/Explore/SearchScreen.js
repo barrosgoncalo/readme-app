@@ -5,9 +5,13 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
+import { searchBookTitles } from '@readme/shared/src/services/searchBook';
 import { buildStyles } from '../../styles/searchStyles';
-import UserProfileModal from '../../components/ui/UserProfileModal';
 
+const TABS = {
+    BOOKS: 'books',
+    PEOPLE: 'people'
+};
 
 export default function SearchScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -15,21 +19,29 @@ export default function SearchScreen({ navigation }) {
     const styles = buildStyles(theme);
 
     const { currentUser } = useAuth();
+    const [activeTab, setActiveTab] = useState(TABS.BOOKS); // Figma shows Books selected by default
     const [searchText, setSearchText] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
-
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [modalVisible, setModalVisible] = useState(false);
 
     const handleUserPress = (user) => {
         navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: user.uid });
     };
 
-    const handleUserBlocked = (blockedUid) => {
-        setResults((prev) => prev.filter((u) => u.uid !== blockedUid));
+    const handleBookPress = (book) => {
+        navigation.navigate(ROUTES.BOOKS_LIST, {
+            bookId: book.bookId,
+            title: book.title,
+        });
     };
 
+
+    const handleTabChange = (tab) => {
+        if (tab === activeTab) return;
+        setActiveTab(tab);
+        setSearchText('');
+        setResults([]);
+    };
 
     useEffect(() => {
         if (!searchText.trim()) {
@@ -40,20 +52,25 @@ export default function SearchScreen({ navigation }) {
         setLoading(true);
         const debounce = setTimeout(async () => {
             try {
-                const users = await searchUsers(searchText, currentUser.uid);
-                setResults(users);
+                if (activeTab === TABS.PEOPLE) {
+                    const users = await searchUsers(searchText, currentUser.uid);
+                    setResults(users);
+                } else {
+                    const books = await searchBookTitles(searchText);
+                    setResults(books);
+                }
             } catch (error) {
-                console.error("Erro na pesquisa de utilizadores:", error);
+                console.error("Erro na pesquisa:", error);
             } finally {
                 setLoading(false);
             }
         }, 350);
 
         return () => clearTimeout(debounce);
-    }, [searchText]);
+    }, [searchText, activeTab]);
 
 
-    const renderItem = useCallback(({ item }) => (
+    const renderUserItem = useCallback(({ item }) => (
         <TouchableOpacity
             style={styles.resultRow}
             onPress={() => handleUserPress(item)}
@@ -70,7 +87,18 @@ export default function SearchScreen({ navigation }) {
                 <Text style={styles.resultFullName}>{item.fullName}</Text>
             </View>
         </TouchableOpacity>
-    ),  [navigation, theme, styles]);
+    ), [navigation, theme, styles]);
+
+    const renderBookItem = useCallback(({ item }) => (
+        <TouchableOpacity style={styles.resultRow} onPress={() => handleBookPress(item)}>
+            <View style={styles.bookTextContainer}>
+                <Text style={styles.resultUsername}>{item.title}</Text>
+                <Text style={[styles.resultFullName, { marginTop: 4 }]}>{item.author}</Text>
+            </View>
+        </TouchableOpacity>
+    ), [styles]);
+
+    const renderItem = activeTab === TABS.PEOPLE ? renderUserItem : renderBookItem;
 
     return (
         <View style={styles.container}>
@@ -79,7 +107,7 @@ export default function SearchScreen({ navigation }) {
 
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Search users..."
+                    placeholder={activeTab === TABS.PEOPLE ? "Search users..." : "Search books..."}
                     placeholderTextColor={theme.subtext}
                     value={searchText}
                     onChangeText={setSearchText}
@@ -112,16 +140,47 @@ export default function SearchScreen({ navigation }) {
                 </View>
             </View>
 
+            {/* --- TAB BUTTONS --- */}
+            <View style={styles.tabButtonsRow}>
+                <TouchableOpacity
+                    style={[styles.pillButton, activeTab === TABS.BOOKS && styles.tabButtonActive]}
+                    onPress={() => handleTabChange(TABS.BOOKS)}
+                    activeOpacity={0.8}
+                >
+                    <Text style={[styles.tabButtonText, activeTab === TABS.BOOKS && styles.tabButtonTextActive]}>
+                        Books
+                    </Text>
+                </TouchableOpacity>
+
+                {/* TODO: add a "Communities" tab here too, per the Figma, once that search exists */}
+
+                <TouchableOpacity
+                    style={[styles.pillButton, activeTab === TABS.PEOPLE && styles.tabButtonActive]}
+                    onPress={() => handleTabChange(TABS.PEOPLE)}
+                    activeOpacity={0.8}
+                >
+                    <Text style={[styles.tabButtonText, activeTab === TABS.PEOPLE && styles.tabButtonTextActive]}>
+                        People
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
             <FlatList
                 data={results}
-                keyExtractor={(item) => item.uid}
+                keyExtractor={(item) => (activeTab === TABS.PEOPLE ? item.uid : item.id)}
                 renderItem={renderItem}
                 keyboardShouldPersistTaps="handled"
                 ListEmptyComponent={
                     !loading && searchText.trim() ? (
                         <View style={styles.emptyState}>
-                            <Iconify icon="lucide:user-x" size={36} color={theme.subtext} />
-                            <Text style={styles.emptyStateText}>No users found</Text>
+                            <Iconify
+                                icon={activeTab === TABS.PEOPLE ? "lucide:user-x" : "lucide:book-x"}
+                                size={36}
+                                color={theme.subtext}
+                            />
+                            <Text style={styles.emptyStateText}>
+                                {activeTab === TABS.PEOPLE ? 'No users found' : 'No books found'}
+                            </Text>
                         </View>
                     ) : null
                 }

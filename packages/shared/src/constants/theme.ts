@@ -41,6 +41,11 @@ export const Colors = {
     tertiaryInactive: '#C8DFF0',
     /** (Dark Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#3B3561',
+    /** (Pill button Muted). */
+    pillButtonMuted: '#555468',
+    /** (Pill button Active) */
+    pillButtonActive: '#433975',
+
     cardBackground: '#E8E5E3',
     headerBackground: '#26170D',
     groupShadow: '#E4DFDC',
@@ -123,9 +128,13 @@ export const Colors = {
     /** (Bright Vivid Blue) - Strong accent for active links and vibrant informational badges. */
     tertiaryVivid: '#409EE0',    
     /** (Dark Slate Blue) - Disabled states for blue buttons, or subtle blue background fills. */
-    tertiaryInactive: '#2C4459', 
+    tertiaryInactive: '#2C4459',
     /** (Muted Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#5E5496',
+    /** (Pill button Muted). */
+    pillButtonMuted: '#8174b3',
+    /** (Pill button Active) */
+    pillButtonActive: '#433975',
     cardBackground: '#242120',
     headerBackground: '#2a1c11',
     groupShadow: '#242120',
