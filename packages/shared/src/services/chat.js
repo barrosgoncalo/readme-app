@@ -9,13 +9,6 @@ import { DB } from './DB';
 export const ChatService = {
 
     /**
-     * Subscribes to real-time messages for a specific chat.
-     */
-    streamMessages: (chatId, onUpdate, onError) => {
-        return DB.stream(`chats/${chatId}/messages`, onUpdate, onError);
-    },
-
-    /**
      * Sends a standard text message.
      */
     sendTextMessage: async (chatId, currentUserId, text) => {
@@ -149,5 +142,46 @@ export const ChatService = {
             console.error("Error sending counter offer:", error);
             throw error;
         }
+    },
+    
+    /**
+     * Uses the new streamQuery because we need to filter by participants
+     */
+    subscribeToActiveChats: (currentUserId, onUpdate, onError) => {
+        return DB.subscribeQuery(
+            'chats', 
+            [
+                { field: 'participants', operator: 'array-contains', value: currentUserId }
+            ],
+            (fetchedDocs) => {
+                const fetchedChats = fetchedDocs.map(data => {
+                    const isOutgoing = data.proposerId === currentUserId;
+                    const otherParticipantUid = data.participants?.find(uid => uid !== currentUserId);
+
+                    return {
+                        id: data.id,
+                        imageUrl: data.targetBookImage || 'https://via.placeholder.com/150',
+                        status: isOutgoing ? 'giving' : 'receiving', 
+                        targetSeller: {
+                            uid: otherParticipantUid,
+                            name: data.receiverName || 'Swapper',
+                            avatarUrl: data.receiverAvatar || null
+                        },
+                        updatedAt: data.updatedAt || data.createdAt
+                    };
+                });
+
+                fetchedChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                onUpdate(fetchedChats);
+            }, 
+            onError
+        );
+    },
+
+    /**
+     * Uses your original stream method, exactly as it was
+     */
+    subscribeToMessages: (chatId, onUpdate, onError) => {
+        return DB.subscribe(`chats/${chatId}/messages`, onUpdate, onError);
     },
 };

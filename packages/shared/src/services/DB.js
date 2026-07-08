@@ -119,28 +119,81 @@ export const DB = {
         }
     },
 
+    subscribe: (path, onUpdate, onError) => {
+        const pathSegments = path.split('/').filter(Boolean);
+        const isDocument = pathSegments.length % 2 === 0;
+        
+        const q = isDocument ? doc(db, path) : collection(db, path);
+
+        return onSnapshot(
+            q,
+            (snapshot) => {
+                if (isDocument) {
+                    onUpdate(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+                } else {
+                    onUpdate(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                }
+            },
+            (error) => {
+                if (onError) onError(error);
+                else console.error(`DB.stream error on "${path}":`, error);
+            }
+        );
+    },
+
     /**
-     * Real-time stream subscription for a collection or subcollection
-     * @param {string} collectionName - Path to the collection
-     * @param {function} onUpdate - Callback when data changes
-     * @param {function} onError - Optional error callback
-     * @param {string} orderByField - Field to sort by (defaults to 'createdAt')
-     * @param {string} direction - Sort direction (defaults to 'desc')
+     * Query Stream: Used when you need to filter a collection.
+     */
+    subscribeQuery: (collectionName, conditions = [], onUpdate, onError) => {
+        let q = collection(db, collectionName);
+
+        if (conditions.length > 0) {
+            const constraints = conditions.map(c => where(c.field, c.operator, c.value));
+            q = query(q, ...constraints);
+        }
+
+        return onSnapshot(
+            q,
+            (snapshot) => {
+                onUpdate(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            },
+            (error) => {
+                if (onError) onError(error);
+                else console.error(`DB.streamQuery error on "${collectionName}":`, error);
+            }
+        );
+    },
+
+    /**
+     * Creates a real-time listener on a collection.
+     * @param {string} collectionName - The Firestore collection to listen to
+     * @param {Array} conditions - Array of objects { field, operator, value }
+     * @param {function} onData - Callback triggered with array of formatted documents
+     * @param {function} onError - Callback triggered on failure
      * @returns {function} Unsubscribe function
      */
-    stream: (collectionName, onUpdate, onError, orderByField = 'createdAt', direction = 'desc') => {
-        try {
-            const colRef = collection(db, collectionName);
-            const q = query(colRef, orderBy(orderByField, direction));
+    subscribe: (collectionName, conditions = [], onData, onError) => {
+        let q = collection(db, collectionName);
 
-            // Returns the unsubscribe function natively
-            return onSnapshot(q, (snapshot) => {
-                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                onUpdate(list);
-            }, onError);
-        } catch (error) {
-            console.error(`DB.stream Error on collection "${collectionName}":`, error);
-            if (onError) onError(error);
+        // Apply filters dynamically just like your DB.get() method
+        if (conditions.length > 0) {
+            const constraints = conditions.map(c => where(c.field, c.operator, c.value));
+            q = query(q, ...constraints);
         }
+
+        // Return the unsubscribe function so components can unmount safely
+        return onSnapshot(
+            q, 
+            (snapshot) => {
+                const data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                onData(data);
+            },
+            (error) => {
+                if (onError) onError(error);
+            }
+        );
     }
 };
