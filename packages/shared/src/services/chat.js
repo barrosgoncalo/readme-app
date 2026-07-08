@@ -143,8 +143,7 @@ export const ChatService = {
                 'offerDetails.status': 'countered'
             });
 
-            // 2. UPDATED: Use createOfferModel cleanly to construct the counter
-            // We reuse the original target and original offered snapshots, just swapping the location.
+            // Reuse the original target and original offered snapshots, just swapping the location.
             const counterOfferPayload = createOfferModel(
                 originalOffer.targetBookId,
                 originalOffer.targetBookImage,
