@@ -28,18 +28,7 @@ export async function createBookIfMissing(bookId, data) {
 export async function getBooksByIds(ids) {
     if (!ids || ids.length === 0) return [];
 
-    const chunks = [];
-    for (let i = 0; i < ids.length; i += 10) {
-        chunks.push(ids.slice(i, i + 10));
-    }
-
-    const results = await Promise.all(
-        chunks.map(async (chunk) => {
-            return await DB.get(COLLECTION, [
-                { field: documentId(), operator: 'in', value: chunk }
-            ]);
-        })
-    );
-
-    return results.flat();
+    return await DB.get(COLLECTION, [
+        { field: documentId(), operator: 'in', value: ids }
+    ]);
 }

@@ -1,20 +1,16 @@
-import { auth, db, storage } from "./firebase";
+// @readme/shared/src/services/users.js
+
+import { auth, storage } from "./firebase";
 import { 
-    collection, 
-    doc, 
-    getDoc, 
-    getDocs, 
-    updateDoc, 
-    query, 
-    where, 
     documentId,
     arrayUnion,
     arrayRemove,
     increment,
-    writeBatch,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFollowId, createFollow } from '../models/follow';
+
+import { DB } from './DB';
 
 const USERS_COLLECTION = 'users';
 
@@ -26,28 +22,23 @@ export const fetchUserProfile = async (userId) => {
     if (!userId) throw new Error("User ID is required to fetch profile.");
 
     try {
-        const userRef = doc(db, 'users', userId);
-        const userSnap = await getDoc(userRef);
+        const userData = await DB.get('users', userId);
 
-        if (!userSnap.exists()) {
+        if (!userData) {
             return null;
         }
 
-        const userData = userSnap.data();
         let isCurrentUserFollowing = false;
-        
         const currentUserId = auth?.currentUser?.uid;
         
         if (currentUserId && currentUserId !== userId) {
             const followDocId = getFollowId(currentUserId, userId);
-            const followRef = doc(db, 'follows', followDocId);
-            const followSnap = await getDoc(followRef);
+            const followData = await DB.get('follows', followDocId);
             
-            isCurrentUserFollowing = followSnap.exists();
+            isCurrentUserFollowing = !!followData;
         }
 
         return {
-            id: userSnap.id,
             ...userData,
             followers: userData.followersCount || 0,
             following: userData.followingCount || 0,
@@ -67,45 +58,31 @@ export const fetchUserProfile = async (userId) => {
 export async function getUsersByIds(uids) {
     if (!uids || uids.length === 0) return {};
 
-    // Firestore 'in' queries are limited to 10 items, so we chunk the array
-    const chunks = [];
-    for (let i = 0; i < uids.length; i += 10) {
-        chunks.push(uids.slice(i, i + 10));
-    }
+    const users = await DB.get('users', [
+        { field: documentId(), operator: 'in', value: uids }
+    ]);
 
-    const results = await Promise.all(
-        chunks.map(async (chunk) => {
-            const q = query(
-                collection(db, USERS_COLLECTION),
-                where(documentId(), 'in', chunk),
-            );
-            const snapshot = await getDocs(q);
-            const map = {};
-            snapshot.docs.forEach((d) => {
-                map[d.id] = {
-                    username: d.data().username,
-                    fullName: d.data().fullName,
-                };
-            });
-            return map;
-        })
-    );
-
-    return results.reduce((acc, map) => ({ ...acc, ...map }), {});
+    // Map into the expected dictionary format
+    const map = {};
+    users.forEach((u) => {
+        map[u.id] = {
+            username: u.username,
+            fullName: u.fullName,
+        };
+    });
+    
+    return map;
 }
 
 /**
  * Executes a dual-document batch update to toggle favorite statuses.
  */
 export const toggleFavoriteStatus = async (userId, bookId, isCurrentlyFavorited) => {
-    const userDocRef = doc(db, USERS_COLLECTION, userId);
-    const publicationDocRef = doc(db, 'publications', bookId); 
-
     await Promise.all([
-        updateDoc(userDocRef, { 
+        DB.update(USERS_COLLECTION, userId, { 
             favoriteBooks: !isCurrentlyFavorited ? arrayUnion(bookId) : arrayRemove(bookId) 
         }),
-        updateDoc(publicationDocRef, { 
+        DB.update('publications', bookId, { 
             "stats.likesCount": increment(!isCurrentlyFavorited ? 1 : -1) 
         })
     ]);
@@ -118,12 +95,9 @@ export const uploadProfilePicture = async (userId, imageUri) => {
     try {
         console.log("A preparar a imagem para upload...", imageUri);
 
-        // 1. Bulletproof XHR Conversion to Blob
         const blob = await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(xhr.response);
-            };
+            xhr.onload = function() { resolve(xhr.response); };
             xhr.onerror = function(e) {
                 console.error("Erro na conversão XHR:", e);
                 reject(new TypeError('A conversão de rede falhou'));
@@ -135,17 +109,13 @@ export const uploadProfilePicture = async (userId, imageUri) => {
 
         console.log("Blob criado com sucesso! Tamanho:", blob.size);
 
-        // 2. Storage Reference and Upload
         const storageRef = ref(storage, `profile_pictures/${userId}`);
         await uploadBytes(storageRef, blob);
 
-        // 3. Get the final download URL
         const downloadUrl = await getDownloadURL(storageRef);
         console.log("Upload concluído! URL:", downloadUrl);
 
-        // 4. Update Firestore with the new image URL
-        const userDocRef = doc(db, USERS_COLLECTION, userId);
-        await updateDoc(userDocRef, {
+        await DB.update(USERS_COLLECTION, userId, {
             photoURL: downloadUrl
         });
 
@@ -165,34 +135,22 @@ export const uploadProfilePicture = async (userId, imageUri) => {
 export const toggleFollowUser = async (targetUserId, shouldFollow) => {
     const currentUserId = auth?.currentUser?.uid; 
 
-    // Guard rails to make sure nothing is undefined or a boolean
     if (!currentUserId) throw new Error("Authentication required to follow users.");
     if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
 
-    const batch = writeBatch(db);
-    
-    // Use the model to generate the composite ID string cleanly
     const followDocId = getFollowId(currentUserId, targetUserId);
-    const followRef = doc(db, 'follows', followDocId);
-
-    const currentUserRef = doc(db, 'users', currentUserId);
-    const targetUserRef = doc(db, 'users', targetUserId);
 
     if (shouldFollow) {
-        // Create the follow link using the model dictionary template
-        batch.set(followRef, createFollow(currentUserId, targetUserId));
-
-        // Increment counts (make sure these field names match your Firestore fields exactly)
-        batch.update(currentUserRef, { followingCount: increment(1) });
-        batch.update(targetUserRef, { followersCount: increment(1) });
+        await Promise.all([
+            DB.create('follows', createFollow(currentUserId, targetUserId), followDocId),
+            DB.update('users', currentUserId, { followingCount: increment(1) }),
+            DB.update('users', targetUserId, { followersCount: increment(1) })
+        ]);
     } else {
-        // Delete the follow link
-        batch.delete(followRef);
-
-        // Decrement counts
-        batch.update(currentUserRef, { followingCount: increment(-1) });
-        batch.update(targetUserRef, { followersCount: increment(-1) });
+        await Promise.all([
+            DB.remove('follows', followDocId),
+            DB.update('users', currentUserId, { followingCount: increment(-1) }),
+            DB.update('users', targetUserId, { followersCount: increment(-1) })
+        ]);
     }
-
-    await batch.commit();
 };
