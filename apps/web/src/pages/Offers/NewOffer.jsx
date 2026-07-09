@@ -110,7 +110,7 @@ export default function NewOffer() {
 
             <div className={styles.headerWrap}>
                 <PageHeader
-                    onBack={() => navigate(WEB_ROUTES.publicationDetail(pubId))}
+                    onBack={() => navigate(-1)}
                     title="New Offer"
                     right={<div className={styles.steps}>Step {step} / 2</div>}
                 />
