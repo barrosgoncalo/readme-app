@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import BookCover from '../../../components/BookCover.jsx';
-import UserAvatar from '../../../components/UserAvatar.jsx';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { WEB_ROUTES } from '../../../constants/webRoutes';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
@@ -45,8 +44,12 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
                     <p className={styles.authors}>{authors || 'Unknown author'}</p>
 
                     <div className={styles.seller}>
-                        {pub.sellerAvatar && (
+                        {pub.sellerAvatar ? (
                             <img src={pub.sellerAvatar} alt="" className={styles.avatar} />
+                        ) : (
+                            <span className={styles.avatarPlaceholder} aria-hidden>
+                                {(pub.sellerName || '?').charAt(0).toUpperCase()}
+                            </span>
                         )}
                         <span className={styles.sellerName}>{pub.sellerName || 'Anonymous'}</span>
                     </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Heart, Trash2 } from 'lucide-react';
 import { fetchPublicationById, deletePublication } from '@readme/shared/src/services/publications';
-import { toggleFavoriteStatus } from '@readme/shared/src/services/users';
+import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
@@ -32,15 +32,17 @@ export default function PublicationDetails() {
 
         (async () => {
             try {
-                const data = await fetchPublicationById(pubId);
+                const [data, profile] = await Promise.all([
+                    fetchPublicationById(pubId),
+                    currentUser ? fetchUserProfile(currentUser.uid).catch(() => null) : Promise.resolve(null)
+                ]);
                 if (cancelled) return;
                 if (!data) {
                     setNotFound(true);
                     return;
                 }
                 setPub(data);
-                // TODO: check if current user has favorited this when favorites phase runs
-                setIsFavorite(false);
+                setIsFavorite((profile?.favoriteBooks || []).includes(pubId));
             } catch (err) {
                 console.error('Error loading publication:', err);
                 if (!cancelled) setNotFound(true);
@@ -50,7 +52,7 @@ export default function PublicationDetails() {
         })();
 
         return () => { cancelled = true; };
-    }, [pubId]);
+    }, [pubId, currentUser?.uid]);
 
     const isOwner = currentUser && pub && currentUser.uid === pub.uid;
 

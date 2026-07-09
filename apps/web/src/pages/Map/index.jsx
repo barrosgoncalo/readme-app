@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Search, Users, Plus } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/search';
-import { doGetBlockedUids } from '@readme/shared/src/services/blockUser';
+import { doGetBlockedUids, doGetBlockedUsers } from '@readme/shared/src/services/blockUser';
 import { fetchAllPublications } from '@readme/shared/src/services/publications';
-import { toggleFavoriteStatus } from '@readme/shared/src/services/users';
+import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import PublicationCard from './components/PublicationCard.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -22,8 +22,11 @@ const EXPLORE_TAB = {
 export default function Explore() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
+    const [searchParams] = useSearchParams();
 
-    const [activeTab, setActiveTab] = useState(EXPLORE_TAB.BOOKS);
+    const [activeTab, setActiveTab] = useState(
+        searchParams.get('tab') === EXPLORE_TAB.USERS ? EXPLORE_TAB.USERS : EXPLORE_TAB.BOOKS
+    );
     const [search, setSearch] = useState('');
 
     const [userResults, setUserResults] = useState([]);
@@ -44,9 +47,10 @@ export default function Explore() {
         setPubsError(null);
 
         try {
-            const [allPubs, blockedUids] = await Promise.all([
+            const [allPubs, blockedUids, profile] = await Promise.all([
                 fetchAllPublications(),
-                doGetBlockedUids(uid).catch(() => new Set())
+                doGetBlockedUids(uid).catch(() => new Set()),
+                fetchUserProfile(uid).catch(() => null)
             ]);
 
             // Filter: exclude blocked users, user's own pubs, non-available
@@ -57,8 +61,7 @@ export default function Explore() {
             );
 
             setPublications(filtered);
-            // TODO: load user's favoriteBooks from their doc when favorites phase runs
-            setFavoriteIds(new Set());
+            setFavoriteIds(new Set(profile?.favoriteBooks || []));
         } catch (err) {
             setPubsError(err.message || 'Could not load publications.');
         } finally {
