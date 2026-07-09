@@ -42,10 +42,13 @@ export const Colors = {
     /** (Dark Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#3B3561',
     /** (Pill button Muted). */
-    pillButtonMuted: '#555468',
+    pillButtonMuted: '#BFBFBF',
     /** (Pill button Active) */
-    pillButtonActive: '#433975',
-
+    pillButtonActive: '#222B59',
+    /** (Pill button Muted). */
+    pillButtonMutedText: '#6e6e6e',
+    /** (Pill button Active) */
+    pillButtonActiveText: '#e7e7e7',
     cardBackground: '#E8E5E3',
     headerBackground: '#26170D',
     groupShadow: '#E4DFDC',
@@ -131,10 +134,14 @@ export const Colors = {
     tertiaryInactive: '#2C4459',
     /** (Muted Purple) - Final accent for distinct tags or alternative categorization. */
     quaternary: '#5E5496',
-    /** (Pill button Muted). */
-    pillButtonMuted: '#8174b3',
-    /** (Pill button Active) */
-    pillButtonActive: '#433975',
+    /** (Gray Pill button Muted). */
+    pillButtonMuted: '#424242',
+    /** (Dark PurplePill button Active) */
+    pillButtonActive: '#293867',
+    /** (Dark Gray Pill button TEXT Muted). */
+    pillButtonMutedText: '#313131',
+    /** (Light gray almost white Pill button TEXT Active) */
+    pillButtonActiveText: '#c4c4c4',
     cardBackground: '#242120',
     headerBackground: '#2a1c11',
     groupShadow: '#242120',

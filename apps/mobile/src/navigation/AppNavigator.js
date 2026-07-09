@@ -21,7 +21,7 @@ import BlockedUsersScreen from '../screens/Profile/BlockedUsers/BlockedUsersScre
 import BarcodeScannerScreen from '../screens/Shelf/BarcodeScannerScreen';
 import SearchBookScreen from '../screens/Shelf/SearchBookScreen';
 import BookDetailsScreen from '../screens/Shelf/BookDetailsScreen';
-import SearchScreen from '../screens/Explore/SearchScreen';
+import SearchScreen from '../screens/Explore/Search/SearchScreen';
 import CreatePublicationScreen from '../screens/Publication/CreatePublicationScreen';
 import PublicationDetailsScreen from '../screens/Explore/PublicationDetails/PublicationDetailsScreen';
 import StepOneOffer from '../screens/Explore/PublicationDetails/StepOneOfferScreen';

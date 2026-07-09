@@ -63,6 +63,7 @@ export default function (api) {
                         'lucide:maximize-2',
                         'lucide:minimize-2',
                         'lucide:book-x',
+                        'lucide:chevron-left',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',

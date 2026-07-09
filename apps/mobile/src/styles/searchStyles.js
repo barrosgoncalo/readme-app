@@ -21,10 +21,10 @@ export const buildStyles = (theme) => StyleSheet.create({
     tabButtonText: {
         fontSize: 15,
         fontWeight: '600',
-        color: theme.textMuted,
+        color: theme.pillButtonMutedText,
     },
     tabButtonTextActive: {
-        color: theme.borderLight,
+        color: theme.pillButtonActiveText,
     },
     container: {
         flex: 1,
@@ -72,6 +72,9 @@ export const buildStyles = (theme) => StyleSheet.create({
     resultTextContainer: {
         flex: 1,
     },
+    bookTextContainer: {
+        flex: 1,
+    },
     resultUsername: {
         fontSize: 15,
         fontWeight: '600',
@@ -85,10 +88,95 @@ export const buildStyles = (theme) => StyleSheet.create({
     emptyState: {
         alignItems: 'center',
         marginTop: 60,
+        width: '100%',
     },
     emptyStateText: {
         fontSize: 14,
         color: theme.subtext,
         marginTop: 10,
+    },
+
+    // --- inline publication results grid (shown once a book title is picked) ---
+    listContent: {
+        paddingBottom: 40,
+    },
+    columnWrapper: {
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    card: {
+        width: '48%',
+        backgroundColor: theme.backgroundElement,
+        borderRadius: 16,
+        padding: 10,
+    },
+    coverWrapper: {
+        width: '100%',
+        aspectRatio: 3 / 4,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 10,
+        backgroundColor: theme.iconBg,
+    },
+    coverImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    coverPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: theme.text,
+        lineHeight: 18,
+    },
+    cardAuthor: {
+        fontSize: 12,
+        color: theme.subtext,
+        marginTop: 4,
+    },
+    cardSeller: {
+        fontSize: 12,
+        color: theme.subtext,
+        marginTop: 2,
+    },
+
+    // --- Google-style numbered pagination footer ---
+    footerWrapper: {
+        marginTop: 8,
+    },
+    paginationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 16,
+    },
+    pageArrow: {
+        width: 32,
+        height: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pageNumber: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pageNumberActive: {
+        backgroundColor: theme.pillButtonActive,
+    },
+    pageNumberText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: theme.subtext,
+    },
+    pageNumberTextActive: {
+        color: theme.pillButtonActiveText,
     },
 });
