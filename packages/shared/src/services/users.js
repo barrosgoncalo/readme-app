@@ -137,8 +137,8 @@ export const getFollowing = async (uid) => {
     const snapshot = await getDocs(q);
 
     return Promise.all(
-        snapshot.docs.map(async (doc) => {
-            const data = doc.data();
+        snapshot.docs.map(async (followDoc) => {
+            const data = followDoc.data();
             const followingUid = data.followingUid;
 
             let username = null;
@@ -175,8 +175,8 @@ export const getFollowers = async (uid) => {
     const snapshot = await getDocs(q);
 
     return Promise.all(
-        snapshot.docs.map(async (doc) => {
-            const data = doc.data();
+        snapshot.docs.map(async (followDoc) => {
+            const data = followDoc.data();
             const followerUid = data.followerUid;
 
             let username = null;
