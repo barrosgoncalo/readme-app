@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {Link, NavLink, Outlet, useNavigate, useLocation} from 'react-router-dom';
 import {doc, onSnapshot} from 'firebase/firestore';
-import {BookOpen, CalendarDays, Map, Moon, Sun, User} from 'lucide-react';
+import {BookOpen, CalendarDays, Map, MessageCircle, Moon, Sun, User} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {doSignOut} from '@readme/shared/src/services/auth';
 import {db} from '@readme/shared/src/services/firebase';
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
     {to: WEB_ROUTES.BOOKS, label: 'My Books', Icon: BookOpen},
     {to: WEB_ROUTES.EVENTS, label: 'Events', Icon: CalendarDays},
     {to: WEB_ROUTES.MAP, label: 'Explore', Icon: Map},
+    {to: WEB_ROUTES.CHAT, label: 'Chat', Icon: MessageCircle},
     {to: WEB_ROUTES.PROFILE, label: 'Profile', Icon: User},
 ];
 
