@@ -23,7 +23,6 @@ export function useFitMarkers({
         }
 
         locations.forEach(loc => {
-            // Avoid pushing a duplicate coordinate for the same spot already added above
             if (loc.id && seenIds.has(loc.id)) return;
             if (loc.latitude && loc.longitude) {
                 coordsToFrame.push({
@@ -37,8 +36,6 @@ export function useFitMarkers({
 
         const timeoutId = setTimeout(() => {
             if (coordsToFrame.length === 1) {
-                // fitToCoordinates doesn't zoom meaningfully with a single point;
-                // animate to a sensible region around it instead.
                 mapRef.current?.animateToRegion({
                     ...coordsToFrame[0],
                     latitudeDelta: 0.05,
@@ -46,7 +43,6 @@ export function useFitMarkers({
                 }, 300);
             } else {
                 mapRef.current?.fitToCoordinates(coordsToFrame, {
-                    // Optimized paddings to prevent markers from hitting screen thresholds on smaller devices
                     edgePadding: { top: 60, right: 60, bottom: 220, left: 60 },
                     animated: true,
                 });

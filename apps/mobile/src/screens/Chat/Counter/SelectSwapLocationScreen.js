@@ -1,11 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-    View, Text, StyleSheet, TouchableOpacity, 
-    ActivityIndicator, useColorScheme, Keyboard 
+import React, { useState, useRef } from 'react';
+import {
+    View, StyleSheet, ActivityIndicator, useColorScheme,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ChatService } from '@readme/shared/src/services/chat';
@@ -14,6 +10,8 @@ import { ChatService } from '@readme/shared/src/services/chat';
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
 import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
 import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
+import ScreenHeader from '../../../components/ui/ScreenHeader';
+import LocationPickerMap from '../../../components/ui/LocationPickerMap';
 import MapSearchBar from '../../../components/ui/MapSearchBar';
 import SelectedLocationCard from '../../../components/ui/SelectedLocationCard';
 import OfferBottomDock from '../../../components/ui/OfferBottomDock';
@@ -28,7 +26,7 @@ const LISBON_REGION = {
 export default function SelectSwapLocationScreen({ route, navigation }) {
     const { messageId, chatId, offerDetails, targetSellerUid, selectedBookId, selectedBookImage } = route.params;
     const { currentUser } = useAuth();
-    
+
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
 
@@ -81,15 +79,15 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                 location: activeLocationSelection
             };
             await ChatService.sendCounterOffer(
-                chatId, 
-                messageId, 
-                currentUser.uid, 
+                chatId,
+                messageId,
+                currentUser.uid,
                 updatedOfferDetails,
                 activeLocationSelection,
                 selectedBookId,
                 selectedBookImage
             );
-            navigation.pop(2); 
+            navigation.pop(2);
         } catch (error) {
             console.error("Failed to send counter:", error);
             setIsSubmitting(false);
@@ -98,13 +96,12 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: theme.background, borderBottomColor: theme.borderLight }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Iconify icon="lucide:arrow-left" size={24} color={theme.textItemTitle} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textItemTitle }]}>Step 2: Location</Text>
-                <View style={{ width: 32 }} />
-            </SafeAreaView>
+            <ScreenHeader
+                title="Step 2: Location"
+                onBack={() => navigation.goBack()}
+                theme={theme}
+                borderBottom
+            />
 
             <View style={styles.mapContainer}>
                 {mapLoading ? (
@@ -112,72 +109,40 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                         <ActivityIndicator size="large" color={theme.primary} />
                     </View>
                 ) : (
-                    <MapView
-                        ref={mapRef}
-                        provider={PROVIDER_DEFAULT}
+                    <LocationPickerMap
+                        mapRef={mapRef}
+                        theme={theme}
                         style={styles.map}
-                        onMapReady={() => setMapReady(true)} // ✅ FIXED: Only flips the switch, avoiding overlapping function triggers
+                        initialRegion={defaultRegion}
+                        onMapReady={() => setMapReady(true)}
                         onRegionChangeComplete={setCurrentRegion}
-                        onPress={(e) => isProposingAlternative && handleReverseGeocode(e.nativeEvent.coordinate)}
-                        onPanDrag={Keyboard.dismiss}
-                        initialRegion={defaultRegion} 
-                    >
-                        {!isProposingAlternative && originalLocation?.latitude && (
-                            <Marker
-                                key="original-offer-location"
-                                coordinate={{
-                                    latitude: Number(originalLocation.latitude),
-                                    longitude: Number(originalLocation.longitude)
-                                }}
-                                pinColor={selectedLocation?.id === originalLocation.id ? theme.primary : "#4A90E2"}
-                                onPress={() => setSelectedLocation(originalLocation)}
-                            />
-                        )}
-
-                        {!isProposingAlternative && sellerLocations.map((loc) => {
-                            if (loc.id === originalLocation?.id) return null; 
-
-                            return (
-                                <Marker
-                                    key={loc.id}
-                                    coordinate={{
-                                        latitude: Number(loc.latitude),
-                                        longitude: Number(loc.longitude)
-                                    }}
-                                    pinColor={selectedLocation?.id === loc.id ? theme.primary : "#A35C37"}
-                                    onPress={() => setSelectedLocation(loc)}
-                                />
-                            );
-                        })}
-
-                        {isProposingAlternative && customLocation && (
-                            <Marker
-                                draggable
-                                coordinate={customLocation}
-                                pinColor="#E53E3E" 
-                                onMarkerDragEnd={(e) => handleReverseGeocode(e.nativeEvent.coordinate)}
-                            />
-                        )}
-                    </MapView>
+                        isProposingAlternative={isProposingAlternative}
+                        onMapPress={handleReverseGeocode}
+                        onMarkerDragEnd={handleReverseGeocode}
+                        sellerLocations={sellerLocations}
+                        selectedLocation={selectedLocation}
+                        onSelectLocation={setSelectedLocation}
+                        originalLocation={originalLocation}
+                        customLocation={customLocation}
+                    />
                 )}
 
-                {/* Overlays */}
                 {isProposingAlternative && (
                     <MapSearchBar theme={theme} mapRef={mapRef} onLocationFound={handleReverseGeocode} />
                 )}
 
                 {!mapLoading && activeLocationSelection && (
-                    <SelectedLocationCard 
-                        theme={theme} 
-                        location={activeLocationSelection} 
+                    <SelectedLocationCard
+                        theme={theme}
+                        location={activeLocationSelection}
                         isLoading={geocodingCustom}
                         isAlternative={isProposingAlternative}
-                        onClose={() => isProposingAlternative ? handleCancelAlternative() : setSelectedLocation(null)} 
+                        onClose={() => isProposingAlternative ? handleCancelAlternative() : setSelectedLocation(null)}
                     />
                 )}
             </View>
 
-            <OfferBottomDock 
+            <OfferBottomDock
                 theme={theme}
                 canSend={locationIsValid && !isSubmitting}
                 loading={mapLoading || isSubmitting}
@@ -191,9 +156,6 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, zIndex: 10 },
-    headerTitle: { fontSize: 18, fontWeight: '700' },
-    backButton: { padding: 4 },
     mapContainer: { flex: 1, position: 'relative' },
     map: { width: '100%', height: '100%' },
     centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
