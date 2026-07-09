@@ -421,11 +421,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                     {/* Right Side: Offered Book(s) */}
                     <View style={styles.bookColumn}>
                         <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
-                            {/* Altera o label se for apenas 1 livro */}
                             {(isCounterOffer || offer?.offeredBooks?.length === 1) ? "Offered Book" : "Options"}
                         </Text>
 
-                        {/* MOSTRA A IMAGEM SE HOUVER SÓ 1 LIVRO, CASO CONTRÁRIO MOSTRA O NÚMERO */}
                         {imageToShow ? (
                             <Image 
                                 source={{ uri: imageToShow }} 
@@ -495,11 +493,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                             style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
                             onPress={() => {
                                 if (!isCounterOffer) {
-                                    // --- LÓGICA DE NAVEGAÇÃO CORRIGIDA AQUI ---
                                     const offeredBooks = offer?.offeredBooks || [];
                                     
                                     if (offeredBooks.length === 1) {
-                                        // Salta diretamente para a localização
                                         navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, { 
                                             messageId: item.id, 
                                             chatId: chatId,
@@ -509,7 +505,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                                             selectedBookImage: offeredBooks[0].image || null
                                         });
                                     } else {
-                                        // Vai para a seleção de livros se houver 2 ou mais
                                         navigation.navigate(ROUTES.SELECT_SWAP_BOOK, { 
                                             messageId: item.id, 
                                             chatId: chatId,
@@ -536,18 +531,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </View>
                 )}
                 
-                {/* --- VERIFICATION HANDSHAKE UI --- */}
+                {/* --- VERIFICATION HANDSHAKE UI REESTRUTURADA --- */}
                 {offer?.status === 'accepted' && (
-                    <View style={styles.offerActions}>
-                        {/* NEW CANCEL BUTTON */}
-                        <TouchableOpacity 
-                            style={[styles.actionButton, styles.declineButton, { flex: 0.5, marginRight: 8 }]}
-                            onPress={() => handleCancelSwap(item.id, offer?.targetBookId, offer?.selectedBookId)}
-                        >
-                            <Iconify icon="lucide:x" size={18} color="#991B1B" />
-                        </TouchableOpacity>
-
-                        {/* EXISTING QR CODE BUTTONS */}
+                    <View style={styles.acceptedWorkflowContainer}>
+                        {/* AÇÃO PRINCIPAL: BOTÃO DE QR CODE OU SCAN INTEIRO */}
                         {offer.verificationDisplayerId === currentUserId && (
                             <TouchableOpacity 
                                 style={[styles.actionButton, { backgroundColor: theme.primary }]}
@@ -579,6 +566,16 @@ export default function ChatRoomScreen({ route, navigation }) {
                                 </Text>
                             </TouchableOpacity>
                         )}
+
+                        {/* NOVA LINHA INTEGRADA PARA O CANCELAMENTO COM DESIGN PREMIUM */}
+                        <TouchableOpacity 
+                            style={[styles.cancelSwapButton, { borderColor: theme.borderLight }]}
+                            onPress={() => handleCancelSwap(item.id, offer?.targetBookId, offer?.selectedBookId)}
+                            activeOpacity={0.6}
+                        >
+                            <Iconify icon="lucide:ban" size={15} color="#EF4444" style={{ marginRight: 6 }} />
+                            <Text style={styles.cancelSwapButtonText}>Cancel Swap Agreement</Text>
+                        </TouchableOpacity>
                     </View>
                 )}
 
@@ -635,7 +632,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                             </Text>
                         </View>
 
-                        {/* ONLY show the Review button if the current user was NOT the one who canceled! */}
                         {offer.cancelledBy !== currentUserId && (
                             <TouchableOpacity 
                                 style={[
@@ -807,6 +803,28 @@ const styles = StyleSheet.create({
     declineButton: { backgroundColor: '#F3F4F6' },
     declineButtonText: { color: '#374151', fontWeight: '600', fontSize: 14 },
     acceptButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
+
+    // Novas estruturas para o fluxo aceito
+    acceptedWorkflowContainer: {
+        marginTop: 4,
+        width: '100%',
+        gap: 8
+    },
+    cancelSwapButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        backgroundColor: 'transparent',
+        marginTop: 4
+    },
+    cancelSwapButtonText: {
+        color: '#EF4444',
+        fontWeight: '600',
+        fontSize: 13,
+    },
 
     inputContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, alignItems: 'center', gap: 12 },
     input: { flex: 1, minHeight: 40, maxHeight: 100, borderRadius: 20, borderWidth: 1, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, fontSize: 15 },
