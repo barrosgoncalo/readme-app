@@ -20,7 +20,9 @@ export const createOfferModel = (targetBookId, targetBookImage, offeredBookIds =
         location: {
             id: locationData.id || null,
             title: locationData.title || "Unknown Location",
-            address: locationData.address || ""
+            address: locationData.address || "",
+            lat: locationData.lat ?? locationData.latitude ?? null,
+            lon: locationData.lon ?? locationData.longitude ?? null
         },
         status: 'pending', // Will progress to 'accepted', then 'completed'
         

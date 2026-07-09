@@ -1,19 +1,9 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
+import '../../../utils/leafletIcons.js';
 import BookCover from '../../../components/BookCover.jsx';
 import styles from './OfferStep2.module.css';
-
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: markerIcon2x,
-    iconUrl: markerIcon,
-    shadowUrl: markerShadow,
-});
 
 const LISBON = { lat: 38.7223, lng: -9.1393 };
 const DEFAULT_LOCATION = { title: 'Lisbon', address: 'Lisbon, Portugal', ...LISBON };

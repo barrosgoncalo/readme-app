@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { submitReview, hasUserReviewed } from '@readme/shared/src/services/reviews';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
 import VerificationUI from './VerificationUI.jsx';
 import ReviewUI from './ReviewUI.jsx';
+import LocationMapPreview from './LocationMapPreview.jsx';
 import styles from './OfferMessage.module.css';
 
 const STATUS_COLORS = {
@@ -20,6 +21,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     const [verificationError, setVerificationError] = useState('');
     const [hasReviewed, setHasReviewed] = useState(false);
     const [reviewError, setReviewError] = useState('');
+    const [showMap, setShowMap] = useState(false);
     const offer = message.offerDetails;
     const isCompleted = offer?.status === 'completed';
 
@@ -104,9 +106,15 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                     Offered {offer.offeredBookIds?.length || 0} book{offer.offeredBookIds?.length !== 1 ? 's' : ''}
                 </p>
                 {offer.location && (
-                    <p className={styles.location}>
-                        📍 {offer.location.title || 'Location TBD'}
-                    </p>
+                    <button
+                        type="button"
+                        className={styles.locationBtn}
+                        onClick={() => setShowMap(s => !s)}
+                    >
+                        <MapPin size={14} />
+                        <span className={styles.locationText}>{offer.location.title || 'Location TBD'}</span>
+                        {showMap ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
                 )}
 
                 <div className={styles.footer}>
@@ -139,6 +147,10 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                     )}
                 </div>
             </div>
+
+            {showMap && offer.location && (
+                <LocationMapPreview location={offer.location} />
+            )}
 
             {isAccepted && offer.verificationCode && (
                 <VerificationUI
