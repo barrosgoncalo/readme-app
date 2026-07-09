@@ -6,6 +6,13 @@ import Spinner from '../../../components/Spinner.jsx';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
+function formatMessageTime(createdAt) {
+    if (!createdAt) return '';
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function ChatConversation({ chat, messages, loading, currentUserId }) {
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
@@ -73,12 +80,9 @@ export default function ChatConversation({ chat, messages, loading, currentUserI
                                         className={`${styles.message} ${msg.senderId === currentUserId ? styles.own : styles.other}`}
                                     >
                                         <p className={styles.text}>{msg.text}</p>
-                                        <p className={styles.time}>
-                                            {new Date(msg.createdAt).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
-                                        </p>
+                                        {formatMessageTime(msg.createdAt) && (
+                                            <p className={styles.time}>{formatMessageTime(msg.createdAt)}</p>
+                                        )}
                                     </div>
                                 )}
                             </div>
