@@ -1,5 +1,5 @@
 const { setGlobalOptions } = require("firebase-functions/v2");
-const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentWritten, onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
@@ -136,5 +136,49 @@ exports.syncPublicationToAlgolia = onDocumentWritten({ document: "publications/{
         console.log(`Publication ${objectID} successfully synced to Algolia.`);
     } catch (error) {
         console.error("Error syncing publication with Algolia:", error);
+    }
+});
+
+
+// ==========================================
+// DELETE BOOKS ON SWAP COMPLETED FUNCTION
+// ==========================================
+
+exports.deleteBooksOnSwapComplete = onDocumentUpdated({ document: "chats/{chatId}/messages/{messageId}", region: "europe-west1" }, async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    // Safety check: ensure data exists
+    if (!beforeData || !afterData) return;
+
+    // We only care about messages of type 'offer'
+    if (afterData.type !== 'offer') return;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    // Check if the status JUST changed to 'completed'
+    if (beforeStatus !== 'completed' && afterStatus === 'completed') {
+        const targetBookId = afterData.offerDetails?.targetBookId;
+        const finalSelectedBookId = afterData.offerDetails?.finalSelectedBookId || afterData.offerDetails?.selectedBookId;
+
+        console.log(`Swap completed! Deleting books: Target(${targetBookId}), Selected(${finalSelectedBookId})`);
+
+        try {
+            // Using a batch to delete both simultaneously
+            const batch = db.batch();
+
+            if (targetBookId) {
+                batch.delete(db.collection('publications').doc(targetBookId));
+            }
+            if (finalSelectedBookId) {
+                batch.delete(db.collection('publications').doc(finalSelectedBookId));
+            }
+
+            await batch.commit();
+            console.log("Successfully deleted swapped books via Admin SDK.");
+        } catch (error) {
+            console.error("Error deleting books on swap completion:", error);
+        }
     }
 });

@@ -165,11 +165,13 @@ export default function ChatRoomScreen({ route, navigation }) {
         });
     };
 
-    const handleOpenScanner = (expectedCode, messageId) => {
+    const handleOpenScanner = (expectedCode, messageId, passedTargetId, passedSelectedId) => {
         navigation.navigate(ROUTES.QR_SCANNER, {
             expectedCode: expectedCode,
             messageId: messageId,
-            chatId: chatId
+            chatId: chatId,
+            targetBookId: passedTargetId,
+            finalSelectedBookId: passedSelectedId
         });
     };
 
@@ -464,7 +466,12 @@ export default function ChatRoomScreen({ route, navigation }) {
                         {offer.verificationScannerId === currentUserId && (
                             <TouchableOpacity 
                                 style={[styles.actionButton, { backgroundColor: theme.textItemTitle }]}
-                                onPress={() => handleOpenScanner(offer.verificationCode, item.id)}
+                                onPress={() => handleOpenScanner(
+                                    offer.verificationCode, 
+                                    item.id,
+                                    offer?.targetBookId || publicationId,                // Safely grabs from offerDetails
+                                    offer?.finalSelectedBookId || offer?.selectedBookId  // Safely grabs from offerDetails
+                                )}
                             >
                                 <Iconify 
                                     icon="lucide:scan" 

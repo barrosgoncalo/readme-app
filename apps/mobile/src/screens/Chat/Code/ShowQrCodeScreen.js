@@ -31,7 +31,6 @@ export default function ShowQRCodeScreen({ route, navigation }) {
                 const messageData = snapshot.data();
                 const offerDetails = messageData?.offerDetails;
 
-                // ✨ Inspecting your specific offer model status
                 if (offerDetails && (offerDetails.status === 'completed' || offerDetails.status === 'verified')) {
                     navigation.goBack();
                 }

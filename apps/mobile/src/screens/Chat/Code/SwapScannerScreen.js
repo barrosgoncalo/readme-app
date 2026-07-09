@@ -4,15 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { deleteBooksAfterSwap } from '@readme/shared/src/services/publications';
 
 export default function SwapScannerScreen({ route, navigation }) {
-    const { expectedCode, messageId, chatId } = route.params;
+    // EXTRACT THE BOOK IDs FROM PARAMS
+    const { 
+        expectedCode, 
+        messageId, 
+        chatId, 
+        targetBookId,
+        finalSelectedBookId
+    } = route.params;
+    
     const [isVerifying, setIsVerifying] = useState(false);
     const [scanned, setScanned] = useState(false);
-    
-    // Hook do Expo para gerir as permissões da câmara
     const [permission, requestPermission] = useCameraPermissions();
-
     const isProcessingRef = useRef(false);
 
     const handleVerifySuccess = async (scannedCode) => {
@@ -24,7 +30,7 @@ export default function SwapScannerScreen({ route, navigation }) {
                     text: "Tentar Novamente", 
                     onPress: () => {
                         setScanned(false);
-                        isProcessingRef.current = false; // Unlock for another try
+                        isProcessingRef.current = false;
                     } 
                 }] 
             );
@@ -32,10 +38,12 @@ export default function SwapScannerScreen({ route, navigation }) {
         }
 
         setIsVerifying(true);
+        setIsVerifying(true);
         try {
+            // 3. MARK THE CHAT OFFER AS COMPLETED
             await ChatService.updateOfferStatus(chatId, messageId, 'completed');
             
-            Alert.alert("Sucesso!", "Troca verificada com sucesso! O processo está concluído.", [
+            Alert.alert("Sucesso!", "Troca verificada com sucesso! Os livros foram removidos da plataforma.", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
         } catch (error) {
@@ -45,7 +53,7 @@ export default function SwapScannerScreen({ route, navigation }) {
                      text: "OK", 
                      onPress: () => {
                          setScanned(false);
-                         isProcessingRef.current = false; // Unlock on error
+                         isProcessingRef.current = false; 
                      } 
                  }
             ]);
@@ -54,7 +62,7 @@ export default function SwapScannerScreen({ route, navigation }) {
         }
     };
 
-    // Função chamada automaticamente quando a câmara deteta um QR Code
+    // ... (rest of your component remains exactly the same!)
     const handleBarCodeScanned = ({ data }) => {
         if (isProcessingRef.current) return; 
         
@@ -65,12 +73,10 @@ export default function SwapScannerScreen({ route, navigation }) {
         handleVerifySuccess(data);
     };
 
-    // Ecrã de carregamento enquanto verifica permissões
     if (!permission) {
         return <View style={styles.container}><ActivityIndicator size="large" color="#FFFFFF" /></View>;
     }
 
-    // Ecrã caso o utilizador não tenha dado permissão
     if (!permission.granted) {
         return (
             <SafeAreaView style={styles.container}>
@@ -87,7 +93,6 @@ export default function SwapScannerScreen({ route, navigation }) {
 
     return (
         <View style={styles.container}>
-            {/* A Câmara ocupa o ecrã todo por trás */}
             <CameraView
                 style={StyleSheet.absoluteFillObject}
                 facing="back"
@@ -97,9 +102,7 @@ export default function SwapScannerScreen({ route, navigation }) {
                 onBarcodeScanned={scanned || isVerifying ? undefined : handleBarCodeScanned}
             />
 
-            {/* UI sobreposta à câmara (Viewfinder e Header) */}
             <SafeAreaView style={styles.overlayContainer}>
-                {/* Header Escurecido para legibilidade */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
                         <Iconify icon="lucide:x" size={24} color="#FFFFFF" />
@@ -108,7 +111,6 @@ export default function SwapScannerScreen({ route, navigation }) {
                     <View style={{ width: 40 }} />
                 </View>
 
-                {/* Viewfinder Area */}
                 <View style={styles.viewfinderContainer}>
                     <Text style={styles.instructions}>Alinha o código QR dentro do quadrado</Text>
                     
@@ -122,7 +124,6 @@ export default function SwapScannerScreen({ route, navigation }) {
                     </View>
                 </View>
 
-                {/* Área inferior opcional - Podes usar para mostrar estado ou botão de cancelar */}
                 <View style={styles.bottomBar}>
                     {scanned && !isVerifying && (
                          <Text style={styles.instructions}>A processar código...</Text>
@@ -135,7 +136,7 @@ export default function SwapScannerScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#000000' },
-    overlayContainer: { flex: 1 }, // Fica por cima da câmara
+    overlayContainer: { flex: 1 }, 
     permissionContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 56, backgroundColor: 'rgba(0,0,0,0.5)' },
     closeButton: { padding: 8 },
