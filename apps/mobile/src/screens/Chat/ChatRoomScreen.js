@@ -108,7 +108,7 @@ export default function ChatRoomScreen({ route, navigation }) {
 
     // --- REAL-TIME MESSAGES SUBCOLLECTION FEED ---
     useEffect(() => {
-        if (!chatId) {
+        if (!chatId || !currentUserId) {
             setLoading(false);
             return;
         }
@@ -123,13 +123,28 @@ export default function ChatRoomScreen({ route, navigation }) {
             }));
             setMessages(fetchedMessages);
             setLoading(false);
+
+            // --- NEW: MARK INCOMING MESSAGES AS READ ---
+            querySnapshot.docs.forEach(async (documentSnapshot) => {
+                const msg = documentSnapshot.data();
+                // If the message is from the OTHER user and isn't read yet
+                if (msg.senderId !== currentUserId && !msg.read) {
+                    try {
+                        const msgDocRef = doc(db, 'chats', chatId, 'messages', documentSnapshot.id);
+                        await updateDoc(msgDocRef, { read: true });
+                    } catch (error) {
+                        console.error("Error updating read status:", error);
+                    }
+                }
+            });
+
         }, (error) => {
             console.error("Error loading chat room messages:", error);
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, [chatId]);
+    }, [chatId, currentUserId]); // Make sure currentUserId is in the dependency array
 
     useEffect(() => {
         if (!chatId || !currentUserId) return;
@@ -671,8 +686,12 @@ export default function ChatRoomScreen({ route, navigation }) {
         );
     };
 
-    const renderMessageItem = ({ item }) => {
+    const renderMessageItem = ({ item, index }) => {
         const isMe = item.senderId === currentUserId;
+        
+        // In an inverted FlatList, index 0 is the newest message (visually at the bottom).
+        // It is the "last in group" if it's at index 0, OR if the message below it (index - 1) is from a different sender.
+        const isLastInGroup = index === 0 || messages[index - 1]?.senderId !== item.senderId;
 
         if (item.type === 'offer') {
             return (
@@ -683,16 +702,53 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
 
         return (
-            <View style={[styles.messageRow, { justifyContent: isMe ? 'flex-end' : 'flex-start' }]}>
+            <View style={[styles.messageRow, { justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: isLastInGroup ? 8 : 2 }]}>
                 <View style={[
                     styles.bubble, 
                     isMe 
-                        ? [styles.myBubble, { backgroundColor: theme.primary || '#E58A1F' }] 
-                        : [styles.theirBubble, { backgroundColor: theme.backgroundElement, borderColor: theme.borderLight, borderWidth: 1 }]
+                        ? [
+                            styles.myBubble, 
+                            { 
+                                backgroundColor: theme.primary, 
+                                paddingRight: 36, 
+                                paddingBottom: 14,
+                                // Dynamic radius: Apply tail ONLY if it's the last message in the block
+                                borderBottomRightRadius: isLastInGroup ? 4 : 16,
+                            }
+                          ] 
+                        : [
+                            styles.theirBubble, 
+                            { 
+                                backgroundColor: theme.backgroundElement, 
+                                borderColor: theme.borderLight, 
+                                borderWidth: 1,
+                                // Dynamic radius: Apply tail ONLY if it's the last message in the block
+                                borderBottomLeftRadius: isLastInGroup ? 4 : 16,
+                            }
+                          ]
                 ]}>
-                    <Text style={[styles.messageText, { color: isMe ? '#FFFFFF' : theme.textItemTitle }]}>
+                    <Text style={[styles.messageText, { color: isMe ? theme.primaryText : theme.textItemTitle }]}>
                         {item.text}
                     </Text>
+                    
+                    {/* --- READ RECEIPT --- */}
+                    {isMe && (
+                        <View style={{ 
+                            position: 'absolute', 
+                            bottom: 4, 
+                            right: 8 
+                        }}>
+                            <Iconify 
+                                icon={item.read ? "lucide:check-check" : "lucide:check"} 
+                                size={16} 
+                                color={
+                                    item.read 
+                                        ? (colorScheme === 'dark' ? theme.primaryText : theme.avatarBgTonal) 
+                                        : 'rgba(255, 255, 255, 0.35)'
+                                } 
+                            />
+                        </View>
+                    )}
                 </View>
             </View>
         );
@@ -787,11 +843,13 @@ const styles = StyleSheet.create({
 
     listContainer: { paddingHorizontal: 16, paddingVertical: 12 },
     messageRow: { flexDirection: 'row', marginVertical: 4, width: '100%' },
-    bubble: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, maxWidth: '75%' },
-    myBubble: { borderBottomRightRadius: 4 },
-    theirBubble: { borderBottomLeftRadius: 4 },
-    messageText: { fontSize: 15, lineHeight: 20 },
-
+    // Reduced borderRadius from 20 to 16 for a slightly squarer, more modern look
+    bubble: { 
+        paddingHorizontal: 16, 
+        paddingVertical: 10, 
+        borderRadius: 16, 
+        maxWidth: '75%' 
+    },
     offerCardContainer: { width: '100%', alignItems: 'center', marginVertical: 12 },
     offerCard: { width: '90%', borderRadius: 16, borderWidth: 1, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
     offerHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },

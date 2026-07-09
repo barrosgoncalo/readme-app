@@ -63,6 +63,7 @@ export default function (api) {
                         'lucide:maximize-2',
                         'lucide:minimize-2',
                         'lucide:ban',
+                        'lucide:check-check',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',
