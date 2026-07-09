@@ -25,18 +25,20 @@ export default function AppShell() {
     const [username, setUsername] = useState('');
 
     const isExplorePage = location.pathname.startsWith(WEB_ROUTES.MAP);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(!isExplorePage);
+    const isChatPage = location.pathname.startsWith(WEB_ROUTES.CHAT);
+    const shouldCollapseSidebar = isExplorePage || isChatPage;
+    const [isSidebarOpen, setIsSidebarOpen] = useState(!shouldCollapseSidebar);
 
     useEffect(() => {
-        if (isExplorePage) {
+        if (shouldCollapseSidebar) {
             setIsSidebarOpen(false);
         } else {
             setIsSidebarOpen(true);
         }
-    }, [isExplorePage]);
+    }, [shouldCollapseSidebar]);
 
     const handleLogoClick = (e) => {
-        if (isExplorePage) {
+        if (shouldCollapseSidebar) {
             e.preventDefault();
             setIsSidebarOpen(!isSidebarOpen);
         }
@@ -79,7 +81,7 @@ export default function AppShell() {
     }
 
     return (
-        <div className={styles.shell}>
+        <div className={`${styles.shell} ${!isSidebarOpen ? styles.shellCollapsed : ''} ${isChatPage ? styles.chatLock : ''}`}>
             <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
                 <h1 className={styles.wordmark}>
                     <Link to={WEB_ROUTES.MAP} onClick={handleLogoClick} style={{color: 'inherit', textDecoration: 'none'}}>
@@ -119,7 +121,7 @@ export default function AppShell() {
                     </>
                 )}
             </aside>
-            <main className={styles.content}>
+            <main className={`${styles.content} ${isChatPage ? styles.chatContent : ''}`}>
                 <Outlet/>
             </main>
         </div>
