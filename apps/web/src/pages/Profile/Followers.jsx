@@ -10,6 +10,7 @@ export default function Followers() {
             emptyText="You don't have any followers yet."
             metaDescription={<>These users are following you to stay updated on your books and activity.</>}
             loadUsers={getFollowers}
+            rowClickable
         />
     );
 }
