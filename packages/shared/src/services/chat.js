@@ -1,5 +1,6 @@
 // @readme/shared/src/services/chatService.js
 
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { createChatModel } from '../models/chat';
 import { createOfferModel, generateVerificationCode } from '../models/offer';
 import { createMessageModel } from '../models/message';
@@ -40,7 +41,7 @@ export const ChatService = {
             updatePayload['offerDetails.verificationCode'] = generateVerificationCode();
             updatePayload['offerDetails.verificationDisplayerId'] = proposerId;
             updatePayload['offerDetails.verificationScannerId'] = receiverId;
-            
+
             if (finalSelectedBookId) {
                 updatePayload['offerDetails.finalSelectedBookId'] = finalSelectedBookId;
                 updatePayload['offerDetails.finalSelectedBookImage'] = finalSelectedBookImage;
@@ -193,4 +194,19 @@ export const ChatService = {
     subscribeToMessages: (chatId, onUpdate, onError) => {
         return DB.subscribe(`chats/${chatId}/messages`, onUpdate, onError);
     },
+
+    verifySwapCode: async (chatId, messageId, scannedCode) => {
+        try {
+            const functions = getFunctions();
+            functions.region = 'europe-west1'; 
+
+            const verifyFn = httpsCallable(functions, 'verifySwapCode');
+
+            const result = await verifyFn({ chatId, messageId, scannedCode });
+            return result.data;
+        } catch (error) {
+            console.error("Cloud Function Verification Error:", error);
+            throw error;
+        }
+    }
 };

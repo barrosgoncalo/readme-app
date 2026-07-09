@@ -1,4 +1,5 @@
 const { setGlobalOptions } = require("firebase-functions/v2");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentWritten, onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
@@ -25,7 +26,6 @@ const ALGOLIA_PUBLICATIONS_INDEX = "publications";
 // ==========================================
 // ALGOLIA USER SYNC FUNCTION
 // ==========================================
-// Gen 2 function immune to the region bug
 exports.syncUserToAlgolia = onDocumentWritten({ document: "users/{userId}", region: "europe-west1" }, async (event) => {
     const snapshot = event.data;
     if (!snapshot) return;
@@ -180,5 +180,52 @@ exports.deleteBooksOnSwapComplete = onDocumentUpdated({ document: "chats/{chatId
         } catch (error) {
             console.error("Error deleting books on swap completion:", error);
         }
+    }
+});
+
+
+// ==========================================
+// VERIFY SWAP CODE FUNCTION
+// ==========================================
+
+exports.verifySwapCode = onCall({ region: "europe-west1" }, async (request) => {
+    // Extract data sent from the React Native app
+    const { chatId, messageId, scannedCode } = request.data;
+    const uid = request.auth?.uid;
+
+    // Security check: Ensure the user is logged in
+    if (!uid) {
+        throw new HttpsError("unauthenticated", "User must be authenticated to verify a swap.");
+    }
+
+    try {
+        const messageRef = db.collection('chats').doc(chatId).collection('messages').doc(messageId);
+        const doc = await messageRef.get();
+
+        if (!doc.exists) {
+            throw new HttpsError("not-found", "Chat message not found.");
+        }
+
+        const data = doc.data();
+        const expectedCode = data.offerDetails?.verificationCode;
+
+        // Compare the codes on the server
+        if (scannedCode !== expectedCode) {
+            // Throwing an error here sends it straight to the React Native 'catch' block
+            throw new HttpsError("invalid-argument", "The scanned code is incorrect.");
+        }
+
+        // If correct, update the status! 
+        // NOTE: This will automatically trigger your OTHER function (deleteBooksOnSwapComplete)
+        await messageRef.update({
+            "offerDetails.status": "completed"
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Verification error:", error);
+        // Re-throw HttpsErrors so the client receives the exact message
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "An error occurred during verification.");
     }
 });

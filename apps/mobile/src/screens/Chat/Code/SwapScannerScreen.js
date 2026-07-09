@@ -4,16 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { deleteBooksAfterSwap } from '@readme/shared/src/services/publications';
 
 export default function SwapScannerScreen({ route, navigation }) {
-    // EXTRACT THE BOOK IDs FROM PARAMS
     const { 
-        expectedCode, 
         messageId, 
         chatId, 
-        targetBookId,
-        finalSelectedBookId
     } = route.params;
     
     const [isVerifying, setIsVerifying] = useState(false);
@@ -22,41 +17,28 @@ export default function SwapScannerScreen({ route, navigation }) {
     const isProcessingRef = useRef(false);
 
     const handleVerifySuccess = async (scannedCode) => {
-        if (scannedCode !== expectedCode) {
-            Alert.alert(
-                "Verificação Falhou", 
-                `O código lido foi:\n${scannedCode}\n\nEste não corresponde ao esperado.`,
-                [{ 
-                    text: "Tentar Novamente", 
-                    onPress: () => {
-                        setScanned(false);
-                        isProcessingRef.current = false;
-                    } 
-                }] 
-            );
-            return;
-        }
-
-        setIsVerifying(true);
         setIsVerifying(true);
         try {
-            // 3. MARK THE CHAT OFFER AS COMPLETED
-            await ChatService.updateOfferStatus(chatId, messageId, 'completed');
+            // Send the scanned code to the Cloud Function
+            await ChatService.verifySwapCode(chatId, messageId, scannedCode);
             
+            // If we reach this line, the Cloud Function succeeded and updated the DB!
             Alert.alert("Sucesso!", "Troca verificada com sucesso! Os livros foram removidos da plataforma.", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
         } catch (error) {
             console.error("Erro ao validar o swap:", error);
-            Alert.alert("Erro", "Não foi possível finalizar a troca. Tenta novamente.", [
-                 { 
-                     text: "OK", 
-                     onPress: () => {
-                         setScanned(false);
-                         isProcessingRef.current = false; 
-                     } 
-                 }
-            ]);
+            Alert.alert(
+                "Verificação Falhou", 
+                "O código lido é inválido ou ocorreu um erro.", 
+                [{ 
+                    text: "Tentar Novamente", 
+                    onPress: () => {
+                        setScanned(false);
+                        isProcessingRef.current = false; 
+                    } 
+                }]
+            );
         } finally {
             setIsVerifying(false);
         }
