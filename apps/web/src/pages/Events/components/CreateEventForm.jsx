@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Field from '../../../components/Field.jsx';
 import Button from '../../../components/Button.jsx';
 import ErrorAlert from '../../../components/ErrorAlert.jsx';
+import DateTimePicker from '../../../components/DateTimePicker.jsx';
 import styles from './CreateEventForm.module.css';
 
 export default function CreateEventForm({ onSubmit, onCancel, submitting, error }) {
@@ -55,13 +56,7 @@ export default function CreateEventForm({ onSubmit, onCancel, submitting, error 
 
             <label className={styles.fieldLabel}>
                 <span className={styles.label}>Date & time</span>
-                <input
-                    className={styles.input}
-                    type="datetime-local"
-                    value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    required
-                />
+                <DateTimePicker value={startsAt} onChange={setStartsAt} />
             </label>
 
             <Field label="Location" value={locationLabel} onChange={setLocationLabel} placeholder="Café Central, Porto" required />
