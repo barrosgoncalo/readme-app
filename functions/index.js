@@ -216,7 +216,6 @@ exports.verifySwapCode = onCall({ region: "europe-west1" }, async (request) => {
         }
 
         // If correct, update the status! 
-        // NOTE: This will automatically trigger your OTHER function (deleteBooksOnSwapComplete)
         await messageRef.update({
             "offerDetails.status": "completed"
         });
