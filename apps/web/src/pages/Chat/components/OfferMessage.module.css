@@ -111,6 +111,17 @@
     opacity: 0.9;
 }
 
+.withdraw {
+    background: var(--bg);
+    color: var(--subtext);
+    border: 1px solid var(--subtext);
+}
+
+.withdraw:hover:not(:disabled) {
+    background: var(--bg-elem);
+    color: var(--text);
+}
+
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

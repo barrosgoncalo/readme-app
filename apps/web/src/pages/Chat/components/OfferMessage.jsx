@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, X, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, X, MapPin, ChevronDown, ChevronUp, Undo2 } from 'lucide-react';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { submitReview, hasUserReviewed } from '@readme/shared/src/services/reviews';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
@@ -12,6 +12,7 @@ const STATUS_COLORS = {
     pending: 'var(--secondary)',
     accepted: 'var(--success)',
     declined: 'var(--error)',
+    withdrawn: 'var(--subtext)',
     completed: 'var(--primary)',
     countered: 'var(--bg-elem)',
 };
@@ -89,6 +90,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
         [NEGOTIATION_STATUS.PENDING]: 'Pending',
         [NEGOTIATION_STATUS.ACCEPTED]: 'Accepted',
         [NEGOTIATION_STATUS.DECLINED]: 'Declined',
+        [NEGOTIATION_STATUS.WITHDRAWN]: 'Withdrawn',
         completed: 'Completed',
         countered: 'Countered',
     }[offer.status] || offer.status;
@@ -142,6 +144,19 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                             >
                                 <X size={14} />
                                 Decline
+                            </button>
+                        </div>
+                    )}
+
+                    {isOwn && offer.status === NEGOTIATION_STATUS.PENDING && (
+                        <div className={styles.actions}>
+                            <button
+                                className={`${styles.btn} ${styles.withdraw}`}
+                                onClick={() => handleStatus(NEGOTIATION_STATUS.WITHDRAWN)}
+                                disabled={busy}
+                            >
+                                <Undo2 size={14} />
+                                Withdraw
                             </button>
                         </div>
                     )}
