@@ -14,7 +14,6 @@ const TABS = {
 };
 
 const PAGE_WINDOW = 5; // how many page numbers to show at once, Google-style
-const HITS_PER_PAGE = 6;
 
 export default function SearchScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -100,7 +99,7 @@ export default function SearchScreen({ navigation }) {
         try {
             const { publications: pubs, page, nbPages } = await searchPublicationsByBook(
                 selectedBook,
-                { page: pageToLoad, hitsPerPage: HITS_PER_PAGE }
+                { page: pageToLoad }
             );
             setPublications(pubs);
             setPubPage(page);

@@ -9,7 +9,7 @@ const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
 const algoliaClient = algoliasearch(API_APP_ID_KEY, API_SEARCH_KEY);
 
 const PUBLICATIONS_INDEX = "publications";
-const RESULTS_PER_PAGE = 10; // matches the max-10-per-page requirement
+const RESULTS_PER_PAGE = 8; // matches the max-10-per-page requirement
 
 /**
  * Autocomplete-style search returning unique book suggestions (text only)
