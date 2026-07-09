@@ -176,9 +176,6 @@ export default function PublicProfile() {
                             <strong>{books.length}</strong> book{books.length === 1 ? '' : 's'}
                         </span>
                         <span className={styles.stat}>
-                            <strong>{tradeBooks.length}</strong> for trade
-                        </span>
-                        <span className={styles.stat}>
                             <strong>{followers}</strong> follower{followers === 1 ? '' : 's'}
                         </span>
                         <span className={styles.stat}>
