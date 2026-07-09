@@ -6,6 +6,7 @@ import { createChatModel } from '../models/chat';
 import { createOfferModel, generateVerificationCode } from '../models/offer';
 import { createMessageModel } from '../models/message';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status'
+import { toMillis } from '../utils/timestamp';
 
 export const ChatService = {
 
@@ -18,6 +19,7 @@ export const ChatService = {
 
         return onSnapshot(q, (snapshot) => {
             const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            list.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
             onUpdate(list);
         }, onError);
     },
@@ -166,7 +168,7 @@ export const ChatService = {
         const q = query(collection(db, 'chats'), where('participants', 'array-contains', uid));
         return onSnapshot(q, (snap) => {
             const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            list.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            list.sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt));
             onUpdate(list);
         }, onError);
     },

@@ -1,6 +1,10 @@
+import { toMillis } from './timestamp';
+
 export function timeAgo(date) {
+    const time = toMillis(date);
+    if (!time) return '';
+
     const now = Date.now();
-    const time = new Date(date).getTime();
     const diffSecs = Math.floor((now - time) / 1000);
     const diffMins = Math.floor(diffSecs / 60);
     const diffHours = Math.floor(diffMins / 60);
@@ -10,5 +14,5 @@ export function timeAgo(date) {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return new Date(date).toLocaleDateString();
+    return new Date(time).toLocaleDateString();
 }

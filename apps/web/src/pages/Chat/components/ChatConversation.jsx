@@ -2,15 +2,15 @@ import { useRef, useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
+import { toMillis } from '@readme/shared/src/utils/timestamp';
 import Spinner from '../../../components/Spinner.jsx';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
 function formatMessageTime(createdAt) {
-    if (!createdAt) return '';
-    const date = new Date(createdAt);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const millis = toMillis(createdAt);
+    if (!millis) return '';
+    return new Date(millis).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function ChatConversation({ chat, messages, loading, currentUserId }) {
