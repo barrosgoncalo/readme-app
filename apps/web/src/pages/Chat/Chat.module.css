@@ -1,9 +1,11 @@
 .page {
     display: grid;
     grid-template-columns: 280px 1fr;
-    height: calc(100vh - 60px);
+    grid-template-rows: minmax(0, 1fr);
+    height: 100vh;
     gap: 0;
     background: var(--bg);
+    overflow: hidden;
 }
 
 .emptyState {
@@ -18,6 +20,7 @@
 @media (max-width: 720px) {
     .page {
         grid-template-columns: 1fr;
+        height: calc(100vh - 60px);
     }
 
     .emptyState {
