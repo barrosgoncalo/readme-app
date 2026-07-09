@@ -1,37 +1,61 @@
+// ==========================================
+// IMPORTS & INITIALIZATION
+// ==========================================
 const { setGlobalOptions } = require("firebase-functions/v2");
-const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentWritten, onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
-// Initialize Firebase Admin for server-side database access
+// Initialize Firebase Admin globally
 initializeApp();
 const db = getFirestore();
 
-// Set global options for all functions
-setGlobalOptions({ maxInstances: 10 });
+// Set global configuration (Applies region & instance limits to ALL functions automatically)
+setGlobalOptions({ 
+    region: "europe-west1", 
+    maxInstances: 10 
+});
 
-const ALGOLIA_APP_ID = "RHUIQIPTCY";
-// Note: In production, consider using Firebase Secret Manager for admin keys
-const ALGOLIA_ADMIN_KEY = "e8307a98c93b8ca65d21e1ba2faa1e55"; 
+// ==========================================
+// CONFIGURATION CONSTANTS & LAZY INITIALIZATION
+// ==========================================
 const ALGOLIA_INDEX_NAME = "users";
+const ALGOLIA_PUBLICATIONS_INDEX = "publications";
 
-// Direct initialization of the v5 client (without initIndex)
-const client = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_ADMIN_KEY);
+// Keeps the client interface empty until the function is explicitly invoked in production
+let algoliaClient = null;
+
+const getAlgoliaClient = () => {
+    if (!algoliaClient) {
+        const APP_ID = process.env.ALGOLIA_APP_ID;
+        const ADMIN_KEY = process.env.ALGOLIA_ADMIN_KEY; 
+
+        if (!APP_ID || !ADMIN_KEY) {
+            console.error("CRITICAL: Algolia Environment Variables are missing inside the environment context!");
+        }
+
+        algoliaClient = algoliasearch(APP_ID, ADMIN_KEY);
+    }
+    return algoliaClient;
+};
 
 // ==========================================
 // ALGOLIA USER SYNC FUNCTION
 // ==========================================
-// Gen 2 function immune to the region bug
-exports.syncUserToAlgolia = onDocumentWritten({ document: "users/{userId}", region: "europe-west1" }, async (event) => {
+exports.syncUserToAlgolia = onDocumentWritten("users/{userId}", async (event) => {
     const snapshot = event.data;
     if (!snapshot) return;
 
     const data = snapshot.after.data();
     const objectID = event.params.userId;
+    
+    // Safely retrieve client at execution time
+    const client = getAlgoliaClient();
 
     try {
-        // If the document was deleted in Firestore, delete it in Algolia
         if (!data) {
             await client.deleteObject({
                 indexName: ALGOLIA_INDEX_NAME,
@@ -41,7 +65,6 @@ exports.syncUserToAlgolia = onDocumentWritten({ document: "users/{userId}", regi
             return;
         }
 
-        // If it was created or updated, save it to Algolia
         await client.saveObject({
             indexName: ALGOLIA_INDEX_NAME,
             body: {
@@ -58,19 +81,15 @@ exports.syncUserToAlgolia = onDocumentWritten({ document: "users/{userId}", regi
 // ==========================================
 // USER RATING UPDATE FUNCTION
 // ==========================================
-exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", region: "europe-west1" }, async (event) => {
-    // 1. Get the data from the newly created review
+exports.updateUserRating = onDocumentCreated("reviews/{reviewId}", async (event) => {
     const newReview = event.data.data();
     if (!newReview) return null;
 
-    const revieweeId = newReview.revieweeId; // The user receiving the rating
-    const newRating = Number(newReview.rating); // The rating given (1 to 5)
-
-    // 2. Reference to the evaluated user's document
+    const revieweeId = newReview.revieweeId;
+    const newRating = Number(newReview.rating);
     const userRef = db.collection('users').doc(revieweeId);
 
     try {
-        // 3. Use a transaction to ensure integrity if multiple reviews arrive at the exact same time
         await db.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
             
@@ -83,13 +102,11 @@ exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", r
             const currentRating = Number(userData.rating) || 0;
             const currentCount = Number(userData.reviewCount) || 0;
 
-            // 4. Moving average formula to calculate the new rating
             const nextCount = currentCount + 1;
             const nextRating = ((currentRating * currentCount) + newRating) / nextCount;
 
-            // 5. Update the user's profile with the new denormalized data
             transaction.update(userRef, {
-                rating: Number(nextRating.toFixed(2)), // Keep it to 2 decimal places
+                rating: Number(nextRating.toFixed(2)),
                 reviewCount: nextCount
             });
         });
@@ -97,5 +114,148 @@ exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", r
         console.log(`Rating for user ${revieweeId} updated successfully.`);
     } catch (error) {
         console.error("Error processing the rating Cloud Function:", error);
+    }
+});
+
+// ==========================================
+// ALGOLIA PUBLICATION SYNC FUNCTION
+// ==========================================
+exports.syncPublicationToAlgolia = onDocumentWritten("publications/{publicationId}", async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.after.data();
+    const objectID = event.params.publicationId;
+    
+    // Safely retrieve client at execution time
+    const client = getAlgoliaClient();
+
+    try {
+        if (!data) {
+            await client.deleteObject({
+                indexName: ALGOLIA_PUBLICATIONS_INDEX,
+                objectID: objectID
+            });
+            console.log(`Publication ${objectID} successfully deleted from Algolia.`);
+            return;
+        }
+
+        await client.saveObject({
+            indexName: ALGOLIA_PUBLICATIONS_INDEX,
+            body: {
+                objectID,
+                ...data
+            }
+        });
+        console.log(`Publication ${objectID} successfully synced to Algolia.`);
+    } catch (error) {
+        console.error("Error syncing publication with Algolia:", error);
+    }
+});
+
+// ==========================================
+// DELETE BOOKS ON SWAP COMPLETED FUNCTION
+// ==========================================
+exports.deleteBooksOnSwapComplete = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return;
+    if (afterData.type !== 'offer') return;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus !== 'completed' && afterStatus === 'completed') {
+        const targetBookId = afterData.offerDetails?.targetBookId;
+        const finalSelectedBookId = afterData.offerDetails?.finalSelectedBookId || afterData.offerDetails?.selectedBookId;
+
+        console.log(`Swap completed! Deleting books: Target(${targetBookId}), Selected(${finalSelectedBookId})`);
+
+        try {
+            const batch = db.batch();
+
+            if (targetBookId) {
+                batch.delete(db.collection('publications').doc(targetBookId));
+            }
+            if (finalSelectedBookId) {
+                batch.delete(db.collection('publications').doc(finalSelectedBookId));
+            }
+
+            await batch.commit();
+            console.log("Successfully deleted swapped books via Admin SDK.");
+        } catch (error) {
+            console.error("Error deleting books on swap completion:", error);
+        }
+    }
+});
+
+// ==========================================
+// VERIFY SWAP CODE FUNCTION
+// ==========================================
+exports.verifySwapCode = onCall(async (request) => {
+    const { chatId, messageId, scannedCode } = request.data;
+    const uid = request.auth?.uid;
+
+    if (!uid) {
+        throw new HttpsError("unauthenticated", "User must be authenticated to verify a swap.");
+    }
+
+    try {
+        const messageRef = db.collection('chats').doc(chatId).collection('messages').doc(messageId);
+        const doc = await messageRef.get();
+
+        if (!doc.exists) {
+            throw new HttpsError("not-found", "Chat message not found.");
+        }
+
+        const data = doc.data();
+        const expectedCode = data.offerDetails?.verificationCode;
+
+        if (scannedCode !== expectedCode) {
+            throw new HttpsError("invalid-argument", "The scanned code is incorrect.");
+        }
+
+        await messageRef.update({
+            "offerDetails.status": "completed"
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Verification error:", error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "An error occurred during verification.");
+    }
+});
+
+// ==========================================
+// SCHEDULED INACTIVE CHAT PURGE (CRON)
+// ==========================================
+exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const cutoffValue = Timestamp.fromDate(thirtyDaysAgo);
+
+    try {
+        const snapshot = await db.collection("chats")
+            .where("updatedAt", "<=", cutoffValue)
+            .get();
+
+        if (snapshot.empty) {
+            console.log("Cleanup complete: No inactive chats found.");
+            return;
+        }
+
+        console.log(`Found ${snapshot.size} inactive chats. Initiating deletion process...`);
+
+        for (const doc of snapshot.docs) {
+            await db.recursiveDelete(doc.ref);
+            console.log(`Successfully purged chat ID: ${doc.id}`);
+        }
+
+        console.log("All old conversations successfully processed.");
+    } catch (error) {
+        console.error("Fatal error during chat cleanup cycle:", error);
     }
 });

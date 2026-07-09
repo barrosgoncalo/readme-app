@@ -243,7 +243,6 @@ export default function ExploreScreen({ navigation }) {
                         ListHeaderComponent={
                             <>
                                 {renderHeader()}
-                                {/* ✨ Isolated component handles its own states and real-time re-renders natively! */}
                                 <ActiveSwapsSection 
                                     currentUserId={currentUser?.uid} 
                                     navigation={navigation}

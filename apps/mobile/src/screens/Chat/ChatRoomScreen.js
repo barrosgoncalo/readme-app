@@ -262,6 +262,55 @@ export default function ChatRoomScreen({ route, navigation }) {
         );
     };
 
+    const handleOpenOptions = () => {
+        Alert.alert(
+            "Chat Options",
+            "What would you like to do?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete Chat", 
+                    style: "destructive", 
+                    onPress: () => {
+                        const hasActiveSwap = messages.some(msg => 
+                            msg.type === 'offer' && 
+                                (msg.offerDetails?.status === 'pending' || msg.offerDetails?.status === 'accepted')
+                        );
+
+                        if (hasActiveSwap) {
+                            Alert.alert(
+                                "Action Blocked",
+                                "You have an active or pending swap in this chat! You must resolve or decline the proposal before deleting this conversation."
+                            );
+                        } else {
+                            // Safe to proceed with confirmation
+                            Alert.alert(
+                                "Confirm Delete",
+                                "Are you sure you want to delete this chat? It will be removed from your inbox.",
+                                [
+                                    { text: "Cancel", style: "cancel" },
+                                    { text: "Delete", style: "destructive", onPress: handleHideChat }
+                                ]
+                            );
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleHideChat = async () => {
+        try {
+            await ChatService.hideChat(chatId, currentUserId);
+
+            Alert.alert("Success", "Chat removed from your inbox.", [
+                { text: "OK", onPress: () => navigation.popToTop() }
+            ]);
+        } catch (error) {
+            Alert.alert("Detailed Error", error.message || JSON.stringify(error));
+        }
+    };
+
     const renderOfferCard = (item) => {
         const offer = item.offerDetails;
         const isReceivedOffer = item.senderId !== currentUserId;
@@ -287,7 +336,6 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
 
         // --- LÓGICA DE UI DA IMAGEM ---
-        // Verifica se devemos mostrar a imagem (seja por ser final/selecionada ou se só existe 1 livro na oferta)
         const hasSingleBookImage = offer?.offeredBooks?.length === 1 && offer?.offeredBooks[0]?.image;
         const imageToShow = offer?.finalSelectedBookImage || offer?.selectedBookImage || (hasSingleBookImage ? offer.offeredBooks[0].image : null);
 
@@ -586,7 +634,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </View>
                 </TouchableOpacity>
 
-                <View style={styles.headerSpacer} />
+                <TouchableOpacity onPress={handleOpenOptions} style={styles.optionsButton}>
+                    <Iconify icon="lucide:more-vertical" size={24} color={theme.textItemTitle} />
+                </TouchableOpacity>
             </SafeAreaView>
 
             {loading ? (
@@ -733,5 +783,8 @@ const styles = StyleSheet.create({
         fontSize: 16, 
         fontWeight: '700', 
         color: '#10B981' 
-    }
+    },
+    optionsButton: { 
+        padding: 4 
+    },
 });
