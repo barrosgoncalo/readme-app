@@ -235,6 +235,48 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
     };
 
+    const handleCancelSwap = async (messageId, bookId, finalSelectedBookId) => {
+        Alert.alert(
+            "Cancel Swap",
+            "Are you sure you want to cancel this agreed swap? The other user will be notified and allowed to review their experience with you.",
+            [
+                { text: "No, keep it", style: "cancel" },
+                { 
+                    text: "Yes, Cancel", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            // 1. Update status and mark WHO canceled it directly in the message document
+                            const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+                            await updateDoc(messageRef, {
+                                'offerDetails.status': 'cancelled',
+                                'offerDetails.cancelledBy': currentUserId
+                            });
+
+                            // 2. Un-reserve the primary book
+                            const targetBookId = bookId || publicationId;
+                            if (targetBookId) {
+                                const publicationRef = doc(db, 'publications', targetBookId);
+                                await updateDoc(publicationRef, { status: PUBLICATION_STATUS.AVAILABLE });
+                            }
+
+                            // 3. Un-reserve the exchange book
+                            if (finalSelectedBookId) {
+                                const exchangeRef = doc(db, 'publications', finalSelectedBookId);
+                                await updateDoc(exchangeRef, { status: PUBLICATION_STATUS.AVAILABLE });
+                            }
+
+                            Alert.alert("Swap Cancelled", "The swap was cancelled and books are available again.");
+                        } catch (error) {
+                            console.error("Error cancelling swap:", error);
+                            Alert.alert("Error", "Could not cancel the swap. Please try again.");
+                        }
+                    } 
+                }
+            ]
+        );
+    };
+
     const handleOpenNavigation = (location) => {
         if (!location || !location.latitude || !location.longitude) {
             Alert.alert("Location Error", "Coordinates are unavailable for this location.");
@@ -497,6 +539,15 @@ export default function ChatRoomScreen({ route, navigation }) {
                 {/* --- VERIFICATION HANDSHAKE UI --- */}
                 {offer?.status === 'accepted' && (
                     <View style={styles.offerActions}>
+                        {/* NEW CANCEL BUTTON */}
+                        <TouchableOpacity 
+                            style={[styles.actionButton, styles.declineButton, { flex: 0.5, marginRight: 8 }]}
+                            onPress={() => handleCancelSwap(item.id, offer?.targetBookId, offer?.selectedBookId)}
+                        >
+                            <Iconify icon="lucide:x" size={18} color="#991B1B" />
+                        </TouchableOpacity>
+
+                        {/* EXISTING QR CODE BUTTONS */}
                         {offer.verificationDisplayerId === currentUserId && (
                             <TouchableOpacity 
                                 style={[styles.actionButton, { backgroundColor: theme.primary }]}
@@ -504,7 +555,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                             >
                                 <Iconify icon="lucide:qr-code" size={18} color={theme.primaryText} style={{ marginRight: 8 }} />
                                 <Text style={[styles.acceptButtonText, { color: theme.primaryText }]}>
-                                    Show Swap Code
+                                    Show Code
                                 </Text>
                             </TouchableOpacity>
                         )}
@@ -570,6 +621,55 @@ export default function ChatRoomScreen({ route, navigation }) {
                                 {hasReviewed ? "Review Submitted" : "Review User"}
                             </Text>
                         </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* --- CANCELLED SWAP UI --- */}
+                {offer?.status === 'cancelled' && (
+                    <View style={styles.completedContainer}>
+                        <View style={styles.completedHeader}>
+                            <Iconify icon="lucide:alert-triangle" size={22} color="#EF4444" />
+                            <Text style={[styles.completedText, { color: '#EF4444', fontSize: 14 }]}>
+                                {offer.cancelledBy === currentUserId 
+                                    ? "You cancelled this swap agreement" 
+                                    : "The other user cancelled this swap agreement"}
+                            </Text>
+                        </View>
+
+                        {/* ONLY show the Review button if the current user was NOT the one who canceled! */}
+                        {offer.cancelledBy !== currentUserId && (
+                            <TouchableOpacity 
+                                style={[
+                                    styles.actionButton, 
+                                    { 
+                                        backgroundColor: hasReviewed ? theme.backgroundElement : theme.textItemTitle, 
+                                        borderColor: hasReviewed ? theme.borderLight : 'transparent',
+                                        borderWidth: hasReviewed ? 1 : 0,
+                                        width: '100%' 
+                                    }
+                                ]}
+                                onPress={() => {
+                                    navigation.navigate(ROUTES.REVIEW_SWAPPER, { 
+                                        targetUserId: targetSeller?.uid || item.senderId,
+                                        chatId: chatId 
+                                    });
+                                }}
+                                disabled={hasReviewed}
+                            >
+                                <Iconify 
+                                    icon={hasReviewed ? "lucide:check-circle" : "lucide:star"} 
+                                    size={18} 
+                                    color={hasReviewed ? "#10B981" : theme.background} 
+                                    style={{ marginRight: 8 }} 
+                                />
+                                <Text style={[
+                                    styles.acceptButtonText, 
+                                    { color: hasReviewed ? theme.subtext : theme.background }
+                                ]}>
+                                    {hasReviewed ? "Review Submitted" : "Review User"}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
             </View>
