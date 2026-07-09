@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
     View, Text, StyleSheet, TouchableOpacity, 
     ActivityIndicator, useColorScheme, Keyboard 
@@ -13,12 +13,19 @@ import { ChatService } from '@readme/shared/src/services/chat';
 // Map Architectures
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
 import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
+import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
 import MapSearchBar from '../../../components/ui/MapSearchBar';
 import SelectedLocationCard from '../../../components/ui/SelectedLocationCard';
 import OfferBottomDock from '../../../components/ui/OfferBottomDock';
 
+const LISBON_REGION = {
+    latitude: 38.7223,
+    longitude: -9.1393,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+};
+
 export default function SelectSwapLocationScreen({ route, navigation }) {
-    // Destructure params including the ones passed from Step 1
     const { messageId, chatId, offerDetails, targetSellerUid, selectedBookId, selectedBookImage } = route.params;
     const { currentUser } = useAuth();
     
@@ -26,8 +33,8 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
     const theme = Colors[colorScheme];
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [mapReady, setMapReady] = useState(false);
 
-    // --- Map Architectures ---
     const mapRef = useRef(null);
     const { sellerLocations, loading: mapLoading } = useSellerLocations(targetSellerUid || '');
 
@@ -48,14 +55,22 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
         handleCancelAlternative
     } = useLocationProposal(sellerLocations, mapRef);
 
-    const defaultRegion = currentRegion || (originalLocation?.latitude ? {
-        latitude: originalLocation.latitude,
-        longitude: originalLocation.longitude,
+    const defaultRegion = originalLocation?.latitude ? {
+        latitude: Number(originalLocation.latitude),
+        longitude: Number(originalLocation.longitude),
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
-    } : null);
+    } : LISBON_REGION;
 
-    // --- Final Submission ---
+    useFitMarkers({
+        mapRef,
+        mapReady,
+        loading: mapLoading,
+        locations: sellerLocations,
+        isProposingAlternative,
+        originalLocation,
+    });
+
     const handleSendCounter = async () => {
         if (isSubmitting || !locationIsValid || !currentUser?.uid) return;
 
@@ -74,8 +89,6 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                 selectedBookId,
                 selectedBookImage
             );
-
-            // Pop back 2 screens to return to the Chat, closing both Step 1 and Step 2
             navigation.pop(2); 
         } catch (error) {
             console.error("Failed to send counter:", error);
@@ -103,18 +116,18 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                         ref={mapRef}
                         provider={PROVIDER_DEFAULT}
                         style={styles.map}
+                        onMapReady={() => setMapReady(true)} // ✅ FIXED: Only flips the switch, avoiding overlapping function triggers
                         onRegionChangeComplete={setCurrentRegion}
                         onPress={(e) => isProposingAlternative && handleReverseGeocode(e.nativeEvent.coordinate)}
                         onPanDrag={Keyboard.dismiss}
                         initialRegion={defaultRegion} 
-                        region={defaultRegion} 
                     >
                         {!isProposingAlternative && originalLocation?.latitude && (
                             <Marker
                                 key="original-offer-location"
                                 coordinate={{
-                                    latitude: originalLocation.latitude,
-                                    longitude: originalLocation.longitude
+                                    latitude: Number(originalLocation.latitude),
+                                    longitude: Number(originalLocation.longitude)
                                 }}
                                 pinColor={selectedLocation?.id === originalLocation.id ? theme.primary : "#4A90E2"}
                                 onPress={() => setSelectedLocation(originalLocation)}
@@ -127,7 +140,10 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                             return (
                                 <Marker
                                     key={loc.id}
-                                    coordinate={loc}
+                                    coordinate={{
+                                        latitude: Number(loc.latitude),
+                                        longitude: Number(loc.longitude)
+                                    }}
                                     pinColor={selectedLocation?.id === loc.id ? theme.primary : "#A35C37"}
                                     onPress={() => setSelectedLocation(loc)}
                                 />
@@ -161,7 +177,6 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                 )}
             </View>
 
-            {/* FOOTER: Validation Pipeline */}
             <OfferBottomDock 
                 theme={theme}
                 canSend={locationIsValid && !isSubmitting}

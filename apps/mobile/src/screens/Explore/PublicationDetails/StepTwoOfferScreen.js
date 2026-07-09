@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -19,6 +19,7 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 // Consolidated Domain Architectures
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
 import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
+import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
 import MapSearchBar from '../../../components/ui/MapSearchBar';
 import SelectedLocationCard from '../../../components/ui/SelectedLocationCard';
 import OfferBottomDock from '../../../components/ui/OfferBottomDock';
@@ -27,6 +28,9 @@ import OfferBottomDock from '../../../components/ui/OfferBottomDock';
 import { ChatService } from '@readme/shared/src/services/chat';
 
 export default function StepTwoOfferScreen({ route, navigation }) {
+
+    const [mapReady, setMapReady] = useState(false);
+
     // --- Theme & Context Routing ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
@@ -54,6 +58,15 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         handleStartProposingAlternative,
         handleCancelAlternative
     } = useLocationProposal(sellerLocations, mapRef);
+
+
+    useFitMarkers({
+        mapRef,
+        mapReady,
+        loading,
+        locations: sellerLocations,
+        isProposingAlternative,
+    });
 
     // --- Final Context Routing Action ---
     const handleSendOffer = async () => {
@@ -116,6 +129,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                             ref={mapRef}
                             provider={PROVIDER_DEFAULT}
                             style={styles.map}
+                            onMapReady={() => setMapReady(true)}
                             onRegionChangeComplete={setCurrentRegion}
                             onPress={(e) => isProposingAlternative && handleReverseGeocode(e.nativeEvent.coordinate)}
                             onPanDrag={Keyboard.dismiss}

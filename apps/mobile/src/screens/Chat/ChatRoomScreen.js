@@ -628,7 +628,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                 {offer?.status === 'cancelled' && (
                     <View style={styles.completedContainer}>
                         <View style={styles.completedHeader}>
-                            <Iconify icon="lucide:alert-triangle" size={22} color="#EF4444" />
                             <Text style={[styles.completedText, { color: '#EF4444', fontSize: 14 }]}>
                                 {offer.cancelledBy === currentUserId 
                                     ? "You cancelled this swap agreement" 
