@@ -57,6 +57,8 @@ export default function ChatRoomScreen({ route, navigation }) {
 
     const [hasReviewed, setHasReviewed] = useState(false);
 
+    const [isFetchingBook, setIsFetchingBook] = useState(false);
+
     // --- SAFE METADATA FETCH LAYER ---
     useEffect(() => {
         if (!chatId || !currentUserId) return;
@@ -367,6 +369,36 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
     };
 
+    const handleBookPress = async (bookSummary) => {
+        if (!bookSummary?.id) return;
+
+        try {
+            setIsFetchingBook(true);
+
+            // 1. Fetch the full publication from Firestore
+            // (Adjust this line to use whatever API/Service you normally use to fetch data)
+            const docRef = doc(db, 'publications', bookSummary.id); 
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const fullPublicationData = { id: docSnap.id, ...docSnap.data() };
+
+                // 2. Navigate with the fully populated data
+                navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
+                    publication: fullPublicationData,
+                    hideOfferButton: true
+                });
+            } else {
+                console.warn("Publication no longer exists!");
+                // Optional: Show an alert/toast to the user here
+            }
+        } catch (error) {
+            console.error("Failed to fetch full book details:", error);
+        } finally {
+            setIsFetchingBook(false);
+        }
+    };
+
     const renderOfferCard = (item) => {
         const offer = item.offerDetails;
         const isReceivedOffer = item.senderId !== currentUserId;
@@ -412,44 +444,69 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </Text>
                 </View>
 
-                {/* SIDE-BY-SIDE TRADE CONTAINER */}
+                {/* ======================================= */}
+                {/* SIDE-BY-SIDE TRADE CONTAINER            */}
+                {/* ======================================= */}
                 <View style={styles.tradeContainer}>
-                    {/* Left Side: Target Book */}
+
+                    {/* ======================================= */}
+                    {/* Left Side: Target Book                  */}
+                    {/* ======================================= */}
                     <View style={styles.bookColumn}>
                         <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
                             Target Book
                         </Text>
 
-                        {bubbleTargetImage ? (
-                            <Image source={{ uri: bubbleTargetImage }} style={styles.tradeBookImage} />
-                        ) : (
-                            <View style={[styles.tradeBookImage, styles.placeholderBg]}>
-                                <Iconify icon="lucide:book" size={20} color={theme.subtext} />
-                            </View>
-                        )}
+                        <TouchableOpacity 
+                            activeOpacity={0.7}
+                            disabled={isFetchingBook} // Prevent clicking while loading
+                            onPress={() => handleBookPress({ id: offer.targetBookId }) }
+                        >
+                            {bubbleTargetImage ? (
+                                <Image source={{ uri: bubbleTargetImage }} style={styles.tradeBookImage} />
+                            ) : (
+                                    <View style={[styles.tradeBookImage, styles.placeholderBg]}>
+                                        <Iconify icon="lucide:book" size={20} color={theme.subtext} />
+                                    </View>
+                                )}
+                        </TouchableOpacity>
                     </View>
 
                     {/* Middle: Exchange Icon */}
                     <Iconify icon="lucide:arrow-right-left" size={20} color={theme.subtext} style={{ marginHorizontal: 8 }} />
 
-                    {/* Right Side: Offered Book(s) */}
+                    {/* ======================================= */}
+                    {/* Right Side: Offered Book(s)             */}
+                    {/* ======================================= */}
                     <View style={styles.bookColumn}>
                         <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
                             {(isCounterOffer || offer?.offeredBooks?.length === 1) ? "Offered Book" : "Options"}
                         </Text>
 
-                        {imageToShow ? (
-                            <Image 
-                                source={{ uri: imageToShow }} 
-                                style={styles.tradeBookImage} 
-                            />
-                        ) : (
-                            <View style={[styles.tradeBookImage, styles.placeholderBg]}>
-                                <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textItemTitle }}>
-                                    {offer?.offeredBooks?.length || offer?.offeredBookIds?.length || 1}
-                                </Text>
-                            </View>
-                        )}
+                        <TouchableOpacity 
+                            activeOpacity={0.7}
+                            disabled={isFetchingBook} // Prevent clicking while loading
+                            onPress={() => {
+                                // If there are multiple options, you grab the first one
+                                const bookToOpen = offer?.offeredBooks?.[0]; 
+                                if (bookToOpen) {
+                                    handleBookPress(bookToOpen);
+                                }
+                            }}
+                        >
+                            {imageToShow ? (
+                                <Image 
+                                    source={{ uri: imageToShow }} 
+                                    style={styles.tradeBookImage} 
+                                />
+                            ) : (
+                                    <View style={[styles.tradeBookImage, styles.placeholderBg]}>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textItemTitle }}>
+                                            {offer?.offeredBooks?.length || offer?.offeredBookIds?.length || 1}
+                                        </Text>
+                                    </View>
+                                )}
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -467,10 +524,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                         </Text>
                     </TouchableOpacity>
                 ) : (
-                    <Text style={[styles.offerText, { color: theme.subtext, marginTop: 12 }]}>
-                        Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>Not specified</Text>
-                    </Text>
-                )}
+                        <Text style={[styles.offerText, { color: theme.subtext, marginTop: 12 }]}>
+                            Location: <Text style={{ fontWeight: '600', color: theme.textItemTitle }}>Not specified</Text>
+                        </Text>
+                    )}
 
                 {/* STATUS BADGE */}
                 <View style={[styles.statusBadge, { backgroundColor: statusBg, marginTop: 12 }]}>
@@ -508,7 +565,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                             onPress={() => {
                                 if (!isCounterOffer) {
                                     const offeredBooks = offer?.offeredBooks || [];
-                                    
+
                                     if (offeredBooks.length === 1) {
                                         navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, { 
                                             messageId: item.id, 
@@ -544,7 +601,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                         </TouchableOpacity>
                     </View>
                 )}
-                
+
                 {/* --- VERIFICATION HANDSHAKE UI REESTRUTURADA --- */}
                 {offer?.status === 'accepted' && (
                     <View style={styles.acceptedWorkflowContainer}>

@@ -64,6 +64,8 @@ export default function PublicationDetailsScreen({ route, navigation }) {
 
     const passedSeller = route?.params?.seller;
 
+    const hideOfferButton = route?.params?.hideOfferButton || false;
+
     // --- Data & Logic Layer ---
     const { seller, isFavorited, handleToggleFavorite } = usePublicationDetails(book, passedSeller);
 
@@ -108,8 +110,13 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                
+            <ScrollView 
+                showsVerticalScrollIndicator={false} 
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    hideOfferButton && { paddingBottom: 40 }
+                ]}
+            >                
                 {/* --- HEADER IMAGE CAROUSEL --- */}
                 <View style={styles.imageContainer}>
                     <ScrollView 
@@ -207,16 +214,18 @@ export default function PublicationDetailsScreen({ route, navigation }) {
             </ScrollView>
 
             {/* --- BOTTOM ACTION BUTTON --- */}
-            <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-                <TouchableOpacity 
-                    style={styles.offerButton} 
-                    onPress={handleMakeOffer}
-                    activeOpacity={0.85}
-                >
-                    <Iconify icon="lucide:handshake" size={22} color="#FFFFFF" />
-                    <Text style={styles.offerButtonText}>Make an Offer</Text>
-                </TouchableOpacity>
-            </SafeAreaView>
+            {!hideOfferButton && (
+                <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+                    <TouchableOpacity 
+                        style={styles.offerButton} 
+                        onPress={handleMakeOffer}
+                        activeOpacity={0.85}
+                    >
+                        <Iconify icon="lucide:handshake" size={22} color="#FFFFFF" />
+                        <Text style={styles.offerButtonText}>Make an Offer</Text>
+                    </TouchableOpacity>
+                </SafeAreaView>
+            )}
 
             {/* --- FULLSCREEN IMAGE VIEWER MODAL --- */}
             <ImageViewing

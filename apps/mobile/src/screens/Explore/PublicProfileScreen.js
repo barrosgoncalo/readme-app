@@ -167,7 +167,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                         style={styles.publicationCard}
                         onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
                             publicationId: item.id,
-                            publication: item
+                            publication: item,
                         })}
                         activeOpacity={0.8}
                     >
