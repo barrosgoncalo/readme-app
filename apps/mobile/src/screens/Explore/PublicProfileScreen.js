@@ -25,13 +25,12 @@ import { auth } from '@readme/shared/src/services/firebase';
 import { doBlockUser } from '@readme/shared/src/services/block';
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
 import { fetchUserPublications } from '@readme/shared/src/services/publications';
-import { fetchUserReviews } from '@readme/shared/src/services/reviews';
+import { ReviewService } from '@readme/shared/src/services/reviews';
 
 const { width } = Dimensions.get('window');
 
 export default function PublicProfileScreen({ navigation, route }) {
     const userId = route.params?.ownerId;
-
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildProfileStyles(theme);
@@ -59,11 +58,10 @@ export default function PublicProfileScreen({ navigation, route }) {
             else setLoading(true);
 
         try {
-            // Adiciona a chamada de fetchUserReviews ao Promise.all
             const [profileData, publicationsData, reviewsData] = await Promise.all([
                 fetchUserProfile(userId),
                 fetchUserPublications(userId),
-                fetchUserReviews(userId) 
+                ReviewService.fetchUserReviews(userId) 
             ]);
 
             setProfile(profileData);

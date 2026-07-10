@@ -22,12 +22,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { db } from '@readme/shared/src/services/firebase'; 
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { ChatService } from '@readme/shared/src/services/chat';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 import { fetchPublication } from '@readme/shared/src/services/publications';
+import { ChatService } from '@readme/shared/src/services/chat';
+import { ReviewService } from '@readme/shared/src/services/reviews';
+
 import OfferMessageCard from '../../components/ui/OfferMessageCard';
 import ChatBubble from '../../components/ui/ChatBubble';
 
@@ -107,12 +109,16 @@ export default function ChatRoomScreen({ route, navigation }) {
     useEffect(() => {
         if (!chatId || !currentUserId) return;
 
-        const unsubscribe = ChatService.subscribeToReviewStatus(
-            chatId, currentUserId, setHasReviewed
+        const unsubscribe = ReviewService.subscribeToReviewStatus(
+            chatId, 
+            currentUserId, 
+            setHasReviewed
         );
 
         return () => unsubscribe();
     }, [chatId, currentUserId]);
+
+
     const handleSendMessage = async () => {
         if (!inputText.trim() || !currentUserId) return;
 

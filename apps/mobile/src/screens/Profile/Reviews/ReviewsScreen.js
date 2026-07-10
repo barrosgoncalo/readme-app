@@ -15,7 +15,7 @@ import { Iconify } from 'react-native-iconify';
 
 // Theme & Service Imports
 import { Colors, Fonts } from '@readme/shared/src/constants/theme';
-import { fetchUserReviews } from '@readme/shared/src/services/reviews';
+import { ReviewService } from '@readme/shared/src/services/reviews';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext'; 
 
 import { GranularRating } from '../../../components/ui/GranularRating';
@@ -43,7 +43,7 @@ export default function UserReviewsScreen({ navigation, route }) {
         else setLoading(true);
 
         try {
-            const reviewsData = await fetchUserReviews(userId);
+            const reviewsData = await ReviewService.fetchUserReviews(userId);
             setReviews(reviewsData || []);
         } catch (error) {
             console.error("Error loading reviews:", error);

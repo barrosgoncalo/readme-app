@@ -332,15 +332,4 @@ export const ChatService = {
             )
         );
     },
-
-    /**
-     * Subscribes to whether the current user has already reviewed this chat.
-     */
-    subscribeToReviewStatus: (chatId, currentUserId, onUpdate) => {
-        return DB.subscribeDoc(
-            'reviews',
-            `${chatId}_${currentUserId}`,
-            (docData) => onUpdate(!!docData)
-        );
-    },
 };
