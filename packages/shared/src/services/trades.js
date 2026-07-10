@@ -1,54 +1,82 @@
+// @readme/shared/src/services/trades.js
 import { DB } from './DB';
+import { ChatService } from './chat';
+import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
 
-const TRADES_COLLECTION = 'trades';
+export const TradeService = {
 
-export async function createTrade({ bookId, offeredBy, requestedFrom }) {
-    return await DB.create(TRADES_COLLECTION, {
-        bookId,
-        offeredBy,
-        requestedFrom,
-        status: 'pending',
-    });
-}
+    /**
+     * Resolves an offer (Accepts or Rejects it).
+     * Automatically coordinates message status updates and book reservations.
+     */
+    resolveOffer: async (chatId, messageId, newStatus, details = {}) => {
+        const { 
+            proposerId, 
+            receiverId, 
+            targetBookId, 
+            finalSelectedBookId, 
+            finalSelectedBookImage 
+        } = details;
 
-export async function getIncomingTrades(uid) {
-    const trades = await DB.get(TRADES_COLLECTION, [
-        { field: 'requestedFrom', operator: '==', value: uid }
-    ]);
-    
-    return trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-}
+        try {
+            // 1. Update the message text/metadata via ChatService
+            await ChatService.updateOfferStatus(
+                chatId,
+                messageId,
+                newStatus,
+                proposerId,
+                receiverId,
+                finalSelectedBookId,
+                finalSelectedBookImage
+            );
 
-export async function getOutgoingTrades(uid) {
-    const trades = await DB.get(TRADES_COLLECTION, [
-        { field: 'offeredBy', operator: '==', value: uid }
-    ]);
-    
-    return trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-}
+            // 2. If accepted, reserve both books in the inventory so others cannot request them
+            if (newStatus === NEGOTIATION_STATUS.ACCEPTED) {
+                const reservePromises = [];
 
-export async function updateTradeStatus(tradeId, status) {
-    await DB.update(TRADES_COLLECTION, tradeId, { status });
-}
+                if (targetBookId) {
+                    reservePromises.push(DB.update('publications', targetBookId, { status: 'reserved' }));
+                }
+                if (finalSelectedBookId) {
+                    reservePromises.push(DB.update('publications', finalSelectedBookId, { status: 'reserved' }));
+                }
 
-export async function getAvailableTradeBooks(excludeUid) {
-    const users = await DB.get('users', []);
-    const results = [];
+                if (reservePromises.length > 0) {
+                    await Promise.all(reservePromises);
+                }
+            }
+        } catch (error) {
+            console.error("TradeService.resolveOffer failed:", error);
+            throw error;
+        }
+    },
 
-    for (const user of users) {
-        const uid = user.id;
-        if (uid === excludeUid) continue;
+    /**
+     * Cancels an active swap arrangement.
+     * Changes the message status and frees up the books back into the public market.
+     */
+    cancelSwap: async (chatId, messageId, targetBookId, finalSelectedBookId) => {
+        try {
+            // 1. Update the message state (Assuming CANCELLED exists in your NEGOTIATION_STATUS)
+            const cancelStatus = NEGOTIATION_STATUS.CANCELLED || 'cancelled';
+            await ChatService.updateOfferStatus(chatId, messageId, cancelStatus);
 
-        const myBooks = await DB.get(`users/${uid}/myBooks`, []);
+            // 2. Free up the inventory (make them available again)
+            const releasePromises = [];
 
-        for (const book of myBooks) {
-            results.push({
-                bookId: book.id,
-                ownerId: uid,
-                addedAt: book.addedAt,
-            });
+            if (targetBookId) {
+                releasePromises.push(DB.update('publications', targetBookId, { status: 'available' }));
+            }
+            if (finalSelectedBookId) {
+                releasePromises.push(DB.update('publications', finalSelectedBookId, { status: 'available' }));
+            }
+
+            if (releasePromises.length > 0) {
+                await Promise.all(releasePromises);
+            }
+        } catch (error) {
+            console.error("TradeService.cancelSwap failed:", error);
+            throw error;
         }
     }
-
-    return results;
-}
+};

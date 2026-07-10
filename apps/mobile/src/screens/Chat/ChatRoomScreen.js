@@ -14,21 +14,16 @@ import {
     Linking,
     Alert
 } from 'react-native';
-import { 
-    doc, 
-    updateDoc
-} from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
-import { db } from '@readme/shared/src/services/firebase'; 
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 import { fetchPublication } from '@readme/shared/src/services/publications';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { ReviewService } from '@readme/shared/src/services/reviews';
+import { TradeService } from '@readme/shared/src/services/trades';
 
 import OfferMessageCard from '../../components/ui/OfferMessageCard';
 import ChatBubble from '../../components/ui/ChatBubble';
@@ -157,56 +152,21 @@ export default function ChatRoomScreen({ route, navigation }) {
         finalSelectedBookImage = null
     ) => {
         try {
-            let displayerId = senderIdOfOffer;
-            let scannerId = currentUserId;
+            const targetBookId = bookId || publicationId; 
 
-            // Update the message status in the chat room
-            await ChatService.updateOfferStatus(
-                chatId, 
-                messageId, 
-                newStatus, 
-                displayerId, 
-                scannerId, 
-                finalSelectedBookId,
-                finalSelectedBookImage
-            );
-            console.log("Chat offer status updated successfully.");
+            // Offload the heavy lifting to TradeService
+            await TradeService.resolveOffer(chatId, messageId, newStatus, {
+                proposerId: senderIdOfOffer,
+                receiverId: currentUserId,
+                targetBookId: targetBookId,
+                finalSelectedBookId: finalSelectedBookId,
+                finalSelectedBookImage: finalSelectedBookImage
+            });
 
-            // Safely attempt to reserve the books on the main feed
-            if (newStatus === 'accepted') {
-                const targetBookId = bookId || publicationId; 
-
-                if (!targetBookId) {
-                    console.warn("Offer accepted, but no primary book ID could be resolved from message or chat.");
-                    return;
-                }
-
-                // Reserve the primary requested book
-                try {
-                    const publicationRef = doc(db, 'publications', targetBookId);
-                    await updateDoc(publicationRef, { 
-                        status: PUBLICATION_STATUS.RESERVED 
-                    });
-                    console.log(`Success: Primary book ${targetBookId} is now reserved.`);
-                } catch (permError) {
-                    console.error("Rules blocked reserving primary book:", permError);
-                }
-
-                // Reserve the offered exchange book (if this is a 2-way swap)
-                if (finalSelectedBookId) {
-                    try {
-                        const exchangeRef = doc(db, 'publications', finalSelectedBookId);
-                        await updateDoc(exchangeRef, { 
-                            status: PUBLICATION_STATUS.RESERVED 
-                        });
-                        console.log(`Success: Exchange book ${finalSelectedBookId} is now reserved.`);
-                    } catch (permError) {
-                        console.error("Rules blocked reserving exchange book:", permError);
-                    }
-                }
-            }
+            console.log("Chat offer status and inventory updated successfully via TradeService.");
         } catch (error) {
             console.error("Failed to update trade workflow context:", error);
+            Alert.alert("Error", "Could not process the offer. Please try again.");
         }
     };
 
@@ -221,25 +181,14 @@ export default function ChatRoomScreen({ route, navigation }) {
                     style: "destructive", 
                     onPress: async () => {
                         try {
-                            // 1. Update status and mark WHO canceled it directly in the message document
-                            const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
-                            await updateDoc(messageRef, {
-                                'offerDetails.status': 'cancelled',
-                                'offerDetails.cancelledBy': currentUserId
-                            });
-
-                            // 2. Un-reserve the primary book
                             const targetBookId = bookId || publicationId;
-                            if (targetBookId) {
-                                const publicationRef = doc(db, 'publications', targetBookId);
-                                await updateDoc(publicationRef, { status: PUBLICATION_STATUS.AVAILABLE });
-                            }
 
-                            // 3. Un-reserve the exchange book
-                            if (finalSelectedBookId) {
-                                const exchangeRef = doc(db, 'publications', finalSelectedBookId);
-                                await updateDoc(exchangeRef, { status: PUBLICATION_STATUS.AVAILABLE });
-                            }
+                            await TradeService.cancelSwap(
+                                chatId, 
+                                messageId, 
+                                targetBookId, 
+                                finalSelectedBookId
+                            );
 
                             Alert.alert("Swap Cancelled", "The swap was cancelled and books are available again.");
                         } catch (error) {
