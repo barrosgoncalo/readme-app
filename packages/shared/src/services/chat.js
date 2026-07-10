@@ -78,6 +78,33 @@ const _mapChatToInboxPreview = (data, currentUserId) => {
     };
 };
 
+/**
+ * Resolves the other participant's identity for a chat, using piped-in
+ * targetSeller data when available and falling back to a user doc fetch.
+ */
+const _resolveOtherUser = async (chatData, currentUserId, targetSeller) => {
+    let otherUid = targetSeller?.uid;
+
+    if (!otherUid || otherUid === currentUserId) {
+        otherUid = chatData.participants?.find(uid => uid !== currentUserId);
+    }
+
+    const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
+
+    if (otherUid && !hasPipedData) {
+        const userData = await DB.get('users', otherUid);
+        if (userData) {
+            return {
+                otherUid,
+                otherUserName: userData.username || userData.name || "Swapper",
+                otherUserAvatar: userData.photoURL || null,
+            };
+        }
+    }
+
+    return { otherUid: otherUid || null, otherUserName: null, otherUserAvatar: null };
+};
+
 
 // ==========================================
 // EXPORTED SERVICE
@@ -245,5 +272,75 @@ export const ChatService = {
      */
     subscribeToMessages: (chatId, onUpdate, onError) => {
         return DB.subscribe(`chats/${chatId}/messages`, onUpdate, onError);
+    },
+
+    /**
+     * Fetches one-time chat metadata: cached book image/location, and
+     * resolves the other participant's identity (using piped data if present).
+     * Returns null if the chat doc doesn't exist.
+     */
+    getChatMetadata: async (chatId, currentUserId, targetSeller) => {
+        const chatData = await DB.get('chats', chatId);
+        if (!chatData) return null;
+
+        const { otherUid, otherUserName, otherUserAvatar } = await _resolveOtherUser(
+            chatData, currentUserId, targetSeller
+        );
+
+        return {
+            publicationId: chatData.targetBookId || null,
+            bookImage: chatData.targetBookImage || null,
+            chatLocation: chatData.location || null,
+            otherUid,
+            otherUserName,
+            otherUserAvatar,
+        };
+    },
+
+    /**
+     * Subscribes to a chat's messages ordered newest-first, and marks any
+     * incoming (not-yet-read) messages as read. Returns the unsubscribe fn.
+     */
+    subscribeToMessagesOrdered: (chatId, currentUserId, onUpdate, onError) => {
+        return DB.subscribeQuery(
+            `chats/${chatId}/messages`,
+            [],
+            (fetchedDocs) => {
+                const sorted = [...fetchedDocs].sort(
+                    (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+                );
+                onUpdate(sorted);
+                ChatService.markMessagesAsRead(chatId, sorted, currentUserId);
+            },
+            onError
+        );
+    },
+
+    /**
+     * Marks all messages from the other user as read.
+     */
+    markMessagesAsRead: async (chatId, messages, currentUserId) => {
+        const unreadFromOther = messages.filter(
+            msg => msg.senderId !== currentUserId && !msg.read
+        );
+
+        await Promise.all(
+            unreadFromOther.map(msg =>
+                DB.update(`chats/${chatId}/messages`, msg.id, { read: true }, true).catch(error => {
+                    console.error("Error updating read status:", error);
+                })
+            )
+        );
+    },
+
+    /**
+     * Subscribes to whether the current user has already reviewed this chat.
+     */
+    subscribeToReviewStatus: (chatId, currentUserId, onUpdate) => {
+        return DB.subscribeDoc(
+            'reviews',
+            `${chatId}_${currentUserId}`,
+            (docData) => onUpdate(!!docData)
+        );
     },
 };

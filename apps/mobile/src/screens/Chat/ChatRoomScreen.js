@@ -15,12 +15,7 @@ import {
     Alert
 } from 'react-native';
 import { 
-    collection, 
-    query, 
-    orderBy, 
-    onSnapshot, 
     doc, 
-    getDoc,
     updateDoc
 } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,7 +28,8 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 import { fetchPublication } from '@readme/shared/src/services/publications';
-import OfferMessageCard from '../../components/ui/offerMessageCard';
+import OfferMessageCard from '../../components/ui/OfferMessageCard';
+import ChatBubble from '../../components/ui/ChatBubble';
 
 export default function ChatRoomScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -54,7 +50,7 @@ export default function ChatRoomScreen({ route, navigation }) {
     const [otherUserId, setOtherUserId] = useState(targetSeller?.uid || null);
     const [bookImage, setBookImage] = useState(null);
     const [publicationId, setPublicationId] = useState(null);
-    
+
     // Fallback room metadata for counter offers
     const [chatLocation, setChatLocation] = useState(null);
 
@@ -62,107 +58,61 @@ export default function ChatRoomScreen({ route, navigation }) {
 
     const [isFetchingBook, setIsFetchingBook] = useState(false);
 
-    // --- SAFE METADATA FETCH LAYER ---
+    // --- CHAT METADATA ---
     useEffect(() => {
         if (!chatId || !currentUserId) return;
 
-        const fetchChatMetadata = async () => {
-            try {
-                const chatRef = doc(db, 'chats', chatId);
-                const chatSnap = await getDoc(chatRef);
+        let cancelled = false;
 
-                if (chatSnap.exists()) {
-                    const chatData = chatSnap.data();
+        ChatService.getChatMetadata(chatId, currentUserId, targetSeller)
+            .then(metadata => {
+                if (!metadata || cancelled) return;
 
-                    // 1. Grab the top-level cached IDs/Images/Locations
-                    if (chatData.targetBookId) setPublicationId(chatData.targetBookId);
-                    setBookImage(chatData.targetBookImage || null);
-                    if (chatData.location) setChatLocation(chatData.location);
+                if (metadata.publicationId) setPublicationId(metadata.publicationId);
+                setBookImage(metadata.bookImage);
+                if (metadata.chatLocation) setChatLocation(metadata.chatLocation);
+                if (metadata.otherUid) setOtherUserId(metadata.otherUid);
+                if (metadata.otherUserName) setOtherUserName(metadata.otherUserName);
+                if (metadata.otherUserAvatar) setOtherUserAvatar(metadata.otherUserAvatar);
+            })
+            .catch(error => console.error("Error fetching chat metadata:", error));
 
-                    // 2. Resolve the other user's identity
-                    let otherUid = targetSeller?.uid;
-
-                    if (!otherUid || otherUid === currentUserId) {
-                        otherUid = chatData.participants?.find(uid => uid !== currentUserId);
-                    }
-
-                    if (otherUid) setOtherUserId(otherUid);
-
-                    const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
-
-                    // 3. Fetch missing user info if necessary
-                    if (otherUid && !hasPipedData) {
-                        const userRef = doc(db, 'users', otherUid);
-                        const userSnap = await getDoc(userRef);
-
-                        if (userSnap.exists()) {
-                            const userData = userSnap.data();
-                            setOtherUserName(userData.username || userData.name || "Swapper");
-                            setOtherUserAvatar(userData.photoURL || null);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching chat metadata:", error);
-            }
-        };
-
-        fetchChatMetadata();
+        return () => { cancelled = true; };
     }, [chatId, currentUserId, targetSeller?.uid]);
 
-
-    // --- REAL-TIME MESSAGES SUBCOLLECTION FEED ---
+    // --- MESSAGES FEED (replaces the whole messages useEffect) ---
     useEffect(() => {
         if (!chatId || !currentUserId) {
             setLoading(false);
             return;
         }
 
-        const messagesRef = collection(db, 'chats', chatId, 'messages');
-        const q = query(messagesRef, orderBy('createdAt', 'desc'));
-
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const fetchedMessages = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setMessages(fetchedMessages);
-            setLoading(false);
-
-            // --- NEW: MARK INCOMING MESSAGES AS READ ---
-            querySnapshot.docs.forEach(async (documentSnapshot) => {
-                const msg = documentSnapshot.data();
-                // If the message is from the OTHER user and isn't read yet
-                if (msg.senderId !== currentUserId && !msg.read) {
-                    try {
-                        const msgDocRef = doc(db, 'chats', chatId, 'messages', documentSnapshot.id);
-                        await updateDoc(msgDocRef, { read: true });
-                    } catch (error) {
-                        console.error("Error updating read status:", error);
-                    }
-                }
-            });
-
-        }, (error) => {
-            console.error("Error loading chat room messages:", error);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [chatId, currentUserId]); // Make sure currentUserId is in the dependency array
-
-    useEffect(() => {
-        if (!chatId || !currentUserId) return;
-
-        const reviewRef = doc(db, 'reviews', `${chatId}_${currentUserId}`);
-
-        const unsubscribe = onSnapshot(reviewRef, (docSnap) => {
-            setHasReviewed(docSnap.exists());
-        });
+        const unsubscribe = ChatService.subscribeToMessagesOrdered(
+            chatId,
+            currentUserId,
+            (fetchedMessages) => {
+                setMessages(fetchedMessages);
+                setLoading(false);
+            },
+            (error) => {
+                console.error("Error loading chat room messages:", error);
+                setLoading(false);
+            }
+        );
 
         return () => unsubscribe();
     }, [chatId, currentUserId]);
 
+    // --- REVIEW STATUS (replaces the review useEffect) ---
+    useEffect(() => {
+        if (!chatId || !currentUserId) return;
+
+        const unsubscribe = ChatService.subscribeToReviewStatus(
+            chatId, currentUserId, setHasReviewed
+        );
+
+        return () => unsubscribe();
+    }, [chatId, currentUserId]);
     const handleSendMessage = async () => {
         if (!inputText.trim() || !currentUserId) return;
 
@@ -373,110 +323,68 @@ export default function ChatRoomScreen({ route, navigation }) {
     };
 
     const handleBookPress = async (bookSummary) => {
-    if (!bookSummary?.id) return;
+        if (!bookSummary?.id) return;
 
-    try {
-        setIsFetchingBook(true);
+        try {
+            setIsFetchingBook(true);
 
-        const fullPublicationData = await fetchPublication(bookSummary.id);
+            const fullPublicationData = await fetchPublication(bookSummary.id);
 
-        if (fullPublicationData) {
-            navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
-                publication: fullPublicationData,
-                hideOfferButton: true
-            });
-        } else {
-            console.warn("Publication no longer exists!");
-            Alert.alert("Unavailable", "This book details are no longer available.");
+            if (fullPublicationData) {
+                navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
+                    publication: fullPublicationData,
+                    hideOfferButton: true
+                });
+            } else {
+                console.warn("Publication no longer exists!");
+                Alert.alert("Unavailable", "This book details are no longer available.");
+            }
+        } catch (error) {
+            console.error("Failed to fetch full book details:", error);
+            Alert.alert("Error", "Could not load book details. Please try again.");
+        } finally {
+            setIsFetchingBook(false);
         }
-    } catch (error) {
-        console.error("Failed to fetch full book details:", error);
-        Alert.alert("Error", "Could not load book details. Please try again.");
-    } finally {
-        setIsFetchingBook(false);
-    }
-};
+    };
 
     const renderMessageItem = ({ item, index }) => {
-    const isMe = item.senderId === currentUserId;
-    const isLastInGroup = index === 0 || messages[index - 1]?.senderId !== item.senderId;
+        const isMe = item.senderId === currentUserId;
+        const isLastInGroup = index === 0 || messages[index - 1]?.senderId !== item.senderId;
 
-    if (item.type === 'offer') {
-        return (
-            <View style={styles.offerCardContainer}>
-                <OfferMessageCard
-                    item={item}
-                    theme={theme}
-                    colorScheme={colorScheme}
-                    currentUserId={currentUserId}
-                    chatId={chatId}
-                    targetSeller={targetSeller}
-                    bookImage={bookImage}
-                    chatLocation={chatLocation}
-                    isFetchingBook={isFetchingBook}
-                    hasReviewed={hasReviewed}
-                    navigation={navigation}
-                    onBookPress={handleBookPress}
-                    onOpenNavigation={handleOpenNavigation}
-                    onResolveOffer={handleResolveOffer}
-                    onShowQRCode={handleShowQRCode}
-                    onOpenScanner={handleOpenScanner}
-                    onCancelSwap={handleCancelSwap}
-                />
-            </View>
-        );
-    }
-
-        return (
-            <View style={[styles.messageRow, { justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: isLastInGroup ? 8 : 2 }]}>
-                <View style={[
-                    styles.bubble, 
-                    isMe 
-                        ? [
-                            styles.myBubble, 
-                            { 
-                                backgroundColor: theme.primary, 
-                                paddingRight: 36, 
-                                paddingBottom: 14,
-                                // Dynamic radius: Apply tail ONLY if it's the last message in the block
-                                borderBottomRightRadius: isLastInGroup ? 4 : 16,
-                            }
-                          ] 
-                        : [
-                            styles.theirBubble, 
-                            { 
-                                backgroundColor: theme.backgroundElement, 
-                                borderColor: theme.borderLight, 
-                                borderWidth: 1,
-                                // Dynamic radius: Apply tail ONLY if it's the last message in the block
-                                borderBottomLeftRadius: isLastInGroup ? 4 : 16,
-                            }
-                          ]
-                ]}>
-                    <Text style={[styles.messageText, { color: isMe ? theme.primaryText : theme.textItemTitle }]}>
-                        {item.text}
-                    </Text>
-                    
-                    {/* --- READ RECEIPT --- */}
-                    {isMe && (
-                        <View style={{ 
-                            position: 'absolute', 
-                            bottom: 4, 
-                            right: 8 
-                        }}>
-                            <Iconify 
-                                icon={item.read ? "lucide:check-check" : "lucide:check"} 
-                                size={16} 
-                                color={
-                                    item.read 
-                                        ? (colorScheme === 'dark' ? theme.primaryText : theme.avatarBgTonal) 
-                                        : 'rgba(255, 255, 255, 0.35)'
-                                } 
-                            />
-                        </View>
-                    )}
+        if (item.type === 'offer') {
+            return (
+                <View style={styles.offerCardContainer}>
+                    <OfferMessageCard
+                        item={item}
+                        theme={theme}
+                        colorScheme={colorScheme}
+                        currentUserId={currentUserId}
+                        chatId={chatId}
+                        targetSeller={targetSeller}
+                        bookImage={bookImage}
+                        chatLocation={chatLocation}
+                        isFetchingBook={isFetchingBook}
+                        hasReviewed={hasReviewed}
+                        navigation={navigation}
+                        onBookPress={handleBookPress}
+                        onOpenNavigation={handleOpenNavigation}
+                        onResolveOffer={handleResolveOffer}
+                        onShowQRCode={handleShowQRCode}
+                        onOpenScanner={handleOpenScanner}
+                        onCancelSwap={handleCancelSwap}
+                    />
                 </View>
-            </View>
+            );
+        }
+
+        return (
+            <ChatBubble
+                item={item}
+                isMe={isMe}
+                isLastInGroup={isLastInGroup}
+                theme={theme}
+                colorScheme={colorScheme}
+            />
         );
     };
 
@@ -500,10 +408,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                     {otherUserAvatar ? (
                         <Image source={{ uri: otherUserAvatar }} style={styles.headerAvatar} />
                     ) : (
-                        <View style={[styles.headerAvatarPlaceholder, { backgroundColor: theme.backgroundElement }]}>
-                            <Iconify icon="lucide:user" size={20} color={theme.subtext} />
-                        </View>
-                    )}
+                            <View style={[styles.headerAvatarPlaceholder, { backgroundColor: theme.backgroundElement }]}>
+                                <Iconify icon="lucide:user" size={20} color={theme.subtext} />
+                            </View>
+                        )}
                     <View style={styles.headerTextGroup}>
                         <Text style={[styles.headerName, { color: theme.textItemTitle }]}>
                             {otherUserName}
@@ -521,15 +429,15 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                <FlatList
-                    data={messages}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderMessageItem}
-                    inverted
-                    contentContainerStyle={styles.listContainer}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+                    <FlatList
+                        data={messages}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderMessageItem}
+                        inverted
+                        contentContainerStyle={styles.listContainer}
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
                 <SafeAreaView edges={['bottom']} style={[styles.inputContainer, { backgroundColor: theme.background, borderTopColor: theme.borderLight }]}>
@@ -567,26 +475,11 @@ const styles = StyleSheet.create({
     centerLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
     listContainer: { paddingHorizontal: 16, paddingVertical: 12 },
-    messageRow: { flexDirection: 'row', marginVertical: 4, width: '100%' },
-    bubble: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 16,
-        maxWidth: '75%'
-    },
     offerCardContainer: { width: '100%', alignItems: 'center', marginVertical: 12 },
 
     inputContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, alignItems: 'center', gap: 12 },
     input: { flex: 1, minHeight: 40, maxHeight: 100, borderRadius: 20, borderWidth: 1, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, fontSize: 15 },
     sendButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-    arrowIconContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    optionsButton: {
-        padding: 4
-    },
+    arrowIconContainer: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    optionsButton: { padding: 4 },
 });

@@ -10,11 +10,10 @@ export const DB = {
 
     /**
      * Fetches a single doc by ID (string) OR multiple docs by conditions (array)
-     * @param {string} collectionName 
-     * @param {string|Array} idOrConditions - A document ID string OR array of query objects
+     * @param {string} collectionPath 
+     * @param {string|Array} queryArgs - A document ID string OR array of query objects
      */
     get: async (collectionPath, queryArgs) => {
-
         try {
             // Fetching a single document by ID (String)
             if (typeof queryArgs === 'string') {
@@ -95,7 +94,6 @@ export const DB = {
      */
     update: async (collectionName, docId, data, includeTimestamp = false) => {
         const docRef = doc(db, collectionName, docId);
-
         const payload = { ...data };
 
         if (includeTimestamp) {
@@ -118,6 +116,28 @@ export const DB = {
         }
     },
 
+    /**
+     * Matches the split argument pattern of DB.get()
+     */
+    subscribeDoc: (collectionPath, docId, onUpdate, onError) => {
+        const docRef = doc(db, collectionPath, docId);
+
+        return onSnapshot(
+            docRef,
+            (snapshot) => {
+                onUpdate(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+            },
+            (error) => {
+                if (onError) onError(error);
+                else console.error(`DB.subscribeDoc error on "${collectionPath}/${docId}":`, error);
+            }
+        );
+    },
+
+    /**
+     * Generic Path Stream: Infers document vs collection from string segments
+     * e.g., 'publications' (collection) vs 'publications/1234' (document)
+     */
     subscribe: (path, onUpdate, onError) => {
         const pathSegments = path.split('/').filter(Boolean);
         const isDocument = pathSegments.length % 2 === 0;
