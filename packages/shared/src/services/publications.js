@@ -1,55 +1,118 @@
 import { DB } from './DB';
-import { PUBLICATION_STATUS } from '../constants/status';
+import { collection, getDocs, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
+import { db } from '@readme/shared/src/services/firebase';
+import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
-/**
- * Fetches a single publication by its unique document ID
- */
-export const fetchPublication = async (bookId) => {
-    try {
-        if (!bookId) return null;
-        
-        // Because your DB.get accepts a string for direct ID lookup, this works perfectly!
-        return await DB.get('publications', bookId);
-    } catch (error) {
-        console.error("ERROR FETCHING SINGLE PUBLICATION:", error.message || error);
-        throw error;
-    }
-};
+export const PublicationService = {
 
-/**
- * Fetches all books belonging to a specific user UID
- */
-export const fetchUserPublications = async (userId) => {
-    return await DB.get('publications', [
-        { field: 'uid', operator: '==', value: userId }
-    ]);
-};
-
-/**
- * Hard deletes books from the database after a successful swap
- */
-export const deleteBooksAfterSwap = async (targetBookId, finalSelectedBookId) => {
-    try {
-        console.log("--- STARTING BOOK DELETION ---");
-        console.log("1. Target Book ID:", targetBookId);
-        console.log("2. Selected Book ID:", finalSelectedBookId);
-
-        if (targetBookId) {
-            console.log(`Attempting to delete Target Book...`);
-            await DB.remove('publications', targetBookId);
-            console.log(`Target Book deleted successfully!`);
+    /**
+     * Fetches a single publication by its unique document ID
+     */
+    fetchPublication : async (bookId) => {
+        try {
+            if (!bookId) return null;
+            return await DB.get('publications', bookId);
+        } catch (error) {
+            console.error("ERROR FETCHING SINGLE PUBLICATION:", error.message || error);
+            throw error;
         }
+    },
 
-        if (finalSelectedBookId) {
-            console.log(`Attempting to delete Selected Book...`);
-            await DB.remove('publications', finalSelectedBookId);
-            console.log(`Selected Book deleted successfully!`);
+    /**
+     * Fetches all books belonging to a specific user UID
+     */
+    fetchUserPublications : async (userId) => {
+        return await DB.get('publications', [
+            { field: 'uid', operator: '==', value: userId }
+        ]);
+    },
+
+    /**
+     * Fetches all available publications for the explore feed, filtering out the current user and blocked users.
+     */
+    fetchExplorePublications : async (currentUserUid, blockedUids = []) => {
+        try {
+            const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(q);
+
+            return querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    uid: data.uid,
+                    title: data.book?.title || 'Unknown Title',
+                    author: data.book?.author || 'Unknown Author',
+                    imageUrl: data.book?.images && data.book.images.length > 0 
+                        ? data.book.images[0] 
+                        : null,
+                    seller: {
+                        name: data.sellerName || data.ownerName || 'Anonymous Swapper',
+                        avatarUrl: data.sellerAvatar || data.ownerAvatar || null,
+                    },
+                    favoriteCount: data.stats?.likesCount || 0,
+                    publicationData: data
+                };
+            }).filter(book =>
+                book.uid !== currentUserUid &&
+                !blockedUids.includes(book.uid) &&
+                book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
+            );
+        } catch (error) {
+            console.error("ERROR FETCHING EXPLORE PUBLICATIONS:", error);
+            throw error;
         }
+    },
 
-        console.log("--- ALL BOOKS DELETED ---");
-        return { success: true };
-    } catch (error) {
-        console.error("ERROR DELETING BOOKS:", error.message || error);
-        throw error; 
-    }
-};
+    /**
+     * Toggles a publication's favorite status for a user, updating both the user's list and the book's like count.
+     */
+    toggleFavorite : async (userId, bookId, isCurrentlyFavorite) => {
+        try {
+            const userDocRef = doc(db, 'users', userId); 
+            const publicationDocRef = doc(db, 'publications', bookId);
+
+            await Promise.all([
+                updateDoc(userDocRef, {
+                    favoriteBooks: !isCurrentlyFavorite ? arrayUnion(bookId) : arrayRemove(bookId)
+                }),
+                updateDoc(publicationDocRef, {
+                    "stats.likesCount": increment(!isCurrentlyFavorite ? 1 : -1)
+                })
+            ]);
+            
+            return { success: true };
+        } catch (error) {
+            console.error("ERROR TOGGLING FAVORITE:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Hard deletes books from the database after a successful swap
+     */
+    deleteBooksAfterSwap : async (targetBookId, finalSelectedBookId) => {
+        try {
+            console.log("--- STARTING BOOK DELETION ---");
+            console.log("1. Target Book ID:", targetBookId);
+            console.log("2. Selected Book ID:", finalSelectedBookId);
+
+            if (targetBookId) {
+                console.log(`Attempting to delete Target Book...`);
+                await DB.remove('publications', targetBookId);
+                console.log(`Target Book deleted successfully!`);
+            }
+
+            if (finalSelectedBookId) {
+                console.log(`Attempting to delete Selected Book...`);
+                await DB.remove('publications', finalSelectedBookId);
+                console.log(`Selected Book deleted successfully!`);
+            }
+
+            console.log("--- ALL BOOKS DELETED ---");
+            return { success: true };
+        } catch (error) {
+            console.error("ERROR DELETING BOOKS:", error.message || error);
+            throw error; 
+        }
+    },
+}

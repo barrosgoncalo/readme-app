@@ -112,7 +112,7 @@ export default function SearchScreen({ navigation }) {
         try {
             const { publications: pubs, page, nbPages } = await searchPublicationsByBook(
                 selectedBook,
-                { page: pageToLoad, sortBy, conditions: conditionFilters, genres: genreFilters } // new
+                { page: pageToLoad, sortBy, conditions: conditionFilters, genres: genreFilters }
             );
             setPublications(pubs);
             setPubPage(page);

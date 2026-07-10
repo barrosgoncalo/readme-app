@@ -24,7 +24,8 @@ import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 import { auth } from '@readme/shared/src/services/firebase';
 import { doBlockUser } from '@readme/shared/src/services/block';
 import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
-import { fetchUserPublications } from '@readme/shared/src/services/publications';
+
+import { PublicationService } from '@readme/shared/src/services/publications';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 
 const { width } = Dimensions.get('window');
@@ -60,7 +61,7 @@ export default function PublicProfileScreen({ navigation, route }) {
         try {
             const [profileData, publicationsData, reviewsData] = await Promise.all([
                 fetchUserProfile(userId),
-                fetchUserPublications(userId),
+                PublicationService.fetchUserPublications(userId),
                 ReviewService.fetchUserReviews(userId) 
             ]);
 

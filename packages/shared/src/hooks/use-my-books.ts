@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
-import { fetchUserPublications } from '../services/publications';
+
+import { PublicationService } from '../services/publications';
 
 export function useMyBooks() {
     const [myBooks, setMyBooks] = useState([]);
@@ -16,7 +17,7 @@ export function useMyBooks() {
             }
 
             try {
-                const books = await fetchUserPublications(auth.currentUser.uid);
+                const books = await PublicationService.fetchUserPublications(auth.currentUser.uid);
                 setMyBooks(books);
             } catch (err) {
                 setError(err);

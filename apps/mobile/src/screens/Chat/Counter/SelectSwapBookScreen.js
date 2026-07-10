@@ -8,7 +8,7 @@ import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
-import { fetchPublication } from '@readme/shared/src/services/publications';
+import { PublicationService } from '@readme/shared/src/services/publications';
 
 export default function SelectSwapBookScreen({ route, navigation }) {
     const { offerDetails } = route.params;
@@ -39,7 +39,7 @@ export default function SelectSwapBookScreen({ route, navigation }) {
         try {
             // Set the state to this specific book's ID
             setFetchingBookId(bookId);
-            const fullPublicationData = await fetchPublication(bookId);
+            const fullPublicationData = await PublicationService.fetchPublication(bookId);
 
             if (fullPublicationData) {
                 navigation.navigate(ROUTES.PUBLICATION_DETAILS, {

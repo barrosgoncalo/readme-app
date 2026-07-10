@@ -20,7 +20,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
-import { fetchPublication } from '@readme/shared/src/services/publications';
+import { PublicationService } from '@readme/shared/src/services/publications';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { TradeService } from '@readme/shared/src/services/trades';
@@ -278,7 +278,7 @@ export default function ChatRoomScreen({ route, navigation }) {
         try {
             setIsFetchingBook(true);
 
-            const fullPublicationData = await fetchPublication(bookSummary.id);
+            const fullPublicationData = await PublicationService.fetchPublication(bookSummary.id);
 
             if (fullPublicationData) {
                 navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
