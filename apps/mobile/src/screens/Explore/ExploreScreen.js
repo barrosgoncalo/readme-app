@@ -5,7 +5,6 @@ import {
     View,
     Text,
     TouchableOpacity,
-    ScrollView,
     FlatList,
     StatusBar,
     useColorScheme,
@@ -19,24 +18,18 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 
 import { ActiveSwapsSection } from '../../components/ui/ActiveSwapsSection';
 import { BookGridItem } from '../../components/ui/BookGridItem';
-import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
 import { 
     collection, 
-    getDocs, 
     query, 
-    orderBy, 
     doc, 
     getDoc, 
-    updateDoc, 
-    arrayUnion, 
-    arrayRemove, 
-    increment,
     where,
     onSnapshot 
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { doGetBlockedUids } from '@readme/shared/src/services/block';
+import { PublicationService } from '@readme/shared/src/services/PublicationService';
 
 export default function ExploreScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -67,9 +60,7 @@ export default function ExploreScreen({ navigation }) {
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const fetchedChats = querySnapshot.docs.map(doc => {
                 const data = doc.data();
-
                 const isOutgoing = data.proposerId === currentUser.uid;
-
                 const otherParticipantUid = data.participants?.find(uid => uid !== currentUser.uid);
 
                 return {
@@ -103,35 +94,9 @@ export default function ExploreScreen({ navigation }) {
                 blockedUids = await doGetBlockedUids(currentUser.uid);
             }
 
-            const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-
-            const fetchedBooks = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    uid: data.uid,
-                    title: data.book?.title || 'Unknown Title',
-                    author: data.book?.author || 'Unknown Author',
-                    imageUrl: data.book?.images && data.book.images.length > 0 
-                        ? data.book.images[0] 
-                        : null,
-                    seller: {
-                        name: data.sellerName || data.ownerName || 'Anonymous Swapper',
-                        avatarUrl: data.sellerAvatar || data.ownerAvatar || null,
-                    },
-                    favoriteCount: data.stats?.likesCount || 0,
-                    publicationData: data
-                };
-            })
-            .filter(book =>
-                book.uid !== currentUser?.uid &&
-                    !blockedUids.includes(book.uid) &&
-                    // TODO: remove the first condition from OR
-                    book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
-            );
-
+            const fetchedBooks = await PublicationService.fetchExplorePublications(currentUser?.uid, blockedUids);
             setBooks(fetchedBooks);
+
         } catch (error) {
             console.error("Erro a carregar publicações:", error);
         } finally {
@@ -172,6 +137,7 @@ export default function ExploreScreen({ navigation }) {
             return;
         }
 
+        // Optimistic UI Update
         setBooks(prevBooks => 
             prevBooks.map(book => {
                 if (book.id === bookId) {
@@ -185,20 +151,12 @@ export default function ExploreScreen({ navigation }) {
             })
         );
 
+        // Cleaned up!
         try {
-            const userDocRef = doc(db, 'users', currentUser.uid); 
-            const publicationDocRef = doc(db, 'publications', bookId);
-
-            await Promise.all([
-                updateDoc(userDocRef, {
-                    favoriteBooks: !currentIsFavorite ? arrayUnion(bookId) : arrayRemove(bookId)
-                }),
-                updateDoc(publicationDocRef, {
-                    "stats.likesCount": increment(!currentIsFavorite ? 1 : -1)
-                })
-            ]);
+            await PublicationService.toggleFavorite(currentUser.uid, bookId, currentIsFavorite);
         } catch (error) {
             console.error("Failed to like book:", error);
+            // Optional: Revert optimistic UI update here if it fails
         }
     };
 
