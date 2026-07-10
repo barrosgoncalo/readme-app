@@ -21,23 +21,18 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildBookDetailsStyles } from '../../../styles/publicationDetailsStyles';
 import { GalleryImageWrapper } from '../../../components/ui/GalleryImageWrapper';
+import { PublicationService } from '@readme/shared/src/services/publications';
 
 const { width } = Dimensions.get('window');
 
 const extractBookDetails = (passedItem) => {
-    const pubData = passedItem?.publicationData || passedItem || {}; 
-    const bookData = pubData.book || {};
-    const images = bookData.images?.length > 0 ? bookData.images : ['https://via.placeholder.com/400x600'];
+    const pubData = passedItem?.publicationData || passedItem || {};
+    const details = PublicationService.normalizePublicationDetails(pubData);
 
     return {
-        id: passedItem?.id || pubData.id,
-        title: bookData.title || 'Unknown Title',
-        author: bookData.author || 'Unknown Author',
-        description: pubData.detailsText || "No description provided for this book.",
-        condition: bookData.condition || 'Condition not specified',
-        subject: bookData.subject || 'Not specified',
-        images: images,
-        formattedGalleryImages: images.map(imgUrl => ({ uri: imgUrl }))
+        ...details,
+        id: passedItem?.id || pubData.id || details.id,
+        formattedGalleryImages: details.images.map(imgUrl => ({ uri: imgUrl })),
     };
 };
 

@@ -3,6 +3,31 @@ import { collection, getDocs, query, orderBy, doc, updateDoc, arrayUnion, arrayR
 import { db } from '@readme/shared/src/services/firebase';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
+// ==========================================
+// PRIVATE AUXILIARY HELPERS
+// ==========================================
+
+const _mapPublicationSummary = (doc) => ({
+    id: doc.id,
+    title: doc.book?.title || 'Unknown Title',
+    author: doc.book?.author || 'Unknown Author',
+    imageUrl: (doc.book?.images?.length > 0 ? doc.book.images[0] : 'https://via.placeholder.com/400x600'),
+    ownerId: doc.uid,
+});
+
+const _mapPublicationDetails = (doc) => ({
+    ..._mapPublicationSummary(doc),
+    images: doc.book?.images?.length > 0 ? doc.book.images : ['https://via.placeholder.com/400x600'],
+    description: doc.detailsText || "No description provided for this book.",
+    condition: doc.book?.condition || 'Condition not specified',
+    subject: doc.book?.subject || 'Not specified',
+    rawDocData: doc,
+});
+
+// ==========================================
+// EXPORTED SERVICE
+// ==========================================
+
 export const PublicationService = {
 
     /**
@@ -21,11 +46,14 @@ export const PublicationService = {
     /**
      * Fetches all books belonging to a specific user UID
      */
-    fetchUserPublications : async (userId) => {
-        return await DB.get('publications', [
+    fetchUserPublications: async (userId) => {
+        const docs = await DB.get('publications', [
             { field: 'uid', operator: '==', value: userId }
         ]);
+        return docs.map(_mapPublicationSummary);
     },
+
+    normalizePublicationDetails: (doc) => _mapPublicationDetails(doc),
 
     /**
      * Fetches all available publications for the explore feed, filtering out the current user and blocked users.
