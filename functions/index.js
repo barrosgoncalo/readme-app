@@ -13,15 +13,13 @@ const db = getFirestore();
 setGlobalOptions({ maxInstances: 10 });
 
 const ALGOLIA_APP_ID = "RHUIQIPTCY";
-// Note: In production, consider using Firebase Secret Manager for admin keys
 const ALGOLIA_ADMIN_KEY = "e8307a98c93b8ca65d21e1ba2faa1e55"; 
 const ALGOLIA_INDEX_NAME = "users";
 
-// Direct initialization of the v5 client (without initIndex)
+// Direct initialization of the v5 client
 const client = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_ADMIN_KEY);
 
 const ALGOLIA_PUBLICATIONS_INDEX = "publications";
-
 
 // ==========================================
 // ALGOLIA USER SYNC FUNCTION
@@ -66,8 +64,8 @@ exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", r
     const newReview = event.data.data();
     if (!newReview) return null;
 
-    const revieweeId = newReview.revieweeId; // The user receiving the rating
-    const newRating = Number(newReview.rating); // The rating given (1 to 5)
+    const revieweeId = newReview.revieweeId;
+    const newRating = Number(newReview.rating);
 
     // 2. Reference to the evaluated user's document
     const userRef = db.collection('users').doc(revieweeId);
