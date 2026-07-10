@@ -74,7 +74,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                 handleOpenOptions={handleOpenOptions}
             />
 
-            {/* 1. FlatList is now OUTSIDE the KeyboardAvoidingView */}
             {loading ? (
                 <View style={styles.centerLoading}>
                     <ActivityIndicator size="large" color={theme.primary} />
@@ -92,10 +91,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                 />
             )}
 
-            {/* 3. KeyboardAvoidingView NOW ONLY WRAPS THE INPUT BAR */}
             <KeyboardAvoidingView 
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={8} // Restored your original offset
+                keyboardVerticalOffset={8}
             >
                 <ChatInputBar 
                     theme={theme} inputText={inputText}
