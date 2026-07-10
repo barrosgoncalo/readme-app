@@ -17,11 +17,11 @@ import ImageViewing from 'react-native-image-viewing';
 import { Iconify } from 'react-native-iconify';
 
 // Internal Architecture Imports
-import { GranularRating } from '../../../components/ui/GranularRating';
+import { GranularRating } from '../../components/ui/GranularRating';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { buildBookDetailsStyles } from '../../../styles/publicationDetailsStyles';
-import { GalleryImageWrapper } from '../../../components/ui/GalleryImageWrapper';
+import { buildBookDetailsStyles } from '../../styles/publicationDetailsStyles';
+import { GalleryImageWrapper } from '../../components/ui/GalleryImageWrapper';
 import { usePublicationDetails } from '@readme/shared/src/hooks/use-publication-details';
 
 const { width } = Dimensions.get('window');

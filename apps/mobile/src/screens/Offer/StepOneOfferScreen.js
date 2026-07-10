@@ -21,7 +21,7 @@ import { db } from '@readme/shared/src/services/firebase';
 // Internal Architecture
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { BookCard } from '../../../components/ui/BookCard';
+import { BookCard } from '../../components/ui/BookCard';
 
 // ==========================================
 // HELPER FUNCTIONS

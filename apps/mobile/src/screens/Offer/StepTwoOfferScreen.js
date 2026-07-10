@@ -14,11 +14,11 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
 import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
 import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
-import ScreenHeader from '../../../components/ui/ScreenHeader';
-import LocationPickerMap from '../../../components/ui/LocationPickerMap';
-import MapSearchBar from '../../../components/ui/MapSearchBar';
-import SelectedLocationCard from '../../../components/ui/SelectedLocationCard';
-import OfferBottomDock from '../../../components/ui/OfferBottomDock';
+import ScreenHeader from '../../components/ui/ScreenHeader';
+import LocationPickerMap from '../../components/ui/LocationPickerMap';
+import MapSearchBar from '../../components/ui/MapSearchBar';
+import SelectedLocationCard from '../../components/ui/SelectedLocationCard';
+import OfferBottomDock from '../../components/ui/OfferBottomDock';
 
 // Services
 import { ChatService } from '@readme/shared/src/services/chat';
