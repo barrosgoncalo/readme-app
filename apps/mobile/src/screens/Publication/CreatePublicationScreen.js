@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import SuccessModal from '../../components/ui/SuccessModal';
 import { FormLineInput, FormTextArea, FormDropdown } from '../../components/ui/FormsComponents';
+import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
 
 // Firebase imports
 import { doc, setDoc } from 'firebase/firestore'; 
@@ -42,9 +43,6 @@ export default function CreatePublicationScreen({ navigation }) {
     const [subject, setSubject] = useState(''); 
     const [condition, setCondition] = useState(''); 
     const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
-
-    const SUBJECT_OPTIONS = ['Fiction', 'Non-Fiction', 'Science Fiction', 'Fantasy', 'History', 'Biography', 'Textbook'];
-    const CONDITION_OPTIONS = ['Brand New', 'Like New', 'Good', 'Fair', 'Poor (Reading Copy)'];
 
     const { currentUser } = useAuth();
 
@@ -310,7 +308,7 @@ export default function CreatePublicationScreen({ navigation }) {
                                 placeholder="Choose the book's subject"
                                 value={subject}
                                 onSelect={setSubject}
-                                options={SUBJECT_OPTIONS}
+                                options={BOOK_GENRES}
                                 styles={styles}
                             />
 
@@ -319,7 +317,7 @@ export default function CreatePublicationScreen({ navigation }) {
                                 placeholder="Choose the book's condition"
                                 value={condition}
                                 onSelect={setCondition}
-                                options={CONDITION_OPTIONS}
+                                options={BOOK_CONDITIONS}
                                 styles={styles}
                             />
 

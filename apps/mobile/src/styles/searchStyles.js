@@ -179,4 +179,117 @@ export const buildStyles = (theme) => StyleSheet.create({
     pageNumberTextActive: {
         color: theme.pillButtonActiveText,
     },
+    // --- filter button (next to tab pills) ---
+    filterButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: theme.pillButtonMuted,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 'auto',
+    },
+    filterButtonActive: {
+        backgroundColor: theme.pillButtonActive,
+    },
+    filterBadgeDot: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
+        backgroundColor: theme.secondary,
+    },
+    // --- filter/sort modal ---
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    modalBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    modalSheet: {
+        backgroundColor: theme.background,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        maxHeight: '75%',
+        paddingHorizontal: 20,
+        paddingBottom: 24,
+    },
+    modalHandle: {
+        width: 40,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: theme.borderLight,
+        alignSelf: 'center',
+        marginTop: 10,
+        marginBottom: 6,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 14,
+    },
+    modalTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: theme.text,
+    },
+    modalScroll: {
+        maxHeight: 420,
+    },
+    modalSectionLabel: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: theme.subtext,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 8,
+    },
+    modalOptionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 10,
+    },
+    modalOptionText: {
+        fontSize: 15,
+        color: theme.text,
+    },
+    modalOptionTextActive: {
+        fontWeight: '600',
+        color: theme.secondary,
+    },
+    modalFooter: {
+        flexDirection: 'row',
+        gap: 12,
+        paddingTop: 16,
+    },
+    modalResetButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        backgroundColor: theme.pillButtonMuted,
+    },
+    modalResetText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: theme.pillButtonMutedText,
+    },
+    modalApplyButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        backgroundColor: theme.pillButtonActive,
+    },
+    modalApplyText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: theme.pillButtonActiveText,
+    },
 });
