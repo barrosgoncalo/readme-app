@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
@@ -22,6 +22,8 @@ export default function ChatRoomScreen({ route, navigation }) {
     const { currentUser } = useAuth();
     const currentUserId = currentUser?.uid;
 
+    const flatListRef = useRef(null);
+
     const [inputText, setInputText] = useState('');
 
     const {
@@ -39,6 +41,7 @@ export default function ChatRoomScreen({ route, navigation }) {
         const text = inputText;
         setInputText('');
         handleSendMessage(text, setInputText);
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, [inputText, handleSendMessage]);
 
     const renderMessageItem = useCallback(({ item, index }) => {
@@ -78,15 +81,14 @@ export default function ChatRoomScreen({ route, navigation }) {
                 </View>
             ) : (
                 <FlatList
+                    ref={flatListRef}
                     data={messages}
                     keyExtractor={(item) => item.id}
                     renderItem={renderMessageItem}
-                    
-                    inverted={true} // 2. Put the normal inverted prop back
-                    
+                    inverted={true}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled" 
+                    keyboardShouldPersistTaps="handled"
                 />
             )}
 
