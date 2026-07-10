@@ -16,7 +16,6 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
             await ChatService.sendTextMessage(chatId, currentUserId, textToSend);
         } catch (error) {
             console.error("Error sending message:", error);
-            // If it fails, put the text back in the input box
             restoreInputText(textToSend); 
         }
     };
