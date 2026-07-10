@@ -20,15 +20,12 @@ import { ActiveSwapsSection } from '../../components/ui/ActiveSwapsSection';
 import { BookGridItem } from '../../components/ui/BookGridItem';
 
 import { 
-    collection, 
-    query, 
     doc, 
-    getDoc, 
-    where,
-    onSnapshot 
+    getDoc 
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { doGetBlockedUids } from '@readme/shared/src/services/block';
+import { ChatService } from '@readme/shared/src/services/chat';
 import { PublicationService } from '@readme/shared/src/services/publications';
 
 export default function ExploreScreen({ navigation }) {
@@ -51,38 +48,14 @@ export default function ExploreScreen({ navigation }) {
             return;
         }
 
-        const chatsRef = collection(db, 'chats');
-        const q = query(
-            chatsRef,
-            where('participants', 'array-contains', currentUser.uid)
+        const unsubscribe = ChatService.subscribeToActiveChats(
+            currentUser.uid,
+            setActiveChats,
+            (error) => console.error("Error loading active chats:", error)
         );
-
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const fetchedChats = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                const isOutgoing = data.proposerId === currentUser.uid;
-                const otherParticipantUid = data.participants?.find(uid => uid !== currentUser.uid);
-
-                return {
-                    id: doc.id,
-                    imageUrl: data.targetBookImage || 'https://via.placeholder.com/150',
-                    status: isOutgoing ? 'giving' : 'receiving', 
-                    targetSeller: {
-                        uid: otherParticipantUid,
-                        name: data.receiverName || 'Swapper',
-                        avatarUrl: data.receiverAvatar || null
-                    },
-                    updatedAt: data.updatedAt || data.createdAt
-                };
-            });
-
-            fetchedChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-            setActiveChats(fetchedChats);
-        });
 
         return () => unsubscribe();
     }, [currentUser?.uid]);
-
 
     // --- FETCH PUBLICATIONS & FAVORITES ---
     const fetchPublications = async (showSpinner = true) => {
