@@ -9,7 +9,31 @@ const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
 const algoliaClient = algoliasearch(API_APP_ID_KEY, API_SEARCH_KEY);
 
 const PUBLICATIONS_INDEX = "publications";
-const RESULTS_PER_PAGE = 10; // matches the max-10-per-page requirement
+const RESULTS_PER_PAGE = 8; // matches the max-X-per-page requirement
+
+// Algolia can only re-sort results using replica indices with a custom
+// ranking configured (set up in the Algolia dashboard, or via setSettings
+// with a `replicas` array on the primary index). "relevance" uses the
+// primary index as-is; everything else routes to a replica.
+export const SORT_OPTIONS = {
+    RELEVANCE: 'relevance',
+    TITLE_ASC: 'title_asc',
+    TITLE_DESC: 'title_desc',
+    FAVORITES_DESC: 'favorites_desc',
+    FAVORITES_ASC: 'favorites_asc',
+    DATE_DESC: 'date_desc',
+    DATE_ASC: 'date_asc',
+};
+
+const SORT_INDEXES = {
+    [SORT_OPTIONS.RELEVANCE]: PUBLICATIONS_INDEX,
+    [SORT_OPTIONS.TITLE_ASC]: `${PUBLICATIONS_INDEX}_title_asc`,
+    [SORT_OPTIONS.TITLE_DESC]: `${PUBLICATIONS_INDEX}_title_desc`,
+    [SORT_OPTIONS.FAVORITES_DESC]: `${PUBLICATIONS_INDEX}_favorites_desc`,
+    [SORT_OPTIONS.FAVORITES_ASC]: `${PUBLICATIONS_INDEX}_favorites_asc`,
+    [SORT_OPTIONS.DATE_DESC]: `${PUBLICATIONS_INDEX}_date_desc`,
+    [SORT_OPTIONS.DATE_ASC]: `${PUBLICATIONS_INDEX}_date_asc`,
+};
 
 /**
  * Autocomplete-style search returning unique book suggestions (text only)
@@ -27,12 +51,8 @@ export const searchBookTitles = async (searchText, resultLimit = 15) => {
             {
                 indexName: PUBLICATIONS_INDEX,
                 query: trimmed,
-                // Only search title/author fields so a match on detailsText
-                // or seller name doesn't pollute book suggestions
                 restrictSearchableAttributes: ["book.title", "book.author"],
                 filters: `status:${PUBLICATION_STATUS.AVAILABLE}`,
-                // Fetch more than we need since many hits will collapse
-                // into the same book after dedup
                 hitsPerPage: resultLimit * 5,
                 typoTolerance: true,
             },
@@ -50,20 +70,16 @@ export const searchBookTitles = async (searchText, resultLimit = 15) => {
         const title = hit.book?.title || "Unknown Title";
         const author = hit.book?.author || "Unknown Author";
 
-        // Create a normalized composite key for Title + Author
         const titleAuthorKey = `${title.trim().toLowerCase()}|${author.trim().toLowerCase()}`;
 
-        // Skip if we've already seen this exact Title/Author OR this exact bookId
         if (seenTitleAuthors.has(titleAuthorKey) || (bookId && seenIds.has(bookId))) {
             continue;
         }
 
-        // Mark as seen
         seenTitleAuthors.add(titleAuthorKey);
         if (bookId) seenIds.add(bookId);
 
         suggestions.push({
-            // Provide a stable key for React mapping
             key: bookId ? `id:${bookId}` : `ta:${titleAuthorKey}`,
             bookId,
             title,
@@ -77,48 +93,87 @@ export const searchBookTitles = async (searchText, resultLimit = 15) => {
 };
 
 /**
+ * Builds the Algolia `filters` string for the AVAILABLE status plus any
+ * selected book-condition facets (OR'd together within the group, ANDed
+ * against status).
+ */
+const buildPublicationFilters = (conditions = [], genres = []) => {
+    let filters = `status:${PUBLICATION_STATUS.AVAILABLE}`;
+
+    if (conditions.length > 0) {
+        const conditionGroup = conditions
+            .map((c) => `book.condition:"${c}"`)
+            .join(" OR ");
+        filters += ` AND (${conditionGroup})`;
+    }
+
+    if (genres.length > 0) {
+        const genreGroup = genres
+            .map((g) => `book.subject:"${g}"`)
+            .join(" OR ");
+        filters += ` AND (${genreGroup})`;
+    }
+
+    return filters;
+};
+
+/**
  * Fetches available publications for a given book, paginated 10-at-a-time
  * (Google-style numbered pages), used on the results page after a
  * suggestion is tapped or the user presses enter on the search bar.
  *
- * IMPORTANT: this deliberately runs a *text* query against title/author
- * (with typoTolerance on) rather than a strict `book.bookId` facet filter.
- * That's what lets near-matches and other editions of the same book
- * ("Harry Poter and the Philosopher Stone", a hardcover vs. paperback
- * edition, etc.) show up side by side, exactly like the Figma reference.
+ * Supports optional filtering by book condition and sorting via Algolia
+ * replica indices (see SORT_OPTIONS / SORT_INDEXES above — the replicas
+ * must exist in your Algolia app for anything other than 'relevance').
  *
- * If a bookId is known (the user tapped a specific suggestion), its
- * publications are nudged to the top via optionalFilters — a *soft*
- * boost, not a hard filter, so similar books still appear beneath it.
+ * IMPORTANT: on the relevance index, this deliberately runs a *text* query
+ * against title/author (with typoTolerance on) rather than a strict
+ * `book.bookId` facet filter. That's what lets near-matches and other
+ * editions of the same book show up side by side. On sorted replicas the
+ * custom ranking takes over, so the bookId soft-boost only applies to
+ * the relevance case.
  *
  * @param {{ bookId?: string, title: string, author?: string }} book
- * @param {{ page?: number, hitsPerPage?: number }} pagination - page is 0-indexed, like Algolia
+ * @param {{ page?: number, hitsPerPage?: number, sortBy?: string, conditions?: string[] }} options - page is 0-indexed, like Algolia
  */
 export const searchPublicationsByBook = async (
     { bookId, title, author },
-    { page = 0, hitsPerPage = RESULTS_PER_PAGE } = {}
+    { page = 0, hitsPerPage = RESULTS_PER_PAGE, sortBy = SORT_OPTIONS.RELEVANCE, conditions = [], genres = [] } = {}
 ) => {
     const queryText = [title, author].filter(Boolean).join(" ").trim();
+    const indexName = SORT_INDEXES[sortBy] || SORT_INDEXES[SORT_OPTIONS.RELEVANCE];
 
     const searchParams = {
-        indexName: PUBLICATIONS_INDEX,
+        indexName,
         query: queryText,
         restrictSearchableAttributes: ["book.title", "book.author"],
-        filters: `status:${PUBLICATION_STATUS.AVAILABLE}`,
+        filters: buildPublicationFilters(conditions, genres),
         page,
         hitsPerPage,
         typoTolerance: true,
-        // If the exact query returns nothing, progressively drop trailing
-        // words instead of showing an empty page (tolerates partial/garbled titles)
         removeWordsIfNoResults: "lastWords",
     };
 
-    if (bookId) {
-        // Soft-boost: same book ranks first, everything else still shows
+    if (bookId && sortBy === SORT_OPTIONS.RELEVANCE) {
         searchParams.optionalFilters = [`book.bookId:${bookId}<score=2>`];
     }
 
-    const { results } = await algoliaClient.search({ requests: [searchParams] });
+    let results;
+    try {
+        ({ results } = await algoliaClient.search({ requests: [searchParams] }));
+    } catch (error) {
+        // Replica index not created yet (or misconfigured) — fall back to
+        // relevance rather than surfacing a broken screen to the user.
+        if (error?.status === 404 && indexName !== PUBLICATIONS_INDEX) {
+            console.warn(`Sort index "${indexName}" not found, falling back to relevance.`);
+            searchParams.indexName = PUBLICATIONS_INDEX;
+            if (bookId) searchParams.optionalFilters = [`book.bookId:${bookId}<score=2>`];
+            ({ results } = await algoliaClient.search({ requests: [searchParams] }));
+        } else {
+            throw error;
+        }
+    }
+
     const result = results[0] || {};
     const hits = result.hits || [];
 
@@ -129,11 +184,14 @@ export const searchPublicationsByBook = async (
         author: hit.book?.author || "Unknown Author",
         imageUrl: hit.book?.images?.[0] || null,
         bookId: hit.book?.bookId || null,
+        condition: hit.book?.condition || "Not specified",
+        subject: hit.book?.subject || "Not specified",
         seller: {
             name: hit.sellerName || "Anonymous Swapper",
             avatarUrl: hit.sellerAvatar || null,
         },
         favoriteCount: hit.stats?.likesCount || 0,
+        createdAt: hit.createdAt || null,
         publicationData: hit,
     }));
 
@@ -142,5 +200,7 @@ export const searchPublicationsByBook = async (
         page: result.page ?? page,
         nbPages: result.nbPages ?? 1,
         nbHits: result.nbHits ?? publications.length,
+        sortBy,
+        conditions,
     };
 };

@@ -5,8 +5,9 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
-import { searchBookTitles, searchPublicationsByBook } from '@readme/shared/src/services/searchBook';
+import { searchBookTitles, searchPublicationsByBook, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
 import { buildStyles } from '../../../styles/searchStyles';
+import PublicationFilterModal from '../../../components/ui/PublicationFilterModal';
 
 const TABS = {
     BOOKS: 'books',
@@ -14,7 +15,6 @@ const TABS = {
 };
 
 const PAGE_WINDOW = 5; // how many page numbers to show at once, Google-style
-const HITS_PER_PAGE = 6;
 
 export default function SearchScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -22,17 +22,22 @@ export default function SearchScreen({ navigation }) {
     const styles = buildStyles(theme);
 
     const { currentUser } = useAuth();
-    const [activeTab, setActiveTab] = useState(TABS.BOOKS); // Figma shows Books selected by default
+    const [activeTab, setActiveTab] = useState(TABS.BOOKS);
     const [searchText, setSearchText] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // --- publications for a picked/submitted book title, shown inline below the pills ---
-    const [selectedBook, setSelectedBook] = useState(null); // { bookId, title, author } | null
+    const [selectedBook, setSelectedBook] = useState(null);
     const [publications, setPublications] = useState([]);
     const [pubPage, setPubPage] = useState(0);
     const [pubNbPages, setPubNbPages] = useState(1);
     const [pubLoading, setPubLoading] = useState(false);
+
+    // --- filter/sort state for the publications grid ---
+    const [filtersVisible, setFiltersVisible] = useState(false);
+    const [sortBy, setSortBy] = useState(SORT_OPTIONS.RELEVANCE);
+    const [conditionFilters, setConditionFilters] = useState([]);
+    const [genreFilters, setGenreFilters] = useState([]);
 
     const handleUserPress = (user) => {
         navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: user.uid });
@@ -45,11 +50,13 @@ export default function SearchScreen({ navigation }) {
         setResults([]);
         setSelectedBook(null);
         setPublications([]);
+        setSortBy(SORT_OPTIONS.RELEVANCE);
+        setConditionFilters([]);
+        setGenreFilters([]);          // new
     };
 
     const handleSearchTextChange = (text) => {
         setSearchText(text);
-        // Editing the query again after picking a book means "start over"
         if (selectedBook) setSelectedBook(null);
     };
 
@@ -58,13 +65,18 @@ export default function SearchScreen({ navigation }) {
     };
 
     const handleSearchSubmit = () => {
-        // Pressing enter on the books tab shows publications for the typed text directly
         if (activeTab === TABS.BOOKS && searchText.trim()) {
             setSelectedBook({ bookId: null, title: searchText.trim() });
         }
     };
 
-    // --- title suggestions (books) / people search — paused once a book is selected ---
+    const handleApplyFilters = (newSortBy, newConditions, newGenres) => {
+        setSortBy(newSortBy);
+        setConditionFilters(newConditions);
+        setGenreFilters(newGenres);   // new
+        setFiltersVisible(false);
+    };
+
     useEffect(() => {
         if (selectedBook) return;
 
@@ -93,14 +105,14 @@ export default function SearchScreen({ navigation }) {
         return () => clearTimeout(debounce);
     }, [searchText, activeTab, selectedBook, currentUser]);
 
-    // --- publications for the selected book, 10-per-page ---
+    // --- publications for the selected book, filtered/sorted, 10-per-page ---
     const fetchPublicationsPage = useCallback(async (pageToLoad) => {
         if (!selectedBook) return;
         setPubLoading(true);
         try {
             const { publications: pubs, page, nbPages } = await searchPublicationsByBook(
                 selectedBook,
-                { page: pageToLoad, hitsPerPage: HITS_PER_PAGE }
+                { page: pageToLoad, sortBy, conditions: conditionFilters, genres: genreFilters } // new
             );
             setPublications(pubs);
             setPubPage(page);
@@ -111,7 +123,8 @@ export default function SearchScreen({ navigation }) {
         } finally {
             setPubLoading(false);
         }
-    }, [selectedBook]);
+    }, [selectedBook, sortBy, conditionFilters, genreFilters]);   // add genreFilters to deps
+
 
     useEffect(() => {
         if (selectedBook) fetchPublicationsPage(0);
@@ -217,6 +230,7 @@ export default function SearchScreen({ navigation }) {
 
     const showingPublications = activeTab === TABS.BOOKS && !!selectedBook;
     const renderItem = activeTab === TABS.PEOPLE ? renderUserItem : renderBookSuggestionItem;
+    const hasActiveFilters = sortBy !== SORT_OPTIONS.RELEVANCE || conditionFilters.length > 0 || genreFilters.length > 0;
 
     return (
         <View style={styles.container}>
@@ -260,7 +274,7 @@ export default function SearchScreen({ navigation }) {
                 </View>
             </View>
 
-            {/* --- TAB BUTTONS --- */}
+            {/* --- TAB BUTTONS + FILTER BUTTON --- */}
             <View style={styles.tabButtonsRow}>
                 <TouchableOpacity
                     style={[styles.pillButton, activeTab === TABS.BOOKS && styles.tabButtonActive]}
@@ -283,6 +297,21 @@ export default function SearchScreen({ navigation }) {
                         People
                     </Text>
                 </TouchableOpacity>
+
+                {showingPublications && (
+                    <TouchableOpacity
+                        style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+                        onPress={() => setFiltersVisible(true)}
+                        activeOpacity={0.8}
+                    >
+                        <Iconify
+                            icon="lucide:sliders-horizontal"
+                            size={16}
+                            color={hasActiveFilters ? theme.pillButtonActiveText : theme.pillButtonMutedText}
+                        />
+                        {hasActiveFilters && <View style={styles.filterBadgeDot} />}
+                    </TouchableOpacity>
+                )}
             </View>
 
             {showingPublications ? (
@@ -298,7 +327,9 @@ export default function SearchScreen({ navigation }) {
                         !pubLoading ? (
                             <View style={styles.emptyState}>
                                 <Iconify icon="lucide:book-x" size={36} color={theme.subtext} />
-                                <Text style={styles.emptyStateText}>No copies found for this book</Text>
+                                <Text style={styles.emptyStateText}>
+                                    {hasActiveFilters ? 'No copies match these filters' : 'No copies found for this book'}
+                                </Text>
                             </View>
                         ) : null
                     }
@@ -328,6 +359,17 @@ export default function SearchScreen({ navigation }) {
                     }
                 />
             )}
+
+            <PublicationFilterModal
+                visible={filtersVisible}
+                onClose={() => setFiltersVisible(false)}
+                onApply={handleApplyFilters}
+                initialSortBy={sortBy}
+                initialConditions={conditionFilters}
+                initialGenres={genreFilters}
+                theme={theme}
+                styles={styles}
+            />
         </View>
     );
 }
