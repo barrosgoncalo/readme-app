@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // <-- Não te esqueças de importar o useEffect
+import React, { useState, useEffect } from 'react'; 
 import { 
     View, Text, StyleSheet, FlatList, TouchableOpacity, 
     useColorScheme, Image 
@@ -8,6 +8,8 @@ import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
+import { fetchPublication } from '@readme/shared/src/services/publications';
+
 export default function SelectSwapBookScreen({ route, navigation }) {
     const { offerDetails } = route.params;
     
@@ -16,13 +18,11 @@ export default function SelectSwapBookScreen({ route, navigation }) {
 
     const [offeredBooks] = useState(offerDetails?.offeredBooks || []);
     const [selectedBookId, setSelectedBookId] = useState(null);
+    const [fetchingBookId, setFetchingBookId] = useState(null);
 
-    // --- ADICIONA ESTE USEEFFECT AQUI ---
     useEffect(() => {
         if (offeredBooks.length === 1) {
             const singleBook = offeredBooks[0];
-            
-            // Usar replace para não deixar este ecrã "fantasma" no histórico do botão voltar
             navigation.replace(ROUTES.SELECT_SWAP_LOCATION, {
                 ...route.params,
                 selectedBookId: singleBook.id,
@@ -31,11 +31,34 @@ export default function SelectSwapBookScreen({ route, navigation }) {
         }
     }, [offeredBooks, navigation, route.params]);
 
-    // ------------------------------------
+    // 2. Add the handleBookPress function using your custom service
+    const handleBookPress = async (bookId) => {
+        // If any book is currently fetching, block further presses
+        if (!bookId || fetchingBookId) return;
+
+        try {
+            // Set the state to this specific book's ID
+            setFetchingBookId(bookId);
+            const fullPublicationData = await fetchPublication(bookId);
+
+            if (fullPublicationData) {
+                navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
+                    publication: fullPublicationData,
+                    hideOfferButton: true 
+                });
+            } else {
+                console.warn("Publication no longer exists!");
+            }
+        } catch (error) {
+            console.error("Failed to fetch full book details:", error);
+        } finally {
+            // Clear the fetching state
+            setFetchingBookId(null);
+        }
+    };
 
     const handleNext = () => {
         if (!selectedBookId) return;
-        
         const selectedBook = offeredBooks.find(b => b.id === selectedBookId);
 
         navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, {
@@ -47,9 +70,10 @@ export default function SelectSwapBookScreen({ route, navigation }) {
 
     const renderBookItem = ({ item }) => {
         const isSelected = selectedBookId === item.id;
-        
-        // Map directly to the data structure from your log
         const imageUrl = item.image || 'https://via.placeholder.com/150';
+
+        // Check if THIS specific card is the one currently fetching data
+        const isThisItemLoading = fetchingBookId === item.id;
 
         return (
             <TouchableOpacity 
@@ -65,7 +89,20 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                     <Text style={[styles.bookTitle, { color: theme.textItemTitle }]} numberOfLines={1}>
                         {item.title || 'Unknown Title'}
                     </Text>
-                    {/* We removed author because it wasn't in your route payload, keeping UI clean */}
+
+                    <TouchableOpacity 
+                        style={styles.detailsButton}
+                        // Disable button if any book is loading
+                        disabled={fetchingBookId !== null} 
+                        onPress={() => handleBookPress(item.id)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Iconify icon="lucide:info" size={16} color={theme.subtext} />
+                        <Text style={[styles.detailsButtonText, { color: theme.subtext }]}>
+                            {/* Scope the loading text strictly to this single card */}
+                            {isThisItemLoading ? "Loading..." : "View Details"}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
                 {isSelected && (
                     <View style={styles.checkBadge}>
@@ -78,8 +115,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            
-            {/* --- HEADER --- */}
             <SafeAreaView edges={['top']} style={{ backgroundColor: theme.background }}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -96,7 +131,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                 </View>
             </SafeAreaView>
 
-            {/* --- MAIN CONTENT AREA --- */}
             <FlatList
                 data={offeredBooks}
                 keyExtractor={item => item.id}
@@ -110,7 +144,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                 }
             />
 
-            {/* --- FLOATING BOTTOM ACTION BAR --- */}
             <SafeAreaView edges={['bottom']} style={[styles.bottomBar, { 
                 backgroundColor: theme.backgroundElement,
                 borderTopColor: theme.borderLight
@@ -138,7 +171,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                     <Iconify icon="lucide:arrow-right" size={20} color={selectedBookId ? '#FFFFFF' : theme.subtext} />
                 </TouchableOpacity>
             </SafeAreaView>
-
         </View>
     );
 }
@@ -155,7 +187,10 @@ const styles = StyleSheet.create({
     bookCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 2, marginBottom: 16 },
     bookImage: { width: 80, height: 120, borderRadius: 8, backgroundColor: '#EAEAEA' },
     bookInfo: { flex: 1, marginLeft: 20, justifyContent: 'center' },
-    bookTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+    bookTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
+    // 4. Added missing layout styles for the details action link
+    detailsButton: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 },
+    detailsButtonText: { fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' },
     checkBadge: { position: 'absolute', top: 16, right: 16 },
     bottomBar: { 
         position: 'absolute', bottom: 0, width: '100%', paddingHorizontal: 20, 

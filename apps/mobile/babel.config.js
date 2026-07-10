@@ -71,6 +71,7 @@ export default function (api) {
                         'lucide:circle',
                         'lucide:square-check',
                         'lucide:square',
+                        'lucide:info',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',

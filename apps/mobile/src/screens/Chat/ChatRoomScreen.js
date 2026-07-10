@@ -32,6 +32,8 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 
+import { fetchPublication } from '@readme/shared/src/services/publications';
+
 export default function ChatRoomScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
@@ -370,34 +372,29 @@ export default function ChatRoomScreen({ route, navigation }) {
     };
 
     const handleBookPress = async (bookSummary) => {
-        if (!bookSummary?.id) return;
+    if (!bookSummary?.id) return;
 
-        try {
-            setIsFetchingBook(true);
+    try {
+        setIsFetchingBook(true);
 
-            // 1. Fetch the full publication from Firestore
-            // (Adjust this line to use whatever API/Service you normally use to fetch data)
-            const docRef = doc(db, 'publications', bookSummary.id); 
-            const docSnap = await getDoc(docRef);
+        const fullPublicationData = await fetchPublication(bookSummary.id);
 
-            if (docSnap.exists()) {
-                const fullPublicationData = { id: docSnap.id, ...docSnap.data() };
-
-                // 2. Navigate with the fully populated data
-                navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
-                    publication: fullPublicationData,
-                    hideOfferButton: true
-                });
-            } else {
-                console.warn("Publication no longer exists!");
-                // Optional: Show an alert/toast to the user here
-            }
-        } catch (error) {
-            console.error("Failed to fetch full book details:", error);
-        } finally {
-            setIsFetchingBook(false);
+        if (fullPublicationData) {
+            navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
+                publication: fullPublicationData,
+                hideOfferButton: true
+            });
+        } else {
+            console.warn("Publication no longer exists!");
+            Alert.alert("Unavailable", "This book details are no longer available.");
         }
-    };
+    } catch (error) {
+        console.error("Failed to fetch full book details:", error);
+        Alert.alert("Error", "Could not load book details. Please try again.");
+    } finally {
+        setIsFetchingBook(false);
+    }
+};
 
     const renderOfferCard = (item) => {
         const offer = item.offerDetails;
