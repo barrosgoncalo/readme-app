@@ -24,7 +24,7 @@ import CountryPicker from 'react-native-country-picker-modal';
 import { buildEditProfileStyles } from '../../../styles/editProfileStyles';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadProfilePicture } from '@readme/shared/src/services/users';
+import { UsersService } from '@readme/shared/src/services/users';
 
 export default function EditProfileScreen({ navigation, route }) {
     const existing = route?.params?.userData ?? {};
@@ -165,7 +165,7 @@ export default function EditProfileScreen({ navigation, route }) {
             if (!uid) throw new Error('Not authenticated.');
 
             if (newImageUri) {
-                await uploadProfilePicture(uid, newImageUri);
+                await UsersService.uploadProfilePicture(uid, newImageUri);
             }
 
             await doUpdateUserProfile(uid, {

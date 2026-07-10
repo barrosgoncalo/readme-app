@@ -13,35 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // External Libraries
 import { Iconify } from 'react-native-iconify';
 
-// Firebase Imports
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { db } from '@readme/shared/src/services/firebase'; 
-
-// Internal Architecture
+// Internal Architecture - Replaced direct Firebase calls with Services & Contexts
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import { PublicationService } from '@readme/shared/src/services/publications'; // Adjust import path as needed
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { BookCard } from '../../components/ui/BookCard';
-
-// ==========================================
-// HELPER FUNCTIONS
-// ==========================================
-
-/**
- * STRICT DATA CONTRACT
- * No fallbacks. We expect the publications collection to strictly follow this shape.
- */
-const normalizeBookData = (doc) => {
-    const data = doc.data();
-    
-    return {
-        id: doc.id,
-        title: data.book.title,         // Single source of truth
-        imageUrl: data.book.images[0],  // Single source of truth
-        ownerId: data.uid,              // Explicit owner ID mapping
-        rawDocData: data
-    };
-};
 
 // ==========================================
 // MAIN COMPONENT
@@ -54,6 +31,9 @@ export default function StepOneOfferScreen({ route, navigation }) {
     
     const { targetBook, targetSeller } = route.params;
 
+    // --- Global Auth Context ---
+    const { currentUser } = useAuth();
+
     // --- Local State ---
     const [myBooks, setMyBooks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -63,31 +43,25 @@ export default function StepOneOfferScreen({ route, navigation }) {
     // EFFECTS
     // ==========================================
 
-    // Fetch the user's available books from Firestore on mount
     useEffect(() => {
         const fetchMyBooks = async () => {
-            const auth = getAuth();
-            if (!auth.currentUser) return;
+            if (!currentUser?.uid) {
+                setLoading(false);
+                return;
+            }
 
             try {
-                const q = query(
-                    collection(db, 'publications'), 
-                    where('uid', '==', auth.currentUser.uid) 
-                );
-                const querySnapshot = await getDocs(q);
-
-                // Data is perfectly mapped at the moment of fetching
-                const books = querySnapshot.docs.map(normalizeBookData);
+                const books = await PublicationService.fetchUserPublications(currentUser.uid);
                 setMyBooks(books);
             } catch (error) {
-                console.error("[StepOneOfferScreen] Error fetching user books:", error);
+                console.error("[StepOneOfferScreen] Failed to load books:", error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchMyBooks();
-    }, []);
+    }, [currentUser?.uid]);
 
     // ==========================================
     // HANDLERS
@@ -107,7 +81,6 @@ export default function StepOneOfferScreen({ route, navigation }) {
     const handleNext = () => {
         if (selectedBooks.length === 0) return;
         
-        // Passing the pristine targetBook and perfectly mapped selectedBooks forward
         navigation.navigate(ROUTES.STEP_TWO_OFFER, { 
             targetBook, 
             targetSeller, 

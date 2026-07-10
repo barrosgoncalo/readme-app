@@ -7,7 +7,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doSignOut, doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { buildProfileStyles } from '../../styles/profileStyles';
-import { uploadProfilePicture } from '@readme/shared/src/services/users';
+import { UsersService } from '@readme/shared/src/services/users';
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
 
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
@@ -56,7 +56,7 @@ export default function ProfileScreen({ navigation }) {
     const handleUpload = async (imageUri) => {
         setUploading(true);
         try {
-            await uploadProfilePicture(currentUser.uid, imageUri);
+            await UsersService.uploadProfilePicture(currentUser.uid, imageUri);
             alert("Foto atualizada com sucesso!");
         } catch (error) {
             alert("Erro ao atualizar a foto.");

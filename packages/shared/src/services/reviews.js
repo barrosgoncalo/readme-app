@@ -1,5 +1,6 @@
 // @readme/shared/src/services/reviews.js
 import { DB } from './DB';
+import { UsersService } from './users';
 
 export const ReviewService = {
     fetchUserReviews : async (revieweeId) => {
@@ -11,7 +12,7 @@ export const ReviewService = {
             const reviewsPromises = reviews.map(async (reviewData) => {
                 let authorName = "Unknown User";
                 try {
-                    const reviewerProfile = await fetchUserProfile(reviewData.reviewerId);
+                    const reviewerProfile = await UsersService.fetchUserProfile(reviewData.reviewerId);
                     if (reviewerProfile && reviewerProfile.username) {
                         authorName = reviewerProfile.username;
                     }

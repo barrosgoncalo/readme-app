@@ -2,8 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { getEvent, getAttendees, isAttending, joinEvent, leaveEvent } from '@readme/shared/src/services/events.web';
-import { getUsersByIds } from '@readme/shared/src/services/users.web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
+import { UsersService } from '@readme/shared/src/services/users';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
@@ -43,7 +43,7 @@ export default function EventDetails() {
             // Hydrate organiser + attendee names
             const uids = new Set([eventData.ownerId, ...attendeeList.map((a) => a.uid)]);
             if (uids.size > 0) {
-                const names = await getUsersByIds(Array.from(uids));
+                const names = await UsersService.getUsersByIds(Array.from(uids));
                 setUserNames(names);
             }
         } catch (err) {

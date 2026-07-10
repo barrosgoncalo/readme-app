@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { doGetBlockedUids } from '../services/block';
 import { PublicationService } from '../services/publications';
 import { ChatService } from '../services/chat';
+
+import { UsersService } from '../services/users';
 
 export function useExploreData(currentUserId) {
     const [books, setBooks] = useState([]);
@@ -51,12 +51,9 @@ export function useExploreData(currentUserId) {
     const fetchUserFavorites = useCallback(async () => {
         if (!currentUserId) return;
         try {
-            const userDocRef = doc(db, 'users', currentUserId);
-            const userDocSnap = await getDoc(userDocRef);
-
-            if (userDocSnap.exists()) {
-                setUserFavorites(userDocSnap.data().favoriteBooks || []);
-            }
+            // 2. Call the method explicitly from the service
+            const favorites = await UsersService.fetchUserFavorites(currentUserId);
+            setUserFavorites(favorites);
         } catch (error) {
             console.error("Failed to load user favorites:", error);
         }

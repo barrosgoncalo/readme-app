@@ -23,7 +23,7 @@ import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 // --- SERVICE IMPORTS ---
 import { auth } from '@readme/shared/src/services/firebase';
 import { doBlockUser } from '@readme/shared/src/services/block';
-import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users'; 
+import { UsersService } from '@readme/shared/src/services/users';
 
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { ReviewService } from '@readme/shared/src/services/reviews';
@@ -60,7 +60,7 @@ export default function PublicProfileScreen({ navigation, route }) {
 
         try {
             const [profileData, publicationsData, reviewsData] = await Promise.all([
-                fetchUserProfile(userId),
+                UsersService.fetchUserProfile(userId),
                 PublicationService.fetchUserPublications(userId),
                 ReviewService.fetchUserReviews(userId) 
             ]);
@@ -88,7 +88,7 @@ export default function PublicProfileScreen({ navigation, route }) {
         setIsFollowing(!previousFollowingState);
 
         try {
-            await toggleFollowUser(userId, !previousFollowingState);
+            await UsersService.toggleFollowUser(userId, !previousFollowingState);
         } catch (error) {
             console.error("Error updating follow status:", error);
             setIsFollowing(previousFollowingState);

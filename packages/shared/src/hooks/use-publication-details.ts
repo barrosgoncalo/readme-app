@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
-import { fetchUserProfile, toggleFavoriteStatus } from '../services/users';
+import { UsersService } from '../services/users';
 
 export function usePublicationDetails(book: any, initialSellerData: any) {
     const auth = getAuth();
@@ -24,8 +24,7 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
         const checkFavoriteStatus = async () => {
             if (!currentUser || !book?.id) return;
             try {
-                // 🪙 Forçamos o 'as any' aqui para o TS ignorar a falta do 'favoriteBooks' no tipo do serviço
-                const userData = await fetchUserProfile(currentUser.uid) as any;
+                const userData = await UsersService.fetchUserProfile(currentUser.uid) as any;
                 if (userData && userData.favoriteBooks) {
                     setIsFavorited(userData.favoriteBooks.includes(book.id));
                 }
@@ -43,7 +42,7 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
             if (!sellerId) return;
 
             try {
-                const sellerData = await fetchUserProfile(sellerId) as any;
+                const sellerData = await UsersService.fetchUserProfile(sellerId) as any;
                 if (sellerData) {
                     const displayName = sellerData.username || sellerData.fullName || sellerData.name || 'Anonymous Swapper';
                     const fetchedAvatar = sellerData.photoURL || sellerData.profilePicture || sellerData.avatar;
@@ -73,7 +72,7 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
         setIsFavorited(!baselineState);
 
         try {
-            await toggleFavoriteStatus(currentUser.uid, book.id, baselineState);
+            await UsersService.toggleFavoriteStatus(currentUser.uid, book.id, baselineState);
         } catch (error) {
             console.error('[usePublicationDetails] Failed to toggle favorite:', error);
             setIsFavorited(baselineState);

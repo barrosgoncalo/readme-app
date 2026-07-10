@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { ArrowLeft, Search } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
-import { getUsersByIds } from '@readme/shared/src/services/users.web';
+import { UsersService } from '@readme/shared/src/services/users.js';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -31,7 +31,7 @@ export default function BlockedUsers() {
             const uids = snap.docs.map(d => d.id);
             if (uids.length === 0) { setBlocked([]); setLoading(false); return; }
 
-            const profiles = await getUsersByIds(uids);
+            const profiles = await UsersService.getUsersByIds(uids);
             const list = snap.docs.map(d => ({
                 uid: d.id,
                 blockedAt: d.data().blockedAt,
