@@ -4,7 +4,6 @@ import {
     Text, 
     TouchableOpacity, 
     FlatList, 
-    StyleSheet, 
     ActivityIndicator,
     useColorScheme
 } from 'react-native';
@@ -13,35 +12,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // External Libraries
 import { Iconify } from 'react-native-iconify';
 
-// Internal Architecture - Replaced direct Firebase calls with Services & Contexts
+// Internal Architecture
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { PublicationService } from '@readme/shared/src/services/publications'; // Adjust import path as needed
+import { PublicationService } from '@readme/shared/src/services/publications';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { buildOfferFlowStyles } from '../../styles/offerFlowStyles';
 import { BookCard } from '../../components/ui/BookCard';
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
-
 export default function StepOneOfferScreen({ route, navigation }) {
-    // --- Theme & Navigation Context ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
+    const styles = buildOfferFlowStyles(theme);
     
     const { targetBook, targetSeller } = route.params;
-
-    // --- Global Auth Context ---
     const { currentUser } = useAuth();
 
-    // --- Local State ---
     const [myBooks, setMyBooks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedBooks, setSelectedBooks] = useState([]);
-
-    // ==========================================
-    // EFFECTS
-    // ==========================================
 
     useEffect(() => {
         const fetchMyBooks = async () => {
@@ -49,7 +38,6 @@ export default function StepOneOfferScreen({ route, navigation }) {
                 setLoading(false);
                 return;
             }
-
             try {
                 const books = await PublicationService.fetchUserPublications(currentUser.uid);
                 setMyBooks(books);
@@ -59,13 +47,8 @@ export default function StepOneOfferScreen({ route, navigation }) {
                 setLoading(false);
             }
         };
-
         fetchMyBooks();
     }, [currentUser?.uid]);
-
-    // ==========================================
-    // HANDLERS
-    // ==========================================
 
     const handleBookPress = useCallback((book) => {
         setSelectedBooks((prevSelected) => {
@@ -80,15 +63,12 @@ export default function StepOneOfferScreen({ route, navigation }) {
 
     const handleNext = () => {
         if (selectedBooks.length === 0) return;
-        
         navigation.navigate(ROUTES.STEP_TWO_OFFER, { 
             targetBook, 
             targetSeller, 
             offeredBooks: selectedBooks 
         });
     };
-
-    // --- Render Helpers ---
 
     const renderBookItem = ({ item }) => {
         const isSelected = selectedBooks.some((book) => book.id === item.id);
@@ -104,19 +84,15 @@ export default function StepOneOfferScreen({ route, navigation }) {
 
     const hasSelection = selectedBooks.length > 0;
 
-    // ==========================================
-    // RENDER
-    // ==========================================
-
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.container}>
             
             {/* --- HEADER --- */}
             <SafeAreaView edges={['top']} style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Iconify icon="lucide:arrow-left" size={24} color={theme.textItemTitle} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textItemTitle }]}>Select Books to Offer</Text>
+                <Text style={styles.headerTitle}>Select Books to Offer</Text>
                 <View style={{ width: 24 }} /> 
             </SafeAreaView>
 
@@ -127,7 +103,7 @@ export default function StepOneOfferScreen({ route, navigation }) {
                 </View>
             ) : myBooks.length === 0 ? (
                 <View style={styles.centerContent}>
-                    <Text style={[styles.emptyText, { color: theme.subtext }]}>
+                    <Text style={styles.emptyText}>
                         You don't have any books in your collection to offer yet.
                     </Text>
                 </View>
@@ -144,28 +120,18 @@ export default function StepOneOfferScreen({ route, navigation }) {
             )}
 
             {/* --- FLOATING BOTTOM ACTION BAR --- */}
-            <SafeAreaView edges={['bottom']} style={[styles.bottomBar, { 
-                backgroundColor: theme.backgroundElement,
-                borderTopColor: theme.borderLight
-            }]}>
+            <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
                 <TouchableOpacity 
                     style={[
-                        styles.nextButton, 
-                        { 
-                            backgroundColor: hasSelection ? (theme.primary || '#E58A1F') : theme.borderLight,
-                            shadowColor: hasSelection ? (theme.primary || '#E58A1F') : '#000',
-                            elevation: hasSelection ? 8 : 0,
-                        }
+                        styles.nextButtonBase, 
+                        hasSelection ? styles.nextButtonActive : styles.nextButtonDisabled
                     ]} 
                     onPress={handleNext}
                     disabled={!hasSelection}
                     activeOpacity={0.85}
                 >
                     <Iconify icon="lucide:map" size={22} color={hasSelection ? '#FFFFFF' : theme.subtext} />
-                    <Text style={[
-                        styles.nextButtonText, 
-                        { color: hasSelection ? '#FFFFFF' : theme.subtext }
-                    ]}>
+                    <Text style={[styles.nextButtonText, { color: hasSelection ? '#FFFFFF' : theme.subtext }]}>
                         Choose Location
                     </Text>
                     <Iconify icon="lucide:arrow-right" size={20} color={hasSelection ? '#FFFFFF' : theme.subtext} />
@@ -174,51 +140,3 @@ export default function StepOneOfferScreen({ route, navigation }) {
         </View>
     );
 }
-
-// ==========================================
-// STYLES
-// ==========================================
-
-const styles = StyleSheet.create({
-    container: { flex: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, paddingTop: 12 },
-    backButton: { padding: 4 },
-    headerTitle: { fontSize: 18, fontWeight: '700' },
-    
-    // States (Loading / Empty)
-    centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-    emptyText: { fontSize: 16, textAlign: 'center', lineHeight: 24 },
-    
-    // List & Grid
-    listContainer: { padding: 16, paddingBottom: 120 }, 
-    row: { justifyContent: 'space-between', marginBottom: 16 },
-    
-    // Bottom Floating Dock
-    bottomBar: { 
-        position: 'absolute', 
-        bottom: 0, 
-        width: '100%', 
-        paddingHorizontal: 20, 
-        paddingTop: 16,
-        paddingBottom: 16,
-        borderTopWidth: 1, 
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: -4 }, 
-        shadowOpacity: 0.05, 
-        shadowRadius: 12, 
-        elevation: 10 
-    },
-    nextButton: { 
-        width: '100%', 
-        borderRadius: 16, 
-        paddingVertical: 16, 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        gap: 12,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-    },
-    nextButtonText: { fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
-});

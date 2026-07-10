@@ -1,14 +1,15 @@
 import React, { useRef, useState } from 'react';
 import {
     View,
-    StyleSheet,
     useColorScheme,
     ActivityIndicator,
     Text,
 } from 'react-native';
-import { auth } from '@readme/shared/src/services/firebase';
+
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
+import { buildOfferFlowStyles } from '../../styles/offerFlowStyles'; // <-- Import the new style builder
 
 // Consolidated Domain Architectures
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
@@ -29,16 +30,14 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     // --- Theme & Context Routing ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
+    const styles = buildOfferFlowStyles(theme); // <-- Initialize styles with theme
 
     const { targetBook, targetSeller, offeredBooks = [] } = route.params;
+    const { currentUser } = useAuth(); 
 
-    // --- Component Architectural Anchors ---
     const mapRef = useRef(null);
-
-    // --- Core Data Query Layer ---
     const { sellerLocations, loading } = useSellerLocations(targetBook.ownerId);
 
-    // --- Combined Core Logic Layer ---
     const {
         selectedLocation,
         setSelectedLocation,
@@ -62,9 +61,8 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         isProposingAlternative,
     });
 
-    // --- Final Context Routing Action ---
     const handleSendOffer = async () => {
-        const currentUserId = auth.currentUser?.uid;
+        const currentUserId = currentUser?.uid;
 
         if (!activeLocationSelection || !currentUserId) {
             console.warn("Missing location selection or user is not logged in.");
@@ -96,7 +94,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.container}>
             <ScreenHeader
                 title={isProposingAlternative ? "Propose Custom Spot" : "Choose Exchange Location"}
                 onBack={() => navigation.goBack()}
@@ -107,7 +105,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                 {loading ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color={theme.primary || "#E58A1F"} />
-                        <Text style={[styles.loadingText, { color: theme.subtext }]}>Finding spots...</Text>
+                        <Text style={styles.loadingText}>Finding spots...</Text>
                     </View>
                 ) : (
                     <LocationPickerMap
@@ -153,11 +151,3 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1 },
-    mapContainer: { flex: 1, position: 'relative' },
-    map: { width: '100%', height: '100%' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    loadingText: { marginTop: 12, fontSize: 14, fontWeight: '600' },
-});
