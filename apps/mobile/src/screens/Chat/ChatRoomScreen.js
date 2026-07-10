@@ -11,8 +11,6 @@ import {
     ActivityIndicator,
     useColorScheme,
     Image, 
-    Linking,
-    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
@@ -20,13 +18,11 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
-import { PublicationService } from '@readme/shared/src/services/publications';
-import { ChatService } from '@readme/shared/src/services/chat';
-import { TradeService } from '@readme/shared/src/services/trades';
-import { LocationService } from '@readme/shared/src/services/location';
-
+// Hooks
 import { useChatRoomData } from '@readme/shared/src/hooks/use-chat-room-data';
+import { useChatActions } from '@readme/shared/src/hooks/use-chat-actions';
 
+// Components
 import OfferMessageCard from '../../components/ui/OfferMessageCard';
 import ChatBubble from '../../components/ui/ChatBubble';
 
@@ -38,12 +34,9 @@ export default function ChatRoomScreen({ route, navigation }) {
     const { currentUser } = useAuth();
     const currentUserId = currentUser?.uid;
 
-    // UI-specific state stays in the component
     const [inputText, setInputText] = useState('');
-    const [isFetchingBook, setIsFetchingBook] = useState(false);
 
-    // 1. CALL YOUR CUSTOM HOOK HERE
-    // This replaces all the separate useState and useEffect blocks!
+    // 1. Fetch data
     const {
         messages,
         loading,
@@ -56,186 +49,30 @@ export default function ChatRoomScreen({ route, navigation }) {
         hasReviewed
     } = useChatRoomData(chatId, currentUserId, targetSeller);
 
+    // 2. Bind action handlers
+    const {
+        isFetchingBook,
+        handleSendMessage,
+        handleShowQRCode,
+        handleOpenScanner,
+        handleResolveOffer,
+        handleCancelSwap,
+        handleOpenNavigation,
+        handleOpenOptions,
+        handleBookPress
+    } = useChatActions({ 
+        chatId, 
+        currentUserId, 
+        publicationId, 
+        messages, 
+        navigation 
+    });
 
-    const handleSendMessage = async () => {
-        if (!inputText.trim() || !currentUserId) return;
-
-        const textToSend = inputText;
+    // Local wrapper to clear input text immediately for better UI feel
+    const onSendPress = () => {
+        const text = inputText;
         setInputText('');
-
-        try {
-            await ChatService.sendTextMessage(chatId, currentUserId, textToSend);
-        } catch (error) {
-            console.error("Error sending message:", error);
-            setInputText(textToSend); 
-        }
-    };
-
-    const handleShowQRCode = (code, messageId) => {
-        navigation.navigate(ROUTES.QR_DISPLAY, { 
-            verificationCode: code,
-            chatId: chatId,
-            messageId: messageId
-        });
-    };
-
-    const handleOpenScanner = (messageId) => {
-        navigation.navigate(ROUTES.QR_SCANNER, {
-            messageId: messageId,
-            chatId: chatId
-        });
-    };
-
-    const handleResolveOffer = async (
-        messageId, 
-        newStatus, 
-        bookId = null, 
-        senderIdOfOffer = null,
-        finalSelectedBookId = null,
-        finalSelectedBookImage = null
-    ) => {
-        try {
-            const targetBookId = bookId || publicationId; 
-
-            // Offload the heavy lifting to TradeService
-            await TradeService.resolveOffer(chatId, messageId, newStatus, {
-                proposerId: senderIdOfOffer,
-                receiverId: currentUserId,
-                targetBookId: targetBookId,
-                finalSelectedBookId: finalSelectedBookId,
-                finalSelectedBookImage: finalSelectedBookImage
-            });
-
-            console.log("Chat offer status and inventory updated successfully via TradeService.");
-        } catch (error) {
-            console.error("Failed to update trade workflow context:", error);
-            Alert.alert("Error", "Could not process the offer. Please try again.");
-        }
-    };
-
-    const handleCancelSwap = async (messageId, bookId, finalSelectedBookId) => {
-        Alert.alert(
-            "Cancel Swap",
-            "Are you sure you want to cancel this agreed swap? The other user will be notified and allowed to review their experience with you.",
-            [
-                { text: "No, keep it", style: "cancel" },
-                { 
-                    text: "Yes, Cancel", 
-                    style: "destructive", 
-                    onPress: async () => {
-                        try {
-                            const targetBookId = bookId || publicationId;
-
-                            await TradeService.cancelSwap(
-                                chatId, 
-                                messageId, 
-                                targetBookId, 
-                                finalSelectedBookId
-                            );
-
-                            Alert.alert("Swap Cancelled", "The swap was cancelled and books are available again.");
-                        } catch (error) {
-                            console.error("Error cancelling swap:", error);
-                            Alert.alert("Error", "Could not cancel the swap. Please try again.");
-                        }
-                    } 
-                }
-            ]
-        );
-    };
-
-    const handleOpenNavigation = (location) => {
-        if (!location || !location.latitude || !location.longitude) {
-            Alert.alert("Location Error", "Coordinates are unavailable for this location.");
-            return;
-        }
-
-        const { appleMapsUrl, googleMapsUrl, wazeUrl } = LocationService.buildNavigationLinks(location);
-
-        Alert.alert(
-            "Navigate to Spot",
-            "Open this location with your preferred navigation app:",
-            [
-                ...(Platform.OS === 'ios' ? [{ text: "Apple Maps", onPress: () => Linking.openURL(appleMapsUrl) }] : []),
-                { text: "Google Maps", onPress: () => Linking.openURL(googleMapsUrl) },
-                { text: "Waze", onPress: () => Linking.openURL(wazeUrl) },
-                { text: "Cancel", style: "cancel" }
-            ],
-            { cancelable: true }
-        );
-    };
-
-    const handleOpenOptions = () => {
-        Alert.alert(
-            "Chat Options",
-            "What would you like to do?",
-            [
-                { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Delete Chat", 
-                    style: "destructive", 
-                    onPress: () => {
-                        const hasActiveSwap = messages.some(msg => 
-                            msg.type === 'offer' && 
-                                (msg.offerDetails?.status === 'pending' || msg.offerDetails?.status === 'accepted')
-                        );
-
-                        if (hasActiveSwap) {
-                            Alert.alert(
-                                "Action Blocked",
-                                "You have an active or pending swap in this chat! You must resolve or decline the proposal before deleting this conversation."
-                            );
-                        } else {
-                            Alert.alert(
-                                "Confirm Delete",
-                                "Are you sure you want to delete this chat? It will be removed from your inbox.",
-                                [
-                                    { text: "Cancel", style: "cancel" },
-                                    { text: "Delete", style: "destructive", onPress: handleHideChat }
-                                ]
-                            );
-                        }
-                    }
-                }
-            ]
-        );
-    };
-
-    const handleHideChat = async () => {
-        try {
-            await ChatService.hideChat(chatId, currentUserId);
-
-            Alert.alert("Success", "Chat removed from your inbox.", [
-                { text: "OK", onPress: () => navigation.popToTop() }
-            ]);
-        } catch (error) {
-            Alert.alert("Detailed Error", error.message || JSON.stringify(error));
-        }
-    };
-
-    const handleBookPress = async (bookSummary) => {
-        if (!bookSummary?.id) return;
-
-        try {
-            setIsFetchingBook(true);
-
-            const fullPublicationData = await PublicationService.fetchPublication(bookSummary.id);
-
-            if (fullPublicationData) {
-                navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
-                    publication: fullPublicationData,
-                    hideOfferButton: true
-                });
-            } else {
-                console.warn("Publication no longer exists!");
-                Alert.alert("Unavailable", "This book details are no longer available.");
-            }
-        } catch (error) {
-            console.error("Failed to fetch full book details:", error);
-            Alert.alert("Error", "Could not load book details. Please try again.");
-        } finally {
-            setIsFetchingBook(false);
-        }
+        handleSendMessage(text, setInputText);
     };
 
     const renderMessageItem = ({ item, index }) => {
@@ -299,10 +136,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                     {otherUserAvatar ? (
                         <Image source={{ uri: otherUserAvatar }} style={styles.headerAvatar} />
                     ) : (
-                            <View style={[styles.headerAvatarPlaceholder, { backgroundColor: theme.backgroundElement }]}>
-                                <Iconify icon="lucide:user" size={20} color={theme.subtext} />
-                            </View>
-                        )}
+                        <View style={[styles.headerAvatarPlaceholder, { backgroundColor: theme.backgroundElement }]}>
+                            <Iconify icon="lucide:user" size={20} color={theme.subtext} />
+                        </View>
+                    )}
                     <View style={styles.headerTextGroup}>
                         <Text style={[styles.headerName, { color: theme.textItemTitle }]}>
                             {otherUserName}
@@ -320,15 +157,15 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                    <FlatList
-                        data={messages}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderMessageItem}
-                        inverted
-                        contentContainerStyle={styles.listContainer}
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
+                <FlatList
+                    data={messages}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderMessageItem}
+                    inverted
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
                 <SafeAreaView edges={['bottom']} style={[styles.inputContainer, { backgroundColor: theme.background, borderTopColor: theme.borderLight }]}>
@@ -342,7 +179,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                     />
                     <TouchableOpacity 
                         style={[styles.sendButton, { backgroundColor: inputText.trim() ? (theme.primary || '#E58A1F') : theme.borderLight }]} 
-                        onPress={handleSendMessage}
+                        onPress={onSendPress}
                         disabled={!inputText.trim()}
                     >
                         <Iconify icon="lucide:send" size={18} color={inputText.trim() ? '#FFFFFF' : theme.subtext} />
