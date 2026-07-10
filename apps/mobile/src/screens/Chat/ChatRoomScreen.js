@@ -24,6 +24,7 @@ import { fetchPublication } from '@readme/shared/src/services/publications';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { TradeService } from '@readme/shared/src/services/trades';
+import { LocationService } from '@readme/shared/src/services/location';
 
 import OfferMessageCard from '../../components/ui/OfferMessageCard';
 import ChatBubble from '../../components/ui/ChatBubble';
@@ -207,13 +208,7 @@ export default function ChatRoomScreen({ route, navigation }) {
             return;
         }
 
-        const { latitude, longitude, title, address } = location;
-        const label = encodeURIComponent(title || address || "Book Exchange Spot");
-
-        // Deep Link URLs
-        const appleMapsUrl = `maps://?q=${label}&ll=${latitude},${longitude}`;
-        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-        const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
+        const { appleMapsUrl, googleMapsUrl, wazeUrl } = LocationService.buildNavigationLinks(location);
 
         Alert.alert(
             "Navigate to Spot",

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Keyboard } from 'react-native';
-import { reverseGeocodeCoordinates } from '../services/location';
+
+import { LocationService } from '../services/location';
 
 const DEFAULT_MAP_VIEWPORT = { 
     latitude: 38.7223, 
@@ -16,20 +17,10 @@ export function useLocationProposal(sellerLocations, mapRef) {
     const [geocodingCustom, setGeocodingCustom] = useState(false);
     const [currentRegion, setCurrentRegion] = useState(DEFAULT_MAP_VIEWPORT);
 
-    // NOTE: Camera framing (fitToCoordinates / animateToRegion) is intentionally
-    // NOT handled here anymore. The screen (SelectSwapLocationScreen) owns that
-    // responsibility via fitAllMarkers(), since it's the only place with full
-    // visibility into BOTH originalLocation (from offerDetails) AND
-    // sellerLocations. Having two independent effects both call fitToCoordinates
-    // on the same mapRef caused a race condition where this hook's effect
-    // (previously firing at 400ms) would run after and overwrite the screen's
-    // fit (at 100ms) — silently dropping originalLocation from the framed view
-    // every time, since this hook never had access to it.
-
     const handleReverseGeocode = async (coords) => {
         setGeocodingCustom(true);
         try {
-            const address = await reverseGeocodeCoordinates(coords);
+            const address = await LocationService.reverseGeocodeCoordinates(coords);
             setCustomLocation({
                 id: 'proposed_custom',
                 title: 'Proposed Custom Location',
