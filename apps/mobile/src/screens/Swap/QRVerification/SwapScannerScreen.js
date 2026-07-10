@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
@@ -19,10 +19,8 @@ export default function SwapScannerScreen({ route, navigation }) {
     const handleVerifySuccess = async (scannedCode) => {
         setIsVerifying(true);
         try {
-            // Send the scanned code to the Cloud Function
             await ChatService.verifySwapCode(chatId, messageId, scannedCode);
             
-            // If we reach this line, the Cloud Function succeeded and updated the DB!
             Alert.alert("Sucesso!", "Troca verificada com sucesso! Os livros foram removidos da plataforma.", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
@@ -44,7 +42,6 @@ export default function SwapScannerScreen({ route, navigation }) {
         }
     };
 
-    // ... (rest of your component remains exactly the same!)
     const handleBarCodeScanned = ({ data }) => {
         if (isProcessingRef.current) return; 
         
