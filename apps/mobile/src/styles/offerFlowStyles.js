@@ -76,8 +76,8 @@ export const buildOfferFlowStyles = (theme) => StyleSheet.create({
         shadowRadius: 8,
     },
     nextButtonActive: {
-        backgroundColor: theme.primary || '#E58A1F',
-        shadowColor: theme.primary || '#E58A1F',
+        backgroundColor: theme.primary,
+        shadowColor: theme.primary,
         elevation: 8,
     },
     nextButtonDisabled: {
