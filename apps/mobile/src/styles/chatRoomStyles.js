@@ -14,7 +14,7 @@ export const buildChatRoomStyles = (theme) => {
         },
         listContainer: { 
             paddingHorizontal: 16, 
-            paddingTop: 16, 
+            paddingTop: 2,
             paddingBottom: 16, 
         },
 

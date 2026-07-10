@@ -1,14 +1,10 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildChatRoomStyles } from '../../styles/chatRoomStyles';
-
-// Hooks
 import { useChatRoomData } from '@readme/shared/src/hooks/use-chat-room-data';
 import { useChatActions } from '@readme/shared/src/hooks/use-chat-actions';
-
-// Extracted Components
 import ChatHeader from './Components/ChatHeader';
 import ChatInputBar from './Components/ChatInputBar';
 import MessageListItem from './Components/MessageListItem';
@@ -23,8 +19,9 @@ export default function ChatRoomScreen({ route, navigation }) {
     const currentUserId = currentUser?.uid;
 
     const flatListRef = useRef(null);
-
+    const prevNewestIdRef = useRef(null);
     const [inputText, setInputText] = useState('');
+    const [inputBarHeight, setInputBarHeight] = useState(72); // sane fallback before first layout
 
     const {
         messages, loading, otherUserName, otherUserAvatar,
@@ -41,8 +38,19 @@ export default function ChatRoomScreen({ route, navigation }) {
         const text = inputText;
         setInputText('');
         handleSendMessage(text, setInputText);
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, [inputText, handleSendMessage]);
+
+    // Scroll to bottom whenever a NEW message from me actually lands in the list
+    useEffect(() => {
+        if (!messages.length) return;
+        const newest = messages[0];
+        const isNewMessage = newest.id !== prevNewestIdRef.current;
+        prevNewestIdRef.current = newest.id;
+
+        if (isNewMessage && newest.senderId === currentUserId) {
+            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        }
+    }, [messages, currentUserId]);
 
     const renderMessageItem = useCallback(({ item, index }) => {
         const isMe = item.senderId === currentUserId;
@@ -60,15 +68,15 @@ export default function ChatRoomScreen({ route, navigation }) {
             />
         );
     }, [
-        currentUserId, messages, theme, colorScheme, chatId, targetSeller, 
-        bookImage, chatLocation, isFetchingBook, hasReviewed, navigation, 
-        handleBookPress, handleOpenNavigation, handleResolveOffer, 
+        currentUserId, messages, theme, colorScheme, chatId, targetSeller,
+        bookImage, chatLocation, isFetchingBook, hasReviewed, navigation,
+        handleBookPress, handleOpenNavigation, handleResolveOffer,
         handleShowQRCode, handleOpenScanner, handleCancelSwap
     ]);
 
     return (
         <View style={styles.container}>
-            <ChatHeader 
+            <ChatHeader
                 theme={theme} navigation={navigation} otherUserId={otherUserId}
                 otherUserAvatar={otherUserAvatar} otherUserName={otherUserName}
                 handleOpenOptions={handleOpenOptions}
@@ -79,26 +87,36 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                <FlatList
-                    ref={flatListRef}
-                    data={messages}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderMessageItem}
-                    inverted={true}
-                    contentContainerStyle={styles.listContainer}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                />
-            )}
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderMessageItem}
+                        inverted={true}
+                        contentContainerStyle={[
+                            styles.listContainer,
+                            { flexGrow: 1, justifyContent: 'flex-end' }
+                        ]}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    />
+                )}
 
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={8}
             >
-                <ChatInputBar 
-                    theme={theme} inputText={inputText}
-                    setInputText={setInputText} onSendPress={onSendPress}
-                />
+                <View onLayout={(e) => {
+                    const h = e.nativeEvent.layout.height;
+                    if (h > 0 && Math.abs(h - inputBarHeight) > 1) {
+                        setInputBarHeight(h);
+                    }
+                }}>
+                    <ChatInputBar
+                        theme={theme} inputText={inputText}
+                        setInputText={setInputText} onSendPress={onSendPress}
+                    />
+                </View>
             </KeyboardAvoidingView>
         </View>
     );
