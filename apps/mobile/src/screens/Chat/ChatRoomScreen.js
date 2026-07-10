@@ -460,7 +460,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                         <TouchableOpacity 
                             activeOpacity={0.7}
                             disabled={isFetchingBook} // Prevent clicking while loading
-                            onPress={() => handleBookPress({ id: offer.targetBookId }) }
+                            onPress={() => {
+                                console.log("Full Offer Object:", JSON.stringify(offer, null, 2));
+                                handleBookPress({ id: offer.targetBookId });
+                            }}
                         >
                             {bubbleTargetImage ? (
                                 <Image source={{ uri: bubbleTargetImage }} style={styles.tradeBookImage} />
@@ -485,13 +488,13 @@ export default function ChatRoomScreen({ route, navigation }) {
 
                         <TouchableOpacity 
                             activeOpacity={0.7}
-                            disabled={isFetchingBook} // Prevent clicking while loading
+                            disabled={isFetchingBook}
                             onPress={() => {
-                                // If there are multiple options, you grab the first one
-                                const bookToOpen = offer?.offeredBooks?.[0]; 
-                                if (bookToOpen) {
-                                    handleBookPress(bookToOpen);
-                                }
+                                const books = item.offeredBooks || offer?.offeredBooks;
+
+                                const bookId = offer?.selectedBookId || (books?.length === 1 ? books[0]?.id : null);
+
+                                if (bookId) handleBookPress({ id: bookId });
                             }}
                         >
                             {imageToShow ? (
