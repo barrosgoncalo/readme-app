@@ -256,9 +256,8 @@ export const ChatService = {
             `chats/${chatId}/messages`,
             [],
             (fetchedDocs) => {
-                const sorted = [...fetchedDocs].sort(
-                    (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
-                );
+                const getTime = (m) => m.createdAt?.toMillis?.() ?? m.clientTimestamp ?? 0;
+                const sorted = [...fetchedDocs].sort((a, b) => getTime(b) - getTime(a));
                 onUpdate(sorted);
                 ChatService.markMessagesAsRead(chatId, sorted, currentUserId);
             },

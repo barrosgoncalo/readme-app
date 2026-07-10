@@ -10,14 +10,11 @@
  */
 export const createMessageModel = (senderId, text, type = "text", offerPayload = null) => {
     return {
-        senderId: senderId,
+        senderId,
         text: text.trim(),
-        type: type,
-
+        type,
         ...(type === 'offer' && offerPayload ? { offerDetails: offerPayload } : {}),
-        
-        // -- Timestamps & Status --
-        createdAt: new Date().toISOString(),
-        read: false 
+        clientTimestamp: Date.now(),
+        read: false
     };
 };

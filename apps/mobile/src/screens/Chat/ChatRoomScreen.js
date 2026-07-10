@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, useColorScheme } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
+import { buildChatRoomStyles } from '../../styles/chatRoomStyles';
 
 // Hooks
 import { useChatRoomData } from '@readme/shared/src/hooks/use-chat-room-data';
@@ -15,44 +16,24 @@ import MessageListItem from './Components/MessageListItem';
 export default function ChatRoomScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const { chatId, targetSeller } = route.params;
+    const styles = useMemo(() => buildChatRoomStyles(theme), [theme]);
 
+    const { chatId, targetSeller } = route.params;
     const { currentUser } = useAuth();
     const currentUserId = currentUser?.uid;
 
     const [inputText, setInputText] = useState('');
 
-    // 1. Fetch data
     const {
-        messages,
-        loading,
-        otherUserName,
-        otherUserAvatar,
-        otherUserId,
-        bookImage,
-        publicationId,
-        chatLocation,
-        hasReviewed
+        messages, loading, otherUserName, otherUserAvatar,
+        otherUserId, bookImage, publicationId, chatLocation, hasReviewed
     } = useChatRoomData(chatId, currentUserId, targetSeller);
 
-    // 2. Bind action handlers
     const {
-        isFetchingBook,
-        handleSendMessage,
-        handleShowQRCode,
-        handleOpenScanner,
-        handleResolveOffer,
-        handleCancelSwap,
-        handleOpenNavigation,
-        handleOpenOptions,
-        handleBookPress
-    } = useChatActions({ 
-        chatId, 
-        currentUserId, 
-        publicationId, 
-        messages, 
-        navigation 
-    });
+        isFetchingBook, handleSendMessage, handleShowQRCode,
+        handleOpenScanner, handleResolveOffer, handleCancelSwap,
+        handleOpenNavigation, handleOpenOptions, handleBookPress
+    } = useChatActions({ chatId, currentUserId, publicationId, messages, navigation });
 
     const onSendPress = useCallback(() => {
         const text = inputText;
@@ -66,25 +47,13 @@ export default function ChatRoomScreen({ route, navigation }) {
 
         return (
             <MessageListItem
-                item={item}
-                isMe={isMe}
-                isLastInGroup={isLastInGroup}
-                theme={theme}
-                colorScheme={colorScheme}
-                currentUserId={currentUserId}
-                chatId={chatId}
-                targetSeller={targetSeller}
-                bookImage={bookImage}
-                chatLocation={chatLocation}
-                isFetchingBook={isFetchingBook}
-                hasReviewed={hasReviewed}
-                navigation={navigation}
-                onBookPress={handleBookPress}
-                onOpenNavigation={handleOpenNavigation}
-                onResolveOffer={handleResolveOffer}
-                onShowQRCode={handleShowQRCode}
-                onOpenScanner={handleOpenScanner}
-                onCancelSwap={handleCancelSwap}
+                item={item} isMe={isMe} isLastInGroup={isLastInGroup} theme={theme}
+                colorScheme={colorScheme} currentUserId={currentUserId} chatId={chatId}
+                targetSeller={targetSeller} bookImage={bookImage} chatLocation={chatLocation}
+                isFetchingBook={isFetchingBook} hasReviewed={hasReviewed} navigation={navigation}
+                onBookPress={handleBookPress} onOpenNavigation={handleOpenNavigation}
+                onResolveOffer={handleResolveOffer} onShowQRCode={handleShowQRCode}
+                onOpenScanner={handleOpenScanner} onCancelSwap={handleCancelSwap}
             />
         );
     }, [
@@ -95,16 +64,14 @@ export default function ChatRoomScreen({ route, navigation }) {
     ]);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.container}>
             <ChatHeader 
-                theme={theme}
-                navigation={navigation}
-                otherUserId={otherUserId}
-                otherUserAvatar={otherUserAvatar}
-                otherUserName={otherUserName}
+                theme={theme} navigation={navigation} otherUserId={otherUserId}
+                otherUserAvatar={otherUserAvatar} otherUserName={otherUserName}
                 handleOpenOptions={handleOpenOptions}
             />
 
+            {/* 1. FlatList is now OUTSIDE the KeyboardAvoidingView */}
             {loading ? (
                 <View style={styles.centerLoading}>
                     <ActivityIndicator size="large" color={theme.primary} />
@@ -114,24 +81,25 @@ export default function ChatRoomScreen({ route, navigation }) {
                     data={messages}
                     keyExtractor={(item) => item.id}
                     renderItem={renderMessageItem}
-                    inverted
+                    
+                    inverted={true} // 2. Put the normal inverted prop back
+                    
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled" 
                 />
             )}
 
-            <ChatInputBar 
-                theme={theme}
-                inputText={inputText}
-                setInputText={setInputText}
-                onSendPress={onSendPress}
-            />
+            {/* 3. KeyboardAvoidingView NOW ONLY WRAPS THE INPUT BAR */}
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={8} // Restored your original offset
+            >
+                <ChatInputBar 
+                    theme={theme} inputText={inputText}
+                    setInputText={setInputText} onSendPress={onSendPress}
+                />
+            </KeyboardAvoidingView>
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1 },
-    centerLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContainer: { paddingHorizontal: 16, paddingVertical: 12 },
-});

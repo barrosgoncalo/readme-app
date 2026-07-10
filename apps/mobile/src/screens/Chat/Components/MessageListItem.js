@@ -1,7 +1,8 @@
-import React, { memo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { memo, useMemo } from 'react';
+import { View } from 'react-native';
 import OfferMessageCard from '../../../components/ui/OfferMessageCard';
 import ChatBubble from '../../../components/ui/ChatBubble';
+import { buildChatRoomStyles } from '../../../styles/chatRoomStyles';
 
 const MessageListItem = memo(({
     item,
@@ -24,6 +25,8 @@ const MessageListItem = memo(({
     onOpenScanner,
     onCancelSwap
 }) => {
+    const styles = useMemo(() => buildChatRoomStyles(theme), [theme]);
+
     if (item.type === 'offer') {
         return (
             <View style={styles.offerCardContainer}>
@@ -59,10 +62,6 @@ const MessageListItem = memo(({
             colorScheme={colorScheme}
         />
     );
-});
-
-const styles = StyleSheet.create({
-    offerCardContainer: { width: '100%', alignItems: 'center', marginVertical: 12 },
 });
 
 export default MessageListItem;
