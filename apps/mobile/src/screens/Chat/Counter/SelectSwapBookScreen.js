@@ -31,13 +31,10 @@ export default function SelectSwapBookScreen({ route, navigation }) {
         }
     }, [offeredBooks, navigation, route.params]);
 
-    // 2. Add the handleBookPress function using your custom service
     const handleBookPress = async (bookId) => {
-        // If any book is currently fetching, block further presses
         if (!bookId || fetchingBookId) return;
 
         try {
-            // Set the state to this specific book's ID
             setFetchingBookId(bookId);
             const fullPublicationData = await PublicationService.fetchPublication(bookId);
 
@@ -52,7 +49,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
         } catch (error) {
             console.error("Failed to fetch full book details:", error);
         } finally {
-            // Clear the fetching state
             setFetchingBookId(null);
         }
     };
@@ -72,7 +68,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
         const isSelected = selectedBookId === item.id;
         const imageUrl = item.image || 'https://via.placeholder.com/150';
 
-        // Check if THIS specific card is the one currently fetching data
         const isThisItemLoading = fetchingBookId === item.id;
 
         return (
@@ -92,7 +87,6 @@ export default function SelectSwapBookScreen({ route, navigation }) {
 
                     <TouchableOpacity 
                         style={styles.detailsButton}
-                        // Disable button if any book is loading
                         disabled={fetchingBookId !== null} 
                         onPress={() => handleBookPress(item.id)}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

@@ -5,25 +5,20 @@ import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import QRCode from 'react-native-qrcode-svg';
 
-// Firestore imports
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 
 export default function ShowQRCodeScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     
-    // Unpack subcollection route parameters
     const { verificationCode, chatId, messageId } = route.params;
 
     // --- REAL-TIME LISTEN TO NESTED OFFER STATUS ---
     useEffect(() => {
-        // Safety check to ensure we have the complete subcollection path
         if (!chatId || !messageId) return;
 
         const db = getFirestore();
         
-        // Target: chats/{chatId}/messages/{messageId}
-        // Note: Change 'chats' if your root collection is named 'threads' or something else
         const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
 
         const unsubscribe = onSnapshot(messageRef, (snapshot) => {
