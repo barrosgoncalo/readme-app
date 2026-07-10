@@ -16,28 +16,15 @@ export function useLocationProposal(sellerLocations, mapRef) {
     const [geocodingCustom, setGeocodingCustom] = useState(false);
     const [currentRegion, setCurrentRegion] = useState(DEFAULT_MAP_VIEWPORT);
 
-    // Dynamic viewport side-effect management
-    useEffect(() => {
-        if (mapRef.current && sellerLocations.length > 0 && !isProposingAlternative) {
-            const viewportTimer = setTimeout(() => {
-                if (sellerLocations.length === 1) {
-                    mapRef.current.animateToRegion({
-                        latitude: sellerLocations[0].latitude,
-                        longitude: sellerLocations[0].longitude,
-                        latitudeDelta: 0.04, 
-                        longitudeDelta: 0.04,
-                    }, 1000); 
-                } else {
-                    mapRef.current.fitToCoordinates(sellerLocations, {
-                        edgePadding: { top: 80, right: 80, bottom: 360, left: 80 },
-                        animated: true,
-                    });
-                }
-            }, 400);
-
-            return () => clearTimeout(viewportTimer);
-        }
-    }, [sellerLocations, isProposingAlternative, mapRef]);
+    // NOTE: Camera framing (fitToCoordinates / animateToRegion) is intentionally
+    // NOT handled here anymore. The screen (SelectSwapLocationScreen) owns that
+    // responsibility via fitAllMarkers(), since it's the only place with full
+    // visibility into BOTH originalLocation (from offerDetails) AND
+    // sellerLocations. Having two independent effects both call fitToCoordinates
+    // on the same mapRef caused a race condition where this hook's effect
+    // (previously firing at 400ms) would run after and overwrite the screen's
+    // fit (at 100ms) — silently dropping originalLocation from the framed view
+    // every time, since this hook never had access to it.
 
     const handleReverseGeocode = async (coords) => {
         setGeocodingCustom(true);

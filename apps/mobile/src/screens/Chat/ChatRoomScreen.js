@@ -108,7 +108,7 @@ export default function ChatRoomScreen({ route, navigation }) {
 
     // --- REAL-TIME MESSAGES SUBCOLLECTION FEED ---
     useEffect(() => {
-        if (!chatId) {
+        if (!chatId || !currentUserId) {
             setLoading(false);
             return;
         }
@@ -123,13 +123,28 @@ export default function ChatRoomScreen({ route, navigation }) {
             }));
             setMessages(fetchedMessages);
             setLoading(false);
+
+            // --- NEW: MARK INCOMING MESSAGES AS READ ---
+            querySnapshot.docs.forEach(async (documentSnapshot) => {
+                const msg = documentSnapshot.data();
+                // If the message is from the OTHER user and isn't read yet
+                if (msg.senderId !== currentUserId && !msg.read) {
+                    try {
+                        const msgDocRef = doc(db, 'chats', chatId, 'messages', documentSnapshot.id);
+                        await updateDoc(msgDocRef, { read: true });
+                    } catch (error) {
+                        console.error("Error updating read status:", error);
+                    }
+                }
+            });
+
         }, (error) => {
             console.error("Error loading chat room messages:", error);
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, [chatId]);
+    }, [chatId, currentUserId]); // Make sure currentUserId is in the dependency array
 
     useEffect(() => {
         if (!chatId || !currentUserId) return;
@@ -234,6 +249,48 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
     };
 
+    const handleCancelSwap = async (messageId, bookId, finalSelectedBookId) => {
+        Alert.alert(
+            "Cancel Swap",
+            "Are you sure you want to cancel this agreed swap? The other user will be notified and allowed to review their experience with you.",
+            [
+                { text: "No, keep it", style: "cancel" },
+                { 
+                    text: "Yes, Cancel", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            // 1. Update status and mark WHO canceled it directly in the message document
+                            const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+                            await updateDoc(messageRef, {
+                                'offerDetails.status': 'cancelled',
+                                'offerDetails.cancelledBy': currentUserId
+                            });
+
+                            // 2. Un-reserve the primary book
+                            const targetBookId = bookId || publicationId;
+                            if (targetBookId) {
+                                const publicationRef = doc(db, 'publications', targetBookId);
+                                await updateDoc(publicationRef, { status: PUBLICATION_STATUS.AVAILABLE });
+                            }
+
+                            // 3. Un-reserve the exchange book
+                            if (finalSelectedBookId) {
+                                const exchangeRef = doc(db, 'publications', finalSelectedBookId);
+                                await updateDoc(exchangeRef, { status: PUBLICATION_STATUS.AVAILABLE });
+                            }
+
+                            Alert.alert("Swap Cancelled", "The swap was cancelled and books are available again.");
+                        } catch (error) {
+                            console.error("Error cancelling swap:", error);
+                            Alert.alert("Error", "Could not cancel the swap. Please try again.");
+                        }
+                    } 
+                }
+            ]
+        );
+    };
+
     const handleOpenNavigation = (location) => {
         if (!location || !location.latitude || !location.longitude) {
             Alert.alert("Location Error", "Coordinates are unavailable for this location.");
@@ -261,6 +318,55 @@ export default function ChatRoomScreen({ route, navigation }) {
         );
     };
 
+    const handleOpenOptions = () => {
+        Alert.alert(
+            "Chat Options",
+            "What would you like to do?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete Chat", 
+                    style: "destructive", 
+                    onPress: () => {
+                        const hasActiveSwap = messages.some(msg => 
+                            msg.type === 'offer' && 
+                                (msg.offerDetails?.status === 'pending' || msg.offerDetails?.status === 'accepted')
+                        );
+
+                        if (hasActiveSwap) {
+                            Alert.alert(
+                                "Action Blocked",
+                                "You have an active or pending swap in this chat! You must resolve or decline the proposal before deleting this conversation."
+                            );
+                        } else {
+                            // Safe to proceed with confirmation
+                            Alert.alert(
+                                "Confirm Delete",
+                                "Are you sure you want to delete this chat? It will be removed from your inbox.",
+                                [
+                                    { text: "Cancel", style: "cancel" },
+                                    { text: "Delete", style: "destructive", onPress: handleHideChat }
+                                ]
+                            );
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleHideChat = async () => {
+        try {
+            await ChatService.hideChat(chatId, currentUserId);
+
+            Alert.alert("Success", "Chat removed from your inbox.", [
+                { text: "OK", onPress: () => navigation.popToTop() }
+            ]);
+        } catch (error) {
+            Alert.alert("Detailed Error", error.message || JSON.stringify(error));
+        }
+    };
+
     const renderOfferCard = (item) => {
         const offer = item.offerDetails;
         const isReceivedOffer = item.senderId !== currentUserId;
@@ -286,7 +392,6 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
 
         // --- LÓGICA DE UI DA IMAGEM ---
-        // Verifica se devemos mostrar a imagem (seja por ser final/selecionada ou se só existe 1 livro na oferta)
         const hasSingleBookImage = offer?.offeredBooks?.length === 1 && offer?.offeredBooks[0]?.image;
         const imageToShow = offer?.finalSelectedBookImage || offer?.selectedBookImage || (hasSingleBookImage ? offer.offeredBooks[0].image : null);
 
@@ -330,11 +435,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                     {/* Right Side: Offered Book(s) */}
                     <View style={styles.bookColumn}>
                         <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
-                            {/* Altera o label se for apenas 1 livro */}
                             {(isCounterOffer || offer?.offeredBooks?.length === 1) ? "Offered Book" : "Options"}
                         </Text>
 
-                        {/* MOSTRA A IMAGEM SE HOUVER SÓ 1 LIVRO, CASO CONTRÁRIO MOSTRA O NÚMERO */}
                         {imageToShow ? (
                             <Image 
                                 source={{ uri: imageToShow }} 
@@ -404,11 +507,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                             style={[styles.actionButton, { backgroundColor: theme.primary || '#E58A1F' }]}
                             onPress={() => {
                                 if (!isCounterOffer) {
-                                    // --- LÓGICA DE NAVEGAÇÃO CORRIGIDA AQUI ---
                                     const offeredBooks = offer?.offeredBooks || [];
                                     
                                     if (offeredBooks.length === 1) {
-                                        // Salta diretamente para a localização
                                         navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, { 
                                             messageId: item.id, 
                                             chatId: chatId,
@@ -418,7 +519,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                                             selectedBookImage: offeredBooks[0].image || null
                                         });
                                     } else {
-                                        // Vai para a seleção de livros se houver 2 ou mais
                                         navigation.navigate(ROUTES.SELECT_SWAP_BOOK, { 
                                             messageId: item.id, 
                                             chatId: chatId,
@@ -445,9 +545,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </View>
                 )}
                 
-                {/* --- VERIFICATION HANDSHAKE UI --- */}
+                {/* --- VERIFICATION HANDSHAKE UI REESTRUTURADA --- */}
                 {offer?.status === 'accepted' && (
-                    <View style={styles.offerActions}>
+                    <View style={styles.acceptedWorkflowContainer}>
+                        {/* AÇÃO PRINCIPAL: BOTÃO DE QR CODE OU SCAN INTEIRO */}
                         {offer.verificationDisplayerId === currentUserId && (
                             <TouchableOpacity 
                                 style={[styles.actionButton, { backgroundColor: theme.primary }]}
@@ -455,7 +556,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                             >
                                 <Iconify icon="lucide:qr-code" size={18} color={theme.primaryText} style={{ marginRight: 8 }} />
                                 <Text style={[styles.acceptButtonText, { color: theme.primaryText }]}>
-                                    Show Swap Code
+                                    Show Code
                                 </Text>
                             </TouchableOpacity>
                         )}
@@ -479,6 +580,16 @@ export default function ChatRoomScreen({ route, navigation }) {
                                 </Text>
                             </TouchableOpacity>
                         )}
+
+                        {/* NOVA LINHA INTEGRADA PARA O CANCELAMENTO COM DESIGN PREMIUM */}
+                        <TouchableOpacity 
+                            style={[styles.cancelSwapButton, { borderColor: theme.borderLight }]}
+                            onPress={() => handleCancelSwap(item.id, offer?.targetBookId, offer?.selectedBookId)}
+                            activeOpacity={0.6}
+                        >
+                            <Iconify icon="lucide:ban" size={15} color="#EF4444" style={{ marginRight: 6 }} />
+                            <Text style={styles.cancelSwapButtonText}>Cancel Swap Agreement</Text>
+                        </TouchableOpacity>
                     </View>
                 )}
 
@@ -523,12 +634,63 @@ export default function ChatRoomScreen({ route, navigation }) {
                         </TouchableOpacity>
                     </View>
                 )}
+
+                {/* --- CANCELLED SWAP UI --- */}
+                {offer?.status === 'cancelled' && (
+                    <View style={styles.completedContainer}>
+                        <View style={styles.completedHeader}>
+                            <Text style={[styles.completedText, { color: '#EF4444', fontSize: 14 }]}>
+                                {offer.cancelledBy === currentUserId 
+                                    ? "You cancelled this swap agreement" 
+                                    : "The other user cancelled this swap agreement"}
+                            </Text>
+                        </View>
+
+                        {offer.cancelledBy !== currentUserId && (
+                            <TouchableOpacity 
+                                style={[
+                                    styles.actionButton, 
+                                    { 
+                                        backgroundColor: hasReviewed ? theme.backgroundElement : theme.textItemTitle, 
+                                        borderColor: hasReviewed ? theme.borderLight : 'transparent',
+                                        borderWidth: hasReviewed ? 1 : 0,
+                                        width: '100%' 
+                                    }
+                                ]}
+                                onPress={() => {
+                                    navigation.navigate(ROUTES.REVIEW_SWAPPER, { 
+                                        targetUserId: targetSeller?.uid || item.senderId,
+                                        chatId: chatId 
+                                    });
+                                }}
+                                disabled={hasReviewed}
+                            >
+                                <Iconify 
+                                    icon={hasReviewed ? "lucide:check-circle" : "lucide:star"} 
+                                    size={18} 
+                                    color={hasReviewed ? "#10B981" : theme.background} 
+                                    style={{ marginRight: 8 }} 
+                                />
+                                <Text style={[
+                                    styles.acceptButtonText, 
+                                    { color: hasReviewed ? theme.subtext : theme.background }
+                                ]}>
+                                    {hasReviewed ? "Review Submitted" : "Review User"}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
             </View>
         );
     };
 
-    const renderMessageItem = ({ item }) => {
+    const renderMessageItem = ({ item, index }) => {
         const isMe = item.senderId === currentUserId;
+        
+        // In an inverted FlatList, index 0 is the newest message (visually at the bottom).
+        // It is the "last in group" if it's at index 0, OR if the message below it (index - 1) is from a different sender.
+        const isLastInGroup = index === 0 || messages[index - 1]?.senderId !== item.senderId;
 
         if (item.type === 'offer') {
             return (
@@ -539,16 +701,53 @@ export default function ChatRoomScreen({ route, navigation }) {
         }
 
         return (
-            <View style={[styles.messageRow, { justifyContent: isMe ? 'flex-end' : 'flex-start' }]}>
+            <View style={[styles.messageRow, { justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: isLastInGroup ? 8 : 2 }]}>
                 <View style={[
                     styles.bubble, 
                     isMe 
-                        ? [styles.myBubble, { backgroundColor: theme.primary || '#E58A1F' }] 
-                        : [styles.theirBubble, { backgroundColor: theme.backgroundElement, borderColor: theme.borderLight, borderWidth: 1 }]
+                        ? [
+                            styles.myBubble, 
+                            { 
+                                backgroundColor: theme.primary, 
+                                paddingRight: 36, 
+                                paddingBottom: 14,
+                                // Dynamic radius: Apply tail ONLY if it's the last message in the block
+                                borderBottomRightRadius: isLastInGroup ? 4 : 16,
+                            }
+                          ] 
+                        : [
+                            styles.theirBubble, 
+                            { 
+                                backgroundColor: theme.backgroundElement, 
+                                borderColor: theme.borderLight, 
+                                borderWidth: 1,
+                                // Dynamic radius: Apply tail ONLY if it's the last message in the block
+                                borderBottomLeftRadius: isLastInGroup ? 4 : 16,
+                            }
+                          ]
                 ]}>
-                    <Text style={[styles.messageText, { color: isMe ? '#FFFFFF' : theme.textItemTitle }]}>
+                    <Text style={[styles.messageText, { color: isMe ? theme.primaryText : theme.textItemTitle }]}>
                         {item.text}
                     </Text>
+                    
+                    {/* --- READ RECEIPT --- */}
+                    {isMe && (
+                        <View style={{ 
+                            position: 'absolute', 
+                            bottom: 4, 
+                            right: 8 
+                        }}>
+                            <Iconify 
+                                icon={item.read ? "lucide:check-check" : "lucide:check"} 
+                                size={16} 
+                                color={
+                                    item.read 
+                                        ? (colorScheme === 'dark' ? theme.primaryText : theme.avatarBgTonal) 
+                                        : 'rgba(255, 255, 255, 0.35)'
+                                } 
+                            />
+                        </View>
+                    )}
                 </View>
             </View>
         );
@@ -585,7 +784,9 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </View>
                 </TouchableOpacity>
 
-                <View style={styles.headerSpacer} />
+                <TouchableOpacity onPress={handleOpenOptions} style={styles.optionsButton}>
+                    <Iconify icon="lucide:more-vertical" size={24} color={theme.textItemTitle} />
+                </TouchableOpacity>
             </SafeAreaView>
 
             {loading ? (
@@ -641,11 +842,13 @@ const styles = StyleSheet.create({
 
     listContainer: { paddingHorizontal: 16, paddingVertical: 12 },
     messageRow: { flexDirection: 'row', marginVertical: 4, width: '100%' },
-    bubble: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, maxWidth: '75%' },
-    myBubble: { borderBottomRightRadius: 4 },
-    theirBubble: { borderBottomLeftRadius: 4 },
-    messageText: { fontSize: 15, lineHeight: 20 },
-
+    // Reduced borderRadius from 20 to 16 for a slightly squarer, more modern look
+    bubble: { 
+        paddingHorizontal: 16, 
+        paddingVertical: 10, 
+        borderRadius: 16, 
+        maxWidth: '75%' 
+    },
     offerCardContainer: { width: '100%', alignItems: 'center', marginVertical: 12 },
     offerCard: { width: '90%', borderRadius: 16, borderWidth: 1, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
     offerHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
@@ -657,6 +860,28 @@ const styles = StyleSheet.create({
     declineButton: { backgroundColor: '#F3F4F6' },
     declineButtonText: { color: '#374151', fontWeight: '600', fontSize: 14 },
     acceptButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
+
+    // Novas estruturas para o fluxo aceito
+    acceptedWorkflowContainer: {
+        marginTop: 4,
+        width: '100%',
+        gap: 8
+    },
+    cancelSwapButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        backgroundColor: 'transparent',
+        marginTop: 4
+    },
+    cancelSwapButtonText: {
+        color: '#EF4444',
+        fontWeight: '600',
+        fontSize: 13,
+    },
 
     inputContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, alignItems: 'center', gap: 12 },
     input: { flex: 1, minHeight: 40, maxHeight: 100, borderRadius: 20, borderWidth: 1, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, fontSize: 15 },
@@ -732,5 +957,8 @@ const styles = StyleSheet.create({
         fontSize: 16, 
         fontWeight: '700', 
         color: '#10B981' 
-    }
+    },
+    optionsButton: { 
+        padding: 4 
+    },
 });

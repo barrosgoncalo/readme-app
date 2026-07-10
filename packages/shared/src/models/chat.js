@@ -14,8 +14,8 @@ export const createChatModel = (
     proposerId, 
     receiverId, 
     receiverName, 
-    targetBookId,      // Keep this parameter
-    targetBookImage,   // Keep this parameter
+    targetBookId,
+    targetBookImage,
     lastMessage = "Started a new conversation"
 ) => {
     return {
@@ -30,7 +30,8 @@ export const createChatModel = (
         
         lastMessage: lastMessage,
         status: "active",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: null,
+        updatedAt: null,
+        hiddenFor: []
     };
 };
