@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -22,9 +22,10 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { ChatService } from '@readme/shared/src/services/chat';
-import { ReviewService } from '@readme/shared/src/services/reviews';
 import { TradeService } from '@readme/shared/src/services/trades';
 import { LocationService } from '@readme/shared/src/services/location';
+
+import { useChatRoomData } from '@readme/shared/src/hooks/use-chat-room-data';
 
 import OfferMessageCard from '../../components/ui/OfferMessageCard';
 import ChatBubble from '../../components/ui/ChatBubble';
@@ -37,82 +38,23 @@ export default function ChatRoomScreen({ route, navigation }) {
     const { currentUser } = useAuth();
     const currentUserId = currentUser?.uid;
 
-    const [messages, setMessages] = useState([]);
+    // UI-specific state stays in the component
     const [inputText, setInputText] = useState('');
-    const [loading, setLoading] = useState(true);
-
-    const [otherUserName, setOtherUserName] = useState(
-        targetSeller?.name && targetSeller.name !== "Anonymous Swapper" ? targetSeller.name : "Loading..."
-    );
-    const [otherUserAvatar, setOtherUserAvatar] = useState(targetSeller?.avatarUrl || null);
-    const [otherUserId, setOtherUserId] = useState(targetSeller?.uid || null);
-    const [bookImage, setBookImage] = useState(null);
-    const [publicationId, setPublicationId] = useState(null);
-
-    // Fallback room metadata for counter offers
-    const [chatLocation, setChatLocation] = useState(null);
-
-    const [hasReviewed, setHasReviewed] = useState(false);
-
     const [isFetchingBook, setIsFetchingBook] = useState(false);
 
-    // --- CHAT METADATA ---
-    useEffect(() => {
-        if (!chatId || !currentUserId) return;
-
-        let cancelled = false;
-
-        ChatService.getChatMetadata(chatId, currentUserId, targetSeller)
-            .then(metadata => {
-                if (!metadata || cancelled) return;
-
-                if (metadata.publicationId) setPublicationId(metadata.publicationId);
-                setBookImage(metadata.bookImage);
-                if (metadata.chatLocation) setChatLocation(metadata.chatLocation);
-                if (metadata.otherUid) setOtherUserId(metadata.otherUid);
-                if (metadata.otherUserName) setOtherUserName(metadata.otherUserName);
-                if (metadata.otherUserAvatar) setOtherUserAvatar(metadata.otherUserAvatar);
-            })
-            .catch(error => console.error("Error fetching chat metadata:", error));
-
-        return () => { cancelled = true; };
-    }, [chatId, currentUserId, targetSeller?.uid]);
-
-    // --- MESSAGES FEED (replaces the whole messages useEffect) ---
-    useEffect(() => {
-        if (!chatId || !currentUserId) {
-            setLoading(false);
-            return;
-        }
-
-        const unsubscribe = ChatService.subscribeToMessagesOrdered(
-            chatId,
-            currentUserId,
-            (fetchedMessages) => {
-                setMessages(fetchedMessages);
-                setLoading(false);
-            },
-            (error) => {
-                console.error("Error loading chat room messages:", error);
-                setLoading(false);
-            }
-        );
-
-        return () => unsubscribe();
-    }, [chatId, currentUserId]);
-
-    // --- REVIEW STATUS (replaces the review useEffect) ---
-    useEffect(() => {
-        if (!chatId || !currentUserId) return;
-
-        const unsubscribe = ReviewService.subscribeToReviewStatus(
-            chatId, 
-            currentUserId, 
-            setHasReviewed
-        );
-
-        return () => unsubscribe();
-    }, [chatId, currentUserId]);
+    // 1. CALL YOUR CUSTOM HOOK HERE
+    // This replaces all the separate useState and useEffect blocks!
+    const {
+        messages,
+        loading,
+        otherUserName,
+        otherUserAvatar,
+        otherUserId,
+        bookImage,
+        publicationId,
+        chatLocation,
+        hasReviewed
+    } = useChatRoomData(chatId, currentUserId, targetSeller);
 
 
     const handleSendMessage = async () => {
@@ -244,7 +186,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                                 "You have an active or pending swap in this chat! You must resolve or decline the proposal before deleting this conversation."
                             );
                         } else {
-                            // Safe to proceed with confirmation
                             Alert.alert(
                                 "Confirm Delete",
                                 "Are you sure you want to delete this chat? It will be removed from your inbox.",
@@ -411,6 +352,7 @@ export default function ChatRoomScreen({ route, navigation }) {
         </View>
     );
 }
+
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
@@ -423,10 +365,8 @@ const styles = StyleSheet.create({
     headerSubtitle: { fontSize: 12, marginTop: 2 },
     headerSpacer: { width: 40 },
     centerLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
     listContainer: { paddingHorizontal: 16, paddingVertical: 12 },
     offerCardContainer: { width: '100%', alignItems: 'center', marginVertical: 12 },
-
     inputContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, alignItems: 'center', gap: 12 },
     input: { flex: 1, minHeight: 40, maxHeight: 100, borderRadius: 20, borderWidth: 1, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, fontSize: 15 },
     sendButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },

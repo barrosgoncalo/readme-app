@@ -29,7 +29,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { doGetBlockedUids } from '@readme/shared/src/services/block';
-import { PublicationService } from '@readme/shared/src/services/PublicationService';
+import { PublicationService } from '@readme/shared/src/services/publications';
 
 export default function ExploreScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
