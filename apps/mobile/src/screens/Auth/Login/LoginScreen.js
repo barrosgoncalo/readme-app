@@ -46,7 +46,6 @@ export default function LoginScreen({ navigation }) {
 
         setIsLoading(true);
         try {
-            // Using the unified function that includes the Suspension Bouncer
             const { userData } = await doSignInWithEmailAndPassword(email, password);
             console.log("Logged in successfully as:", userData.role);
         } catch (error) {
@@ -56,7 +55,6 @@ export default function LoginScreen({ navigation }) {
         }
     };
 
-    // Handle Google Login
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
         try {
