@@ -14,8 +14,6 @@ import BookCover from '../../../components/BookCover.jsx';
 import Spinner from '../../../components/Spinner.jsx';
 import Button from '../../../components/Button.jsx';
 import styles from './OfferMessage.module.css';
-import {fetchPublicationById} from '@readme/shared/src/services/publications';
-import {myBooksService} from '@readme/shared/src/services/books';
 
 const STATUS_COLORS = {
     pending: 'var(--secondary)',
@@ -63,9 +61,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                     if (!cancelled) setLoadingBooks(false);
                 });
 
-            return () => {
-                cancelled = true;
-            };
+            return () => cancelled = true;
         }
     }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
 

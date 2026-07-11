@@ -1,19 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { myBooksService } from '@readme/shared/src/services/books';
-import { getBook } from '@readme/shared/src/services/booksCatalog';
-import { getUserById } from '@readme/shared/src/services/users';
-import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
-import { BOOK_STATUS, BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
+import {useEffect, useRef, useState} from 'react';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {ArrowLeft} from 'lucide-react';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
+import {myBooksService} from '@readme/shared/src/services/books';
+import {getBook} from '@readme/shared/src/services/booksCatalog';
+import {getUserById} from '@readme/shared/src/services/users';
+import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
+import {BOOK_STATUS, BOOK_STATUS_LABELS} from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import BookCover from '../../components/BookCover.jsx';
-import { WEB_ROUTES } from '../../constants/webRoutes.js';
+import {WEB_ROUTES} from '../../constants/webRoutes.js';
 import styles from './BookDetail.module.css';
 
-function StarRating({ rating, onRate, disabled }) {
+function StarRating({rating, onRate, disabled}) {
     const [hovered, setHovered] = useState(null);
     const active = hovered ?? rating ?? 0;
 
@@ -44,7 +44,7 @@ function StarRating({ rating, onRate, disabled }) {
     );
 }
 
-function ReadOnlyStars({ rating }) {
+function ReadOnlyStars({rating}) {
     const filled = rating ?? 0;
     return (
         <div className={styles.stars} role="img" aria-label={filled ? `${filled} out of 5 stars` : 'Not rated'}>
@@ -52,7 +52,7 @@ function ReadOnlyStars({ rating }) {
                 <span
                     key={n}
                     className={`${styles.starBtn} ${n <= filled ? styles.starFilled : styles.starEmpty}`}
-                    style={{ cursor: 'default' }}
+                    style={{cursor: 'default'}}
                 >
                     ★
                 </span>
@@ -63,15 +63,17 @@ function ReadOnlyStars({ rating }) {
 }
 
 export default function BookDetail() {
-    const { bookId } = useParams();
+    const {bookId} = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
     const uid = currentUser?.uid;
 
     // If ?owner=<uid> is present and differs from the current user, show read-only view.
     const ownerUid = searchParams.get('owner');
     const isOwnBook = !ownerUid || ownerUid === uid;
+
+    const fromOrigin = searchParams.get('from');
 
     const [catalog, setCatalog] = useState(null);
     const [myBook, setMyBook] = useState(null);
@@ -90,9 +92,11 @@ export default function BookDetail() {
 
     useEffect(() => {
         if (!uid || !bookId) return;
+
         setLoading(true);
         setError(null);
         const targetUid = isOwnBook ? uid : ownerUid;
+
         Promise.all([
             getBook(bookId),
             myBooksService.getBookData(targetUid, bookId),
@@ -109,21 +113,21 @@ export default function BookDetail() {
     }, [uid, bookId, ownerUid, isOwnBook]);
 
     async function handleStatusChange(status) {
-        setMyBook(prev => ({ ...prev, status }));
+        setMyBook(prev => ({...prev, status}));
         try {
-            await myBooksService.updateBook(uid, bookId, { status });
+            await myBooksService.updateBook(uid, bookId, {status});
         } catch {
-            setMyBook(prev => ({ ...prev, status: myBook?.status }));
+            setMyBook(prev => ({...prev, status: myBook?.status}));
         }
     }
 
     async function handleRate(rating) {
         const newRating = rating === 0 ? null : rating;
-        setMyBook(prev => ({ ...prev, rating: newRating }));
+        setMyBook(prev => ({...prev, rating: newRating}));
         try {
-            await myBooksService.updateBook(uid, bookId, { rating: newRating });
+            await myBooksService.updateBook(uid, bookId, {rating: newRating});
         } catch {
-            setMyBook(prev => ({ ...prev, rating: myBook?.rating }));
+            setMyBook(prev => ({...prev, rating: myBook?.rating}));
         }
     }
 
@@ -132,10 +136,11 @@ export default function BookDetail() {
         setNotes(val);
         setNotesSaved(false);
         clearTimeout(notesTimer.current);
+
         notesTimer.current = setTimeout(async () => {
             setSavingNotes(true);
             try {
-                await myBooksService.updateBook(uid, bookId, { notes: val });
+                await myBooksService.updateBook(uid, bookId, {notes: val});
                 setNotesSaved(true);
                 setTimeout(() => setNotesSaved(false), 2000);
             } finally {
@@ -167,7 +172,7 @@ export default function BookDetail() {
                 const pageCount = catalog?.pageCount || 0;
                 const pct = pageCount > 0 ? Math.round((finalPage / pageCount) * 100) : Math.min(finalPage, 100);
 
-                const updates = { currentPage: finalPage, progress: pct };
+                const updates = {currentPage: finalPage, progress: pct};
                 let newStatus = status;
 
                 if (pageCount > 0 && finalPage >= pageCount && status !== BOOK_STATUS.DONE) {
@@ -179,7 +184,7 @@ export default function BookDetail() {
                 }
 
                 await myBooksService.updateBook(uid, bookId, updates);
-                setMyBook(prev => ({ ...prev, currentPage: finalPage, progress: pct, status: newStatus }));
+                setMyBook(prev => ({...prev, currentPage: finalPage, progress: pct, status: newStatus}));
             } finally {
                 setSavingProgress(false);
             }
@@ -194,17 +199,26 @@ export default function BookDetail() {
 
     return (
         <div className={styles.page}>
-            <button type="button" className={styles.backBtn} onClick={() => navigate(isOwnBook ? WEB_ROUTES.BOOKS : -1)}>
-                <ArrowLeft size={18} />
-                {isOwnBook ? 'My Books' : 'Back'}
+            <button
+                type="button"
+                className={styles.backBtn}
+                onClick={() => {
+                    if (fromOrigin === 'chat')
+                        navigate(-1);
+                    else
+                        navigate(isOwnBook ? WEB_ROUTES.BOOKS : -1);
+                }}
+            >
+                <ArrowLeft size={18}/>
+                {fromOrigin === 'chat' ? 'Back to Chat' : (isOwnBook ? 'My Books' : 'Back')}
             </button>
 
             {loading ? (
-                <Spinner center label="Loading book" />
+                <Spinner center label="Loading book"/>
             ) : error ? (
                 <ErrorAlert>{error}</ErrorAlert>
             ) : isOwnBook ? (
-                // ── Owner view: full editing controls ──
+
                 <>
                     <div className={styles.hero}>
                         <BookCover
@@ -223,9 +237,15 @@ export default function BookDetail() {
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Reading status</p>
                         <div className={styles.statusToggle}>
-                            <button type="button" className={`${styles.statusBtn} ${status === BOOK_STATUS.READING ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange(BOOK_STATUS.READING)}>{BOOK_STATUS_LABELS[BOOK_STATUS.READING]}</button>
-                            <button type="button" className={`${styles.statusBtn} ${status === BOOK_STATUS.DONE ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange(BOOK_STATUS.DONE)}>{BOOK_STATUS_LABELS[BOOK_STATUS.DONE]}</button>
-                            <button type="button" className={`${styles.statusBtn} ${status === BOOK_STATUS.WANT ? styles.statusBtnActive : ''}`} onClick={() => handleStatusChange(BOOK_STATUS.WANT)}>{BOOK_STATUS_LABELS[BOOK_STATUS.WANT]}</button>
+                            <button type="button"
+                                    className={`${styles.statusBtn} ${status === BOOK_STATUS.READING ? styles.statusBtnActive : ''}`}
+                                    onClick={() => handleStatusChange(BOOK_STATUS.READING)}>{BOOK_STATUS_LABELS[BOOK_STATUS.READING]}</button>
+                            <button type="button"
+                                    className={`${styles.statusBtn} ${status === BOOK_STATUS.DONE ? styles.statusBtnActive : ''}`}
+                                    onClick={() => handleStatusChange(BOOK_STATUS.DONE)}>{BOOK_STATUS_LABELS[BOOK_STATUS.DONE]}</button>
+                            <button type="button"
+                                    className={`${styles.statusBtn} ${status === BOOK_STATUS.WANT ? styles.statusBtnActive : ''}`}
+                                    onClick={() => handleStatusChange(BOOK_STATUS.WANT)}>{BOOK_STATUS_LABELS[BOOK_STATUS.WANT]}</button>
                         </div>
                     </div>
 
@@ -263,14 +283,15 @@ export default function BookDetail() {
 
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Your rating</p>
-                        <StarRating rating={myBook?.rating ?? null} onRate={handleRate} />
+                        <StarRating rating={myBook?.rating ?? null} onRate={handleRate}/>
                     </div>
 
                     <div className={styles.section}>
                         <div className={styles.sectionLabelRow}>
                             <p className={styles.sectionLabel}>Your notes</p>
                             {savingNotes && <span className={styles.saveStatus}>Saving…</span>}
-                            {notesSaved && <span className={`${styles.saveStatus} ${styles.saveStatusDone}`}>Saved</span>}
+                            {notesSaved &&
+                                <span className={`${styles.saveStatus} ${styles.saveStatusDone}`}>Saved</span>}
                         </div>
                         <textarea
                             className={styles.textarea}
@@ -282,7 +303,7 @@ export default function BookDetail() {
                     </div>
                 </>
             ) : (
-                // ── Read-only view: cover + meta + owner's rating & notes ──
+
                 <>
                     <div className={styles.hero}>
                         <BookCover
@@ -301,8 +322,10 @@ export default function BookDetail() {
                     <div className={styles.section}>
                         <p className={styles.sectionLabel}>Rating</p>
                         {myBook?.rating
-                            ? <ReadOnlyStars rating={myBook.rating} />
-                            : <p className={styles.emptyField}>{ownerProfile?.username ? `@${ownerProfile.username}` : 'This user'} hasn&rsquo;t rated this book yet!</p>
+                            ? <ReadOnlyStars rating={myBook.rating}/>
+                            :
+                            <p className={styles.emptyField}>{ownerProfile?.username ? `@${ownerProfile.username}` : 'This user'} hasn&rsquo;t
+                                rated this book yet!</p>
                         }
                     </div>
 
@@ -310,7 +333,9 @@ export default function BookDetail() {
                         <p className={styles.sectionLabel}>Review</p>
                         {myBook?.notes
                             ? <p className={styles.readOnlyNotes}>{myBook.notes}</p>
-                            : <p className={styles.emptyField}>{ownerProfile?.username ? `@${ownerProfile.username}` : 'This user'} hasn&rsquo;t reviewed this book yet.</p>
+                            :
+                            <p className={styles.emptyField}>{ownerProfile?.username ? `@${ownerProfile.username}` : 'This user'} hasn&rsquo;t
+                                reviewed this book yet.</p>
                         }
                     </div>
                 </>
