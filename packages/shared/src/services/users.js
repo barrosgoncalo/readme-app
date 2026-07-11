@@ -15,6 +15,23 @@ import { DB } from './DB';
 const USERS_COLLECTION = 'users';
 
 export const UsersService = {
+
+    /**
+    * Resolves a display name from either a canonical Firestore user doc
+    * (username/fullName) or a raw Firebase Auth user object (displayName),
+    * in case currentUser is ever the latter.
+    */
+    getDisplayName: (user) => {
+        return user?.username || user?.fullName || user?.displayName || 'Anonymous Swapper';
+    },
+
+    /**
+    * Resolves an avatar URL from either shape.
+    */
+    getAvatarUrl: (user) => {
+        return user?.photoURL || null;
+    },
+
     /**
      * Fetches a user's profile and checks if the current user is following them.
      * @param {string} userId - The ID of the profile being viewed

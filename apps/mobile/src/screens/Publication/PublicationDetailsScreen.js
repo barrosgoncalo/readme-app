@@ -11,6 +11,8 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildBookDetailsStyles } from '../../styles/publicationDetailsStyles';
 import { usePublicationDetails } from '@readme/shared/src/hooks/use-publication-details';
+
+import { UsersService } from '@readme/shared/src/services/users';
 import { PublicationService } from '@readme/shared/src/services/publications';
 
 import { useOffer } from '@readme/shared/src/contexts/OfferContext';
@@ -52,8 +54,8 @@ export default function PublicationDetailsScreen({ route, navigation }) {
 
     const sellerRating = Number(seller?.rating) || 0;
     const sellerReviewCount = Number(seller?.reviewCount ?? seller?.reviews) || 0;
-    const sellerName = seller?.username || "Anonymous Swapper";
-    const sellerAvatar = seller?.photoURL || null;
+    const sellerName = UsersService.getDisplayName(seller);
+    const sellerAvatar = UsersService.getAvatarUrl(seller);
 
     const { startOffer } = useOffer();
 

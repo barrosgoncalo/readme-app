@@ -31,6 +31,8 @@ export const createPublicationModel = (uid, sellerName, sellerAvatar, bookData, 
             subject: bookData?.subject || "Not specified"
         },
 
+        createdAt: null,
+
         detailsText: detailsText.trim(),
 
         stats: {

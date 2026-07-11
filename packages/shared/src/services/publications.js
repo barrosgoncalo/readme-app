@@ -1,6 +1,7 @@
 import { DB } from './DB';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 import { createPublicationModel } from '../models/publication';
+import { UsersService } from './users'; 
 import { StorageService } from './storage';
 
 // ==========================================
@@ -52,8 +53,8 @@ export const PublicationService = {
             throw error;
         }
 
-        const sellerName = currentUser?.username || currentUser?.displayName || currentUser?.name || 'Anonymous Swapper';
-        const sellerAvatar = currentUser?.photoURL || currentUser?.profilePicture || currentUser?.avatarUrl || null;
+        const sellerName = UsersService.getDisplayName(currentUser);
+        const sellerAvatar = UsersService.getAvatarUrl(currentUser);
 
         const publicationData = createPublicationModel(
             currentUser.uid,

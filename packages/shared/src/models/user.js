@@ -20,8 +20,6 @@ export const createUserModel = (uid, profileData, provider) => {
             country: profileData.country
         },
 
-        // TODO: include chat ids cache
-
         rating: 0,
         reviewCount: 0,
 
@@ -34,7 +32,7 @@ export const createUserModel = (uid, profileData, provider) => {
             badges: []
         },
 
-        createdAt: new Date().toISOString(),
+        createdAt: null,
         photoURL: profileData.photoURL || null,
         role: 'user',
         accountStatus: 'active',
