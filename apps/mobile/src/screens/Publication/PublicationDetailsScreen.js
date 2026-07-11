@@ -25,6 +25,16 @@ const extractBookDetails = (passedItem) => {
     };
 };
 
+/**
+ * @typedef {Object} PublicationDetailsParams
+ * @property {Object} publication - Required. A publication summary or raw doc
+ *   (either shape is normalized via PublicationService.normalizePublicationDetails).
+ * @property {Object} [seller] - Optional. Seller profile data ({ username, photoURL, rating, ... }).
+ *   Pass when available to avoid a loading flash; PublicationDetailsScreen will
+ *   fetch it independently via usePublicationDetails if omitted.
+ * @property {boolean} [hideOfferButton] - Optional. Hides "Make an Offer" (e.g. viewing your own listing via a public route).
+ * @property {boolean} [hideSellerCard] - Optional. Hides the seller card (e.g. public-profile context where it's redundant).
+ */
 export default function PublicationDetailsScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];

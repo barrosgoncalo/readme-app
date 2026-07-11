@@ -13,7 +13,7 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildOfferFlowStyles } from '../../styles/offerFlowStyles';
 
 // Consolidated Domain Architectures
-import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
+import { useSellerLocations } from '@readme/shared/src/hooks/use-seller-locations';
 import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
 import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
 import ScreenHeader from '../../components/ui/ScreenHeader';

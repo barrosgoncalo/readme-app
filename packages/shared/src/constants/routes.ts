@@ -17,7 +17,10 @@ export const ROUTES = {
     BOOK_DETAILS: 'BooksDetails',
     SEARCH: 'Search',
     PUBLICATION: 'Publication',
+    /** @see PublicationDetailsParams in screens/Publication/PublicationDetailsScreen.js */
     PUBLICATION_DETAILS: 'PublicationDetails',
+    /** @see MyPublicationDetailsParams in screens/Profile/MyBooks/MyPublicationDetailsScreen.js */
+    MY_PUBLICATION_DETAILS: 'MyPublicationDetails',
     STEP_ONE_OFFER: 'StepOneOffer',
     STEP_TWO_OFFER: 'StepTwoOffer',
     PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen',
@@ -30,5 +33,4 @@ export const ROUTES = {
     QR_SCANNER: 'ScanQrCode',
     REVIEW_SWAPPER: 'Review',
     MY_BOOKS: 'MyBooks',
-    MY_PUBLICATION_DETAILS: 'MyPublicationDetails',
 } as const;

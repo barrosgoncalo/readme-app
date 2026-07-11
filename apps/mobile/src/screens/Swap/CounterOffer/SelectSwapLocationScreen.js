@@ -7,7 +7,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ChatService } from '@readme/shared/src/services/chat';
 
 // Map Architectures
-import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
+import { useSellerLocations } from '@readme/shared/src/hooks/use-seller-locations';
 import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
 import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
 import ScreenHeader from '../../../components/ui/ScreenHeader';

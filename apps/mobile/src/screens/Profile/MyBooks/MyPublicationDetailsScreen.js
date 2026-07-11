@@ -20,6 +20,12 @@ const extractBookDetails = (passedItem) => {
     };
 };
 
+/**
+ * @typedef {Object} MyPublicationDetailsParams
+ * @property {Object} publication - Required. A publication summary or raw doc,
+ *   normalized via PublicationService.normalizePublicationDetails.
+ *   No `seller` param — this screen never renders a seller card (it's always the current user's own listing).
+ */
 export default function MyPublicationDetailsScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];

@@ -1,4 +1,3 @@
-// src/screens/CreateAnnouncementScreen.js
 import React, { useState } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import {
