@@ -20,7 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { GoogleBooksService } from '@readme/shared/src/services/googleBooks';
-import { myBooksService } from '@readme/shared/src/services/books';
+import { MyBooksService } from '@readme/shared/src/services/books';
 
 export default function SearchBookScreen() {
     const navigation = useNavigation();
@@ -60,7 +60,7 @@ export default function SearchBookScreen() {
         setSavingBookId(book.bookId);
 
         try {
-            await myBooksService.saveBookToShelf(currentUser.uid, book, 'reading');
+            await MyBooksService.saveBookToShelf(currentUser.uid, book, 'reading');
 
             Alert.alert(
                 'Success!', 

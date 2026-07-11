@@ -1,5 +1,4 @@
 // @readme/shared/src/services/books.js
-import { db } from "./firebase"; // You might not even need this import anymore depending on if other models use it!
 import { createUserBookModel } from "../models/book";
 import ImageColors from 'react-native-image-colors';
 
@@ -134,10 +133,10 @@ class BookCollectionService {
     }
 }
 
-export const favoriteBooksService = new BookCollectionService("favoriteBooks");
-export const myBooksService = new BookCollectionService("myBooks");
+export const FavoriteBooksService = new BookCollectionService("favoriteBooks");
+export const MyBooksService = new BookCollectionService("myBooks");
 
-export const globalBooksService = {
+export const GlobalBooksService = {
     /**
      * Checks if a book already exists in our global Firebase cache by ISBN
      */

@@ -17,7 +17,7 @@ import { Iconify } from 'react-native-iconify';
 import { buildShelfStyles } from '../../styles/shelfStyles';
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { myBooksService } from '@readme/shared/src/services/books'; 
+import { MyBooksService } from '@readme/shared/src/services/books'; 
 
 import AddBookPopup from './AddBookPopup';
 
@@ -49,7 +49,7 @@ export default function ReadingListScreen({ navigation }) {
         const newPercentage = Math.round((boundedPage / safeTotal) * 100);
 
         try {
-            await myBooksService.updateBook(currentUser.uid, bookId, {
+            await MyBooksService.updateBook(currentUser.uid, bookId, {
                 currentPage: boundedPage,
                 progressPercentage: newPercentage,
                 ...(boundedPage === safeTotal && { 
@@ -93,7 +93,7 @@ export default function ReadingListScreen({ navigation }) {
         }
 
         try {
-            await myBooksService.deleteBook(currentUser.uid, targetId);
+            await MyBooksService.deleteBook(currentUser.uid, targetId);
             setBooks(prevBooks => prevBooks.filter(book => (book.bookId || book.id) !== targetId));
         } catch (error) {
             console.error("Failed to delete book:", error);
@@ -109,7 +109,7 @@ export default function ReadingListScreen({ navigation }) {
             const fetchBooks = async () => {
                 if (!currentUser?.uid) return;
                 try {
-                    const userBooks = await myBooksService.getBooks(currentUser.uid);
+                    const userBooks = await MyBooksService.getBooks(currentUser.uid);
                     setBooks(userBooks);
                 } catch (error) {
                     console.error("Error fetching books:", error);

@@ -1,4 +1,3 @@
-// @readme/shared/src/screens/BarcodeScannerScreen.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
@@ -21,8 +20,8 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 
 // ─── SERVICES & MODELS ──────────
 import { GoogleBooksService } from '@readme/shared/src/services/googleBooks';
-import { globalBooksService } from '@readme/shared/src/services/books';
-import { myBooksService } from '@readme/shared/src/services/books';
+import { GlobalBooksService } from '@readme/shared/src/services/books';
+import { MyBooksService } from '@readme/shared/src/services/books';
 
 export default function BarcodeScannerScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -74,10 +73,10 @@ export default function BarcodeScannerScreen({ navigation }) {
         setLoading(true);
 
         try {
-            let bookResult = await globalBooksService.getBookByIsbn(data);
+            let bookResult = await GlobalBooksService.getBookByIsbn(data);
 
             if (!bookResult) {
-                bookResult = await GoogleBooksService.getBookByIsbn(data); // Missing import caused the crash here!
+                bookResult = await GoogleBooksService.getBookByIsbn(data);
             }
 
             setScannedBook(bookResult);
@@ -107,8 +106,7 @@ export default function BarcodeScannerScreen({ navigation }) {
         setIsSaving(true);
 
         try {
-            // The service handles the color extraction automatically now!
-            await myBooksService.saveBookToShelf(currentUser.uid, scannedBook, 'reading');
+            await MyBooksService.saveBookToShelf(currentUser.uid, scannedBook, 'reading');
 
             Alert.alert(
                 'Success!', 
