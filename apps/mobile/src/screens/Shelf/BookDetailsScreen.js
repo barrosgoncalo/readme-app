@@ -10,29 +10,20 @@ import {
 import { buildBookDetailsStyles } from '../../styles/bookDetailsStyle'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@readme/shared/src/constants/theme';
-import { useNavigation } from '@react-navigation/native';
 import { Iconify } from 'react-native-iconify';
 
-export default function BookDetailsScreen({ route }) {
-
-    const navigation = useNavigation();
+export default function BookDetailsScreen({ route, navigation }) {
     const insets = useSafeAreaInsets();
-
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-
     const styles = buildBookDetailsStyles();
-
     const { book } = route.params || {};
     const bookData = book?.bookDetails || book || {};
-
     const title = bookData.title || 'Unknown Title';
     const authors = bookData.authors?.join(', ') || 'Unknown Author';
     const coverUrl = bookData.coverUrl;
-
     const rawDescription = bookData.description || 'No description available for this book.';
     const cleanDescription = rawDescription.replace(/<[^>]+>/g, '');
-
     return (
         <View 
             style={[
@@ -49,7 +40,6 @@ export default function BookDetailsScreen({ route }) {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-
                 {/* ── Back Button ── */}
                 <TouchableOpacity 
                     style={styles.backButton} 
@@ -58,7 +48,6 @@ export default function BookDetailsScreen({ route }) {
                 >
                     <Iconify icon="lucide:arrow-left" size={22} color={theme.text} />
                 </TouchableOpacity>
-
                 {/* ── Header ── */}
                 {/* Forcing text colors inline to bypass cache */}
                 <Text style={[styles.title, { color: theme.text }]} numberOfLines={2} ellipsizeMode="tail">
@@ -67,7 +56,6 @@ export default function BookDetailsScreen({ route }) {
                 <Text style={[styles.subtitle, { color: theme.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
                     {authors}
                 </Text>
-
                 {/* ── Book Cover with Shadow ── */}
                 <View style={styles.imageContainer}>
                     {coverUrl ? (
@@ -82,13 +70,11 @@ export default function BookDetailsScreen({ route }) {
                             </View>
                         )}
                 </View>
-
                 {/* ── Description Section ── */}
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Description</Text>
                 <Text style={[styles.descriptionText, { color: theme.textMuted }]}>
                     {cleanDescription}
                 </Text>
-
             </ScrollView>
         </View>
     );

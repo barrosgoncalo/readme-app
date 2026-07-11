@@ -95,19 +95,31 @@ export const GoogleBooksService = {
     },
 
     async searchBooks(query) {
-        try {
-            const url = `${GOOGLE_BOOKS_BASE_URL}?q=${encodeURIComponent(query)}&maxResults=10&key=${API_KEY}`;
+        const url = `${GOOGLE_BOOKS_BASE_URL}?q=${encodeURIComponent(query)}&maxResults=10&key=${API_KEY}`;
+
+        const attemptFetch = async () => {
             const response = await fetch(url);
             const data = await response.json();
 
-            if (!data.items) return [];
+            if (data.error) {
+                throw new Error(`Google Books API error ${data.error.code}: ${data.error.message}`);
+            }
 
-            // Use the Google Adapter for text searches
-            return data.items.map(item => mapGoogleBook(item));
+            return data.items ? data.items.map(item => mapGoogleBook(item)) : [];
+        };
 
-        } catch (error) {
-            console.error("Error searching books:", error);
-            throw error;
+        try {
+            return await attemptFetch();
+        } catch (firstError) {
+            console.warn("[GoogleBooks searchBooks] First attempt failed, retrying once:", firstError.message);
+            try {
+                // Brief delay before retry — transient backend failures often clear within ~1s
+                await new Promise(resolve => setTimeout(resolve, 800));
+                return await attemptFetch();
+            } catch (secondError) {
+                console.error("[GoogleBooks searchBooks] Retry also failed:", secondError.message);
+                throw secondError;
+            }
         }
     }
 };
