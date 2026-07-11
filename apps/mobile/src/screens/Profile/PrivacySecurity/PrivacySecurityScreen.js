@@ -146,9 +146,9 @@ export default function PrivacySecurityScreen({ navigation }) {
                             theme={theme}
                             icon="uiw:user-delete"
                             label="Delete Account"
-                            textColor={Colors.password?.red || '#F13B2D'}
-                            iconColor={Colors.password?.red || '#F13B2D'}
-                            iconBgColor={`${Colors.password?.red || '#F13B2D'}35`}
+                            textColor={Colors.password?.red}
+                            iconColor={Colors.password?.red}
+                            iconBgColor={`${Colors.password?.red}35`}
                             onPress={handleDeleteAccount}
                         />
                     </MenuGroup>
