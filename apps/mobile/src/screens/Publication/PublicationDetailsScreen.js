@@ -53,10 +53,10 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     // --- Route Parsing ---
     const passedData = route?.params?.publication;
     const book = extractBookDetails(passedData);
-
     const passedSeller = route?.params?.seller;
 
     const hideOfferButton = route?.params?.hideOfferButton || false;
+    const hideSellerCard = route?.params?.hideSellerCard || false;
 
     // --- Data & Logic Layer ---
     const { seller, isFavorited, handleToggleFavorite } = usePublicationDetails(book, passedSeller);
@@ -178,30 +178,32 @@ export default function PublicationDetailsScreen({ route, navigation }) {
                     <Text style={styles.description}>{book.description}</Text>
 
                     {/* --- SELLER CARD --- */}
-                    <TouchableOpacity
-                        style={styles.sellerCard}
-                        onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { 
-                            ownerId: book?.ownerId
-                        })}
-                    >
-                        <View style={styles.sellerInfoLeft}>
-                            <Image 
-                                source={sellerAvatar ? { uri: sellerAvatar } : null} 
-                                style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]} 
-                                contentFit="cover" 
-                            />
-                            <View>
-                                <Text style={styles.sellerName}>{sellerName}</Text>
-                                <View style={styles.ratingContainer}>
-                                    <GranularRating rating={sellerRating} theme={theme} />
-                                    <Text style={styles.reviewsCount}>
-                                        {sellerReviewCount > 0 ? `(${sellerReviewCount})` : 'No reviews yet'}
-                                    </Text>
+                    {!hideSellerCard && (
+                        <TouchableOpacity
+                            style={styles.sellerCard}
+                            onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { 
+                                ownerId: book?.ownerId
+                            })}
+                        >
+                            <View style={styles.sellerInfoLeft}>
+                                <Image 
+                                    source={sellerAvatar ? { uri: sellerAvatar } : null} 
+                                    style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]} 
+                                    contentFit="cover" 
+                                />
+                                <View>
+                                    <Text style={styles.sellerName}>{sellerName}</Text>
+                                    <View style={styles.ratingContainer}>
+                                        <GranularRating rating={sellerRating} theme={theme} />
+                                        <Text style={styles.reviewsCount}>
+                                            {sellerReviewCount > 0 ? `(${sellerReviewCount})` : 'No reviews yet'}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
-                        <Iconify icon="lucide:chevron-right" size={20} color="#333333" />
-                    </TouchableOpacity>
+                            <Iconify icon="lucide:chevron-right" size={20} color="#333333" />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScrollView>
 

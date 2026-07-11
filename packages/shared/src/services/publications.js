@@ -13,6 +13,7 @@ const _mapPublicationSummary = (doc) => ({
     author: doc.book?.author || 'Unknown Author',
     imageUrl: (doc.book?.images?.length > 0 ? doc.book.images[0] : 'https://via.placeholder.com/400x600'),
     ownerId: doc.uid,
+    rawDocData: doc,
 });
 
 const _mapPublicationDetails = (doc) => ({

@@ -164,16 +164,20 @@ export default function PublicProfileScreen({ navigation, route }) {
                     <TouchableOpacity 
                         key={item.id} 
                         style={styles.publicationCard}
-                        onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
-                            publicationId: item.id,
-                            publication: item,
+                        onPress={() => navigation.navigate({
+                            name: ROUTES.PUBLICATION_DETAILS,
+                            key: `PublicationDetails-${item.id}`,
+                            params: { 
+                                publicationId: item.id,
+                                publication: item.rawDocData, 
+                            }
                         })}
                         activeOpacity={0.8}
                     >
                         <View style={styles.bookCoverPlaceholder}>
-                            {item.book?.images && item.book.images.length > 0 ? (
+                            {item.imageUrl ? (
                                 <Image 
-                                    source={{ uri: item.book.images[0] }} 
+                                    source={{ uri: item.imageUrl }} 
                                     style={styles.bookCoverImage}
                                     contentFit="cover"
                                     transition={200}
@@ -184,7 +188,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                         </View>
                         <View style={styles.bookInfo}>
                             <Text style={styles.bookTitle} numberOfLines={1}>
-                                {item.book?.title || 'Untitled Book'}
+                                {item.title || 'Untitled Book'}
                             </Text>
                         </View>
                     </TouchableOpacity>
