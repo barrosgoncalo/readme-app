@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
     View, 
     Text, 
@@ -13,12 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 
 // Internal Architecture
-import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { PublicationService } from '@readme/shared/src/services/publications';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { buildOfferFlowStyles } from '../../styles/offerFlowStyles';
 import { BookCard } from '../../components/ui/BookCard';
+import { useMyBooks } from '@readme/shared/src/hooks/use-my-books';
 
 import { useOffer } from '@readme/shared/src/contexts/OfferContext';
 
@@ -27,31 +26,11 @@ export default function StepOneOfferScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildOfferFlowStyles(theme);
-    
-    const { currentUser } = useAuth();
+
     const { updateOfferedBooks } = useOffer();
 
-    const [myBooks, setMyBooks] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { myBooks, loading } = useMyBooks();
     const [selectedBooks, setSelectedBooks] = useState([]);
-
-    useEffect(() => {
-        const fetchMyBooks = async () => {
-            if (!currentUser?.uid) {
-                setLoading(false);
-                return;
-            }
-            try {
-                const books = await PublicationService.fetchUserPublications(currentUser.uid);
-                setMyBooks(books);
-            } catch (error) {
-                console.error("[StepOneOfferScreen] Failed to load books:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchMyBooks();
-    }, [currentUser?.uid]);
 
     const handleBookPress = useCallback((book) => {
         setSelectedBooks((prevSelected) => {
