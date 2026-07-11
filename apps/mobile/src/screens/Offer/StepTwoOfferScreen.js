@@ -5,11 +5,12 @@ import {
     ActivityIndicator,
     Text,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { buildOfferFlowStyles } from '../../styles/offerFlowStyles'; // <-- Import the new style builder
+import { buildOfferFlowStyles } from '../../styles/offerFlowStyles';
 
 // Consolidated Domain Architectures
 import { useSellerLocations } from '@readme/shared/src/hooks/user-seller-locations';
@@ -24,19 +25,29 @@ import OfferBottomDock from '../../components/ui/OfferBottomDock';
 // Services
 import { ChatService } from '@readme/shared/src/services/chat';
 
+// Contexts
+import { useOffer } from '@readme/shared/src/contexts/OfferContext';
+
 export default function StepTwoOfferScreen({ route, navigation }) {
+    // ==========================================
+    // 1. UNCONDITIONAL HOOK DECLARATION ZONE
+    // ==========================================
     const [mapReady, setMapReady] = useState(false);
+    const mapRef = useRef(null);
 
     // --- Theme & Context Routing ---
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildOfferFlowStyles(theme); // <-- Initialize styles with theme
+    const styles = buildOfferFlowStyles(theme);
 
-    const { targetBook, targetSeller, offeredBooks = [] } = route.params;
+    const { offerDraft, clearOffer } = useOffer();
+    const { targetBook, targetSeller, offeredBooks } = offerDraft;
     const { currentUser } = useAuth(); 
 
-    const mapRef = useRef(null);
-    const { sellerLocations, loading } = useSellerLocations(targetBook.ownerId);
+    const isFocused = useIsFocused()
+
+    // Custom data hooks (Safe evaluated via optional chaining for hot reloads)
+    const { sellerLocations, loading } = useSellerLocations(targetBook?.ownerId);
 
     const {
         selectedLocation,
@@ -61,6 +72,17 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         isProposingAlternative,
     });
 
+    // ==========================================
+    // 2. SAFE ZONE GUARD CLAUSE
+    // ==========================================
+    if (!targetBook && isFocused) {
+        setTimeout(() => navigation.goBack(), 0);
+        return null;
+    }
+
+    // ==========================================
+    // 3. ACTION HANDLERS
+    // ==========================================
     const handleSendOffer = async () => {
         const currentUserId = currentUser?.uid;
 
@@ -80,6 +102,8 @@ export default function StepTwoOfferScreen({ route, navigation }) {
                 activeLocationSelection
             );
 
+            clearOffer();
+
             navigation.navigate(ROUTES.CHAT_ROOM, {
                 chatId,
                 targetSeller: targetSeller || {
@@ -93,6 +117,9 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         }
     };
 
+    // ==========================================
+    // 4. RENDER LAYERS
+    // ==========================================
     return (
         <View style={styles.container}>
             <ScreenHeader

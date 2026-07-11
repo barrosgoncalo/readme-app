@@ -13,6 +13,8 @@ import { buildBookDetailsStyles } from '../../styles/publicationDetailsStyles';
 import { usePublicationDetails } from '@readme/shared/src/hooks/use-publication-details';
 import { PublicationService } from '@readme/shared/src/services/publications';
 
+import { useOffer } from '@readme/shared/src/contexts/OfferContext';
+
 const extractBookDetails = (passedItem) => {
     const pubData = passedItem?.publicationData || passedItem || {};
     const details = PublicationService.normalizePublicationDetails(pubData);
@@ -43,16 +45,18 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const sellerName = seller?.username || "Anonymous Swapper";
     const sellerAvatar = seller?.photoURL || null;
 
+    const { startOffer } = useOffer();
+
     const handleMakeOffer = () => {
         const perfectlyCleanBook = {
             ...book,
             ownerName: sellerName,
             ownerAvatar: sellerAvatar
         };
-        navigation.navigate(ROUTES.STEP_ONE_OFFER, { 
-            targetBook: perfectlyCleanBook,
-            targetSeller: seller
-        });
+
+        startOffer(perfectlyCleanBook, seller);
+
+        navigation.navigate(ROUTES.STEP_ONE_OFFER);
     };
 
     // --- Compose UI Parts ---

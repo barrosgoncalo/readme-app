@@ -20,13 +20,16 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { buildOfferFlowStyles } from '../../styles/offerFlowStyles';
 import { BookCard } from '../../components/ui/BookCard';
 
+import { useOffer } from '@readme/shared/src/contexts/OfferContext';
+
 export default function StepOneOfferScreen({ route, navigation }) {
+
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildOfferFlowStyles(theme);
     
-    const { targetBook, targetSeller } = route.params;
     const { currentUser } = useAuth();
+    const { updateOfferedBooks } = useOffer();
 
     const [myBooks, setMyBooks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -63,11 +66,10 @@ export default function StepOneOfferScreen({ route, navigation }) {
 
     const handleNext = () => {
         if (selectedBooks.length === 0) return;
-        navigation.navigate(ROUTES.STEP_TWO_OFFER, { 
-            targetBook, 
-            targetSeller, 
-            offeredBooks: selectedBooks 
-        });
+        
+        updateOfferedBooks(selectedBooks);
+        
+        navigation.navigate(ROUTES.STEP_TWO_OFFER);
     };
 
     const renderBookItem = ({ item }) => {

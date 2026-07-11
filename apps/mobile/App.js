@@ -2,6 +2,7 @@ import React from 'react';
 import { LogBox } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@readme/shared/src/contexts/AuthContext';
+import { OfferProvider } from '@readme/shared/src/contexts/OfferContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
@@ -28,7 +29,9 @@ export default function App() {
 
     return (
         <AuthProvider>
-            <AppNavigator />
+            <OfferProvider>
+                <AppNavigator />
+            </OfferProvider>
         </AuthProvider>
     );
 }

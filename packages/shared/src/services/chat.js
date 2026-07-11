@@ -35,6 +35,26 @@ const _formatOfferedBooks = (offeredBooks) => {
 };
 
 /**
+ * Generates the specific payloads needed when an offer is Accepted.
+ */
+const _buildAcceptedOfferPayloads = (proposerId, receiverId, finalBookId, finalBookImage) => {
+    const msgPayload = {
+        'offerDetails.verificationCode': generateVerificationCode(),
+        'offerDetails.verificationDisplayerId': proposerId,
+        'offerDetails.verificationScannerId': receiverId,
+    };
+    const chatPayload = {};
+
+    if (finalBookId) {
+        msgPayload['offerDetails.finalSelectedBookId'] = finalBookId;
+        msgPayload['offerDetails.finalSelectedBookImage'] = finalBookImage;
+        chatPayload.targetBookImage = finalBookImage;
+    }
+
+    return { msgPayload, chatPayload };
+};
+
+/**
  * Formats a raw database chat document into the frontend Inbox Preview model.
  */
 const _mapChatToInboxPreview = (data, currentUserId) => {
@@ -120,6 +140,36 @@ export const ChatService = {
             console.error("Error hiding chat:", error);
             throw error;
         }
+    },
+
+    /**
+     * Updates the status of an offer and refreshes the parent chat metadata.
+     */
+    updateOfferStatus: async (
+        chatId, 
+        messageId, 
+        newStatus, 
+        proposerId = null, 
+        receiverId = null,
+        finalSelectedBookId = null,
+        finalSelectedBookImage = null
+    ) => {
+        let messageUpdatePayload = { 'offerDetails.status': newStatus };
+        let chatParentPayload = { hiddenFor: [] };
+
+        if (newStatus === NEGOTIATION_STATUS.ACCEPTED) {
+            const { msgPayload, chatPayload } = _buildAcceptedOfferPayloads(
+                proposerId, receiverId, finalSelectedBookId, finalSelectedBookImage
+            );
+            
+            messageUpdatePayload = { ...messageUpdatePayload, ...msgPayload };
+            chatParentPayload = { ...chatParentPayload, ...chatPayload };
+        }
+
+        await Promise.all([
+            DB.update(`chats/${chatId}/messages`, messageId, messageUpdatePayload, true),
+            DB.update('chats', chatId, chatParentPayload, true)
+        ]);
     },
 
     /**
