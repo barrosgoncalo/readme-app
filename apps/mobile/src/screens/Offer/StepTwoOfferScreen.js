@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
     View,
     useColorScheme,
@@ -75,8 +75,13 @@ export default function StepTwoOfferScreen({ route, navigation }) {
     // ==========================================
     // 2. SAFE ZONE GUARD CLAUSE
     // ==========================================
-    if (!targetBook && isFocused) {
-        setTimeout(() => navigation.goBack(), 0);
+    useEffect(() => {
+        if (!targetBook && isFocused) {
+            navigation.goBack();
+        }
+    }, [targetBook, isFocused, navigation]);
+
+    if (!targetBook) {
         return null;
     }
 
