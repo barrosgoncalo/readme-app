@@ -22,6 +22,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { PublicationService } from '@readme/shared/src/services/publications';
+import { UsersService } from '@readme/shared/src/services/users';
+import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings';
 
 export default function MyPostingsScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -31,57 +33,14 @@ export default function MyPostingsScreen({ navigation }) {
     const insets = useSafeAreaInsets();
     const { currentUser } = useAuth();
 
-    const [myBooks, setMyBooks] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchMyPostings = async () => {
-        if (!currentUser?.uid) return;
-        setIsLoading(true);
-
-        try {
-            const userDocRef = doc(db, 'users', currentUser.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            const favoriteIds = userDocSnap.exists() ? (userDocSnap.data().favoriteBooks || []) : [];
-
-            const fetchedBooks = await PublicationService.fetchUserPublications(currentUser.uid);
-
-            setMyBooks(fetchedBooks.map(book => ({
-                ...book,
-                isFavorite: favoriteIds.includes(book.id)
-            })));
-        } catch (error) {
-            console.error("Error fetching my postings:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleToggleFavorite = async (bookId, currentIsFavorite) => {
-        setMyBooks(prev => prev.map(book => {
-            if (book.id === bookId) {
-                return {
-                    ...book,
-                    isFavorite: !currentIsFavorite,
-                    favoriteCount: book.favoriteCount + (currentIsFavorite ? -1 : 1)
-                };
-            }
-            return book;
-        }));
-
-        try {
-            await PublicationService.toggleFavorite(currentUser.uid, bookId, currentIsFavorite);
-        } catch (error) {
-            console.error("Failed to toggle favorite status:", error);
-            fetchMyPostings();
-        }
-    };
+    const { myBooks, isLoading, fetchMyPostings, handleToggleFavorite } = useMyPostings(currentUser?.uid);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             fetchMyPostings();
         });
         return unsubscribe;
-    }, [navigation, currentUser]);
+    }, [navigation, fetchMyPostings]);
 
     return (
         <View style={styles.container}>

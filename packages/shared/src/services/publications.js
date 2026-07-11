@@ -108,28 +108,4 @@ export const PublicationService = {
             throw error;
         }
     },
-
-    /**
-     * Toggles a publication's favorite status for a user, updating both the user's list and the book's like count.
-     */
-    toggleFavorite : async (userId, bookId, isCurrentlyFavorite) => {
-        try {
-            const userDocRef = doc(db, 'users', userId); 
-            const publicationDocRef = doc(db, 'publications', bookId);
-
-            await Promise.all([
-                updateDoc(userDocRef, {
-                    favoriteBooks: !isCurrentlyFavorite ? arrayUnion(bookId) : arrayRemove(bookId)
-                }),
-                updateDoc(publicationDocRef, {
-                    "stats.likesCount": increment(!isCurrentlyFavorite ? 1 : -1)
-                })
-            ]);
-            
-            return { success: true };
-        } catch (error) {
-            console.error("ERROR TOGGLING FAVORITE:", error);
-            throw error;
-        }
-    },
 }

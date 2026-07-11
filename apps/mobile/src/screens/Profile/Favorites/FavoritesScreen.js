@@ -19,12 +19,11 @@ import { BookGridItem } from '../../../components/ui/BookGridItem';
 import { 
     doc, 
     getDoc, 
-    updateDoc, 
-    arrayRemove, 
-    increment 
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { PublicationService } from '@readme/shared/src/services/publications';
+import { UsersService } from '@readme/shared/src/services/users';
+import { useFavorites } from '@readme/shared/src/hooks/use-favorites';
 
 export default function FavoritesScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -35,50 +34,19 @@ export default function FavoritesScreen({ navigation }) {
 
     const { currentUser } = useAuth();
     
-    const [favorites, setFavorites] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchFavoriteBooks = async () => {
-        if (!currentUser?.uid) return;
-        setIsLoading(true);
-
-        try {
-            const userDocRef = doc(db, 'users', currentUser.uid);
-            const userDocSnap = await getDoc(userDocRef);
-
-            if (!userDocSnap.exists()) {
-                setFavorites([]);
-                return;
-            }
-
-            const favoriteIds = userDocSnap.data().favoriteBooks || [];
-            const fetchedFavorites = await PublicationService.fetchPublicationsByIds(favoriteIds);
-
-            setFavorites(fetchedFavorites.map(book => ({ ...book, isFavorite: true })));
-        } catch (error) {
-            console.error("Error fetching favorites:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleRemoveFavorite = async (bookId, currentIsFavorite) => {
-        setFavorites(prev => prev.filter(book => book.id !== bookId));
-
-        try {
-            await PublicationService.toggleFavorite(currentUser.uid, bookId, currentIsFavorite);
-        } catch (error) {
-            console.error("Failed to remove favorite:", error);
-            fetchFavoriteBooks();
-        }
-    };
+    const {
+        favorites,
+        isLoading,
+        fetchFavoriteBooks,
+        handleRemoveFavorite
+    } = useFavorites(currentUser?.uid);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             fetchFavoriteBooks();
         });
         return unsubscribe;
-    }, [navigation, currentUser]);
+    }, [navigation, fetchFavoriteBooks]);
 
     return (
         <View style={styles.container}>

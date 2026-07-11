@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert, useColorScheme, ActivityIndicator } from 'react-native';
 import { Iconify } from 'react-native-iconify';
-import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { doSignOut, doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { buildProfileStyles } from '../../styles/profileStyles';
-import { UsersService } from '@readme/shared/src/services/users';
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
 
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
+
+import { useProfileActions } from '@readme/shared/src/hooks/use-profile-actions';
 
 export default function ProfileScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -18,73 +17,21 @@ export default function ProfileScreen({ navigation }) {
     const styles = buildProfileStyles(theme);
 
     const { currentUser, refreshUser } = useAuth(); 
-    const [uploading, setUploading] = useState(false);
     const [focusKey, setFocusKey] = useState(0);
-
-    const [hasNotifications, setHasNotifications] = useState(
-        currentUser?.notificationSettings?.pushEnabled ?? false
-    );
-
     const handleScroll = useScrollTabBarControl();
+
+    const {
+        uploading, hasNotifications,
+        pickImage, handleNotificationsToggle, handleSignOut
+    } = useProfileActions(currentUser, refreshUser);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             setFocusKey(prev => prev + 1);
-
-            if (refreshUser) {
-                refreshUser();
-            }
+            if (refreshUser) refreshUser();
         });
-
         return unsubscribe;
     }, [navigation, refreshUser]);
-
-    const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
-
-        if (!result.canceled) {
-            const imageUri = result.assets[0].uri;
-            handleUpload(imageUri);
-        }
-    };
-
-    const handleUpload = async (imageUri) => {
-        setUploading(true);
-        try {
-            await UsersService.uploadProfilePicture(currentUser.uid, imageUri);
-            alert("Foto atualizada com sucesso!");
-        } catch (error) {
-            alert("Erro ao atualizar a foto.");
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    const handleNotificationsToggle = async (newValue) => {
-        setHasNotifications(newValue);
-        try {
-            await doUpdateUserProfile(currentUser.uid, {
-                'notificationSettings.pushEnabled': newValue
-            });
-
-            await refreshUser();
-
-        } catch (error) {
-            console.error("Error updating notifications settings:", error);
-            Alert.alert("Error", "Failed to update notifications settings. Please try again.");
-            setHasNotifications(!newValue);
-        }
-    }
-
-    const handleSignOut = async () => {
-        console.log("A terminar sessão...");
-        await doSignOut();
-    };
 
     return (
         <View style={styles.container}>

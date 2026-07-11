@@ -91,7 +91,7 @@ export function useExploreData(currentUserId) {
         );
 
         try {
-            await PublicationService.toggleFavorite(currentUserId, bookId, currentIsFavorite);
+            await UsersService.toggleFavoriteStatus(currentUserId, bookId, currentIsFavorite);
         } catch (error) {
             console.error("Failed to like book:", error);
         }
