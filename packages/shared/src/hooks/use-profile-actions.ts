@@ -1,8 +1,9 @@
+// use-profile-actions.ts
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { doSignOut, doUpdateUserProfile } from '../services/auth';
 import { UsersService } from '../services/users';
+import { useImagePicker } from './use-image-picker';
 
 export function useProfileActions(currentUser, refreshUser) {
     const [uploading, setUploading] = useState(false);
@@ -22,16 +23,20 @@ export function useProfileActions(currentUser, refreshUser) {
         }
     };
 
-    const pickImage = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
+    const { pickFromGallery } = useImagePicker({
+        mode: 'single',
+        aspect: [1, 1],
+        allowsEditing: true,
+    });
 
+    const pickImage = async () => {
+        const result = await pickFromGallery();
+        if (result.deniedPermission) {
+            Alert.alert("Permissão necessária", "Precisamos de permissão para aceder à sua galeria.");
+            return;
+        }
         if (!result.canceled) {
-            handleUpload(result.assets[0].uri);
+            await handleUpload(result.uri);
         }
     };
 

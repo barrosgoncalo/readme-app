@@ -23,22 +23,25 @@ import { auth } from '@readme/shared/src/services/firebase';
 import CountryPicker from 'react-native-country-picker-modal';
 import { buildEditProfileStyles } from '../../../styles/editProfileStyles';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import * as ImagePicker from 'expo-image-picker';
+import { useImagePicker } from '@readme/shared/src/hooks/use-image-picker';
 import { UsersService } from '@readme/shared/src/services/users';
 
 export default function EditProfileScreen({ navigation, route }) {
     const existing = route?.params?.userData ?? {};
-
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildEditProfileStyles(theme);
-
     const { currentUser, refreshUser } = useAuth();
 
     // ─── Image Upload State ──────────────────────────────────────────────────
     const [uploading, setUploading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
-    const [newImageUri, setNewImageUri] = useState(null);
+    const { images, takePhoto: takePhotoRaw, pickFromGallery: pickFromGalleryRaw } = useImagePicker({
+        mode: 'single',
+        aspect: [1, 1],
+        allowsEditing: true,
+    });
+    const newImageUri = images[0] ?? null;
 
     // ─── Original values (never mutated) ─────────────────────────────────────
     const original = useMemo(() => ({
@@ -92,45 +95,22 @@ export default function EditProfileScreen({ navigation, route }) {
         dob:          dob          !== original.dob,
         photo:        newImageUri  !== null,
     };
-
     const isAnyDirty = Object.values(dirty).some(Boolean);
 
     // ─── Image Handlers ───────────────────────────────────────────────────────
     const pickImage = async () => {
         setModalVisible(false);
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (permissionResult.granted === false) {
+        const result = await pickFromGalleryRaw();
+        if (result.deniedPermission) {
             Alert.alert("Permissão necessária", "Precisamos de permissão para aceder à sua galeria.");
-            return;
-        }
-
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: 'images',
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
-        
-        if (!result.canceled) {
-            setNewImageUri(result.assets[0].uri);
         }
     };
 
     const takePhoto = async () => {
         setModalVisible(false);
-        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-        if (!cameraPermission.granted) {
+        const result = await takePhotoRaw();
+        if (result.deniedPermission) {
             Alert.alert("Permissão necessária", "Precisamos de permissão para acessar a câmera.");
-            return;
-        }
-        let result = await ImagePicker.launchCameraAsync({
-            mediaTypes: 'images', // <--- FIX: Changed from ['images'] to 'images'
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
-        if (!result.canceled) {
-            setNewImageUri(result.assets[0].uri);
         }
     };
 
@@ -163,11 +143,9 @@ export default function EditProfileScreen({ navigation, route }) {
         try {
             const uid = auth.currentUser?.uid;
             if (!uid) throw new Error('Not authenticated.');
-
             if (newImageUri) {
                 await UsersService.uploadProfilePicture(uid, newImageUri);
             }
-
             await doUpdateUserProfile(uid, {
                 fullName,
                 username,
@@ -182,9 +160,7 @@ export default function EditProfileScreen({ navigation, route }) {
                     country,
                 },
             });
-
             await refreshUser();
-
             Alert.alert('Saved', 'Your profile has been updated.', [
                 { text: 'OK', onPress: () => navigation.goBack() },
             ]);
@@ -196,7 +172,6 @@ export default function EditProfileScreen({ navigation, route }) {
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
-
     return (
         <View style={[styles.root, { backgroundColor: theme.background }]}>
             {/* ── Header ── */}
@@ -207,7 +182,6 @@ export default function EditProfileScreen({ navigation, route }) {
                 <Text style={styles.headerTitle}>Edit profile</Text>
                 <View style={{ width: 22 }} />
             </View>
-
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: 60 }]}
                 keyboardShouldPersistTaps="handled"
@@ -249,13 +223,11 @@ export default function EditProfileScreen({ navigation, route }) {
                                     <Iconify icon="lucide:user" size={45} color={theme.text} />
                                 )}
                         </View>
-
                         <View style={styles.pencilButtonContainer}>
                             <View style={styles.pencilMiddleLayer}>
                                 <Iconify icon="material-symbols:edit-rounded" size={15} color="#F58B2E" />
                             </View>
                         </View>
-
                         {uploading && (
                             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 50 }}>
                                 <ActivityIndicator size="large" color="#F58B2E" />
@@ -263,7 +235,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         )}
                     </TouchableOpacity>
                 </View>
-
                 {/* ── Form Fields ── */}
                 <FormBoxInput label="Full Name" dirty={dirty.fullName} focused={focusedField === 'fullName'} styles={styles}>
                     <TextInput
@@ -279,19 +250,17 @@ export default function EditProfileScreen({ navigation, route }) {
                         placeholderTextColor={theme.subtext}
                     />
                 </FormBoxInput>
-
                 <FormBoxInput label="Date of birth" dirty={dirty.dob} focused={focusedField === 'dob'} styles={styles}>
                     <TouchableOpacity
                         style={styles.rowBetween}
                         onPress={() => {
                             Keyboard.dismiss();
-                            // Delays the highlight by 100ms so the previous input's onBlur
-                            // doesn't overwrite it.
                             setTimeout(() => {
                                 setShowDatePicker(true);
                                 setFocusedField('dob');
                             }, 100);
-                        }}                        activeOpacity={0.7}
+                        }}
+                        activeOpacity={0.7}
                     >
                         <Text style={[styles.input, { color: dob ? theme.text : theme.subtext, flex: 1 }]}>
                             {dob || 'DD/MM/YYYY'}
@@ -308,7 +277,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         />
                     )}
                 </FormBoxInput>
-
                 <FormBoxInput label="Username" dirty={dirty.username} focused={focusedField === 'username'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
@@ -324,7 +292,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         autoCapitalize="none"
                     />
                 </FormBoxInput>
-
                 <FormBoxInput label="Phone number" dirty={dirty.phoneNumber} focused={focusedField === 'phone'} styles={styles}>
                     <View style={styles.rowStart}>
                         <TextInput
@@ -342,7 +309,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         />
                     </View>
                 </FormBoxInput>
-
                 <FormBoxInput label="Country" dirty={dirty.country} focused={focusedField === 'country'} styles={styles}>
                     <TouchableOpacity
                         style={styles.rowBetween}
@@ -388,7 +354,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         </View>
                     </Modal>
                 </FormBoxInput>
-
                 <FormBoxInput label="City" dirty={dirty.city} focused={focusedField === 'city'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
@@ -403,7 +368,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         placeholderTextColor={theme.subtext}
                     />
                 </FormBoxInput>
-
                 <FormBoxInput label="District" dirty={dirty.district} focused={focusedField === 'district'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
@@ -418,7 +382,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         placeholderTextColor={theme.subtext}
                     />
                 </FormBoxInput>
-
                 <FormBoxInput label="Address Line 1" dirty={dirty.addressLine1} focused={focusedField === 'addr1'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
@@ -433,7 +396,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         placeholderTextColor={theme.subtext}
                     />
                 </FormBoxInput>
-
                 <FormBoxInput label="Address Line 2" dirty={dirty.addressLine2} focused={focusedField === 'addr2'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
@@ -448,7 +410,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         placeholderTextColor={theme.subtext}
                     />
                 </FormBoxInput>
-
                 <FormBoxInput label="Postal Code" dirty={dirty.postalCode} focused={focusedField === 'postal'} styles={styles}>
                     <TextInput
                         style={[styles.input, { color: theme.text }]}
@@ -464,7 +425,6 @@ export default function EditProfileScreen({ navigation, route }) {
                         keyboardType="numbers-and-punctuation"
                     />
                 </FormBoxInput>
-
                 <TouchableOpacity
                     style={[
                         styles.submitBtn,
@@ -483,7 +443,6 @@ export default function EditProfileScreen({ navigation, route }) {
                     }
                 </TouchableOpacity>
             </ScrollView>
-
             {/* --- EDIT PICTURE OPTIONS MODAL --- */}
             <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
                 <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>

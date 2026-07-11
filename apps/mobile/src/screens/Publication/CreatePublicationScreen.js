@@ -24,8 +24,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@readme/shared/src/services/firebase';
 import { createPublicationModel } from '@readme/shared/src/models/publication';
-import * as ImagePicker from 'expo-image-picker'; 
-import * as ImageManipulator from 'expo-image-manipulator';
+import { useImagePicker } from '@readme/shared/src/hooks/use-image-picker';
 
 export default function CreatePublicationScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -36,7 +35,6 @@ export default function CreatePublicationScreen({ navigation }) {
     const [authorName, setAuthorName] = useState('');
     const [description, setDescription] = useState('');
 
-    const [images, setImages] = useState([]); 
     const [isUploading, setIsUploading] = useState(false);
 
     const [subject, setSubject] = useState(''); 
@@ -45,86 +43,27 @@ export default function CreatePublicationScreen({ navigation }) {
 
     const { currentUser } = useAuth();
 
+    const { images, takePhoto, pickFromGallery, removeImage } = useImagePicker({
+        mode: 'multiple',
+        compress: true,
+    });
+
     // ==========================================
     // IMAGE HANDLING LOGIC
     // ==========================================
 
-    const processAndSaveImage = async (rawUri) => {
-        try {
-            const manipulatedImage = await ImageManipulator.manipulateAsync(
-                rawUri,
-                [], // Empty array because we don't need to manually crop/rotate
-                { 
-                    compress: 0.8, // Optimizes file size for storage
-                    format: ImageManipulator.SaveFormat.JPEG 
-                }
-            );
-            
-            // Save the fixed image URI to state instead of the raw one
-            setImages(prevImages => [...prevImages, manipulatedImage.uri]);
-            
-        } catch (error) {
-            console.error("Failed to process image orientation:", error);
-            // Fallback to the raw image just in case the manipulator fails
-            setImages(prevImages => [...prevImages, rawUri]);
-        }
-    };
-
-    const takePhoto = async () => {
-        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-        if (permissionResult.granted === false) {
-            Alert.alert("Permission Required", "We need access to your camera to take photos.");
-            return;
-        }
-
-        let result = await ImagePicker.launchCameraAsync({
-            mediaTypes: 'images',
-            allowsEditing: true,
-            aspect: [3, 4],
-            quality: 1, 
-        });
-
-        if (!result.canceled) {
-            await processAndSaveImage(result.assets[0].uri);
-        }
-    };
-
-    const pickFromGallery = async () => {
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-        if (permissionResult.granted === false) {
-            Alert.alert("Permission Required", "We need access to your gallery to upload photos.");
-            return;
-        }
-
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: 'images', 
-            allowsMultipleSelection: false, 
-            allowsEditing: true, 
-            aspect: [3, 4], 
-            quality: 1,
-        });
-
-        if (!result.canceled) {
-            await processAndSaveImage(result.assets[0].uri);
-        }
-    };
-
     const handleAddImagePress = () => {
-        Alert.alert(
-            "Add Photo",
-            "Choose a method to add a photo",
-            [
-                { text: "Take a Photo", onPress: takePhoto },
-                { text: "Choose from Gallery", onPress: pickFromGallery },
-                { text: "Cancel", style: "cancel" }
-            ]
-        );
-    };
-
-    const removeImage = (indexToRemove) => {
-        setImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
+        Alert.alert("Add Photo", "Choose a method to add a photo", [
+            { text: "Take a Photo", onPress: async () => {
+                const r = await takePhoto();
+                if (r.deniedPermission) Alert.alert("Permission Required", "We need access to your camera to take photos.");
+            }},
+            { text: "Choose from Gallery", onPress: async () => {
+                const r = await pickFromGallery();
+                if (r.deniedPermission) Alert.alert("Permission Required", "We need access to your gallery to upload photos.");
+            }},
+            { text: "Cancel", style: "cancel" }
+        ]);
     };
 
     // ==========================================
