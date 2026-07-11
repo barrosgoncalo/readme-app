@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {Check, ChevronDown, ChevronUp, List, MapPin, Undo2, X} from 'lucide-react';
-import {Link, useSearchParams} from 'react-router-dom';
+import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {hasUserReviewed, submitReview} from '@readme/shared/src/services/reviews';
 import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
@@ -14,6 +14,8 @@ import BookCover from '../../../components/BookCover.jsx';
 import Spinner from '../../../components/Spinner.jsx';
 import Button from '../../../components/Button.jsx';
 import styles from './OfferMessage.module.css';
+import {fetchPublicationById} from '@readme/shared/src/services/publications';
+import {myBooksService} from '@readme/shared/src/services/books';
 
 const STATUS_COLORS = {
     pending: 'var(--secondary)',
@@ -25,6 +27,8 @@ const STATUS_COLORS = {
 };
 
 export default function OfferMessage({message, isOwn, currentUserId, chatId, otherUserId}) {
+    const navigate = useNavigate();
+
     const [busy, setBusy] = useState(false);
     const [verificationError, setVerificationError] = useState('');
     const [hasReviewed, setHasReviewed] = useState(false);
@@ -37,6 +41,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     const [loadingBooks, setLoadingBooks] = useState(false);
 
     const [selectedBookId, setSelectedBookId] = useState(null);
+    const [singleBook, setSingleBook] = useState(null);
 
     const offer = message.offerDetails;
     const isCompleted = offer?.status === 'completed';
@@ -74,10 +79,37 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                     setHasReviewed(reviewed);
             })
             .catch(err => console.error('Error checking review status:', err));
-        return () => {
-            cancelled = true;
-        };
+
+        return () => cancelled = true;
     }, [isCompleted, message.id, currentUserId]);
+
+    useEffect(() => {
+        if (offer?.offeredBookIds?.length === 1 && !singleBook) {
+            if (offer.savedOfferedTitle && offer.savedRealOfferedId) {
+                setSingleBook({
+                    title: offer.savedOfferedTitle,
+                    realBookId: offer.savedRealOfferedId
+                });
+                return;
+            }
+
+            let cancelled = false;
+            const originalId = offer.offeredBookIds[0];
+
+            async function fetchNormalBook() {
+                try {
+                    const globalBooks = await getBooksByIds([originalId]);
+                    if (globalBooks && globalBooks.length > 0 && !cancelled)
+                        setSingleBook({title: globalBooks[0].title, realBookId: globalBooks[0].id});
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            fetchNormalBook();
+            return () => cancelled = true;
+        }
+    }, [offer?.offeredBookIds, offer?.savedOfferedTitle, offer?.savedRealOfferedId, singleBook]);
 
     if (!offer) return null;
 
@@ -163,7 +195,9 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                 message,
                 chosenBook,
                 currentUserId,
-                otherUserId
+                otherUserId,
+                chosenBook.id,
+                chosenBook.title
             );
 
             handleCloseBooks();
@@ -195,9 +229,27 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
 
             <div className={styles.content}>
 
-                <p className={`${styles.title} ${styles.clickableTitle}`} onClick={handleOpenBooks}>
-                    Offered {offer.offeredBookIds?.length || 0} book{offer.offeredBookIds?.length !== 1 ? 's' : ''}
-                </p>
+                {offer.offeredBookIds?.length === 1 ? (
+                    <p
+                        className={`${styles.title} ${styles.clickableTitle}`}
+                        onClick={() => {
+                            const targetId = offer.savedRealOfferedId || singleBook?.realBookId || offer.offeredBookIds[0];
+                            const bookOwnerId = offer.isSelectionFrom
+                                ? (isOwn ? otherUserId : currentUserId)
+                                : message.senderId;
+
+                            navigate(`${WEB_ROUTES.bookDetail(targetId)}?owner=${bookOwnerId}&from=chat`);
+                        }}
+                        title={offer.savedOfferedTitle || singleBook?.title || 'Loading book...'}
+                    >
+                        {offer.isSelectionFrom ? 'Chosen: ' : 'Offered: '}
+                        {offer.savedOfferedTitle || singleBook?.title || 'Loading...'}
+                    </p>
+                ) : (
+                    <p className={`${styles.title} ${styles.clickableTitle}`} onClick={handleOpenBooks}>
+                        Offered {offer.offeredBookIds?.length || 0} books
+                    </p>
+                )}
 
                 {offer.location && (
                     <button

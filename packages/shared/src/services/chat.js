@@ -184,7 +184,7 @@ export const ChatService = {
     /**
      * Acionada quando o User B escolhe um livro da lista enviada pelo User A.
      */
-    chooseBookFromOffer: async (chatId, originalMessage, chosenBook, currentUserId, otherUserId) => {
+    chooseBookFromOffer: async (chatId, originalMessage, chosenBook, currentUserId, otherUserId, realOfferedId, offeredTitle) => {
         await ChatService.updateOfferStatus(chatId, originalMessage.id, 'countered', originalMessage.senderId, currentUserId);
 
         const offer = originalMessage.offerDetails;
@@ -195,6 +195,10 @@ export const ChatService = {
             offeredBookIds: offer.targetBookId ? [offer.targetBookId] : [],
             location: offer.location || null,
             status: 'pending',
+
+            // A TUA IDEIA APLICADA AQUI: Guardamos a info de acesso rápido!
+            savedRealOfferedId: realOfferedId || null,
+            savedOfferedTitle: offeredTitle || null,
 
             isSelectionFrom: originalMessage.id,
             originalOfferedIds: offer.offeredBookIds,
