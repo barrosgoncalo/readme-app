@@ -21,7 +21,7 @@ import { useMyBooks } from '@readme/shared/src/hooks/use-my-books';
 
 import { useOffer } from '@readme/shared/src/contexts/OfferContext';
 
-export default function StepOneOfferScreen({ route, navigation }) {
+export default function StepOneOfferScreen({ navigation }) {
 
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];

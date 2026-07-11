@@ -28,10 +28,7 @@ import { ChatService } from '@readme/shared/src/services/chat';
 // Contexts
 import { useOffer } from '@readme/shared/src/contexts/OfferContext';
 
-export default function StepTwoOfferScreen({ route, navigation }) {
-    // ==========================================
-    // 1. UNCONDITIONAL HOOK DECLARATION ZONE
-    // ==========================================
+export default function StepTwoOfferScreen({ navigation }) {
     const [mapReady, setMapReady] = useState(false);
     const mapRef = useRef(null);
 
@@ -46,7 +43,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
 
     const isFocused = useIsFocused()
 
-    // Custom data hooks (Safe evaluated via optional chaining for hot reloads)
+    // Custom data hooks
     const { sellerLocations, loading } = useSellerLocations(targetBook?.ownerId);
 
     const {
@@ -72,9 +69,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         isProposingAlternative,
     });
 
-    // ==========================================
-    // 2. SAFE ZONE GUARD CLAUSE
-    // ==========================================
+    // GUARD CLAUSE
     useEffect(() => {
         if (!targetBook && isFocused) {
             navigation.goBack();
@@ -85,9 +80,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         return null;
     }
 
-    // ==========================================
-    // 3. ACTION HANDLERS
-    // ==========================================
+    // ACTION HANDLERS
     const handleSendOffer = async () => {
         const currentUserId = currentUser?.uid;
 
@@ -122,9 +115,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
         }
     };
 
-    // ==========================================
-    // 4. RENDER LAYERS
-    // ==========================================
+    // RENDER LAYERS
     return (
         <View style={styles.container}>
             <ScreenHeader
@@ -136,7 +127,7 @@ export default function StepTwoOfferScreen({ route, navigation }) {
             <View style={styles.mapContainer}>
                 {loading ? (
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={theme.primary || "#E58A1F"} />
+                        <ActivityIndicator size="large" color={theme.primary} />
                         <Text style={styles.loadingText}>Finding spots...</Text>
                     </View>
                 ) : (
