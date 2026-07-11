@@ -169,7 +169,7 @@ export default function PublicProfileScreen({ navigation, route }) {
                             key: `PublicationDetails-${item.id}`,
                             params: { 
                                 publicationId: item.id,
-                                publication: item.rawDocData, 
+                                publication: item, 
                             }
                         })}
                         activeOpacity={0.8}

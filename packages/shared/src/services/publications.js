@@ -1,7 +1,7 @@
 import { DB } from './DB';
-import { collection, getDocs, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
-import { db } from '@readme/shared/src/services/firebase';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
+import { createPublicationModel } from '../models/publication';
+import { StorageService } from './storage';
 
 // ==========================================
 // PRIVATE AUXILIARY HELPERS
@@ -35,6 +35,50 @@ const _mapPublicationDetails = (doc) => ({
 // ==========================================
 
 export const PublicationService = {
+
+    createPublication: async (currentUser, formData, images) => {
+        if (!currentUser?.uid) throw new Error('Authentication required to create a publication.');
+        if (!images || images.length === 0) throw new Error('At least one image is required.');
+
+        const timestamp = Date.now();
+        const publicationId = `${currentUser.uid}_${timestamp}`;
+        const bookId = `book_${formData.bookName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${timestamp}`;
+
+        let imageUrls;
+        try {
+            imageUrls = await StorageService.uploadImages(images, `books/${publicationId}`);
+        } catch (error) {
+            error.stage = 'storage';
+            throw error;
+        }
+
+        const sellerName = currentUser?.username || currentUser?.displayName || currentUser?.name || 'Anonymous Swapper';
+        const sellerAvatar = currentUser?.photoURL || currentUser?.profilePicture || currentUser?.avatarUrl || null;
+
+        const publicationData = createPublicationModel(
+            currentUser.uid,
+            sellerName,
+            sellerAvatar,
+            {
+                title: formData.bookName,
+                author: formData.authorName || 'Unknown Author',
+                images: imageUrls,
+                bookId,
+                condition: formData.condition,
+                subject: formData.subject,
+            },
+            formData.description
+        );
+
+        try {
+            await DB.create('publications', publicationData, publicationId);
+        } catch (error) {
+            error.stage = 'firestore';
+            throw error;
+        }
+
+        return { id: publicationId, ...publicationData };
+    },
 
     /**
      * Fetches a single publication by its unique document ID
@@ -73,39 +117,20 @@ export const PublicationService = {
 
     normalizePublicationDetails: (doc) => _mapPublicationDetails(doc),
 
-    /**
-     * Fetches all available publications for the explore feed, filtering out the current user and blocked users.
-     */
-    fetchExplorePublications : async (currentUserUid, blockedUids = []) => {
-        try {
-            const q = query(collection(db, 'publications'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
+    fetchExplorePublications: async (currentUserUid, blockedUids = []) => {
+        const docs = await DB.getOrderedBy(
+            'publications',
+            { field: 'createdAt', direction: 'desc' },
+            [],
+            { source: 'server' }
+        );
 
-            return querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    uid: data.uid,
-                    title: data.book?.title || 'Unknown Title',
-                    author: data.book?.author || 'Unknown Author',
-                    imageUrl: data.book?.images && data.book.images.length > 0 
-                        ? data.book.images[0] 
-                        : null,
-                    seller: {
-                        name: data.sellerName || data.ownerName || 'Anonymous Swapper',
-                        avatarUrl: data.sellerAvatar || data.ownerAvatar || null,
-                    },
-                    favoriteCount: data.stats?.likesCount || 0,
-                    publicationData: data
-                };
-            }).filter(book =>
-                book.uid !== currentUserUid &&
-                !blockedUids.includes(book.uid) &&
-                book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
+        return docs
+            .map(_mapPublicationSummary)
+            .filter(book =>
+                book.ownerId !== currentUserUid &&
+                    !blockedUids.includes(book.ownerId) &&
+                    book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
             );
-        } catch (error) {
-            console.error("ERROR FETCHING EXPLORE PUBLICATIONS:", error);
-            throw error;
-        }
     },
 }

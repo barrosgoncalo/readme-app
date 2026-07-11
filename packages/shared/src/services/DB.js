@@ -3,7 +3,7 @@ import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
     updateDoc, deleteDoc, serverTimestamp,
-    query, where, getDocs, onSnapshot
+    query, where, orderBy, getDocs, getDocsFromServer, onSnapshot
 } from 'firebase/firestore';
 
 export const DB = {
@@ -65,6 +65,30 @@ export const DB = {
             }
         } catch (error) {
             console.error(`DB.get Error on path "${collectionPath}":`, error);
+            throw error;
+        }
+    },
+
+    /**
+ * Fetches a collection with ordering, optional where-clauses, and optional server-forced read.
+ * @param {string} collectionPath
+ * @param {{field: string, direction?: 'asc'|'desc'}} orderByArg
+ * @param {Array} whereArgs - optional array of {field, operator, value}
+ * @param {{source?: 'server'|'cache'|'default'}} options
+ */
+    getOrderedBy: async (collectionPath, orderByArg, whereArgs = [], options = {}) => {
+        try {
+            const colRef = collection(db, collectionPath);
+            const constraints = whereArgs.map(w => where(w.field, w.operator, w.value));
+            constraints.push(orderBy(orderByArg.field, orderByArg.direction || 'asc'));
+
+            const q = query(colRef, ...constraints);
+            const fetchFn = options.source === 'server' ? getDocsFromServer : getDocs;
+            const snap = await fetchFn(q);
+
+            return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (error) {
+            console.error(`DB.getOrderedBy Error on path "${collectionPath}":`, error);
             throw error;
         }
     },

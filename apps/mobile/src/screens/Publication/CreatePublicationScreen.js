@@ -19,11 +19,7 @@ import SuccessModal from '../../components/ui/SuccessModal';
 import { FormLineInput, FormTextArea, FormDropdown } from '../../components/ui/FormsComponents';
 import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
 
-// Firebase imports
-import { doc, setDoc } from 'firebase/firestore'; 
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@readme/shared/src/services/firebase';
-import { createPublicationModel } from '@readme/shared/src/models/publication';
+import { PublicationService } from '@readme/shared/src/services/publications';
 import { useImagePicker } from '@readme/shared/src/hooks/use-image-picker';
 
 export default function CreatePublicationScreen({ navigation }) {
@@ -77,76 +73,24 @@ export default function CreatePublicationScreen({ navigation }) {
         }
 
         setIsUploading(true);
-
-        const timestamp = Date.now();
-        const customPublicationId = `${currentUser.uid}_${timestamp}`;
-        const generatedBookId = `book_${bookName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${timestamp}`;
-
-        let uploadedImageUrls = [];
-
-        // STAGE 1: UPLOAD IMAGES TO FIREBASE STORAGE
         try {
-            uploadedImageUrls = await Promise.all(
-                images.map(async (uri, index) => {
-                    const blob = await new Promise((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-                        xhr.onload = () => resolve(xhr.response);
-                        xhr.onerror = (e) => reject(new TypeError('Network request failed'));
-                        xhr.responseType = 'blob';
-                        xhr.open('GET', uri, true);
-                        xhr.send(null);
-                    });
-
-                    const imageRef = ref(storage, `books/${customPublicationId}/image_${index}`);
-                    await uploadBytes(imageRef, blob);
-                    blob.close();
-
-                    return await getDownloadURL(imageRef);
-                })
+            await PublicationService.createPublication(
+                currentUser,
+                { bookName, authorName, description, subject, condition },
+                images
             );
-        } catch (error) {
-            setIsUploading(false);
-            console.error("Storage Error:", error);
-            Alert.alert(
-                "Storage Permission Error", 
-                "Firebase blocked the image upload. Please check your Firebase Storage Rules in the console."
-            );
-            return;
-        }
-
-        // STAGE 2: SAVE TEXT DATA TO FIRESTORE
-        try {
-            const sellerName = currentUser?.username || currentUser?.displayName || currentUser?.name || 'Anonymous Swapper';
-            const sellerAvatar = currentUser?.photoURL || currentUser?.profilePicture || currentUser?.avatarUrl || null;
-
-            const publicationData = createPublicationModel(
-                currentUser.uid, 
-                sellerName,
-                sellerAvatar,
-                {
-                    title: bookName,
-                    author: authorName || "Unknown Author",
-                    images: uploadedImageUrls, 
-                    bookId: generatedBookId,
-                    condition: condition,
-                    subject: subject
-                }, 
-                description
-            );
-
-            await setDoc(doc(db, 'publications', customPublicationId), publicationData);
-
-            console.log("Successfully published:", customPublicationId);
             setIsUploading(false);
             setSuccessModalVisible(true);
-
         } catch (error) {
             setIsUploading(false);
-            console.error("Firestore Error:", error);
-            Alert.alert(
-                "Firestore Permission Error", 
-                "Database blocked the save. Ensure the current user has 'accountStatus: \"active\"' in their user document."
-            );
+            console.error(`${error.stage || 'Unknown'} Error:`, error);
+            if (error.stage === 'storage') {
+                Alert.alert("Storage Permission Error", "Firebase blocked the image upload. Please check your Firebase Storage Rules in the console.");
+            } else if (error.stage === 'firestore') {
+                Alert.alert("Firestore Permission Error", "Database blocked the save. Ensure the current user has 'accountStatus: \"active\"' in their user document.");
+            } else {
+                Alert.alert("Error", error.message);
+            }
         }
     };
 

@@ -33,8 +33,6 @@ export const createPublicationModel = (uid, sellerName, sellerAvatar, bookData, 
 
         detailsText: detailsText.trim(),
 
-        // -- Timestamps & Stats --
-        createdAt: new Date().toISOString(),
         stats: {
             likesCount: 0,
             commentsCount: 0

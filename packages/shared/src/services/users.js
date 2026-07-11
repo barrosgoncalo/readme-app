@@ -7,8 +7,8 @@ import {
     arrayRemove,
     increment,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFollowId, createFollow } from '../models/follow';
+import { StorageService } from "./storage";
 
 import { DB } from './DB';
 
@@ -111,39 +111,13 @@ export const UsersService = {
      * Uploads a profile picture to Firebase Storage and updates the user's Firestore document.
      */
     uploadProfilePicture: async (userId, imageUri) => {
-        try {
-            console.log("A preparar a imagem para upload...", imageUri);
+        const downloadUrl = await StorageService.uploadImage(imageUri, `profile_pictures/${userId}`);
 
-            const blob = await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.onload = function() { resolve(xhr.response); };
-                xhr.onerror = function(e) {
-                    console.error("Erro na conversão XHR:", e);
-                    reject(new TypeError('A conversão de rede falhou'));
-                };
-                xhr.responseType = 'blob';
-                xhr.open('GET', imageUri, true);
-                xhr.send(null);
-            });
+        await DB.update(USERS_COLLECTION, userId, {
+            photoURL: downloadUrl
+        });
 
-            console.log("Blob criado com sucesso! Tamanho:", blob.size);
-
-            const storageRef = ref(storage, `profile_pictures/${userId}`);
-            await uploadBytes(storageRef, blob);
-
-            const downloadUrl = await getDownloadURL(storageRef);
-            console.log("Upload concluído! URL:", downloadUrl);
-
-            await DB.update(USERS_COLLECTION, userId, {
-                photoURL: downloadUrl
-            });
-
-            return downloadUrl;
-
-        } catch (error) {
-            console.error("Erro fatal no uploadProfilePicture:", error);
-            throw error;
-        }
+        return downloadUrl;
     },
 
     /**
