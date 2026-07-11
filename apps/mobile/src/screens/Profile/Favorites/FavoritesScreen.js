@@ -1,15 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { 
     View, 
     Text, 
     FlatList, 
     ActivityIndicator, 
     StatusBar,
-    TouchableOpacity,
     useColorScheme 
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
@@ -17,13 +14,12 @@ import { buildBookGridStyles } from '../../../styles/bookGridStyles';
 
 import { BookGridItem } from '../../../components/ui/BookGridItem';
 import { useFavorites } from '@readme/shared/src/hooks/use-favorites';
+import ScreenHeader from '../../../components/ui/ScreenHeader';
 
 export default function FavoritesScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
     const styles = buildBookGridStyles(theme); 
-
-    const insets = useSafeAreaInsets();
 
     const { currentUser } = useAuth();
     
@@ -48,25 +44,12 @@ export default function FavoritesScreen({ navigation }) {
                 backgroundColor={theme.background} 
             />
 
-            {/* --- CUSTOM HEADER FIX --- */}
-            <View style={{ 
-                flexDirection: 'row', 
-                alignItems: 'center', 
-                paddingHorizontal: 16, 
-                paddingTop: insets.top + 12, 
-                paddingBottom: 16,
-            }}>
-                <TouchableOpacity 
-                    onPress={() => navigation.goBack()}
-                    style={{ padding: 8, marginLeft: -8, marginRight: 8 }}
-                >
-                    <Iconify icon="lucide:arrow-left" size={24} color={theme.text} />
-                </TouchableOpacity>
-                
-                <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>
-                    Favorites
-                </Text>
-            </View>
+            <ScreenHeader
+                title="Favorites"
+                onBack={() => navigation.goBack()}
+                theme={theme}
+                variant="large"
+            />
 
             {isLoading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
