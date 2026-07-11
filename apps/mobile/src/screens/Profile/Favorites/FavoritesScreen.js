@@ -170,10 +170,10 @@ export default function FavoritesScreen({ navigation }) {
                             theme={theme}
                             isFavorite={item.isFavorite}
                             favoriteCount={item.favoriteCount}
-                            onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
-                                book: item,
-                                seller: item.seller
-                            })}
+                                onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
+                                    publication: item,
+                                    seller: item.seller
+                                })}
                             onToggleFavorite={handleRemoveFavorite}
                         />
                     )}
