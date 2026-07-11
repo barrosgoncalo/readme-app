@@ -23,12 +23,9 @@ import {
     arrayRemove, 
     arrayUnion,
     increment,
-    collection,
-    query,
-    where,
-    getDocs
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
+import { PublicationService } from '@readme/shared/src/services/publications';
 
 export default function MyPostingsScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -46,43 +43,20 @@ export default function MyPostingsScreen({ navigation }) {
         setIsLoading(true);
 
         try {
-            // 1. Procurar a lista de favoritos do utilizador para saber quais das suas publicações ele próprio favoritou
             const userDocRef = doc(db, 'users', currentUser.uid);
             const userDocSnap = await getDoc(userDocRef);
             const favoriteIds = userDocSnap.exists() ? (userDocSnap.data().favoriteBooks || []) : [];
 
-            // 2. Fazer query à coleção 'publications' onde o criador (uid) é o utilizador atual
-            const publicationsRef = collection(db, 'publications');
-            const q = query(publicationsRef, where('uid', '==', currentUser.uid));
-            const querySnapshot = await getDocs(q);
+            const fetchedBooks = await PublicationService.fetchUserPublications(currentUser.uid);
 
-            const fetchedBooks = querySnapshot.docs.map(snap => {
-                const data = snap.data();
-                return {
-                    id: snap.id,
-                    uid: data.uid,
-                    title: data.book?.title || 'Unknown Title',
-                    author: data.book?.author || 'Unknown Author',
-                    imageUrl: data.book?.images && data.book.images.length > 0 
-                        ? data.book.images[0] 
-                        : null,
-                    seller: {
-                        name: data.sellerName || data.ownerName || 'Anonymous Swapper',
-                        avatarUrl: data.sellerAvatar || data.ownerAvatar || null,
-                    },
-                    favoriteCount: data.stats?.likesCount || 0,
-                    publicationData: data,
-                    // Verifica se este livro específico está na lista de favoritos guardada no passo 1
-                    isFavorite: favoriteIds.includes(snap.id)
-                };
-            });
-
-            setMyBooks(fetchedBooks);
-
+            setMyBooks(fetchedBooks.map(book => ({
+                ...book,
+                isFavorite: favoriteIds.includes(book.id)
+            })));
         } catch (error) {
             console.error("Error fetching my postings:", error);
         } finally {
-            isLoading && setIsLoading(false);
+            setIsLoading(false);
         }
     };
 

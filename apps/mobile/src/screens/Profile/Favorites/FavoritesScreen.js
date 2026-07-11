@@ -24,6 +24,7 @@ import {
     increment 
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
+import { PublicationService } from '@readme/shared/src/services/publications';
 
 export default function FavoritesScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -44,48 +45,16 @@ export default function FavoritesScreen({ navigation }) {
         try {
             const userDocRef = doc(db, 'users', currentUser.uid);
             const userDocSnap = await getDoc(userDocRef);
-            
+
             if (!userDocSnap.exists()) {
                 setFavorites([]);
-                setIsLoading(false);
                 return;
             }
 
             const favoriteIds = userDocSnap.data().favoriteBooks || [];
+            const fetchedFavorites = await PublicationService.fetchPublicationsByIds(favoriteIds);
 
-            if (favoriteIds.length === 0) {
-                setFavorites([]);
-                setIsLoading(false);
-                return;
-            }
-
-            const fetchPromises = favoriteIds.map(id => getDoc(doc(db, 'publications', id)));
-            const documentSnapshots = await Promise.all(fetchPromises);
-
-            const fetchedFavorites = documentSnapshots
-                .filter(snap => snap.exists())
-                .map(snap => {
-                    const data = snap.data();
-                    return {
-                        id: snap.id,
-                        uid: data.uid,
-                        title: data.book?.title || 'Unknown Title',
-                        author: data.book?.author || 'Unknown Author',
-                        imageUrl: data.book?.images && data.book.images.length > 0 
-                            ? data.book.images[0] 
-                            : null,
-                        seller: {
-                            name: data.sellerName || data.ownerName || 'Anonymous Swapper',
-                            avatarUrl: data.sellerAvatar || data.ownerAvatar || null,
-                        },
-                        favoriteCount: data.stats?.likesCount || 0,
-                        publicationData: data,
-                        isFavorite: true
-                    };
-                });
-
-            setFavorites(fetchedFavorites);
-
+            setFavorites(fetchedFavorites.map(book => ({ ...book, isFavorite: true })));
         } catch (error) {
             console.error("Error fetching favorites:", error);
         } finally {
@@ -170,10 +139,10 @@ export default function FavoritesScreen({ navigation }) {
                             theme={theme}
                             isFavorite={item.isFavorite}
                             favoriteCount={item.favoriteCount}
-                                onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
-                                    publication: item,
-                                    seller: item.seller
-                                })}
+                            onPress={() => navigation.navigate(ROUTES.PUBLICATION_DETAILS, { 
+                                publication: item,
+                                seller: item.seller
+                            })}
                             onToggleFavorite={handleRemoveFavorite}
                         />
                     )}

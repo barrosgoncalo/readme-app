@@ -13,7 +13,12 @@ const _mapPublicationSummary = (doc) => ({
     author: doc.book?.author || 'Unknown Author',
     imageUrl: (doc.book?.images?.length > 0 ? doc.book.images[0] : 'https://via.placeholder.com/400x600'),
     ownerId: doc.uid,
-    rawDocData: doc,
+    seller: {
+        name: doc.sellerName || doc.ownerName || 'Anonymous Swapper',
+        avatarUrl: doc.sellerAvatar || doc.ownerAvatar || null,
+    },
+    favoriteCount: doc.stats?.likesCount || 0,
+    publicationData: doc,
 });
 
 const _mapPublicationDetails = (doc) => ({
@@ -52,6 +57,18 @@ export const PublicationService = {
             { field: 'uid', operator: '==', value: userId }
         ]);
         return docs.map(_mapPublicationSummary);
+    },
+
+    fetchPublicationsByIds: async (ids) => {
+        if (!ids || ids.length === 0) return [];
+
+        const docs = await Promise.all(
+            ids.map(id => PublicationService.fetchPublication(id))
+        );
+
+        return docs
+            .filter(Boolean)
+            .map(_mapPublicationSummary);
     },
 
     normalizePublicationDetails: (doc) => _mapPublicationDetails(doc),
