@@ -19,10 +19,6 @@ import { BookGridItem } from '../../../components/ui/BookGridItem';
 import { 
     doc, 
     getDoc, 
-    updateDoc, 
-    arrayRemove, 
-    arrayUnion,
-    increment,
 } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { PublicationService } from '@readme/shared/src/services/publications';
@@ -60,9 +56,7 @@ export default function MyPostingsScreen({ navigation }) {
         }
     };
 
-    // Função melhorada que permite tanto adicionar como remover dos favoritos diretamente neste ecrã
     const handleToggleFavorite = async (bookId, currentIsFavorite) => {
-        // Otimismo na UI: atualiza o estado imediatamente para dar sensação de fluidez
         setMyBooks(prev => prev.map(book => {
             if (book.id === bookId) {
                 return {
@@ -75,20 +69,10 @@ export default function MyPostingsScreen({ navigation }) {
         }));
 
         try {
-            const userDocRef = doc(db, 'users', currentUser.uid); 
-            const publicationDocRef = doc(db, 'publications', bookId);
-
-            await Promise.all([
-                updateDoc(userDocRef, {
-                    favoriteBooks: currentIsFavorite ? arrayRemove(bookId) : arrayUnion(bookId)
-                }),
-                updateDoc(publicationDocRef, {
-                    "stats.likesCount": increment(currentIsFavorite ? -1 : 1)
-                })
-            ]);
+            await PublicationService.toggleFavorite(currentUser.uid, bookId, currentIsFavorite);
         } catch (error) {
             console.error("Failed to toggle favorite status:", error);
-            fetchMyPostings(); // Reverte para o estado real do Firestore caso falhe
+            fetchMyPostings();
         }
     };
 

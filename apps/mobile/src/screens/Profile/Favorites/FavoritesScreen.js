@@ -62,24 +62,14 @@ export default function FavoritesScreen({ navigation }) {
         }
     };
 
-    const handleRemoveFavorite = async (bookId, currentIsFavorite, currentCount) => {
+    const handleRemoveFavorite = async (bookId, currentIsFavorite) => {
         setFavorites(prev => prev.filter(book => book.id !== bookId));
 
         try {
-            const userDocRef = doc(db, 'users', currentUser.uid); 
-            const publicationDocRef = doc(db, 'publications', bookId);
-
-            await Promise.all([
-                updateDoc(userDocRef, {
-                    favoriteBooks: arrayRemove(bookId)
-                }),
-                updateDoc(publicationDocRef, {
-                    "stats.likesCount": increment(-1)
-                })
-            ]);
+            await PublicationService.toggleFavorite(currentUser.uid, bookId, currentIsFavorite);
         } catch (error) {
             console.error("Failed to remove favorite:", error);
-            fetchFavoriteBooks(); 
+            fetchFavoriteBooks();
         }
     };
 
