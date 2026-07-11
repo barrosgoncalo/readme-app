@@ -13,22 +13,15 @@ import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { buildExploreStyles } from '../../../styles/exploreStyles';
+import { buildBookGridStyles } from '../../../styles/bookGridStyles';
 
 import { BookGridItem } from '../../../components/ui/BookGridItem';
-import { 
-    doc, 
-    getDoc, 
-} from 'firebase/firestore';
-import { db } from '@readme/shared/src/services/firebase';
-import { PublicationService } from '@readme/shared/src/services/publications';
-import { UsersService } from '@readme/shared/src/services/users';
 import { useFavorites } from '@readme/shared/src/hooks/use-favorites';
 
 export default function FavoritesScreen({ navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const styles = buildExploreStyles(theme); 
+    const styles = buildBookGridStyles(theme); 
 
     const insets = useSafeAreaInsets();
 
