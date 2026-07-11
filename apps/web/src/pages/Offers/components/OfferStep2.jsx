@@ -6,7 +6,7 @@ import BookCover from '../../../components/BookCover.jsx';
 import styles from './OfferStep2.module.css';
 
 const LISBON = { lat: 38.7223, lng: -9.1393 };
-const DEFAULT_LOCATION = { title: 'Lisbon', address: 'Lisbon, Portugal', ...LISBON };
+const DEFAULT_LOCATION = { title: 'Lisbon', address: 'Lisbon, Portugal', lat: LISBON.lat, lon: LISBON.lng };
 
 function RecenterMap({ center }) {
     const map = useMap();
@@ -144,7 +144,7 @@ export default function OfferStep2({ publication, selectedCount, location, onLoc
                         <RecenterMap center={center} />
                         <MapClickHandler onMapClick={handleMapClick} />
                         {location && (
-                            <Marker position={[location.lat, location.lon]}>
+                            <Marker position={[location.lat, location.lon ?? location.lng]}>
                                 <Popup>{location.title}</Popup>
                             </Marker>
                         )}
