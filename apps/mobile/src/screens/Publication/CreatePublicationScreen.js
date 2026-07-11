@@ -16,6 +16,7 @@ import { buildPublicationStyles } from '../../styles/publicationStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import SuccessModal from '../../components/ui/SuccessModal';
+import { PhotoGalleryEditor } from '../../components/ui/PhotoGalleryEditor';
 import { FormLineInput, FormTextArea, FormDropdown } from '../../components/ui/FormsComponents';
 import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
 
@@ -119,53 +120,12 @@ export default function CreatePublicationScreen({ navigation }) {
                                 </TouchableOpacity>
                             </View>
 
-                            <ScrollView 
-                                horizontal 
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{ gap: 12, paddingVertical: 10 }}
-                                style={{ marginBottom: 20 }}
-                            >
-                                {images.map((uri, index) => (
-                                    <View key={index} style={{ width: 100, height: 133, position: 'relative' }}>
-                                        <Image 
-                                            source={{ uri }} 
-                                            style={{ width: '100%', height: '100%', borderRadius: 12 }} 
-                                        />
-                                        <TouchableOpacity 
-                                            style={{ 
-                                                position: 'absolute', 
-                                                top: -8, 
-                                                right: -8, 
-                                                backgroundColor: theme.background, 
-                                                borderRadius: 12 
-                                            }}
-                                            onPress={() => removeImage(index)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Iconify icon="lucide:x-circle" size={24} color={theme.text} />
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-
-                                <TouchableOpacity 
-                                    style={{
-                                        width: 100, 
-                                        height: 133, 
-                                        borderRadius: 12,
-                                        borderWidth: 1,
-                                        borderColor: theme.secondary,
-                                        borderStyle: 'dashed',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        backgroundColor: theme.background
-                                    }} 
-                                    activeOpacity={0.7} 
-                                    onPress={handleAddImagePress}
-                                >
-                                    <Iconify icon="lucide:plus" size={32} color={theme.subtext} />
-                                    <Text style={{ color: theme.subtext, fontSize: 12, marginTop: 4 }}>Add photo</Text>
-                                </TouchableOpacity>
-                            </ScrollView>
+                            <PhotoGalleryEditor
+                                images={images}
+                                onRemove={removeImage}
+                                onAddPress={handleAddImagePress}
+                                theme={theme}
+                            />
 
                             <FormLineInput
                                 label="Book's Name"
