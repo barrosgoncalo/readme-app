@@ -284,6 +284,57 @@
     text-overflow: ellipsis;
 }
 
+.chooseBtn {
+    background: var(--primary);
+    color: white;
+}
+
+.chooseBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.selectable {
+    cursor: pointer;
+}
+
+.selectable:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.selectedBook {
+    border-color: var(--success) !important;
+    background: rgba(76, 175, 80, 0.08) !important;
+}
+
+.checkIcon {
+    margin-left: auto;
+    align-self: center;
+    color: var(--success);
+    padding-right: var(--space-2);
+}
+
+.obDetailsLink {
+    font-size: 0.8rem;
+    color: var(--primary);
+    text-decoration: none;
+    margin-top: auto;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.obDetailsLink:hover {
+    text-decoration: underline;
+}
+
+.modalFooter {
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-elem);
+    border-top: 1px solid var(--bg-selected);
+    display: flex;
+    justify-content: flex-end;
+}
+
 @media (max-width: 720px) {
     .card {
         width: 220px;
