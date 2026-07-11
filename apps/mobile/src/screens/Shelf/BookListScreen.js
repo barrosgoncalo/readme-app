@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
     View, 
     Text, 
@@ -9,7 +9,6 @@ import {
     Modal,
 } from 'react-native';
 import { CurrentReadingCard } from '../../components/ui/CurrentReadingCard.js'
-import { useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
@@ -17,11 +16,9 @@ import { Iconify } from 'react-native-iconify';
 import { buildShelfStyles } from '../../styles/shelfStyles';
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { MyBooksService } from '@readme/shared/src/services/books'; 
+import { useReadingList } from '@readme/shared/src/hooks/use-reading-list';
 
 import AddBookPopup from './AddBookPopup';
-
-
 
 // ─── MAIN SCREEN COMPONENT ───────────────────────────────────────────────
 export default function ReadingListScreen({ navigation }) {
@@ -31,50 +28,13 @@ export default function ReadingListScreen({ navigation }) {
 
     const { currentUser } = useAuth();
 
-    // ─── STATE ───────────────────────────────────────────────────────────────
-    const [books, setBooks] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAddPopupVisible, setAddPopupVisible] = useState(false);
+    // ─── DATA (now from hook) ────────────────────────────────────────────────
+    const { books, isLoading, handlePageUpdate, handleDeleteBook } = useReadingList(currentUser?.uid);
 
-    // Delete Popup State
+    // ─── LOCAL UI STATE ──────────────────────────────────────────────────────
+    const [isAddPopupVisible, setAddPopupVisible] = useState(false);
     const [isDeletePopupVisible, setDeletePopupVisible] = useState(false);
     const [selectedBookForDelete, setSelectedBookForDelete] = useState(null);
-
-    // ─── HANDLERS ────────────────────────────────────────────────────────────
-    const handlePageUpdate = async (bookId, newPage, totalPages) => {
-        if (!currentUser?.uid) return;
-
-        const safeTotal = totalPages > 0 ? totalPages : 1;
-        const boundedPage = Math.min(Math.max(newPage, 0), safeTotal); 
-        const newPercentage = Math.round((boundedPage / safeTotal) * 100);
-
-        try {
-            await MyBooksService.updateBook(currentUser.uid, bookId, {
-                currentPage: boundedPage,
-                progressPercentage: newPercentage,
-                ...(boundedPage === safeTotal && { 
-                    status: 'finished', 
-                    finishedAt: new Date().toISOString() 
-                })
-            });
-
-            setBooks(prevBooks => 
-                prevBooks.map(book => {
-                    if (book.bookId === bookId) {
-                        return { 
-                            ...book, 
-                            currentPage: boundedPage, 
-                            progressPercentage: newPercentage,
-                            status: boundedPage === safeTotal ? 'finished' : book.status
-                        };
-                    }
-                    return book;
-                })
-            );
-        } catch (error) {
-            console.error("Failed to update page progress:", error);
-        }
-    };
 
     // ─── DELETE HANDLERS ─────────────────────────────────────────────────────
     const openDeletePopup = (book) => {
@@ -82,44 +42,11 @@ export default function ReadingListScreen({ navigation }) {
         setDeletePopupVisible(true);
     };
 
-    const handleDeleteBook = async () => {
-        if (!currentUser?.uid || !selectedBookForDelete) return;
-
-        const targetId = selectedBookForDelete.bookId || selectedBookForDelete.id;
-
-        if (!targetId) {
-            console.error("Could not find a valid ID for this book!");
-            return;
-        }
-
-        try {
-            await MyBooksService.deleteBook(currentUser.uid, targetId);
-            setBooks(prevBooks => prevBooks.filter(book => (book.bookId || book.id) !== targetId));
-        } catch (error) {
-            console.error("Failed to delete book:", error);
-        } finally {
-            setDeletePopupVisible(false);
-            setSelectedBookForDelete(null);
-        }
+    const confirmDelete = async () => {
+        await handleDeleteBook(selectedBookForDelete);
+        setDeletePopupVisible(false);
+        setSelectedBookForDelete(null);
     };
-
-    // ─── DATA FETCHING ───────────────────────────────────────────────────────
-    useFocusEffect(
-        useCallback(() => {
-            const fetchBooks = async () => {
-                if (!currentUser?.uid) return;
-                try {
-                    const userBooks = await MyBooksService.getBooks(currentUser.uid);
-                    setBooks(userBooks);
-                } catch (error) {
-                    console.error("Error fetching books:", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            fetchBooks();
-        }, [currentUser])
-    );
 
     // ─── DATA PROCESSING ─────────────────────────────────────────────────────
     const currentlyReadingBooks = useMemo(() => 
@@ -210,7 +137,7 @@ export default function ReadingListScreen({ navigation }) {
                 </View>
             )}
         </View>
-    ), [currentlyReadingBooks, styles, theme, navigation]);
+    ), [currentlyReadingBooks, styles, theme, navigation, handlePageUpdate]);
 
     // ─── MAIN RENDER ─────────────────────────────────────────────────────────
     if (isLoading && books.length === 0) {
@@ -307,7 +234,7 @@ export default function ReadingListScreen({ navigation }) {
 
                             <TouchableOpacity 
                                 style={[styles.actionButton, styles.deleteButton]} 
-                                onPress={handleDeleteBook}
+                                onPress={confirmDelete}
                             >
                                 <Text style={[styles.buttonText, { color: '#FFF' }]}>Delete</Text>
                             </TouchableOpacity>
