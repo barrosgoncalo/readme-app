@@ -84,9 +84,13 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     async function handleStatus(newStatus) {
         setBusy(true);
         try {
-            const receiverId = isOwn ? message.senderId : currentUserId;
-            const senderId = isOwn ? currentUserId : message.senderId;
-            await ChatService.updateOfferStatus(chatId, message.id, newStatus, senderId, receiverId);
+            if (newStatus === NEGOTIATION_STATUS.DECLINED && offer.isSelectionFrom)
+                await ChatService.declineOfferAndReofferRemaining(chatId, message, currentUserId, otherUserId);
+            else {
+                const receiverId = isOwn ? message.senderId : currentUserId;
+                const senderId = isOwn ? currentUserId : message.senderId;
+                await ChatService.updateOfferStatus(chatId, message.id, newStatus, senderId, receiverId);
+            }
         } catch (err) {
             console.error('Error updating offer:', err);
         } finally {
@@ -149,11 +153,25 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     async function handleProposeSelected() {
         if (!selectedBookId) return;
 
-        // TODO: AQUI É ONDE O NOVO CARTÃO VAI SER ENVIADO!
-        console.log("Livro selecionado para a nova proposta:", selectedBookId);
-        alert("Livro selecionado com sucesso!\n\nPara o próximo passo (enviar a nova mensagem para o chat) precisaremos de criar uma função no teu ChatService. Avisa-me quando quiseres avançar com essa parte!");
+        const chosenBook = fetchedBooks.find(b => b.id === selectedBookId);
+        if (!chosenBook) return;
 
-        handleCloseBooks();
+        setBusy(true);
+        try {
+            await ChatService.chooseBookFromOffer(
+                chatId,
+                message,
+                chosenBook,
+                currentUserId,
+                otherUserId
+            );
+
+            handleCloseBooks();
+        } catch (err) {
+            console.error('Error sending selection:', err);
+        } finally {
+            setBusy(false);
+        }
     }
 
     const statusLabel = {
@@ -210,7 +228,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                     disabled={busy}
                                 >
                                     <List size={14}/>
-                                    Choose book
+                                    Choose Book
                                 </button>
                             ) : (
                                 <button
@@ -281,7 +299,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                             </button>
                         </div>
 
-                        <div className={`${styles.modalBody} ${fetchedBooks.length > 6 ? styles.grid : styles.list}`}>
+                        <div className={`${styles.modalBody} ${fetchedBooks.length > 5 ? styles.grid : styles.list}`}>
                             {loadingBooks ? (
                                 <Spinner center label="Loading books..."/>
                             ) : (
