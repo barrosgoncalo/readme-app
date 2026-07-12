@@ -273,9 +273,10 @@ export default function OfferMessageCard({
                             }
                         ]}
                         onPress={() => {
-                            navigation.navigate(ROUTES.REVIEW_SWAPPER, {
+                            navigation.navigate(ROUTES.REVIEW_SWAPPER, { 
                                 targetUserId: targetSeller?.uid || item.senderId,
-                                chatId: chatId
+                                chatId: chatId,
+                                swapId: item.id
                             });
                         }}
                         disabled={hasReviewed}
@@ -321,7 +322,8 @@ export default function OfferMessageCard({
                             onPress={() => {
                                 navigation.navigate(ROUTES.REVIEW_SWAPPER, {
                                     targetUserId: targetSeller?.uid || item.senderId,
-                                    chatId: chatId
+                                    chatId: chatId,
+                                    swapId: item.id
                                 });
                             }}
                             disabled={hasReviewed}

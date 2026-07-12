@@ -26,7 +26,7 @@ export default function ReviewSwapperScreen({ route, navigation }) {
     const theme = Colors[colorScheme];
     
     // Parameters passed from previous screen
-    const { targetUserId, chatId } = route.params;
+    const { targetUserId, chatId, swapId } = route.params;
     const { currentUser } = useAuth();
 
     const [rating, setRating] = useState(0);
@@ -70,19 +70,8 @@ export default function ReviewSwapperScreen({ route, navigation }) {
         setIsSubmitting(true);
 
         try {
-            const reviewPayload = createReviewModel(
-                chatId,           // swapId
-                chatId,           // chatId
-                currentUser?.uid, // reviewerId
-                targetUserId,     // revieweeId
-                rating,           // rating
-                comment.trim()    // comment
-            );
-
-            // Save review to Firestore using a composite key to prevent duplicates
-            // This safely triggers the background Cloud Function on Document Creation
-            await setDoc(doc(db, 'reviews', `${chatId}_${currentUser?.uid}`), reviewPayload);
-
+            const reviewPayload = createReviewModel(swapId, chatId, currentUser?.uid, targetUserId, rating, comment.trim());
+            await setDoc(doc(db, 'reviews', `${swapId}_${currentUser?.uid}`), reviewPayload);
             Alert.alert(
                 "Thank you!", 
                 "Your review has been successfully submitted.",

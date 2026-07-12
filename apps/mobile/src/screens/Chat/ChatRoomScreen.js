@@ -21,11 +21,11 @@ export default function ChatRoomScreen({ route, navigation }) {
     const flatListRef = useRef(null);
     const prevNewestIdRef = useRef(null);
     const [inputText, setInputText] = useState('');
-    const [inputBarHeight, setInputBarHeight] = useState(72); // sane fallback before first layout
+    const [inputBarHeight, setInputBarHeight] = useState(72);
 
     const {
         messages, loading, otherUserName, otherUserAvatar,
-        otherUserId, bookImage, publicationId, chatLocation, hasReviewed
+        otherUserId, bookImage, publicationId, chatLocation, reviewedSwapIds
     } = useChatRoomData(chatId, currentUserId, targetSeller);
 
     const {
@@ -55,24 +55,25 @@ export default function ChatRoomScreen({ route, navigation }) {
     const renderMessageItem = useCallback(({ item, index }) => {
         const isMe = item.senderId === currentUserId;
         const isLastInGroup = index === 0 || messages[index - 1]?.senderId !== item.senderId;
+        const hasReviewedThisSwap = reviewedSwapIds.has(item.id);
 
         return (
             <MessageListItem
                 item={item} isMe={isMe} isLastInGroup={isLastInGroup} theme={theme}
                 colorScheme={colorScheme} currentUserId={currentUserId} chatId={chatId}
                 targetSeller={targetSeller} bookImage={bookImage} chatLocation={chatLocation}
-                isFetchingBook={isFetchingBook} hasReviewed={hasReviewed} navigation={navigation}
+                isFetchingBook={isFetchingBook} hasReviewed={hasReviewedThisSwap} navigation={navigation}
                 onBookPress={handleBookPress} onOpenNavigation={handleOpenNavigation}
                 onResolveOffer={handleResolveOffer} onShowQRCode={handleShowQRCode}
                 onOpenScanner={handleOpenScanner} onCancelSwap={handleCancelSwap}
             />
         );
     }, [
-        currentUserId, messages, theme, colorScheme, chatId, targetSeller,
-        bookImage, chatLocation, isFetchingBook, hasReviewed, navigation,
-        handleBookPress, handleOpenNavigation, handleResolveOffer,
-        handleShowQRCode, handleOpenScanner, handleCancelSwap
-    ]);
+            currentUserId, messages, theme, colorScheme, chatId, targetSeller,
+            bookImage, chatLocation, isFetchingBook, reviewedSwapIds, navigation,
+            handleBookPress, handleOpenNavigation, handleResolveOffer,
+            handleShowQRCode, handleOpenScanner, handleCancelSwap
+        ]);
 
     return (
         <View style={styles.container}>

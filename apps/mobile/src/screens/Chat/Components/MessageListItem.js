@@ -1,4 +1,3 @@
-// MessageListItem.js
 import React, { memo, useMemo, useRef, useEffect } from 'react';
 import { View, Animated } from 'react-native';
 import OfferMessageCard from '../../../components/ui/OfferMessageCard';

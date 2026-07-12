@@ -76,7 +76,8 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
                                 chatId, 
                                 messageId, 
                                 targetBookId, 
-                                finalSelectedBookId
+                                finalSelectedBookId,
+                                currentUserId
                             );
                             Alert.alert("Swap Cancelled", "The swap was cancelled and books are available again.");
                         } catch (error) {

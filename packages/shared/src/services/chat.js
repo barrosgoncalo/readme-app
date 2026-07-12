@@ -151,7 +151,8 @@ export const ChatService = {
         proposerId = null, 
         receiverId = null,
         finalSelectedBookId = null,
-        finalSelectedBookImage = null
+        finalSelectedBookImage = null,
+        cancelledBy = null
     ) => {
         let messageUpdatePayload = { 'offerDetails.status': newStatus };
         let chatParentPayload = { hiddenFor: [] };
@@ -163,6 +164,10 @@ export const ChatService = {
             
             messageUpdatePayload = { ...messageUpdatePayload, ...msgPayload };
             chatParentPayload = { ...chatParentPayload, ...chatPayload };
+        }
+
+        if (newStatus === (NEGOTIATION_STATUS.CANCELLED || 'cancelled') && cancelledBy) {
+            messageUpdatePayload['offerDetails.cancelledBy'] = cancelledBy;
         }
 
         await Promise.all([
