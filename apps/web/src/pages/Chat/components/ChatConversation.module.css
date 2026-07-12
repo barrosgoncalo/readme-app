@@ -6,8 +6,19 @@
     background: var(--bg);
 }
 
+@media (min-width: 721px) {
+    .conversation {
+        margin-top: -70px;
+        height: calc(100% + 80px);
+        position: relative;
+        z-index: 50;
+        border-top-left-radius: var(--radius-lg);
+        box-shadow: -4px -4px 16px rgba(0,0,0,0.05);
+    }
+}
+
 .header {
-    padding: var(--space-3);
+    padding: 12px var(--space-3);
     border-bottom: 1px solid var(--bg-elem);
 }
 
@@ -27,11 +38,13 @@
 .name {
     margin: 0;
     font-weight: 600;
+    font-size: 1rem;
     color: var(--text);
+    line-height: 1.2;
 }
 
 .subtitle {
-    margin: 0;
+    margin: 2px 0 0 0;
     font-size: 0.85rem;
     color: var(--subtext);
 }
