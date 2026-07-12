@@ -31,12 +31,12 @@ export default function BookDetailsScreen({ route, navigation }) {
                 { 
                     paddingTop: insets.top, 
                     paddingBottom: insets.bottom,
-                    backgroundColor: theme.background // FORCING the background color inline
+                    backgroundColor: theme.background
                 }
             ]}
         >
             <ScrollView 
-                style={[styles.container, { backgroundColor: theme.background }]} // Forcing here too
+                style={[styles.container, { backgroundColor: theme.background }]}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
