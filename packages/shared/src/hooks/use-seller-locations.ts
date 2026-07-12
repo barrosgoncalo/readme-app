@@ -15,6 +15,17 @@ export function useSellerLocations(sellerUid) {
 
         const fetchAndGeocode = async () => {
             try {
+                // 1. Request permission BEFORE attempting to geocode
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                
+                if (status !== 'granted') {
+                    console.warn('Location permission denied. Defaulting to fallback pin.');
+                    setSellerLocations([{ id: 'fallback', title: 'Lisbon Center', address: 'Lisbon, Portugal', latitude: 38.7223, longitude: -9.1393 }]);
+                    setLoading(false);
+                    return;
+                }
+
+                // 2. Fetch the user's data from Firestore
                 const sellerDocRef = doc(db, 'users', sellerUid);
                 const sellerDocSnap = await getDoc(sellerDocRef);
 

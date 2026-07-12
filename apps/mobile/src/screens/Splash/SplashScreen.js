@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Animated, Image } from 'react-native';
+import { View, Animated, Image, useColorScheme } from 'react-native';
 import * as ExpoSplash from 'expo-splash-screen';
 import { buildStyles } from '../../styles/splashStyles';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
@@ -17,6 +17,7 @@ export default function SplashScreen({ onFinish }) {
 
     const [isLogoLoaded, setIsLogoLoaded] = useState(false);
 
+    const colorScheme = useColorScheme();
     const theme = useTheme();
     const styles = buildStyles(theme);
 
