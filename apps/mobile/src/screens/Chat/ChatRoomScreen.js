@@ -10,6 +10,7 @@ import ChatInputBar from './Components/ChatInputBar';
 import MessageListItem from './Components/MessageListItem';
 
 export default function ChatRoomScreen({ route, navigation }) {
+    const colorScheme = useColorScheme();
     const theme = useTheme();
     const styles = useMemo(() => buildChatRoomStyles(theme), [theme]);
 

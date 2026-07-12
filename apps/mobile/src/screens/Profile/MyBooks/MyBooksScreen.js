@@ -5,6 +5,7 @@ import {
     FlatList, 
     ActivityIndicator, 
     StatusBar,
+    useColorScheme
 } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
@@ -17,6 +18,7 @@ import { BookGridItem } from '../../../components/ui/BookGridItem';
 import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings';
 
 export default function MyPostingsScreen({ navigation }) {
+    const colorScheme = useColorScheme();
     const theme = useTheme();
     const styles = buildBookGridStyles(theme); 
 

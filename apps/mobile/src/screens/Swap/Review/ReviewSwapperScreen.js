@@ -21,7 +21,7 @@ import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { createReviewModel } from '@readme/shared/src/models/review';
 
 export default function ReviewSwapperScreen({ route, navigation }) {
-    const theme = useTheme)=;
+    const theme = useTheme();
     
     // Parameters passed from previous screen
     const { targetUserId, chatId, swapId } = route.params;

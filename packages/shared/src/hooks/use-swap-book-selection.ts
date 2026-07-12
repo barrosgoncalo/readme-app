@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { PublicationService } from '@readme/shared/src/services/publications';
+import { useCounterOffer } from '@readme/shared/src/contexts/CounterOfferContext';
 
 export function useSwapBookSelection(offeredBooks, routeParams, navigation, ROUTES) {
+    const { initCounterOffer, updateSelectedBook } = useCounterOffer();
+    
     const [selectedBookId, setSelectedBookId] = useState(null);
     const [fetchingBookId, setFetchingBookId] = useState(null);
 
@@ -9,13 +12,15 @@ export function useSwapBookSelection(offeredBooks, routeParams, navigation, ROUT
     useEffect(() => {
         if (offeredBooks.length === 1) {
             const singleBook = offeredBooks[0];
-            navigation.replace(ROUTES.SELECT_SWAP_LOCATION, {
-                ...routeParams,
-                selectedBookId: singleBook.id,
-                selectedBookImage: singleBook.image || null
-            });
+            
+            // Seed context and skip step 1
+            initCounterOffer(routeParams);
+            updateSelectedBook(singleBook.id, singleBook.image || null);
+            
+            // Navigate cleanly without a parameter blob
+            navigation.replace(ROUTES.SELECT_SWAP_LOCATION);
         }
-    }, [offeredBooks, navigation, routeParams]);
+    }, [offeredBooks, navigation, routeParams, ROUTES, initCounterOffer, updateSelectedBook]);
 
     const handleBookPress = async (bookId) => {
         if (!bookId || fetchingBookId) return;
@@ -43,11 +48,12 @@ export function useSwapBookSelection(offeredBooks, routeParams, navigation, ROUT
         if (!selectedBookId) return;
         const selectedBook = offeredBooks.find(b => b.id === selectedBookId);
 
-        navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, {
-            ...routeParams,
-            selectedBookId,
-            selectedBookImage: selectedBook?.image || null
-        });
+        // Commit everything to context before moving forward
+        initCounterOffer(routeParams);
+        updateSelectedBook(selectedBookId, selectedBook?.image || null);
+        
+        // Navigate cleanly without a parameter blob
+        navigation.navigate(ROUTES.SELECT_SWAP_LOCATION);
     };
 
     return {

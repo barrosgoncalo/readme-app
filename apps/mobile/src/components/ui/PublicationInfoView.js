@@ -13,7 +13,7 @@ import { Image } from 'expo-image';
 import ImageViewing from 'react-native-image-viewing';
 
 // Adjust path depending on where you place this file
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildBookDetailsStyles } from '../../styles/publicationDetailsStyles';
 import { GalleryImageWrapper } from './GalleryImageWrapper'; 
 
@@ -26,7 +26,7 @@ export function PublicationInfoView({
     bottomBar 
 }) {
     const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildBookDetailsStyles(theme);
 
     const [isGalleryVisible, setIsGalleryVisible] = useState(false);

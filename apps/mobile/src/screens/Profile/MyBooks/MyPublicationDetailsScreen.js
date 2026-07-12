@@ -27,6 +27,7 @@ const extractBookDetails = (passedItem) => {
  *   No `seller` param — this screen never renders a seller card (it's always the current user's own listing).
  */
 export default function MyPublicationDetailsScreen({ route, navigation }) {
+    const colorScheme = useColorScheme();
     const theme = useTheme();
     const styles = buildBookDetailsStyles(theme);
     const isDarkMode = colorScheme === 'dark';

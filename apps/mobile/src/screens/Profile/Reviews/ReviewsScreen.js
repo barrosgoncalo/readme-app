@@ -6,7 +6,8 @@ import {
     ActivityIndicator,
     RefreshControl,
     FlatList,
-    StatusBar
+    StatusBar,
+    useColorScheme
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
@@ -23,6 +24,7 @@ export default function UserReviewsScreen({ navigation, route }) {
     const { currentUser } = useAuth();
     const userId = route.params?.userId || currentUser?.uid;
 
+    const colorScheme = useColorScheme();
     const theme = useTheme();
     const styles = buildReviewsStyles(theme);
 

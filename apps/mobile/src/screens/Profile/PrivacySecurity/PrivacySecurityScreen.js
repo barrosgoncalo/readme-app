@@ -11,9 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { buildPrivacySecurityStyles } from '../../../styles/privacySecurityStyles';
 import { Iconify } from 'react-native-iconify';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
+import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
-// Import doDeleteUserProfile here
 import { useAuth } from '@readme/shared/src/contexts/AuthContext'; 
 import { doUpdateUserProfile, doDeleteUserProfile } from '@readme/shared/src/services/auth';
 

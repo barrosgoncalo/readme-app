@@ -5,6 +5,7 @@ import {
     FlatList, 
     ActivityIndicator, 
     StatusBar,
+    useColorScheme
 } from 'react-native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
@@ -16,6 +17,7 @@ import { useFavorites } from '@readme/shared/src/hooks/use-favorites';
 import ScreenHeader from '../../../components/ui/ScreenHeader';
 
 export default function FavoritesScreen({ navigation }) {
+    const colorScheme = useColorScheme();
     const theme = useTheme();
     const styles = buildBookGridStyles(theme); 
 

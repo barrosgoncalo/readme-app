@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-    View, StyleSheet, ActivityIndicator, useColorScheme,
+    View, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
@@ -10,6 +10,7 @@ import { ChatService } from '@readme/shared/src/services/chat';
 import { useSellerLocations } from '@readme/shared/src/hooks/use-seller-locations';
 import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
 import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
+import { useCounterOffer } from '@readme/shared/src/contexts/CounterOfferContext';
 import ScreenHeader from '../../../components/ui/ScreenHeader';
 import LocationPickerMap from '../../../components/ui/LocationPickerMap';
 import MapSearchBar from '../../../components/ui/MapSearchBar';
@@ -23,15 +24,23 @@ const LISBON_REGION = {
     longitudeDelta: 0.0421,
 };
 
-export default function SelectSwapLocationScreen({ route, navigation }) {
-    const { messageId, chatId, offerDetails, targetSellerUid, selectedBookId, selectedBookImage } = route.params;
-    const { currentUser } = useAuth();
+export default function SelectSwapLocationScreen({ navigation }) {
+    const { counterDraft, clearCounterOffer } = useCounterOffer();
+    const { 
+        messageId, 
+        chatId, 
+        offerDetails, 
+        targetSellerUid, 
+        selectedBookId, 
+        selectedBookImage 
+    } = counterDraft;
 
+    const { currentUser } = useAuth();
     const theme = useTheme();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [mapReady, setMapReady] = useState(false);
-
+    
     const mapRef = useRef(null);
     const { sellerLocations, loading: mapLoading } = useSellerLocations(targetSellerUid || '');
 
@@ -77,6 +86,7 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                 ...offerDetails,
                 location: activeLocationSelection
             };
+            
             await ChatService.sendCounterOffer(
                 chatId,
                 messageId,
@@ -86,6 +96,8 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
                 selectedBookId,
                 selectedBookImage
             );
+            
+            clearCounterOffer();
             navigation.pop(2);
         } catch (error) {
             console.error("Failed to send counter:", error);

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { CurrentReadingCard } from '../../components/ui/CurrentReadingCard.js'
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { useTheme } from '@readme/shared/src/hooks/use-theme.js';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Iconify } from 'react-native-iconify';
 
 import { buildShelfStyles } from '../../styles/shelfStyles';
