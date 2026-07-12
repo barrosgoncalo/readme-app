@@ -19,6 +19,7 @@ import { Iconify } from 'react-native-iconify';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { GAMIFICATION_RANKS } from '@readme/shared/src/constants/gamification';
+import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +35,7 @@ export default function LiteraryLevelsPage({ navigation, route }) {
     }, []);
     
     // Dynamic fallback cascading: Context State -> Route Params -> Default to 0
-    const currentSwapsCompleted = user?.gamification?.completedSwapsCount ?? route?.params?.user?.gamification?.completedSwapsCount ?? 0;
+    const currentSwapsCompleted = user?.gamification?.completedSwapsCount ?? 0;
 
     const colorScheme = useColorScheme();
     const theme = useTheme();
@@ -42,7 +43,7 @@ export default function LiteraryLevelsPage({ navigation, route }) {
 
     // 2. DYNAMIC MILESTONE CALCULATIONS
     // Safely find the highest badge achieved (returns null if user has 0 swaps)
-    const highestUnlockedBadge = [...GAMIFICATION_RANKS].reverse().find(b => currentSwapsCompleted >= b.milestone) || null;
+    const highestUnlockedBadge = getHighestUnlockedBadge(currentSwapsCompleted);
 
     // Target badge is the next upcoming milestone, or the absolute final badge if maxed out
     const targetBadge = GAMIFICATION_RANKS.find(b => b.milestone > currentSwapsCompleted) || GAMIFICATION_RANKS[GAMIFICATION_RANKS.length - 1];
@@ -55,7 +56,6 @@ export default function LiteraryLevelsPage({ navigation, route }) {
     const [selectedBadge, setSelectedBadge] = useState(null);
     const hasUnlockedSelectedBadge = selectedBadge ? currentSwapsCompleted >= selectedBadge.milestone : false;
 
-    // 3. NATIVE SHARING INTERACTION
     const handleShareAchievement = async (badge) => {
         if (!badge) return;
         try {

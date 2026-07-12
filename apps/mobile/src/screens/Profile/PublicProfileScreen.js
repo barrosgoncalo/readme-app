@@ -28,6 +28,8 @@ import { UsersService } from '@readme/shared/src/services/users';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 
+import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
+
 const { width } = Dimensions.get('window');
 
 export default function PublicProfileScreen({ navigation, route }) {
@@ -45,6 +47,8 @@ export default function PublicProfileScreen({ navigation, route }) {
     const [isFollowing, setIsFollowing] = useState(false);
 
     const isValidPhoto = profile?.photoURL && profile.photoURL !== 'null' && profile.photoURL.trim() !== '';
+
+    const currentBadge = getHighestUnlockedBadge(profile?.gamification?.completedSwapsCount ?? 0);
 
     // --- DATA FETCHING ---
     const loadProfileData = async (showRefreshIndicator = false) => {
@@ -306,9 +310,6 @@ export default function PublicProfileScreen({ navigation, route }) {
                     <View style={styles.headerRow}>
                         <View style={styles.nameWrapper}>
                             <Text style={styles.name} numberOfLines={1}>{profile?.username || 'Unknown User'}</Text>
-                            {profile?.isVerified && (
-                                <Iconify icon="mdi:check-decagram" size={22} color="#22C55E" style={{ marginLeft: 6, marginTop: 2 }} />
-                            )}
                         </View>
 
                         <TouchableOpacity 
@@ -321,6 +322,19 @@ export default function PublicProfileScreen({ navigation, route }) {
                             </Text>
                         </TouchableOpacity>
                     </View>
+
+                    {currentBadge && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                            <Image
+                                source={currentBadge.image}
+                                style={{ width: 50, height: 50, marginRight: 6 }}
+                                contentFit="contain"
+                            />
+                            <Text style={{ fontSize: 16, fontFamily: Fonts.inter_semi || 'System', color: theme.subtext }}>
+                                {currentBadge.title}
+                            </Text>
+                        </View>
+                    )}
 
                     <Text style={styles.bio}>{profile?.bio || 'No bio available.'}</Text>
 

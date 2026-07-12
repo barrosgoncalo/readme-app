@@ -13,7 +13,7 @@ export const RankTitles = {
 export const DEFAULT_STARTING_RANK = RankTitles.NOVICE;
 
 export const GAMIFICATION_RANKS = [
-    { id: 1, milestone: 1, title: 'Novice Swapper', image: require('@readme/shared/src/assets/badges/Novice.png') },
+    { id: 1, milestone: 1, title: 'Novice', image: require('@readme/shared/src/assets/badges/Novice.png') },
     { id: 2, milestone: 5, title: 'Page Turner', image: require('@readme/shared/src/assets/badges/PageTurner.png') },
     { id: 3, milestone: 10, title: 'Avid Reader', image: require('@readme/shared/src/assets/badges/AvidReader.png') },
     { id: 4, milestone: 25, title: 'Librarian', image: require('@readme/shared/src/assets/badges/Librarian.png') },

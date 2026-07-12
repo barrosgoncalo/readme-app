@@ -12,6 +12,9 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 
 import { useProfileActions } from '@readme/shared/src/hooks/use-profile-actions';
 
+import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
+
+
 export default function ProfileScreen({ navigation }) {
     const theme = useTheme();
     const styles = buildProfileStyles(theme);
@@ -19,6 +22,9 @@ export default function ProfileScreen({ navigation }) {
     const { currentUser, refreshUser } = useAuth(); 
     const [focusKey, setFocusKey] = useState(0);
     const handleScroll = useScrollTabBarControl();
+
+    const currentSwapsCompleted = currentUser?.gamification?.completedSwapsCount ?? 0;
+    const currentBadge = getHighestUnlockedBadge(currentSwapsCompleted);
 
     const {
         uploading, hasNotifications,
@@ -69,10 +75,13 @@ export default function ProfileScreen({ navigation }) {
                         <Text style={styles.userName}>
                             { currentUser?.username || 'Username' }
                         </Text>
-                        <Iconify 
-                            icon="material-symbols:verified"
-                            size={20}
-                            color="#F58B2E" />
+                        {currentBadge && (
+                            <Image
+                                source={currentBadge.image}
+                                style={{ width: 25, height: 25 }}
+                                resizeMode="contain"
+                            />
+                        )}
                     </View>
                     <Text style={styles.userEmail}>
                         { currentUser?.email || 'Email' }
