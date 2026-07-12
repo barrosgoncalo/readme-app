@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { Fonts } from "@readme/shared/src/constants/theme";
 
 export const buildBookDetailsStyles = () => StyleSheet.create({
     container: {
@@ -16,22 +17,22 @@ export const buildBookDetailsStyles = () => StyleSheet.create({
         marginLeft: -4, 
     },
     title: {
-        fontFamily: 'Inter-Regular', 
+        fontFamily: Fonts.inter_regular, 
         fontSize: 28,
         marginBottom: 4,
     },
     subtitle: {
-        fontFamily: 'Inter-Regular',
+        fontFamily: Fonts.inter_regular,
         fontSize: 18,
         marginBottom: 40,
     },
     sectionTitle: {
-        fontFamily: 'Inter-Regular',
+        fontFamily: Fonts.inter_regular,
         fontSize: 24,
         marginBottom: 16,
     },
     descriptionText: {
-        fontFamily: 'Inter-Regular',
+        fontFamily: Fonts.inter_regular,
         fontSize: 15,
         lineHeight: 24,
     },
@@ -55,7 +56,7 @@ export const buildBookDetailsStyles = () => StyleSheet.create({
         borderWidth: 1,
     },
     placeholderText: {
-        fontFamily: 'Inter-Medium',
+        fontFamily: Fonts.inter_medium,
     }
 });
 
