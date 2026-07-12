@@ -1,16 +1,13 @@
 import {useState} from 'react';
-import {Link, useNavigate, useLocation} from 'react-router-dom';
+import {Link, useLocation, useNavigate} from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout.jsx';
 import Field from '../components/Field.jsx';
 import Button from '../components/Button.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';
-import {
-    doSignInWithEmailAndPassword,
-    doSignInWithGoogle,
-} from '@readme/shared/src/services/auth';
+import {doSignInWithEmailAndPassword, doSignInWithGoogle,} from '@readme/shared/src/services/auth';
+import {WEB_ROUTES} from '../constants/webRoutes';
 
 // A tua imagem de fundo.
-// Como começa por '/', o Vite vai procurar um ficheiro 'login-bg.jpeg' dentro da pasta 'apps/web/public/'
 const loginBg = '/login-bg.jpeg';
 
 // Ícone do Google
@@ -41,8 +38,8 @@ export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Quando o login tiver sucesso, manda-nos para o /profile (ou a página de onde o user vinha)
-    const from = location.state?.from?.pathname || '/profile';
+    // Quando o login tiver sucesso, manda-nos para o Explore (ou a página de onde o user vinha)
+    const from = location.state?.from?.pathname || WEB_ROUTES.MAP;
 
     async function onSubmit(e) {
         e.preventDefault();
@@ -73,7 +70,7 @@ export default function Login() {
         <AuthLayout
             title="Sign in"
             subtitle="Welcome back."
-            bgImage={loginBg} /* AQUI APLICAMOS A PROPRIEDADE CORRETA */
+            bgImage={loginBg}
             footer={
                 <span>
                     No account yet? <Link to="/register">Sign up</Link>

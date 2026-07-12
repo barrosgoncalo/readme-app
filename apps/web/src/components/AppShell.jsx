@@ -122,7 +122,7 @@ export default function AppShell() {
                 )}
             </aside>
             <main className={`${styles.content} ${isChatPage ? styles.chatContent : ''}`}>
-                <Outlet/>
+                <Outlet context={{ isSidebarOpen }} />
             </main>
         </div>
     );

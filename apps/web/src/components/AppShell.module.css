@@ -5,7 +5,6 @@
 }
 
 .shellCollapsed {
-    flex-direction: column;
 }
 
 .chatLock {
@@ -29,13 +28,17 @@
 }
 
 .sidebarCollapsed {
-    width: 100%;
+    width: auto;
     height: auto;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
     padding-bottom: var(--space-2);
     background-color: transparent;
     border-right-color: transparent;
-    transition: width 0.15s ease-out;}
+    transition: width 0.15s ease-out;
+}
 
 .sidebarCollapsed .wordmark {
     margin: 0;

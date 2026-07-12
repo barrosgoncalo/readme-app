@@ -1,30 +1,47 @@
-import { useRef, useEffect, useState } from 'react';
-import { Send } from 'lucide-react';
-import { ChatService } from '@readme/shared/src/services/chat';
-import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
-import { toMillis } from '@readme/shared/src/utils/timestamp';
+import {useEffect, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {Send} from 'lucide-react';
+import {ChatService} from '@readme/shared/src/services/chat';
+import {fetchUserProfile} from '@readme/shared/src/services/users';
+import {toMillis} from '@readme/shared/src/utils/timestamp';
 import Spinner from '../../../components/Spinner.jsx';
+import {WEB_ROUTES} from '../../../constants/webRoutes';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
 function formatMessageTime(createdAt) {
     const millis = toMillis(createdAt);
     if (!millis) return '';
-    return new Date(millis).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(millis).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 }
 
-export default function ChatConversation({ chat, messages, loading, currentUserId }) {
+export default function ChatConversation({chat, messages, loading, currentUserId}) {
+    const navigate = useNavigate();
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef(null);
+    const [otherUser, setOtherUser] = useState(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
     };
 
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    const otherUserId = chat.participants?.find(p => p !== currentUserId);
+
+    useEffect(() => {
+        const otherId = chat.participants?.find(p => p !== currentUserId);
+        if (otherId) {
+            fetchUserProfile(otherId)
+                .then(profile => setOtherUser(profile))
+                .catch(err => console.error(err));
+        }
+    }, [chat.participants, currentUserId]);
+
+    const displayName = otherUser?.username || otherUser?.fullName || chat.sellerName || 'Chat';
 
     async function handleSend() {
         if (!text.trim() || !chat.id) return;
@@ -46,10 +63,15 @@ export default function ChatConversation({ chat, messages, loading, currentUserI
             <div className={styles.header}>
                 <div className={styles.headerContent}>
                     {chat.targetBookImage && (
-                        <img src={chat.targetBookImage} alt="" className={styles.bookImage} />
+                        <img src={chat.targetBookImage} alt="" className={styles.bookImage}/>
                     )}
                     <div>
-                        <h2 className={styles.name}>{chat.sellerName || 'Chat'}</h2>
+                        <h2
+                            className={styles.name}
+                            onClick={() => otherUserId && navigate(WEB_ROUTES.userProfile(otherUserId))}
+                        >
+                            {displayName}
+                        </h2>
                         <p className={styles.subtitle}>{chat.lastMessage}</p>
                     </div>
                 </div>
@@ -58,7 +80,7 @@ export default function ChatConversation({ chat, messages, loading, currentUserI
             {/* Messages */}
             <div className={styles.messagesContainer}>
                 {loading ? (
-                    <Spinner center label="Loading messages" />
+                    <Spinner center label="Loading messages"/>
                 ) : messages.length === 0 ? (
                     <p className={styles.empty}>No messages yet. Start the conversation!</p>
                 ) : (
@@ -88,7 +110,7 @@ export default function ChatConversation({ chat, messages, loading, currentUserI
                             </div>
                         ))
                 )}
-                <div ref={messagesEndRef} />
+                <div ref={messagesEndRef}/>
             </div>
 
             {/* Composer */}
@@ -107,7 +129,7 @@ export default function ChatConversation({ chat, messages, loading, currentUserI
                     onClick={handleSend}
                     disabled={!text.trim() || sending}
                 >
-                    <Send size={18} />
+                    <Send size={18}/>
                 </button>
             </div>
         </div>

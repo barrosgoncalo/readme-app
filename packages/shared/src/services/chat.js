@@ -1,12 +1,12 @@
 // @readme/shared/src/services/chatService.js
 
-import { collection, query, where, getDocs, addDoc, doc, updateDoc, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@readme/shared/src/services/firebase';
-import { createChatModel } from '../models/chat';
-import { createOfferModel, generateVerificationCode } from '../models/offer';
-import { createMessageModel } from '../models/message';
-import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status'
-import { toMillis } from '../utils/timestamp';
+import {addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, updateDoc, where} from 'firebase/firestore';
+import {db} from '@readme/shared/src/services/firebase';
+import {createChatModel} from '../models/chat';
+import {createOfferModel, generateVerificationCode} from '../models/offer';
+import {createMessageModel} from '../models/message';
+import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
+import {toMillis} from '../utils/timestamp';
 
 export const ChatService = {
 
@@ -18,7 +18,7 @@ export const ChatService = {
         const q = query(messagesRef, orderBy('createdAt', 'desc'));
 
         return onSnapshot(q, (snapshot) => {
-            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const list = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
             list.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
             onUpdate(list);
         }, onError);
@@ -40,12 +40,12 @@ export const ChatService = {
     },
 
     /**
-     * Updates the status of an offer (e.g., 'accepted' or 'declined') 
+     * Updates the status of an offer (e.g., 'accepted' or 'declined')
      * and initializes verification data if accepted.
      */
     updateOfferStatus: async (chatId, messageId, newStatus, proposerId = null, receiverId = null) => {
         const messageRef = doc(db, `chats/${chatId}/messages`, messageId);
-        
+
         const updatePayload = {
             'offerDetails.status': newStatus
         };
@@ -94,11 +94,11 @@ export const ChatService = {
             chatId = newChatRef.id;
         }
 
-        // 3. FIXED: Pass `firstImage` as the 2nd argument so the order matches your model!
+        // 3. Pass `firstImage` as the 2nd argument so the order matches your model!
         const offerPayload = createOfferModel(
-            targetBook.id, 
-            firstImage, // <-- Inserted here!
-            offeredBooks.map(b => b.id), 
+            targetBook.id,
+            firstImage,
+            offeredBooks.map(b => b.id),
             location
         );
 
@@ -108,7 +108,7 @@ export const ChatService = {
             addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
             updateDoc(doc(db, 'chats', chatId), {
                 lastMessage: `Swap Offer: ${targetBook.title || 'Book'}`,
-                targetBookImage: firstImage, // <-- Added this! Ensures reused chats update their cover image for the Explore Screen
+                targetBookImage: firstImage,
                 updatedAt: new Date().toISOString()
             })
         ]);
@@ -128,8 +128,8 @@ export const ChatService = {
             const counterOfferPayload = {
                 targetBookId: originalOffer.targetBookId,
                 targetBookImage: originalOffer.targetBookImage || null,
-                offeredBookIds: originalOffer.offeredBookIds, 
-                selectedBookId: selectedBookId, 
+                offeredBookIds: originalOffer.offeredBookIds,
+                selectedBookId: selectedBookId,
                 selectedBookImage: originalOffer.selectedBookImage || null,
                 location: newLocation || originalOffer.location || {},
                 isCounter: true,
@@ -139,9 +139,9 @@ export const ChatService = {
 
             // 3. Create the new message payload
             const messagePayload = createMessageModel(
-                currentUserId, 
-                "Sent a counter proposal", 
-                "offer", 
+                currentUserId,
+                "Sent a counter proposal",
+                "offer",
                 counterOfferPayload
             );
 
@@ -167,7 +167,7 @@ export const ChatService = {
     streamUserChats: (uid, onUpdate, onError) => {
         const q = query(collection(db, 'chats'), where('participants', 'array-contains', uid));
         return onSnapshot(q, (snap) => {
-            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const list = snap.docs.map(d => ({id: d.id, ...d.data()}));
             list.sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt));
             onUpdate(list);
         }, onError);
@@ -182,4 +182,75 @@ export const ChatService = {
             'offerDetails.verifiedAt': new Date().toISOString(),
         });
     },
+
+    /**
+     * Acionada quando o User B escolhe um livro da lista enviada pelo User A.
+     */
+    chooseBookFromOffer: async (chatId, originalMessage, chosenBook, currentUserId, otherUserId, realOfferedId, offeredTitle) => {
+        await ChatService.updateOfferStatus(chatId, originalMessage.id, 'countered', originalMessage.senderId, currentUserId);
+
+        const offer = originalMessage.offerDetails;
+
+        const newMessagePayload = {
+            targetBookId: chosenBook.id,
+            targetBookImage: chosenBook.coverUrl || null,
+            offeredBookIds: offer.targetBookId ? [offer.targetBookId] : [],
+            location: offer.location || null,
+            status: 'pending',
+
+            // A TUA IDEIA APLICADA AQUI: Guardamos a info de acesso rápido!
+            savedRealOfferedId: realOfferedId || null,
+            savedOfferedTitle: offeredTitle || null,
+
+            isSelectionFrom: originalMessage.id,
+            originalOfferedIds: offer.offeredBookIds,
+            originalTargetId: offer.targetBookId,
+            originalTargetImage: offer.targetBookImage
+        };
+
+        const messagePayload = createMessageModel(currentUserId, `Selected "${chosenBook.title || 'a book'}" from your offer`, 'offer', newMessagePayload);
+
+        await Promise.all([
+            addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
+            updateDoc(doc(db, 'chats', chatId), {
+                lastMessage: 'Chose a book from the list',
+                updatedAt: new Date().toISOString()
+            })
+        ]);
+    },
+
+    /**
+     * Acionada quando o User A rejeita a escolha (Decline) e ainda sobram
+     * livros da lista original para continuar a negociação.
+     */
+    declineOfferAndReofferRemaining: async (chatId, messageToDecline, currentUserId, otherUserId) => {
+        await ChatService.updateOfferStatus(chatId, messageToDecline.id, 'declined', messageToDecline.senderId, currentUserId);
+
+        const offer = messageToDecline.offerDetails;
+
+        if (offer.isSelectionFrom && offer.originalOfferedIds) {
+
+            const remainingIds = offer.originalOfferedIds.filter(id => id !== offer.targetBookId);
+
+            if (remainingIds.length > 0) {
+                const newOfferPayload = {
+                    targetBookId: offer.originalTargetId,
+                    targetBookImage: offer.originalTargetImage || null,
+                    offeredBookIds: remainingIds,
+                    location: offer.location || null,
+                    status: 'pending'
+                };
+
+                const messagePayload = createMessageModel(currentUserId, 'Declined and offered remaining books', 'offer', newOfferPayload);
+
+                await Promise.all([
+                    addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
+                    updateDoc(doc(db, 'chats', chatId), {
+                        lastMessage: 'Declined and offered remaining books',
+                        updatedAt: new Date().toISOString()
+                    })
+                ]);
+            }
+        }
+    }
 };

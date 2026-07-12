@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
-import {Check, ChevronDown, ChevronUp, MapPin, Undo2, X} from 'lucide-react';
-import {Link, useSearchParams} from 'react-router-dom';
+import {Check, ChevronDown, ChevronUp, List, MapPin, Undo2, X} from 'lucide-react';
+import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {hasUserReviewed, submitReview} from '@readme/shared/src/services/reviews';
 import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
@@ -12,6 +12,7 @@ import ReviewUI from './ReviewUI.jsx';
 import LocationMapPreview from './LocationMapPreview.jsx';
 import BookCover from '../../../components/BookCover.jsx';
 import Spinner from '../../../components/Spinner.jsx';
+import Button from '../../../components/Button.jsx';
 import styles from './OfferMessage.module.css';
 
 const STATUS_COLORS = {
@@ -24,6 +25,8 @@ const STATUS_COLORS = {
 };
 
 export default function OfferMessage({message, isOwn, currentUserId, chatId, otherUserId}) {
+    const navigate = useNavigate();
+
     const [busy, setBusy] = useState(false);
     const [verificationError, setVerificationError] = useState('');
     const [hasReviewed, setHasReviewed] = useState(false);
@@ -34,6 +37,9 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     const showBooksModal = searchParams.get('offer') === message.id;
     const [fetchedBooks, setFetchedBooks] = useState([]);
     const [loadingBooks, setLoadingBooks] = useState(false);
+
+    const [selectedBookId, setSelectedBookId] = useState(null);
+    const [singleBook, setSingleBook] = useState(null);
 
     const offer = message.offerDetails;
     const isCompleted = offer?.status === 'completed';
@@ -55,34 +61,64 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                     if (!cancelled) setLoadingBooks(false);
                 });
 
-            return () => {
-                cancelled = true;
-            };
+            return () => cancelled = true;
         }
     }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
 
-
     useEffect(() => {
         if (!isCompleted) return;
+
         let cancelled = false;
         hasUserReviewed(message.id, currentUserId)
             .then(reviewed => {
-                if (!cancelled) setHasReviewed(reviewed);
+                if (!cancelled)
+                    setHasReviewed(reviewed);
             })
             .catch(err => console.error('Error checking review status:', err));
-        return () => {
-            cancelled = true;
-        };
+
+        return () => cancelled = true;
     }, [isCompleted, message.id, currentUserId]);
+
+    useEffect(() => {
+        if (offer?.offeredBookIds?.length === 1 && !singleBook) {
+            if (offer.savedOfferedTitle && offer.savedRealOfferedId) {
+                setSingleBook({
+                    title: offer.savedOfferedTitle,
+                    realBookId: offer.savedRealOfferedId
+                });
+                return;
+            }
+
+            let cancelled = false;
+            const originalId = offer.offeredBookIds[0];
+
+            async function fetchNormalBook() {
+                try {
+                    const globalBooks = await getBooksByIds([originalId]);
+                    if (globalBooks && globalBooks.length > 0 && !cancelled)
+                        setSingleBook({title: globalBooks[0].title, realBookId: globalBooks[0].id});
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            fetchNormalBook();
+            return () => cancelled = true;
+        }
+    }, [offer?.offeredBookIds, offer?.savedOfferedTitle, offer?.savedRealOfferedId, singleBook]);
 
     if (!offer) return null;
 
     async function handleStatus(newStatus) {
         setBusy(true);
         try {
-            const receiverId = isOwn ? message.senderId : currentUserId;
-            const senderId = isOwn ? currentUserId : message.senderId;
-            await ChatService.updateOfferStatus(chatId, message.id, newStatus, senderId, receiverId);
+            if (newStatus === NEGOTIATION_STATUS.DECLINED && offer.isSelectionFrom)
+                await ChatService.declineOfferAndReofferRemaining(chatId, message, currentUserId, otherUserId);
+            else {
+                const receiverId = isOwn ? message.senderId : currentUserId;
+                const senderId = isOwn ? currentUserId : message.senderId;
+                await ChatService.updateOfferStatus(chatId, message.id, newStatus, senderId, receiverId);
+            }
         } catch (err) {
             console.error('Error updating offer:', err);
         } finally {
@@ -116,11 +152,10 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             setHasReviewed(true);
         } catch (err) {
             console.error('Error submitting review:', err);
-            if (err.message?.includes('already reviewed')) {
+            if (err.message?.includes('already reviewed'))
                 setHasReviewed(true);
-            } else {
+            else
                 setReviewError('Failed to submit review. Please try again.');
-            }
         } finally {
             setBusy(false);
         }
@@ -140,6 +175,33 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             prev.delete('offer');
             return prev;
         });
+        setSelectedBookId(null);
+    }
+
+    async function handleProposeSelected() {
+        if (!selectedBookId) return;
+
+        const chosenBook = fetchedBooks.find(b => b.id === selectedBookId);
+        if (!chosenBook) return;
+
+        setBusy(true);
+        try {
+            await ChatService.chooseBookFromOffer(
+                chatId,
+                message,
+                chosenBook,
+                currentUserId,
+                otherUserId,
+                chosenBook.id,
+                chosenBook.title
+            );
+
+            handleCloseBooks();
+        } catch (err) {
+            console.error('Error sending selection:', err);
+        } finally {
+            setBusy(false);
+        }
     }
 
     const statusLabel = {
@@ -152,6 +214,8 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     }[offer.status] || offer.status;
 
     const isAccepted = offer.status === NEGOTIATION_STATUS.ACCEPTED;
+    const isPending = offer.status === NEGOTIATION_STATUS.PENDING;
+    const hasMultipleOptions = offer.offeredBookIds?.length > 1;
 
     return (
         <div className={`${styles.card} ${isOwn ? styles.own : styles.other}`}>
@@ -161,9 +225,27 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
 
             <div className={styles.content}>
 
-                <p className={`${styles.title} ${styles.clickableTitle}`} onClick={handleOpenBooks}>
-                    Offered {offer.offeredBookIds?.length || 0} book{offer.offeredBookIds?.length !== 1 ? 's' : ''}
-                </p>
+                {offer.offeredBookIds?.length === 1 ? (
+                    <p
+                        className={`${styles.title} ${styles.clickableTitle}`}
+                        onClick={() => {
+                            const targetId = offer.savedRealOfferedId || singleBook?.realBookId || offer.offeredBookIds[0];
+                            const bookOwnerId = offer.isSelectionFrom
+                                ? (isOwn ? otherUserId : currentUserId)
+                                : message.senderId;
+
+                            navigate(`${WEB_ROUTES.bookDetail(targetId)}?owner=${bookOwnerId}&from=chat`);
+                        }}
+                        title={offer.savedOfferedTitle || singleBook?.title || 'Loading book...'}
+                    >
+                        {offer.isSelectionFrom ? 'Chosen: ' : 'Offered: '}
+                        {offer.savedOfferedTitle || singleBook?.title || 'Loading...'}
+                    </p>
+                ) : (
+                    <p className={`${styles.title} ${styles.clickableTitle}`} onClick={handleOpenBooks}>
+                        Offered {offer.offeredBookIds?.length || 0} books
+                    </p>
+                )}
 
                 {offer.location && (
                     <button
@@ -185,16 +267,28 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                         {statusLabel}
                     </span>
 
-                    {!isOwn && offer.status === NEGOTIATION_STATUS.PENDING && (
+                    {!isOwn && isPending && (
                         <div className={styles.actions}>
-                            <button
-                                className={`${styles.btn} ${styles.accept}`}
-                                onClick={() => handleStatus(NEGOTIATION_STATUS.ACCEPTED)}
-                                disabled={busy}
-                            >
-                                <Check size={14}/>
-                                Accept
-                            </button>
+                            {hasMultipleOptions ? (
+                                <button
+                                    className={`${styles.btn} ${styles.chooseBtn}`}
+                                    onClick={handleOpenBooks}
+                                    disabled={busy}
+                                >
+                                    <List size={14}/>
+                                    Choose Book
+                                </button>
+                            ) : (
+                                <button
+                                    className={`${styles.btn} ${styles.accept}`}
+                                    onClick={() => handleStatus(NEGOTIATION_STATUS.ACCEPTED)}
+                                    disabled={busy}
+                                >
+                                    <Check size={14}/>
+                                    Accept
+                                </button>
+                            )}
+
                             <button
                                 className={`${styles.btn} ${styles.decline}`}
                                 onClick={() => handleStatus(NEGOTIATION_STATUS.DECLINED)}
@@ -206,7 +300,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                         </div>
                     )}
 
-                    {isOwn && offer.status === NEGOTIATION_STATUS.PENDING && (
+                    {isOwn && isPending && (
                         <div className={styles.actions}>
                             <button
                                 className={`${styles.btn} ${styles.withdraw}`}
@@ -245,37 +339,68 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                 <div className={styles.modalOverlay} onClick={handleCloseBooks}>
                     <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h3 className={styles.modalTitle}>Offered Books</h3>
+                            <h3 className={styles.modalTitle}>
+                                {(!isOwn && isPending && hasMultipleOptions) ? 'Choose a book to trade' : 'Offered Books'}
+                            </h3>
                             <button className={styles.closeModal} onClick={handleCloseBooks}>
                                 <X size={18}/>
                             </button>
                         </div>
-                        <div className={`${styles.modalBody} ${fetchedBooks.length > 6 ? styles.grid : styles.list}`}>
+
+                        <div className={`${styles.modalBody} ${fetchedBooks.length > 5 ? styles.grid : styles.list}`}>
                             {loadingBooks ? (
                                 <Spinner center label="Loading books..."/>
                             ) : (
-                                fetchedBooks.map(book => (
-                                    <Link
-                                        key={book.id}
-                                        to={`${WEB_ROUTES.bookDetail(book.id)}?owner=${message.senderId}`}
-                                        className={styles.offeredBookItem}
-                                    >
-                                        <BookCover
-                                            coverUrl={book.coverUrl}
-                                            imgClassName={styles.obCover}
-                                            placeholderClassName={styles.obPlaceholder}
-                                            iconSize={20}
-                                        />
-                                        <div className={styles.obInfo}>
-                                            <p className={styles.obTitle}>{book.title || 'Untitled'}</p>
-                                            <p className={styles.obAuthor}>
-                                                {formatAuthors(book.authors) || 'Unknown author'}
-                                            </p>
+                                fetchedBooks.map(book => {
+                                    const isSelected = selectedBookId === book.id;
+                                    const canSelect = !isOwn && isPending && hasMultipleOptions;
+
+                                    return (
+                                        <div
+                                            key={book.id}
+                                            className={`${styles.offeredBookItem} ${isSelected ? styles.selectedBook : ''} ${canSelect ? styles.selectable : ''}`}
+                                            onClick={() => canSelect && setSelectedBookId(book.id)}
+                                        >
+                                            <BookCover
+                                                coverUrl={book.coverUrl}
+                                                imgClassName={styles.obCover}
+                                                placeholderClassName={styles.obPlaceholder}
+                                                iconSize={20}
+                                            />
+                                            <div className={styles.obInfo}>
+                                                <p className={styles.obTitle}>{book.title || 'Untitled'}</p>
+                                                <p className={styles.obAuthor}>
+                                                    {formatAuthors(book.authors) || 'Unknown author'}
+                                                </p>
+                                                <Link
+                                                    to={`${WEB_ROUTES.bookDetail(book.id)}?owner=${message.senderId}`}
+                                                    className={styles.obDetailsLink}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    View details
+                                                </Link>
+                                            </div>
+                                            {isSelected && (
+                                                <div className={styles.checkIcon}>
+                                                    <Check size={20}/>
+                                                </div>
+                                            )}
                                         </div>
-                                    </Link>
-                                ))
+                                    )
+                                })
                             )}
                         </div>
+
+                        {!isOwn && isPending && hasMultipleOptions && (
+                            <div className={styles.modalFooter}>
+                                <Button
+                                    disabled={!selectedBookId}
+                                    onClick={handleProposeSelected}
+                                >
+                                    Choose Book
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
