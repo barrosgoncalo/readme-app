@@ -1,22 +1,22 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { fetchPublicationById } from '@readme/shared/src/services/publications';
-import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
-import { myBooksService } from '@readme/shared/src/services/books';
-import { ChatService } from '@readme/shared/src/services/chat';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { WEB_ROUTES } from '../../constants/webRoutes';
+import {useEffect, useState} from 'react';
+import {useNavigate, useSearchParams} from 'react-router-dom';
+import {ArrowLeft, ArrowRight} from 'lucide-react';
+import {fetchPublicationById} from '@readme/shared/src/services/publications';
+import {hydrateMyBooks} from '@readme/shared/src/utils/hydrateMyBooks';
+import {myBooksService} from '@readme/shared/src/services/books';
+import {ChatService} from '@readme/shared/src/services/chat';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
+import {WEB_ROUTES} from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
 import OfferStep1 from './components/OfferStep1.jsx';
 import OfferStep2 from './components/OfferStep2.jsx';
-import { useToast } from '../../hooks/useToast';
+import {useToast} from '../../hooks/useToast';
 import styles from './NewOffer.module.css';
 
 export default function NewOffer() {
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
     const uid = currentUser?.uid;
     const [searchParams] = useSearchParams();
     const pubId = searchParams.get('pub');
@@ -53,7 +53,7 @@ export default function NewOffer() {
                 }
 
                 const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-                const books = await hydrateMyBooks(myBookDocs, { apiKey });
+                const books = await hydrateMyBooks(myBookDocs, {apiKey});
                 if (cancelled) return;
 
                 setPublication(pub);
@@ -66,7 +66,7 @@ export default function NewOffer() {
             }
         })();
 
-        return () => { cancelled = true; };
+        return () => cancelled = true;
     }, [uid, pubId, navigate]);
 
     async function handleSubmit() {
@@ -98,7 +98,7 @@ export default function NewOffer() {
         }
     }
 
-    if (loading) return <Spinner center label="Loading offer" />;
+    if (loading) return <Spinner center label="Loading offer"/>;
     if (!publication) return null;
 
     const canProceed = step === 1 ? selectedBooks.size > 0 : location;
@@ -131,6 +131,8 @@ export default function NewOffer() {
                             }
                             setSelectedBooks(next);
                         }}
+                        onSelectAll={() => setSelectedBooks(new Set(myBooks.map(b => b.id)))}
+                        onClearSelection={() => setSelectedBooks(new Set())}
                     />
                 ) : (
                     <OfferStep2
@@ -149,7 +151,7 @@ export default function NewOffer() {
                         onClick={() => setStep(1)}
                         disabled={submitting}
                     >
-                        <ArrowLeft size={16} />
+                        <ArrowLeft size={16}/>
                         Back
                     </button>
                 )}
@@ -161,7 +163,7 @@ export default function NewOffer() {
                         disabled={!canProceed || submitting}
                     >
                         Next
-                        <ArrowRight size={16} />
+                        <ArrowRight size={16}/>
                     </button>
                 ) : (
                     <button

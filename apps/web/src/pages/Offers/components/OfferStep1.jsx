@@ -1,7 +1,9 @@
 import BookCover from '../../../components/BookCover.jsx';
 import styles from './OfferStep1.module.css';
 
-export default function OfferStep1({ publication, myBooks, selectedBooks, onSelectBook }) {
+export default function OfferStep1({publication, myBooks, selectedBooks, onSelectBook, onSelectAll, onClearSelection}) {
+    const allSelected = myBooks.length > 0 && selectedBooks.size === myBooks.length;
+
     return (
         <div className={styles.step1}>
             <section>
@@ -22,9 +24,21 @@ export default function OfferStep1({ publication, myBooks, selectedBooks, onSele
             </section>
 
             <section>
-                <h2 className={styles.sectionTitle}>
-                    Select books to offer ({selectedBooks.size} selected)
-                </h2>
+                <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitleObj}>
+                        Select books to offer ({selectedBooks.size} selected)
+                    </h2>
+                    {myBooks.length > 0 && (
+                        <button
+                            type="button"
+                            className={styles.selectAllBtn}
+                            onClick={allSelected ? onClearSelection : onSelectAll}
+                        >
+                            {allSelected ? 'Deselect All' : 'Select All'}
+                        </button>
+                    )}
+                </div>
+
                 {myBooks.length === 0 ? (
                     <p className={styles.empty}>You don't have any books to offer.</p>
                 ) : (
