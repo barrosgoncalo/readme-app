@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import {useState} from 'react';
 import ActionCard from './ActionCard.jsx';
 import styles from './VerificationUI.module.css';
 
-export default function VerificationUI({ code, displayerId, scannerId, currentUserId, onComplete, error, busy }) {
+export default function VerificationUI({code, displayerId, scannerId, currentUserId, onComplete, error, busy}) {
     const [inputCode, setInputCode] = useState('');
     const isDisplayer = currentUserId === displayerId;
     const isScanner = currentUserId === scannerId;
@@ -20,7 +20,14 @@ export default function VerificationUI({ code, displayerId, scannerId, currentUs
 
     return (
         <ActionCard prompt="Enter the verification code:">
-            <div className={styles.inputGroup}>
+            <form
+                className={styles.inputGroup}
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    if (inputCode.trim() && !busy)
+                        onComplete(inputCode);
+                }}
+            >
                 <input
                     type="text"
                     placeholder="Enter code"
@@ -31,13 +38,13 @@ export default function VerificationUI({ code, displayerId, scannerId, currentUs
                     autoCapitalize="characters"
                 />
                 <button
-                    onClick={() => onComplete(inputCode)}
+                    type="submit"
                     disabled={!inputCode.trim() || busy}
                     className={styles.confirmBtn}
                 >
                     {busy ? 'Verifying...' : 'Confirm'}
                 </button>
-            </div>
+            </form>
             {error && <p className={styles.error}>{error}</p>}
         </ActionCard>
     );
