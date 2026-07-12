@@ -34,7 +34,7 @@ import ReviewsScreen from '../screens/Profile/Reviews/ReviewsScreen';
 import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
 import SelectSwapBookScreen from '../screens/Swap/CounterOffer/SelectSwapBookScreen';
 import SelectSwapLocationScreen from '../screens/Swap/CounterOffer/SelectSwapLocationScreen';
-import ShowQRCodeScreen from '../screens/Swap/QRVerification/ShowQrCodeScreen';
+import ShowQRCodeScreen from '../screens/Swap/QRVerification/ShowQRCodeScreen';
 import SwapScannerScreen from '../screens/Swap/QRVerification/SwapScannerScreen';
 import ReviewSwapperScreen from '../screens/Swap/Review/ReviewSwapperScreen';
 
