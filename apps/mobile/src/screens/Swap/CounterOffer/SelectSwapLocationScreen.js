@@ -35,6 +35,10 @@ export default function SelectSwapLocationScreen({ navigation }) {
         selectedBookImage 
     } = counterDraft;
 
+    console.log("=== COUNTER DRAFT CHECK ===");
+    console.log("Draft Data:", counterDraft);
+    console.log("Target Seller ID:", targetSellerUid);
+
     const { currentUser } = useAuth();
     const theme = useTheme();
 

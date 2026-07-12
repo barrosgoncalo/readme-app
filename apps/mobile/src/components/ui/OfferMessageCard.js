@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { ROUTES } from '@readme/shared/src/constants/routes';
+import { useCounterOffer } from '@readme/shared/src/contexts/CounterOfferContext';
 
 export default function OfferMessageCard({
     item,
@@ -22,6 +23,8 @@ export default function OfferMessageCard({
     onOpenScanner,
     onCancelSwap,
 }) {
+    const { initCounterOffer } = useCounterOffer();
+    
     const offer = item.offerDetails;
     const isReceivedOffer = item.senderId !== currentUserId;
     const isPending = offer?.status === 'pending';
@@ -173,6 +176,14 @@ export default function OfferMessageCard({
                                 const offeredBooks = offer?.offeredBooks || [];
 
                                 if (offeredBooks.length === 1) {
+                                    initCounterOffer({
+                                        chatId: chatId,
+                                        messageId: item.id,
+                                        targetSellerUid: item.senderId,
+                                        offerDetails: offer,
+                                        selectedBookId: offeredBooks[0].id,
+                                    });
+                                    
                                     navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, {
                                         messageId: item.id,
                                         chatId: chatId,

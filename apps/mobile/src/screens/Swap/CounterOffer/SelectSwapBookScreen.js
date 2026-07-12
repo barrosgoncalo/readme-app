@@ -7,6 +7,7 @@ import { Iconify } from 'react-native-iconify';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { useSwapBookSelection } from '@readme/shared/src/hooks/use-swap-book-selection';
+import { useCounterOffer } from '@readme/shared/src/contexts/CounterOfferContext';
 
 export default function SelectSwapBookScreen({ route, navigation }) {
     const { offerDetails } = route.params;
@@ -22,6 +23,34 @@ export default function SelectSwapBookScreen({ route, navigation }) {
         handleBookPress,
         handleNext,
     } = useSwapBookSelection(offeredBooks, route.params, navigation, ROUTES);
+
+    const { updateCounterDraft } = useCounterOffer();
+
+    const onChooseLocationPress = () => {
+        const sellerId = route.params?.targetSellerUid 
+            || route.params?.targetSeller?.uid 
+            || route.params?.targetSeller?.id 
+            || route.params?.otherUserId;
+
+        console.log("=== 1. BUTTON PRESSED! ===");
+        console.log("Found Seller ID:", sellerId);
+        console.log("Found Book ID:", selectedBookId);
+        console.log("Route Params Available:", Object.keys(route.params || {}));
+
+        // Save everything into the Global Context
+        updateCounterDraft({
+            chatId: route.params?.chatId || null,
+            messageId: route.params?.messageId || null,
+            targetSellerUid: sellerId || null,
+            offerDetails: offerDetails || null,
+            selectedBookId: selectedBookId || null,
+        });
+
+        console.log("=== 2. CONTEXT UPDATED, NAVIGATING NOW ===");
+
+        // Navigate directly to bypass any issues in handleNext
+        navigation.navigate(ROUTES.SELECT_SWAP_LOCATION);
+    };
 
     const renderBookItem = ({ item }) => {
         const isSelected = selectedBookId === item.id;
@@ -110,7 +139,7 @@ export default function SelectSwapBookScreen({ route, navigation }) {
                             elevation: selectedBookId ? 8 : 0,
                         }
                     ]} 
-                    onPress={handleNext}
+                    onPress={onChooseLocationPress}
                     disabled={!selectedBookId}
                     activeOpacity={0.85}
                 >
