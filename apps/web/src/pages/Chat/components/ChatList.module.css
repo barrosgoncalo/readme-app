@@ -13,6 +13,11 @@
     font-weight: 600;
     font-size: 1rem;
     color: var(--text);
+    transition: margin-top 0.3s ease;
+}
+
+.titleShifted {
+    margin-top: 80px;
 }
 
 .empty {

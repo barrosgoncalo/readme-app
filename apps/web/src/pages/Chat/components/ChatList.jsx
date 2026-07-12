@@ -1,10 +1,12 @@
-import { timeAgo } from '@readme/shared/src/utils/timeAgo';
+import {timeAgo} from '@readme/shared/src/utils/timeAgo';
 import styles from './ChatList.module.css';
 
-export default function ChatList({ chats, activeChatId, onSelectChat }) {
+export default function ChatList({chats, activeChatId, onSelectChat, isSidebarOpen}) {
     return (
         <div className={styles.list}>
-            <h2 className={styles.title}>Messages</h2>
+            <h2 className={`${styles.title} ${!isSidebarOpen ? styles.titleShifted : ''}`}>
+                Messages
+            </h2>
             {chats.length === 0 ? (
                 <p className={styles.empty}>No messages yet</p>
             ) : (
@@ -16,7 +18,7 @@ export default function ChatList({ chats, activeChatId, onSelectChat }) {
                             onClick={() => onSelectChat(chat.id)}
                         >
                             {chat.targetBookImage && (
-                                <img src={chat.targetBookImage} alt="" className={styles.thumbnail} />
+                                <img src={chat.targetBookImage} alt="" className={styles.thumbnail}/>
                             )}
                             <div className={styles.info}>
                                 <p className={styles.name}>{chat.sellerName || 'User'}</p>
