@@ -1,11 +1,10 @@
-// @readme/shared/src/services/chatService.js
-
 import { arrayUnion } from 'firebase/firestore';
 import { createChatModel } from '../models/chat';
 import { createOfferModel, generateVerificationCode } from '../models/offer';
 import { createMessageModel } from '../models/message';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
 import { DB } from './DB';
+import { CloudFunctions } from './cloudFunctions';
 
 // ==========================================
 // PRIVATE AUXILIARY HELPERS
@@ -331,4 +330,11 @@ export const ChatService = {
             )
         );
     },
+
+    /**
+     * Calls the verifySwapCode Cloud Function to validate a scanned code
+     * and mark the swap as completed.
+     */
+    verifySwapCode: (chatId, messageId, scannedCode) =>
+        CloudFunctions.call('verifySwapCode', { chatId, messageId, scannedCode }),
 };

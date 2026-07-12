@@ -1,5 +1,3 @@
-// src/components/ui/AddBookPopup.js
-
 import React from 'react';
 import { 
     Modal, 
@@ -9,7 +7,7 @@ import {
     TouchableWithoutFeedback,
     useColorScheme
 } from 'react-native';
-import { buildAddBookPopupStyles } from '../../styles/addBookPopupStyles';
+import { buildAddBookPopupStyles } from '../../../styles/addBookPopupStyles';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';

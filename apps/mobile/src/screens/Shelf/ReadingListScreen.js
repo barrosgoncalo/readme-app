@@ -18,7 +18,7 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useReadingList } from '@readme/shared/src/hooks/use-reading-list';
 
-import AddBookPopup from './AddBookPopup';
+import AddBookPopup from './Components/AddBookPopup';
 
 // ─── MAIN SCREEN COMPONENT ───────────────────────────────────────────────
 export default function ReadingListScreen({ navigation }) {
