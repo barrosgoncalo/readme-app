@@ -9,6 +9,9 @@ const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
+// IMPORT YOUR CONSTANTS HERE (Adjust the path to where your shared file is located)
+const { GAMIFICATION_RANKS } = require("./constants/gamification");
+
 // Initialize Firebase Admin globally
 initializeApp();
 const db = getFirestore();
@@ -154,6 +157,33 @@ exports.syncPublicationToAlgolia = onDocumentWritten("publications/{publicationI
 });
 
 // ==========================================
+// HELPER: UPDATE USER GAMIFICATION
+// ==========================================
+async function updateUserGamification(userId) {
+    if (!userId) return;
+
+    const userRef = db.collection('users').doc(userId);
+
+    await db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        
+        if (!userDoc.exists) return;
+
+        const userData = userDoc.data();
+        const currentCount = (userData.gamification?.completedSwapsCount || 0) + 1;
+
+        const highestAchievedRank = [...GAMIFICATION_RANKS]
+            .reverse()
+            .find(rank => currentCount >= rank.milestone) || GAMIFICATION_RANKS[0];
+
+        transaction.update(userRef, {
+            'gamification.completedSwapsCount': currentCount,
+            'gamification.rank': highestAchievedRank.title
+        });
+    });
+}
+
+// ==========================================
 // DELETE BOOKS ON SWAP COMPLETED FUNCTION
 // ==========================================
 exports.deleteBooksOnSwapComplete = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
@@ -184,8 +214,24 @@ exports.deleteBooksOnSwapComplete = onDocumentUpdated("chats/{chatId}/messages/{
 
             await batch.commit();
             console.log("Successfully deleted swapped books via Admin SDK.");
+
+            // --- ADDED GAMIFICATION LOGIC ---
+            // Fetch chat participants to update their gamification stats
+            const chatId = event.params.chatId;
+            const chatDoc = await db.collection('chats').doc(chatId).get();
+            
+            if (chatDoc.exists) {
+                const participants = chatDoc.data().participants || [];
+                
+                await Promise.all(
+                    participants.map(userId => updateUserGamification(userId))
+                );
+                console.log(`Successfully updated gamification stats for users: ${participants.join(", ")}`);
+            }
+            // --------------------------------
+
         } catch (error) {
-            console.error("Error deleting books on swap completion:", error);
+            console.error("Error deleting books or updating gamification on swap completion:", error);
         }
     }
 });

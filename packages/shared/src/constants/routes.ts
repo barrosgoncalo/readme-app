@@ -26,6 +26,7 @@ export const ROUTES = {
     PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen',
     FAVORITES: 'Favorites',
     REVIEWS: 'Reviews',
+    LEVELS: 'Levels',
     CHAT_ROOM: 'ChatRoom',
     SELECT_SWAP_BOOK: 'SelectSwapBook',
     SELECT_SWAP_LOCATION: 'SelectSwapLocation',

@@ -31,6 +31,7 @@ import MyBooksScreen from '../screens/Profile/MyBooks/MyBooksScreen';
 import MyPublicationDetailsScreen from '../screens/Profile/MyBooks/MyPublicationDetailsScreen';
 import FavoritesScreen from '../screens/Profile/Favorites/FavoritesScreen';
 import ReviewsScreen from '../screens/Profile/Reviews/ReviewsScreen';
+import LiteraryLevelsScreen from '../screens/Profile/LiteraryLevels/LiteraryLevelsScreens';
 import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
 import SelectSwapBookScreen from '../screens/Swap/CounterOffer/SelectSwapBookScreen';
 import SelectSwapLocationScreen from '../screens/Swap/CounterOffer/SelectSwapLocationScreen';
@@ -198,6 +199,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.REVIEWS} 
                             component={ReviewsScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.LEVELS} 
+                            component={LiteraryLevelsScreen} 
                             options={{ headerShown: false }} 
                         />
                     </>

@@ -121,6 +121,7 @@ export default function ProfileScreen({ navigation }) {
                             theme={theme}
                             icon="solar:medal-star-circle-linear"
                             label="Level"
+                            onPress={() => navigation.navigate(ROUTES.LEVELS)}
                         />
                     </MenuGroup>
 
