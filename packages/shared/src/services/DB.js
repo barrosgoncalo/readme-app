@@ -1,4 +1,3 @@
-// @readme/shared/src/services/DB.js
 import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 

@@ -267,6 +267,13 @@ export const ChatService = {
     },
 
     /**
+     * Subscribes to a single message document (used for swap verification status).
+     */
+    subscribeToMessage: (chatId, messageId, onUpdate, onError) => {
+        return DB.subscribeDoc(`chats/${chatId}/messages`, messageId, onUpdate, onError);
+    },
+
+    /**
      * Subscribes to a specific chat's messages.
      */
     subscribeToMessages: (chatId, onUpdate, onError) => {

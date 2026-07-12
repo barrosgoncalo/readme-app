@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import QRCode from 'react-native-qrcode-svg';
 
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { useSwapVerification } from '@readme/shared/src/hooks/use-swap-verification';
 
 export default function ShowQRCodeScreen({ route, navigation }) {
     const colorScheme = useColorScheme() ?? 'light';
@@ -13,29 +13,7 @@ export default function ShowQRCodeScreen({ route, navigation }) {
     
     const { verificationCode, chatId, messageId } = route.params;
 
-    // --- REAL-TIME LISTEN TO NESTED OFFER STATUS ---
-    useEffect(() => {
-        if (!chatId || !messageId) return;
-
-        const db = getFirestore();
-        
-        const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
-
-        const unsubscribe = onSnapshot(messageRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const messageData = snapshot.data();
-                const offerDetails = messageData?.offerDetails;
-
-                if (offerDetails && (offerDetails.status === 'completed' || offerDetails.status === 'verified')) {
-                    navigation.goBack();
-                }
-            }
-        }, (error) => {
-            console.error("Error listening to subcollection message updates:", error);
-        });
-
-        return () => unsubscribe();
-    }, [chatId, messageId, navigation]);
+    useSwapVerification(chatId, messageId, navigation);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
