@@ -1,11 +1,13 @@
 // @readme/shared/src/services/chatService.js
-
-import {addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, updateDoc, where} from 'firebase/firestore';
+import {
+    addDoc, collection, doc, getDocs, getDoc, onSnapshot,
+    orderBy, query, updateDoc, where, writeBatch, arrayRemove
+} from 'firebase/firestore';
 import {db} from '@readme/shared/src/services/firebase';
 import {createChatModel} from '../models/chat';
 import {createOfferModel, generateVerificationCode} from '../models/offer';
 import {createMessageModel} from '../models/message';
-import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
+import {PUBLICATION_STATUS, NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
 
 export const ChatService = {
 
@@ -55,6 +57,31 @@ export const ChatService = {
         }
 
         await updateDoc(messageRef, updatePayload);
+
+        try {
+            const messageSnap = await getDoc(messageRef);
+            if (messageSnap.exists()) {
+                const offer = messageSnap.data().offerDetails;
+                const pubId = offer?.originalTargetId || offer?.targetBookId;
+
+                if (pubId) {
+                    let newPubStatus = null;
+                    if (newStatus === NEGOTIATION_STATUS.ACCEPTED)
+                        newPubStatus = PUBLICATION_STATUS.RESERVED;
+                    else if (newStatus === NEGOTIATION_STATUS.DECLINED || newStatus === 'withdrawn')
+                        newPubStatus = PUBLICATION_STATUS.AVAILABLE;
+
+                    if (newPubStatus) {
+                        const pubRef = doc(db, 'publications', pubId);
+                        const pubSnap = await getDoc(pubRef); // Verifica se realmente é uma publicação
+                        if (pubSnap.exists())
+                            await updateDoc(pubRef, {status: newPubStatus});
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error updating publication status:", err);
+        }
     },
 
     /**
@@ -74,25 +101,22 @@ export const ChatService = {
             }
         });
 
-        // 1. Extract the UI data safely
         const firstImage = targetBook?.imageUrl || targetBook?.book?.images?.[0] || targetBook?.images?.[0] || null;
         const receiverName = targetBook?.seller?.name || targetBook?.sellerName || "Swapper";
 
         if (!chatId) {
-            // 2. Pass all 6 arguments exactly as createChatModel expects them
             const newChatData = createChatModel(
-                [currentUserId, sellerId],              // participants
-                currentUserId,                          // proposerId
-                sellerId,                               // receiverId
-                receiverName,                           // receiverName
-                firstImage,                             // targetBookImage
-                `Offered swap for ${targetBook.title}`  // lastMessage
+                [currentUserId, sellerId],
+                currentUserId,
+                sellerId,
+                receiverName,
+                firstImage,
+                `Offered swap for ${targetBook.title}`
             );
             const newChatRef = await addDoc(chatsRef, newChatData);
             chatId = newChatRef.id;
         }
 
-        // 3. Pass `firstImage` as the 2nd argument so the order matches your model!
         const offerPayload = createOfferModel(
             targetBook.id,
             firstImage,
@@ -116,13 +140,11 @@ export const ChatService = {
 
     sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, selectedBookId, newLocation) => {
         try {
-            // 1. Update the old message to 'countered'
             const originalMessageRef = doc(db, 'chats', chatId, 'messages', originalMessageId);
             await updateDoc(originalMessageRef, {
                 'offerDetails.status': 'countered'
             });
 
-            // 2. Build the Counter-Offer Payload
             const counterOfferPayload = {
                 targetBookId: originalOffer.targetBookId,
                 targetBookImage: originalOffer.targetBookImage || null,
@@ -135,7 +157,6 @@ export const ChatService = {
                 createdAt: new Date().toISOString()
             };
 
-            // 3. Create the new message payload
             const messagePayload = createMessageModel(
                 currentUserId,
                 "Sent a counter proposal",
@@ -143,7 +164,6 @@ export const ChatService = {
                 counterOfferPayload
             );
 
-            // 4. Save the new message and update the root chat
             await Promise.all([
                 addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
                 updateDoc(doc(db, 'chats', chatId), {
@@ -175,18 +195,52 @@ export const ChatService = {
      * Mark a swap as completed with verification timestamp.
      */
     completeSwap: async (chatId, messageId) => {
-        await updateDoc(doc(db, `chats/${chatId}/messages`, messageId), {
-            'offerDetails.status': 'completed',
-            'offerDetails.verifiedAt': new Date().toISOString(),
-        });
-    },
+            const messageRef = doc(db, `chats/${chatId}/messages`, messageId);
+
+            try {
+                const messageSnap = await getDoc(messageRef);
+                if (messageSnap.exists()) {
+                    const offer = messageSnap.data().offerDetails;
+                    const pubId = offer?.originalTargetId || offer?.targetBookId;
+
+                    if (pubId) {
+                        const pubRef = doc(db, 'publications', pubId);
+                        const pubSnap = await getDoc(pubRef);
+
+                        if (pubSnap.exists()) {
+                            await updateDoc(pubRef, { status: PUBLICATION_STATUS.SWAPPED });
+
+                            const usersRef = collection(db, 'users');
+                            const qFavs = query(usersRef, where('favoriteBooks', 'array-contains', pubId));
+                            const favsSnap = await getDocs(qFavs);
+
+                            if (!favsSnap.empty) {
+                                const batch = writeBatch(db);
+                                favsSnap.forEach((userDoc) => {
+                                    batch.update(userDoc.ref, {
+                                        favoriteBooks: arrayRemove(pubId)
+                                    });
+                                });
+                                await batch.commit();
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error updating publication and cleaning favorites:", err);
+            }
+
+            await updateDoc(messageRef, {
+                'offerDetails.status': 'completed',
+                'offerDetails.verifiedAt': new Date().toISOString(),
+            });
+        },
 
     /**
      * Acionada quando o User B escolhe um livro da lista enviada pelo User A.
      */
     chooseBookFromOffer: async (chatId, originalMessage, chosenBook, currentUserId, otherUserId, realOfferedId, offeredTitle) => {
         await ChatService.updateOfferStatus(chatId, originalMessage.id, 'countered', originalMessage.senderId, currentUserId);
-
         const offer = originalMessage.offerDetails;
 
         const newMessagePayload = {
@@ -195,8 +249,6 @@ export const ChatService = {
             offeredBookIds: offer.targetBookId ? [offer.targetBookId] : [],
             location: offer.location || null,
             status: 'pending',
-
-            // A TUA IDEIA APLICADA AQUI: Guardamos a info de acesso rápido!
             savedRealOfferedId: realOfferedId || null,
             savedOfferedTitle: offeredTitle || null,
 
@@ -206,7 +258,8 @@ export const ChatService = {
             originalTargetImage: offer.targetBookImage
         };
 
-        const messagePayload = createMessageModel(currentUserId, `Selected "${chosenBook.title || 'a book'}" from your offer`, 'offer', newMessagePayload);
+        const messagePayload = createMessageModel(currentUserId, `Selected "${chosenBook.title
+        || 'a book'}" from your offer`, 'offer', newMessagePayload);
 
         await Promise.all([
             addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
@@ -227,7 +280,6 @@ export const ChatService = {
         const offer = messageToDecline.offerDetails;
 
         if (offer.isSelectionFrom && offer.originalOfferedIds) {
-
             const remainingIds = offer.originalOfferedIds.filter(id => id !== offer.targetBookId);
 
             if (remainingIds.length > 0) {
@@ -239,7 +291,8 @@ export const ChatService = {
                     status: 'pending'
                 };
 
-                const messagePayload = createMessageModel(currentUserId, 'Declined and offered remaining books', 'offer', newOfferPayload);
+                const messagePayload = createMessageModel(currentUserId,
+                    'Declined and offered remaining books', 'offer', newOfferPayload);
 
                 await Promise.all([
                     addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
