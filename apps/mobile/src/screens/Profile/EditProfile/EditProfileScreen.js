@@ -5,7 +5,6 @@ import {
     TextInput,
     TouchableOpacity,
     ScrollView,
-    useColorScheme,
     Platform,
     Alert,
     ActivityIndicator,
@@ -15,7 +14,7 @@ import {
     StatusBar
 } from 'react-native';
 import { FormBoxInput } from '../../../components/ui/FormsComponents'
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Iconify } from 'react-native-iconify';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { doUpdateUserProfile } from '@readme/shared/src/services/auth';
@@ -28,8 +27,7 @@ import { UsersService } from '@readme/shared/src/services/users';
 
 export default function EditProfileScreen({ navigation, route }) {
     const existing = route?.params?.userData ?? {};
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildEditProfileStyles(theme);
     const { currentUser, refreshUser } = useAuth();
 

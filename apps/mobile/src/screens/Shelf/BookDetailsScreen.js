@@ -5,17 +5,17 @@ import {
     Image,
     ScrollView,
     TouchableOpacity,
-    useColorScheme
 } from 'react-native';
 import { buildBookDetailsStyles } from '../../styles/bookDetailsStyle'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Iconify } from 'react-native-iconify';
 
 export default function BookDetailsScreen({ route, navigation }) {
     const insets = useSafeAreaInsets();
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+
+    const theme = useTheme();
+
     const styles = buildBookDetailsStyles();
     const { book } = route.params || {};
     const bookData = book?.bookDetails || book || {};

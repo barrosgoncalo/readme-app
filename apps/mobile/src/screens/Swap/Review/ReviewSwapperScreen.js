@@ -8,7 +8,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-    useColorScheme,
     Image,
     Alert,
     ScrollView
@@ -18,12 +17,11 @@ import { Iconify } from 'react-native-iconify';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@readme/shared/src/services/firebase';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { createReviewModel } from '@readme/shared/src/models/review';
 
 export default function ReviewSwapperScreen({ route, navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme)=;
     
     // Parameters passed from previous screen
     const { targetUserId, chatId, swapId } = route.params;

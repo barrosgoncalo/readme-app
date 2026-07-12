@@ -1,15 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
-import { Colors } from '@readme/shared/src/constants/theme';
 import QRCode from 'react-native-qrcode-svg';
 
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useSwapVerification } from '@readme/shared/src/hooks/use-swap-verification';
 
 export default function ShowQRCodeScreen({ route, navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     
     const { verificationCode, chatId, messageId } = route.params;
 

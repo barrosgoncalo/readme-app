@@ -3,18 +3,16 @@ import {
     View, 
     Text, 
     TouchableOpacity, 
-    StyleSheet, 
     ActivityIndicator,
     RefreshControl,
     FlatList,
-    useColorScheme,
     StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 
 // Theme & Service Imports
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildReviewsStyles } from '../../../styles/reviewsStyles';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext'; 
@@ -25,8 +23,7 @@ export default function UserReviewsScreen({ navigation, route }) {
     const { currentUser } = useAuth();
     const userId = route.params?.userId || currentUser?.uid;
 
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildReviewsStyles(theme);
 
     const [reviews, setReviews] = useState([]);

@@ -6,7 +6,7 @@ import { Iconify } from 'react-native-iconify';
 // Internal Architecture Imports
 import { PublicationInfoView } from '../../../components/ui/PublicationInfoView';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildBookDetailsStyles } from '../../../styles/publicationDetailsStyles';
 import { PublicationService } from '@readme/shared/src/services/publications';
 
@@ -27,8 +27,7 @@ const extractBookDetails = (passedItem) => {
  *   No `seller` param — this screen never renders a seller card (it's always the current user's own listing).
  */
 export default function MyPublicationDetailsScreen({ route, navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildBookDetailsStyles(theme);
     const isDarkMode = colorScheme === 'dark';
 

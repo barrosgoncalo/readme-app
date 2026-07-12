@@ -5,18 +5,16 @@ import {
     Text, 
     TouchableOpacity, 
     TouchableWithoutFeedback,
-    useColorScheme
 } from 'react-native';
 import { buildAddBookPopupStyles } from '../../../styles/addBookPopupStyles';
 import { Iconify } from 'react-native-iconify';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { useNavigation } from '@react-navigation/native';
 
 export default function AddBookPopup({ isVisible, onClose }) {
     const navigation = useNavigation();
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
 
     const styles = buildAddBookPopupStyles(theme);
 

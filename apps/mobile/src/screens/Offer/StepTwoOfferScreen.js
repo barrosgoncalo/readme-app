@@ -1,14 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
     View,
-    useColorScheme,
     ActivityIndicator,
     Text,
 } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildOfferFlowStyles } from '../../styles/offerFlowStyles';
 
@@ -33,8 +32,7 @@ export default function StepTwoOfferScreen({ navigation }) {
     const mapRef = useRef(null);
 
     // --- Theme & Context Routing ---
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildOfferFlowStyles(theme);
 
     const { offerDraft, clearOffer } = useOffer();

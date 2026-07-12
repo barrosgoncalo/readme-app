@@ -4,13 +4,12 @@ import {
     Text, 
     SectionList, 
     TouchableOpacity, 
-    useColorScheme,
     ActivityIndicator,
     Modal,
 } from 'react-native';
 import { CurrentReadingCard } from '../../components/ui/CurrentReadingCard.js'
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme.js';
 import { Iconify } from 'react-native-iconify';
 
 import { buildShelfStyles } from '../../styles/shelfStyles';
@@ -22,8 +21,7 @@ import AddBookPopup from './Components/AddBookPopup';
 
 // ─── MAIN SCREEN COMPONENT ───────────────────────────────────────────────
 export default function ReadingListScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildShelfStyles(theme);
 
     const { currentUser } = useAuth();

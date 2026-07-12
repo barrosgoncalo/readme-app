@@ -10,12 +10,11 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
-    useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { doUpdateUserPassword } from '@readme/shared/src/services/auth'
 import { buildPasswordStyles } from '../../../styles/passwordStyles'; 
@@ -37,8 +36,7 @@ export default function ChangePasswordScreen({ navigation }) {
 
     const [isSaving, setIsSaving] = useState(false);
 
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
 
     const styles = buildPasswordStyles(theme);
 

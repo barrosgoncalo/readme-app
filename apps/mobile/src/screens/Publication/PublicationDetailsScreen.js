@@ -1,5 +1,5 @@
 import React from 'react'; 
-import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
@@ -8,7 +8,7 @@ import { Iconify } from 'react-native-iconify';
 import { PublicationInfoView } from '../../components/ui/PublicationInfoView';
 import { GranularRating } from '../../components/ui/GranularRating';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildBookDetailsStyles } from '../../styles/publicationDetailsStyles';
 import { usePublicationDetails } from '@readme/shared/src/hooks/use-publication-details';
 
@@ -38,8 +38,7 @@ const extractBookDetails = (passedItem) => {
  * @property {boolean} [hideSellerCard] - Optional. Hides the seller card (e.g. public-profile context where it's redundant).
  */
 export default function PublicationDetailsScreen({ route, navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildBookDetailsStyles(theme);
 
     const passedData = route?.params?.publication;

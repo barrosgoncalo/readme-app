@@ -8,14 +8,13 @@ import {
     Modal,
     Image,
     Alert,
-    useColorScheme
 } from 'react-native';
 import { buildBarcodeScannerStyles } from '../../styles/barcodeScannerStyles';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Iconify } from 'react-native-iconify';
 
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { Colors } from '@readme/shared/src/constants/theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 
 // ─── SERVICES & MODELS ──────────
@@ -24,8 +23,7 @@ import { GlobalBooksService } from '@readme/shared/src/services/books';
 import { MyBooksService } from '@readme/shared/src/services/books';
 
 export default function BarcodeScannerScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const { currentUser } = useAuth();
     const styles = buildBarcodeScannerStyles();
 

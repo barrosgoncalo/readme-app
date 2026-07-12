@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react'; 
 import { 
-    View, Text, StyleSheet, FlatList, TouchableOpacity, 
-    useColorScheme, Image 
+    View, Text, StyleSheet, FlatList, TouchableOpacity, Image 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { useSwapBookSelection } from '@readme/shared/src/hooks/use-swap-book-selection';
 
 export default function SelectSwapBookScreen({ route, navigation }) {
     const { offerDetails } = route.params;
     
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
 
     const [offeredBooks] = useState(offerDetails?.offeredBooks || []);
 

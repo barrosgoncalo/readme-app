@@ -4,14 +4,13 @@ import {
     Text,
     TouchableOpacity,
     Alert,
-    useColorScheme,
     ActivityIndicator,
     StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { buildPrivacySecurityStyles } from '../../../styles/privacySecurityStyles';
 import { Iconify } from 'react-native-iconify';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
 // Import doDeleteUserProfile here
@@ -21,8 +20,7 @@ import { doUpdateUserProfile, doDeleteUserProfile } from '@readme/shared/src/ser
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../../components/ui/MenuComponents';
 
 export default function PrivacySecurityScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildPrivacySecurityStyles(theme);
 
     const { currentUser, refreshUser } = useAuth();

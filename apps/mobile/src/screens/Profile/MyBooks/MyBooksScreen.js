@@ -5,12 +5,10 @@ import {
     FlatList, 
     ActivityIndicator, 
     StatusBar,
-    TouchableOpacity,
-    useColorScheme 
 } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildBookGridStyles } from '../../../styles/bookGridStyles';
 
@@ -19,8 +17,7 @@ import { BookGridItem } from '../../../components/ui/BookGridItem';
 import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings';
 
 export default function MyPostingsScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildBookGridStyles(theme); 
 
     const { currentUser } = useAuth();

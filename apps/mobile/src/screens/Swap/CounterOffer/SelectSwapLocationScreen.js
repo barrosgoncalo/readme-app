@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
     View, StyleSheet, ActivityIndicator, useColorScheme,
 } from 'react-native';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ChatService } from '@readme/shared/src/services/chat';
 
@@ -27,8 +27,7 @@ export default function SelectSwapLocationScreen({ route, navigation }) {
     const { messageId, chatId, offerDetails, targetSellerUid, selectedBookId, selectedBookImage } = route.params;
     const { currentUser } = useAuth();
 
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [mapReady, setMapReady] = useState(false);

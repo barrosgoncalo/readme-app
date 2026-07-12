@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildChatRoomStyles } from '../../styles/chatRoomStyles';
 import { useChatRoomData } from '@readme/shared/src/hooks/use-chat-room-data';
 import { useChatActions } from '@readme/shared/src/hooks/use-chat-actions';
@@ -10,8 +10,7 @@ import ChatInputBar from './Components/ChatInputBar';
 import MessageListItem from './Components/MessageListItem';
 
 export default function ChatRoomScreen({ route, navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = useMemo(() => buildChatRoomStyles(theme), [theme]);
 
     const { chatId, targetSeller } = route.params;
@@ -40,7 +39,6 @@ export default function ChatRoomScreen({ route, navigation }) {
         handleSendMessage(text, setInputText);
     }, [inputText, handleSendMessage]);
 
-    // Scroll to bottom whenever a NEW message from me actually lands in the list
     useEffect(() => {
         if (!messages.length) return;
         const newest = messages[0];

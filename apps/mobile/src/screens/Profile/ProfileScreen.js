@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { View, Text, Image, TouchableOpacity, ScrollView, Alert, useColorScheme, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Iconify } from 'react-native-iconify';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildProfileStyles } from '../../styles/profileStyles';
@@ -12,8 +13,7 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { useProfileActions } from '@readme/shared/src/hooks/use-profile-actions';
 
 export default function ProfileScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildProfileStyles(theme);
 
     const { currentUser, refreshUser } = useAuth(); 

@@ -7,21 +7,19 @@ import {
     FlatList,
     ActivityIndicator,
     Image,
-    useColorScheme
 } from 'react-native';
 import { buildSearchBookStyles } from '../../styles/searchBookStyles';
 import { Iconify } from 'react-native-iconify';
 import { useNavigation } from '@react-navigation/native';
 
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useBookSearch } from '@readme/shared/src/hooks/use-book-search';
 import { useSaveBookToShelf } from '@readme/shared/src/hooks/use-save-book-to-shelf';
 
 export default function SearchBookScreen() {
     const navigation = useNavigation();
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildSearchBookStyles(); 
     const { currentUser } = useAuth();
 

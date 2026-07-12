@@ -6,12 +6,10 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    useColorScheme,
     ScrollView,
-    Image,
     Alert
 } from 'react-native';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildPublicationStyles } from '../../styles/publicationStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
@@ -24,8 +22,7 @@ import { PublicationService } from '@readme/shared/src/services/publications';
 import { useImagePicker } from '@readme/shared/src/hooks/use-image-picker';
 
 export default function CreatePublicationScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildPublicationStyles(theme);
 
     const [bookName, setBookName] = useState('');

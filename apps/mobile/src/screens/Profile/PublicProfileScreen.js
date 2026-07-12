@@ -10,14 +10,14 @@ import {
     StatusBar,
     ActivityIndicator,
     RefreshControl,
-    useColorScheme
 } from 'react-native';
 import { ROUTES } from '@readme/shared/src/constants/routes'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
 
-import { Colors, Fonts } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
+import { Fonts } from '@readme/shared/src/constants/theme';
 import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 
 // --- SERVICE IMPORTS ---
@@ -32,8 +32,7 @@ const { width } = Dimensions.get('window');
 
 export default function PublicProfileScreen({ navigation, route }) {
     const userId = route.params?.ownerId;
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildProfileStyles(theme);
 
     // --- STATE MANAGEMENT ---

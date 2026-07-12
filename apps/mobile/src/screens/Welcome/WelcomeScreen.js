@@ -1,16 +1,15 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../styles/welcomeStyles';
 
 export default function WelcomeScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildStyles(theme, colorScheme);
 
     const completeWelcomeAndNavigate = async (targetRoute) => {

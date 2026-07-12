@@ -6,11 +6,10 @@ import {
     TouchableOpacity,
     FlatList,
     StatusBar,
-    useColorScheme,
     ActivityIndicator
 } from 'react-native';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Iconify } from 'react-native-iconify';
 import { buildExploreStyles } from '../../styles/exploreStyles';
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
@@ -20,8 +19,7 @@ import { ActiveSwapsSection } from '../../components/ui/ActiveSwapsSection';
 import { BookGridItem } from '../../components/ui/BookGridItem';
 
 export default function ExploreScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildExploreStyles(theme);
     const handleScroll = useScrollTabBarControl();
 

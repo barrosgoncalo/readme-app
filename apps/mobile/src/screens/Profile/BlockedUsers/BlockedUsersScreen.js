@@ -5,19 +5,17 @@ import {
     Image,
     TouchableOpacity,
     ScrollView,
-    useColorScheme,
     Alert,
 } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildBlockedUsersStyles } from '../../../styles/blockedUsersStyles';
 import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/block';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 
 export default function BlockedUsersScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildBlockedUsersStyles(theme);
 
     const { currentUser } = useAuth();
