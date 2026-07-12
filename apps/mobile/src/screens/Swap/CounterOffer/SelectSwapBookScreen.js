@@ -7,8 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-
-import { PublicationService } from '@readme/shared/src/services/publications';
+import { useSwapBookSelection } from '@readme/shared/src/hooks/use-swap-book-selection';
 
 export default function SelectSwapBookScreen({ route, navigation }) {
     const { offerDetails } = route.params;
@@ -17,52 +16,14 @@ export default function SelectSwapBookScreen({ route, navigation }) {
     const theme = Colors[colorScheme];
 
     const [offeredBooks] = useState(offerDetails?.offeredBooks || []);
-    const [selectedBookId, setSelectedBookId] = useState(null);
-    const [fetchingBookId, setFetchingBookId] = useState(null);
 
-    useEffect(() => {
-        if (offeredBooks.length === 1) {
-            const singleBook = offeredBooks[0];
-            navigation.replace(ROUTES.SELECT_SWAP_LOCATION, {
-                ...route.params,
-                selectedBookId: singleBook.id,
-                selectedBookImage: singleBook.image || null
-            });
-        }
-    }, [offeredBooks, navigation, route.params]);
-
-    const handleBookPress = async (bookId) => {
-        if (!bookId || fetchingBookId) return;
-
-        try {
-            setFetchingBookId(bookId);
-            const fullPublicationData = await PublicationService.fetchPublication(bookId);
-
-            if (fullPublicationData) {
-                navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
-                    publication: fullPublicationData,
-                    hideOfferButton: true 
-                });
-            } else {
-                console.warn("Publication no longer exists!");
-            }
-        } catch (error) {
-            console.error("Failed to fetch full book details:", error);
-        } finally {
-            setFetchingBookId(null);
-        }
-    };
-
-    const handleNext = () => {
-        if (!selectedBookId) return;
-        const selectedBook = offeredBooks.find(b => b.id === selectedBookId);
-
-        navigation.navigate(ROUTES.SELECT_SWAP_LOCATION, {
-            ...route.params,
-            selectedBookId,
-            selectedBookImage: selectedBook?.image || null
-        });
-    };
+    const {
+        selectedBookId,
+        setSelectedBookId,
+        fetchingBookId,
+        handleBookPress,
+        handleNext,
+    } = useSwapBookSelection(offeredBooks, route.params, navigation, ROUTES);
 
     const renderBookItem = ({ item }) => {
         const isSelected = selectedBookId === item.id;
