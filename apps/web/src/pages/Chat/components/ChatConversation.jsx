@@ -1,8 +1,10 @@
-import {useRef, useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {Send} from 'lucide-react';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {fetchUserProfile} from '@readme/shared/src/services/users';
 import Spinner from '../../../components/Spinner.jsx';
+import {WEB_ROUTES} from '../../../constants/webRoutes';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
@@ -14,6 +16,7 @@ function formatMessageTime(createdAt) {
 }
 
 export default function ChatConversation({chat, messages, loading, currentUserId}) {
+    const navigate = useNavigate();
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef(null);
@@ -26,6 +29,8 @@ export default function ChatConversation({chat, messages, loading, currentUserId
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    const otherUserId = chat.participants?.find(p => p !== currentUserId);
 
     useEffect(() => {
         const otherId = chat.participants?.find(p => p !== currentUserId);
@@ -61,7 +66,12 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                         <img src={chat.targetBookImage} alt="" className={styles.bookImage}/>
                     )}
                     <div>
-                        <h2 className={styles.name}>{displayName}</h2>
+                        <h2
+                            className={styles.name}
+                            onClick={() => otherUserId && navigate(WEB_ROUTES.userProfile(otherUserId))}
+                        >
+                            {displayName}
+                        </h2>
                         <p className={styles.subtitle}>{chat.lastMessage}</p>
                     </div>
                 </div>

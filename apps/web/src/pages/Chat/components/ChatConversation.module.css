@@ -30,6 +30,13 @@
     font-size: 1rem;
     color: var(--text);
     line-height: 1.2;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.name:hover {
+    color: var(--primary);
+    text-decoration: underline;
 }
 
 .subtitle {
