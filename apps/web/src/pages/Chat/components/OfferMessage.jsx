@@ -373,8 +373,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                                     {formatAuthors(book.authors) || 'Unknown author'}
                                                 </p>
                                                 <Link
-                                                    to={`${WEB_ROUTES.bookDetail(book.id)}?owner=${message.senderId}`}
-                                                    className={styles.obDetailsLink}
+                                                    to={`${WEB_ROUTES.bookDetail(book.id)}?owner=${message.senderId}&from=chat`}                                                    className={styles.obDetailsLink}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     View details
