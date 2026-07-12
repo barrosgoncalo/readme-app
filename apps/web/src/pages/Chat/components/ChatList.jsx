@@ -46,15 +46,29 @@ function ChatRow({chat, activeChatId, onSelectChat, currentUserId}) {
 }
 
 export default function ChatList({chats, activeChatId, onSelectChat, isSidebarOpen, currentUserId}) {
+    const sortedChats = [...chats].sort((a, b) => {
+        const getTime = (dateVal) => {
+            if (!dateVal)
+                return 0;
+            if (typeof dateVal.toMillis === 'function')
+                return dateVal.toMillis();
+            if (typeof dateVal.toDate === 'function')
+                return dateVal.toDate().getTime();
+            return new Date(dateVal).getTime() || 0;
+        };
+
+        return getTime(b.updatedAt) - getTime(a.updatedAt);
+    });
+
     return (
         <div className={styles.list}>
             <h2 className={`${styles.title} ${!isSidebarOpen ? styles.titleShifted : ''}`}>
                 Messages
             </h2>
-            {chats.length === 0 ? (
+            {sortedChats.length === 0 ? (
                 <p className={styles.empty}>No messages yet</p>
             ) : (
-                chats.map(chat => (
+                sortedChats.map(chat => (
                     <ChatRow
                         key={chat.id}
                         chat={chat}
