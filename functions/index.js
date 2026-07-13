@@ -391,3 +391,60 @@ exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) 
     }
     return null;
 });
+
+// ==========================================
+// TRIGGER: ON NEW OFFER / COUNTER-OFFER MESSAGE
+// ==========================================
+exports.onOfferMessageCreated = onDocumentCreated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const messageData = event.data.data();
+    if (!messageData) return null;
+    if (messageData.type !== 'offer') return null;
+
+    const chatId = event.params.chatId;
+    const senderId = messageData.senderId;
+    const offer = messageData.offerDetails;
+    const isCounter = offer?.isCounter === true;
+
+    try {
+        // Determine the recipient: the chat participant who isn't the sender
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const recipientId = participants.find(uid => uid !== senderId);
+        if (!recipientId) return null;
+
+        const actorDoc = await db.collection("users").doc(senderId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const notifType = isCounter ? "COUNTER_OFFER" : "SWAP_OFFER";
+        const message = isCounter
+            ? `${actorName} sent you a counter offer.`
+            : `${actorName} sent you a swap offer.`;
+
+        const offerNotif = new Notification({
+            type: notifType,
+            actorId: senderId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, offerNotif, `offer_${event.params.messageId}`);
+        console.log(`Offer notification (isCounter=${isCounter}) sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            isCounter ? "New counter offer" : "New swap offer",
+            message,
+            { type: notifType, chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating offer notification:", error);
+    }
+    return null;
+});
