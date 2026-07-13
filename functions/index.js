@@ -305,3 +305,99 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
         console.error("Fatal error during chat cleanup cycle:", error);
     }
 });
+
+
+// ==========================================
+// NOTIFICATIONS ENGINE MODULE (NEW)
+// ==========================================
+const { FieldValue: AdminFieldValue } = require("firebase-admin/firestore");
+
+class Notification {
+    constructor({ type, actorId, actorName, targetId, message }) {
+        this.type = type;         
+        this.actorId = actorId;   
+        this.actorName = actorName; 
+        this.targetId = targetId; 
+        this.message = message;   
+        this.isRead = false;
+    }
+
+    toFirestore() {
+        return {
+            type: this.type,
+            actorId: this.actorId,
+            actorName: this.actorName,
+            targetId: this.targetId,
+            message: this.message,
+            isRead: this.isRead,
+            createdAt: AdminFieldValue.serverTimestamp()
+        };
+    }
+
+    static async sendToUser(database, targetUserId, notificationInstance) {
+        const notifRef = database.collection("users").doc(targetUserId).collection("notifications").doc();
+        const payload = notificationInstance.toFirestore();
+        payload.id = notifRef.id;
+        
+        await notifRef.set(payload);
+        return payload.id;
+    }
+}
+
+// ─── TRIGGER: ON FOLLOW REQUEST CREATED ───
+exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}", async (event) => {
+    const requestData = event.data.data();
+    if (!requestData) return null;
+
+    const requesterUid = requestData.requesterUid;
+    const targetUid = requestData.targetUid;
+
+    try {
+        const actorDoc = await db.collection("users").doc(requesterUid).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+
+        const followRequestNotif = new Notification({
+            type: "FOLLOW_REQUEST",
+            actorId: requesterUid,
+            actorName: actorName,
+            targetId: event.params.requestId,
+            message: `${actorName} requested to follow you.`
+        });
+
+        await Notification.sendToUser(db, targetUid, followRequestNotif);
+        console.log(`Follow request notification successfully sent to user: ${targetUid}`);
+    } catch (error) {
+        console.error("Error generating follow request notification:", error);
+    }
+    return null;
+});
+
+// ─── TRIGGER: ON FOLLOW COMPLETED (ACCEPTED) ───
+exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) => {
+    const followData = event.data.data();
+    if (!followData) return null;
+
+    const followerUid = followData.followerUid;
+    const followingUid = followData.followingUid;
+
+    try {
+        const actorDoc = await db.collection("users").doc(followerUid).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+
+        const newFollowNotif = new Notification({
+            type: "NEW_FOLLOW",
+            actorId: followerUid,
+            actorName: actorName,
+            targetId: event.params.followId,
+            message: `${actorName} started following you.`
+        });
+
+        await Notification.sendToUser(db, followingUid, newFollowNotif);
+        console.log(`New follow notification successfully sent to user: ${followingUid}`);
+    } catch (error) {
+        console.error("Error generating new follow notification:", error);
+    }
+    return null;
+});

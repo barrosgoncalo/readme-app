@@ -44,6 +44,10 @@ service cloud.firestore {
         allow read: if isAuthenticated() && isActive();
         allow write: if isOwner(userId) && isActive();
       }
+
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId) && isActive();
+      }
     }
 
     // ─── myBooks COLLECTION GROUP ───

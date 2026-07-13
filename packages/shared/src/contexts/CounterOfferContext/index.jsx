@@ -12,17 +12,14 @@ export function CounterOfferProvider({ children }) {
         selectedBookImage: null
     });
 
-    // Seeds the root chat/offer data from the entry point
     const initCounterOffer = useCallback((initialData) => {
         setCounterDraft(prev => ({ ...prev, ...initialData }));
     }, []);
 
-    // Updates just the book selection during Step 1
     const updateSelectedBook = useCallback((id, image) => {
         setCounterDraft(prev => ({ ...prev, selectedBookId: id, selectedBookImage: image }));
     }, []);
 
-    // Wipes the slate clean after completion or exit
     const clearCounterOffer = useCallback(() => {
         setCounterDraft({
             chatId: null, messageId: null, offerDetails: null,

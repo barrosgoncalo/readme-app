@@ -2,7 +2,7 @@ import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
     updateDoc, deleteDoc, serverTimestamp,
-    query, where, orderBy, getDocs, getDocsFromServer, onSnapshot
+    query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit
 } from 'firebase/firestore';
 
 export const DB = {
@@ -202,6 +202,41 @@ export const DB = {
             (error) => {
                 if (onError) onError(error);
                 else console.error(`DB.streamQuery error on "${collectionName}":`, error);
+            }
+        );
+    },
+
+    /**
+ * Advanced Query Stream: Supports where-clauses, ordering, and limits.
+ * e.g., DB.subscribeAdvanced('users/123/notifications', [], { field: 'createdAt', direction: 'desc' }, 50, (data) => {})
+ */
+    subscribeAdvanced: (path, conditions = [], orderByArg = null, limitAmount = null, onUpdate, onError) => {
+        let q = collection(db, path);
+
+        // 1. Apply where filters if they exist
+        if (conditions.length > 0) {
+            const constraints = conditions.map(c => where(c.field, c.operator, c.value));
+            q = query(q, ...constraints);
+        }
+
+        // 2. Apply ordering if specified
+        if (orderByArg) {
+            q = query(q, orderBy(orderByArg.field, orderByArg.direction || 'asc'));
+        }
+
+        // 3. Apply limit if specified
+        if (limitAmount) {
+            q = query(q, limit(limitAmount));
+        }
+
+        return onSnapshot(
+            q,
+            (snapshot) => {
+                onUpdate(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            },
+            (error) => {
+                if (onError) onError(error);
+                    else console.error(`DB.subscribeAdvanced error on "${path}":`, error);
             }
         );
     },

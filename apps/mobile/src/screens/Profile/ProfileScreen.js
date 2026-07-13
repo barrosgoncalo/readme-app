@@ -82,7 +82,7 @@ export default function ProfileScreen({ navigation }) {
 
                         <TouchableOpacity 
                             style={{ position: 'relative', padding: 8 }}
-                            onPress={() => navigation.navigate(ROUTES.FOLLOW_REQUESTS)}
+                            onPress={() => navigation.navigate(ROUTES.NOTIFICATIONS)}
                         >
                             <Iconify icon="lucide:bell" size={26} color="#FFFFFF" />
                             {pendingRequestsCount > 0 && (
