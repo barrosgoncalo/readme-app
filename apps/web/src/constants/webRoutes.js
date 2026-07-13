@@ -6,6 +6,7 @@ export const WEB_ROUTES = {
     REGISTER: '/register',
     FORGOT_PASSWORD: '/forgot-password',
     BOOKS: '/books',
+    PUBLICATIONS: '/profile/publications',
     BOOKS_SCAN: '/books/scan',
     EVENTS: '/events',
     MAP: '/map',

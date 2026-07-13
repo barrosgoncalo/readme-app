@@ -2,9 +2,9 @@
 //   loading      → spinner
 //   logged in    → /books (RequireAuth-guarded, behind AppShell)
 //   logged out   → first launch shows /welcome, returning users go to /login
-import { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import {useEffect, useState} from 'react';
+import {Routes, Route, Navigate, useLocation} from 'react-router-dom';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 
 import Splash from '../pages/Splash.jsx';
 import Welcome from '../pages/Welcome.jsx';
@@ -25,6 +25,7 @@ import BlockedUsers from '../pages/Profile/BlockedUsers.jsx';
 import Following from '../pages/Profile/Following.jsx';
 import Followers from '../pages/Profile/Followers.jsx';
 import Favorites from '../pages/Profile/Favorites.jsx';
+import MyPublications from '../pages/Profile/MyPublications.jsx';
 import PublicProfile from '../pages/Users/PublicProfile.jsx';
 import BookDetail from '../pages/Books/BookDetail.jsx';
 import CreatePublication from '../pages/Publications/CreatePublication.jsx';
@@ -32,12 +33,12 @@ import PublicationDetails from '../pages/Publications/PublicationDetails.jsx';
 import NewOffer from '../pages/Offers/NewOffer.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
-import { WEB_ROUTES } from '../constants/webRoutes.js';
+import {WEB_ROUTES} from '../constants/webRoutes.js';
 
 const ALREADY_LAUNCHED_KEY = 'alreadyLaunched';
 
 export default function AppRouter() {
-    const { userLoggedIn, loading } = useAuth();
+    const {userLoggedIn, loading} = useAuth();
     const [isFirstLaunch, setIsFirstLaunch] = useState(null);
     const location = useLocation();
 
@@ -54,7 +55,7 @@ export default function AppRouter() {
     }, []);
 
     if (loading || isFirstLaunch === null) {
-        return <Splash />;
+        return <Splash/>;
     }
 
     // Logged-out users coming to "/" land on Welcome (first launch) or Login.
@@ -66,49 +67,54 @@ export default function AppRouter() {
                 path="/"
                 element={
                     userLoggedIn ? (
-                        <Navigate to={WEB_ROUTES.BOOKS} replace />
+                        <Navigate to={WEB_ROUTES.BOOKS} replace/>
                     ) : (
-                        <Navigate to={loggedOutHome} replace />
+                        <Navigate to={loggedOutHome} replace/>
                     )
                 }
             />
-            <Route path={WEB_ROUTES.WELCOME} element={<Welcome />} />
-            <Route path={WEB_ROUTES.LOGIN} element={<Login />} />
-            <Route path={WEB_ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
-            <Route path={`${WEB_ROUTES.REGISTER}/*`} element={<Register />} />
+            <Route path={WEB_ROUTES.WELCOME} element={<Welcome/>}/>
+            <Route path={WEB_ROUTES.LOGIN} element={<Login/>}/>
+            <Route path={WEB_ROUTES.FORGOT_PASSWORD} element={<ForgotPassword/>}/>
+            <Route path={`${WEB_ROUTES.REGISTER}/*`} element={<Register/>}/>
             <Route
                 element={
                     <RequireAuth>
-                        <AppShell />
+                        <AppShell/>
                     </RequireAuth>
                 }
             >
-                <Route path={WEB_ROUTES.BOOKS} element={<Books />} />
-                <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan />} />
-                <Route path="/books/:bookId" element={<BookDetail />} />
-                <Route path={WEB_ROUTES.EVENTS} element={<Events />} />
-                <Route path={WEB_ROUTES.MAP} element={<MapPage />} />
-                <Route path="/events/:eventId" element={<EventDetails />} />
-                <Route path={WEB_ROUTES.CHAT} element={<Chat />} />
-                <Route path={WEB_ROUTES.PROFILE} element={<Profile />} />
-                <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile />} />
-                <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
-                <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
-                <Route path={WEB_ROUTES.PROFILE_BLOCKED_USERS} element={<BlockedUsers />} />
-                <Route path={WEB_ROUTES.PROFILE_FOLLOWING} element={<Following />} />
-                <Route path={WEB_ROUTES.PROFILE_FOLLOWERS} element={<Followers />} />
-                <Route path={WEB_ROUTES.PROFILE_FAVORITES} element={<Favorites />} />
-                <Route path={WEB_ROUTES.PUBLICATION_NEW} element={<CreatePublication />} />
-                <Route path="/publications/:pubId" element={<PublicationDetails />} />
-                <Route path={WEB_ROUTES.OFFERS_NEW} element={<NewOffer />} />
-                <Route path="/users/:uid" element={<PublicProfile />} />
+                <Route path={WEB_ROUTES.BOOKS} element={<Books/>}/>
+                <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan/>}/>
+                <Route path="/books/:bookId" element={<BookDetail/>}/>
+
+                <Route path={WEB_ROUTES.EVENTS} element={<Events/>}/>
+                <Route path="/events/:eventId" element={<EventDetails/>}/>
+
+                <Route path={WEB_ROUTES.MAP} element={<MapPage/>}/>
+                <Route path={WEB_ROUTES.CHAT} element={<Chat/>}/>
+
+                <Route path={WEB_ROUTES.PROFILE} element={<Profile/>}/>
+                <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile/>}/>
+                <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword/>}/>
+                <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity/>}/>
+                <Route path={WEB_ROUTES.PROFILE_BLOCKED_USERS} element={<BlockedUsers/>}/>
+                <Route path={WEB_ROUTES.PROFILE_FOLLOWING} element={<Following/>}/>
+                <Route path={WEB_ROUTES.PROFILE_FOLLOWERS} element={<Followers/>}/>
+                <Route path={WEB_ROUTES.PROFILE_FAVORITES} element={<Favorites/>}/>
+                <Route path={WEB_ROUTES.PUBLICATIONS} element={<MyPublications/>}/>
+
+                <Route path={WEB_ROUTES.PUBLICATION_NEW} element={<CreatePublication/>}/>
+                <Route path="/publications/:pubId" element={<PublicationDetails/>}/>
+                <Route path={WEB_ROUTES.OFFERS_NEW} element={<NewOffer/>}/>
+                <Route path="/users/:uid" element={<PublicProfile/>}/>
             </Route>
             <Route
                 path="*"
                 element={
                     <Navigate
                         to={userLoggedIn ? WEB_ROUTES.BOOKS : WEB_ROUTES.LOGIN}
-                        state={{ from: location }}
+                        state={{from: location}}
                         replace
                     />
                 }

@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import {Link} from 'react-router-dom';
+import {Heart} from 'lucide-react';
+import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
+import {PUBLICATION_STATUS} from '@readme/shared/src/constants/status';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import BookCover from '../../../components/BookCover.jsx';
-import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
-import { WEB_ROUTES } from '../../../constants/webRoutes';
-import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
+import {WEB_ROUTES} from '../../../constants/webRoutes';
 import styles from './PublicationCard.module.css';
 
 const STATUS_COLORS = {
@@ -12,7 +13,9 @@ const STATUS_COLORS = {
     swapped: 'var(--bg-elem)',
 };
 
-export default function PublicationCard({ pub, isFavorite, onToggleFavorite, busy }) {
+export default function PublicationCard({pub, isFavorite, onToggleFavorite, busy}) {
+    const { currentUser } = useAuth();
+    const isOwner = currentUser?.uid === pub.uid;
     if (!pub) return null;
 
     const authors = formatAuthors(pub.book?.author);
@@ -27,7 +30,7 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
         <Link
             to={WEB_ROUTES.publicationDetail(pub.id)}
             className={styles.card}
-            style={{ textDecoration: 'none', color: 'inherit' }}
+            style={{textDecoration: 'none', color: 'inherit'}}
         >
             <div className={styles.coverWrap}>
                 <BookCover
@@ -45,7 +48,7 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
 
                     <div className={styles.seller}>
                         {pub.sellerAvatar ? (
-                            <img src={pub.sellerAvatar} alt="" className={styles.avatar} />
+                            <img src={pub.sellerAvatar} alt="" className={styles.avatar}/>
                         ) : (
                             <span className={styles.avatarPlaceholder} aria-hidden>
                                 {(pub.sellerName || '?').charAt(0).toUpperCase()}
@@ -57,7 +60,7 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
                     <div className={styles.footer}>
                         <span
                             className={styles.status}
-                            style={{ borderColor: STATUS_COLORS[pub.status] || 'var(--bg-elem)' }}
+                            style={{borderColor: STATUS_COLORS[pub.status] || 'var(--bg-elem)'}}
                         >
                             {statusLabel}
                         </span>
@@ -67,18 +70,20 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
                     </div>
                 </div>
 
-                <button
-                    className={`${styles.heartBtn} ${isFavorite ? styles.liked : ''}`}
-                    onClick={e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onToggleFavorite();
-                    }}
-                    disabled={busy}
-                    title={isFavorite ? 'Unlike' : 'Like'}
-                >
-                    <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} />
-                </button>
+                {!isOwner && (
+                    <button
+                        className={`${styles.heartBtn} ${isFavorite ? styles.liked : ''}`}
+                        onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onToggleFavorite();
+                        }}
+                        disabled={busy}
+                        title={isFavorite ? 'Unlike' : 'Like'}
+                    >
+                        <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} />
+                    </button>
+                )}
             </div>
         </Link>
     );

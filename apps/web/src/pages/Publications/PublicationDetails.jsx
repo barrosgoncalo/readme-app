@@ -1,21 +1,21 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, Trash2 } from 'lucide-react';
-import { fetchPublicationById, deletePublication } from '@readme/shared/src/services/publications';
-import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { WEB_ROUTES } from '../../constants/webRoutes';
+import {useEffect, useState} from 'react';
+import {Link, useNavigate, useParams} from 'react-router-dom';
+import {Heart, Trash2} from 'lucide-react';
+import {deletePublication, fetchPublicationById} from '@readme/shared/src/services/publications';
+import {fetchUserProfile, toggleFavoriteStatus} from '@readme/shared/src/services/users';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
+import {WEB_ROUTES} from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Button from '../../components/Button.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
-import { useToast } from '../../hooks/useToast';
+import {useToast} from '../../hooks/useToast';
 import styles from './PublicationDetails.module.css';
 
 export default function PublicationDetails() {
-    const { pubId } = useParams();
+    const {pubId} = useParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
     const [toast, showToast] = useToast(3000);
 
     const [pub, setPub] = useState(null);
@@ -51,7 +51,9 @@ export default function PublicationDetails() {
             }
         })();
 
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [pubId, currentUser?.uid]);
 
     const isOwner = currentUser && pub && currentUser.uid === pub.uid;
@@ -77,22 +79,20 @@ export default function PublicationDetails() {
         setDeleting(true);
         try {
             await deletePublication(pub.id);
-            showToast('Publication deleted');
-            navigate(WEB_ROUTES.MAP);
+            navigate(WEB_ROUTES.PUBLICATIONS, { state: { toastMessage: 'Publication deleted successfully!' } });
         } catch (err) {
             showToast('Failed to delete publication');
             console.error(err);
-        } finally {
             setDeleting(false);
         }
     }
 
-    if (loading) return <Spinner center label="Loading publication" />;
+    if (loading) return <Spinner center label="Loading publication"/>;
 
     if (notFound) {
         return (
             <div className={styles.page}>
-                <PageHeader onBack={() => navigate(-1)} />
+                <PageHeader onBack={() => navigate(-1)}/>
                 <p className={styles.notFound}>Publication not found.</p>
             </div>
         );
@@ -105,16 +105,20 @@ export default function PublicationDetails() {
 
     return (
         <div className={styles.page}>
-            {toast && <div className={styles.toast}>{toast}</div>}
+            {toast && (
+                <div className={`${styles.toast} ${toast.includes('Failed') ? styles.toastError : ''}`}>
+                    {toast}
+                </div>
+            )}
 
-            <PageHeader onBack={() => navigate(-1)} />
+            <PageHeader onBack={() => navigate(-1)}/>
 
             <div className={styles.container}>
                 {/* Gallery */}
                 <div className={styles.gallery}>
                     {mainImage && (
                         <div className={styles.mainImage}>
-                            <img src={mainImage} alt={pub.book?.title} />
+                            <img src={mainImage} alt={pub.book?.title}/>
                         </div>
                     )}
 
@@ -126,7 +130,7 @@ export default function PublicationDetails() {
                                     className={`${styles.thumb} ${i === mainImageIndex ? styles.thumbActive : ''}`}
                                     onClick={() => setMainImageIndex(i)}
                                 >
-                                    <img src={img} alt="" />
+                                    <img src={img} alt=""/>
                                 </button>
                             ))}
                         </div>
@@ -164,7 +168,7 @@ export default function PublicationDetails() {
                     <div className={styles.seller}>
                         <div className={styles.sellerInfo}>
                             <UserAvatar
-                                user={{ photoURL: pub.sellerAvatar, username: pub.sellerName }}
+                                user={{photoURL: pub.sellerAvatar, username: pub.sellerName}}
                             />
                             <div>
                                 <p className={styles.sellerLabel}>Listed by</p>
@@ -196,7 +200,7 @@ export default function PublicationDetails() {
                                         backgroundColor: isFavorite ? 'var(--error)' : undefined,
                                     }}
                                 >
-                                    <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+                                    <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'}/>
                                     {isFavorite ? 'Favorited' : 'Favorite'}
                                 </Button>
                                 <Button
@@ -212,9 +216,9 @@ export default function PublicationDetails() {
                             <Button
                                 onClick={handleDelete}
                                 disabled={deleting}
-                                style={{ backgroundColor: 'var(--error)' }}
+                                style={{backgroundColor: 'var(--error)'}}
                             >
-                                <Trash2 size={16} />
+                                <Trash2 size={16}/>
                                 {deleting ? 'Deleting...' : 'Delete'}
                             </Button>
                         )}
