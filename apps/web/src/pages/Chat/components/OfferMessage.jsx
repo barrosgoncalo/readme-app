@@ -12,6 +12,7 @@ import ReviewUI from './ReviewUI.jsx';
 import LocationMapPreview from './LocationMapPreview.jsx';
 import BookCover from '../../../components/BookCover.jsx';
 import Spinner from '../../../components/Spinner.jsx';
+import Modal from '../../../components/Modal.jsx';
 import Button from '../../../components/Button.jsx';
 import styles from './OfferMessage.module.css';
 
@@ -335,75 +336,62 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                 <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError}/>
             )}
 
-            {showBooksModal && (
-                <div className={styles.modalOverlay} onClick={handleCloseBooks}>
-                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h3 className={styles.modalTitle}>
-                                {(!isOwn && isPending && hasMultipleOptions) ? 'Choose a book to trade' : 'Offered Books'}
-                            </h3>
-                            <button className={styles.closeModal} onClick={handleCloseBooks}>
-                                <X size={18}/>
-                            </button>
-                        </div>
+            <Modal
+                open={showBooksModal}
+                onClose={handleCloseBooks}
+                title={(!isOwn && isPending && hasMultipleOptions) ? 'Choose a book to trade' : 'Offered Books'}
+                footer={
+                    !isOwn && isPending && hasMultipleOptions ? (
+                        <Button disabled={!selectedBookId} onClick={handleProposeSelected}>
+                            Choose Book
+                        </Button>
+                    ) : null
+                }
+            >
+                <div className={`${styles.modalBody} ${fetchedBooks.length > 5 ? styles.grid : styles.list}`}>
+                    {loadingBooks ? (
+                        <Spinner center label="Loading books..."/>
+                    ) : (
+                        fetchedBooks.map(book => {
+                            const isSelected = selectedBookId === book.id;
+                            const canSelect = !isOwn && isPending && hasMultipleOptions;
 
-                        <div className={`${styles.modalBody} ${fetchedBooks.length > 5 ? styles.grid : styles.list}`}>
-                            {loadingBooks ? (
-                                <Spinner center label="Loading books..."/>
-                            ) : (
-                                fetchedBooks.map(book => {
-                                    const isSelected = selectedBookId === book.id;
-                                    const canSelect = !isOwn && isPending && hasMultipleOptions;
-
-                                    return (
-                                        <div
-                                            key={book.id}
-                                            className={`${styles.offeredBookItem} ${isSelected ? styles.selectedBook : ''} ${canSelect ? styles.selectable : ''}`}
-                                            onClick={() => canSelect && setSelectedBookId(book.id)}
-                                        >
-                                            <BookCover
-                                                coverUrl={book.coverUrl}
-                                                imgClassName={styles.obCover}
-                                                placeholderClassName={styles.obPlaceholder}
-                                                iconSize={20}
-                                            />
-                                            <div className={styles.obInfo}>
-                                                <p className={styles.obTitle}>{book.title || 'Untitled'}</p>
-                                                <p className={styles.obAuthor}>
-                                                    {formatAuthors(book.authors) || 'Unknown author'}
-                                                </p>
-                                                <Link
-                                                    to={`${WEB_ROUTES.bookDetail(book.id)}?owner=${message.senderId}`}
-                                                    className={styles.obDetailsLink}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    View details
-                                                </Link>
-                                            </div>
-                                            {isSelected && (
-                                                <div className={styles.checkIcon}>
-                                                    <Check size={20}/>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )
-                                })
-                            )}
-                        </div>
-
-                        {!isOwn && isPending && hasMultipleOptions && (
-                            <div className={styles.modalFooter}>
-                                <Button
-                                    disabled={!selectedBookId}
-                                    onClick={handleProposeSelected}
+                            return (
+                                <div
+                                    key={book.id}
+                                    className={`${styles.offeredBookItem} ${isSelected ? styles.selectedBook : ''} ${canSelect ? styles.selectable : ''}`}
+                                    onClick={() => canSelect && setSelectedBookId(book.id)}
                                 >
-                                    Choose Book
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                                    <BookCover
+                                        coverUrl={book.coverUrl}
+                                        imgClassName={styles.obCover}
+                                        placeholderClassName={styles.obPlaceholder}
+                                        iconSize={20}
+                                    />
+                                    <div className={styles.obInfo}>
+                                        <p className={styles.obTitle}>{book.title || 'Untitled'}</p>
+                                        <p className={styles.obAuthor}>
+                                            {formatAuthors(book.authors) || 'Unknown author'}
+                                        </p>
+                                        <Link
+                                            to={`${WEB_ROUTES.bookDetail(book.id)}?owner=${message.senderId}`}
+                                            className={styles.obDetailsLink}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            View details
+                                        </Link>
+                                    </div>
+                                    {isSelected && (
+                                        <div className={styles.checkIcon}>
+                                            <Check size={20}/>
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })
+                    )}
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

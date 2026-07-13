@@ -1,0 +1,39 @@
+.empty {
+    text-align: center;
+    padding: var(--space-6) var(--space-3);
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--bg-selected);
+}
+
+.iconWrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-3);
+    border-radius: 50%;
+    background: var(--bg-selected);
+    color: var(--subtext);
+}
+
+.title {
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    color: var(--text);
+    font-weight: 700;
+    margin: 0 0 var(--space-1) 0;
+}
+
+.message {
+    color: var(--subtext);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.action {
+    max-width: 240px;
+    margin: var(--space-4) auto 0;
+}

@@ -39,10 +39,47 @@ function StarRating({ rating, onRate, size = 'md', disabled }) {
     );
 }
 
-export default function BookCard({ book, variant = 'row', isFavorite, onToggleFavorite, onRemove, onRate, onEdit, busy }) {
+export default function BookCard({ book, variant = 'row', isFavorite, isSelected, onToggleFavorite, onRemove, onRate, onEdit, busy }) {
     const authors = formatAuthors(book.authors);
     const status = book.status || BOOK_STATUS.READING;
     const day = book.addedAt ? new Date(book.addedAt).getDate() : null;
+
+    if (variant === 'grid') {
+        return (
+            <div
+                className={`${styles.gridCard} ${isSelected ? styles.gridSelected : ''}`}
+                onClick={onEdit}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onEdit?.();
+                    }
+                }}
+            >
+                <BookCover
+                    coverUrl={book.coverUrl}
+                    imgClassName={styles.gridCover}
+                    placeholderClassName={`${styles.gridCover} ${styles.coverPlaceholder}`}
+                    iconSize={24}
+                />
+                <p className={styles.gridTitle}>{book.title || 'Untitled'}</p>
+                <p className={styles.gridAuthors}>{authors || 'Unknown author'}</p>
+                <span className={styles.statusPill}>
+                    <span className={`${styles.dot} ${STATUS_COLORS[status]}`} />
+                    {BOOK_STATUS_LABELS[status]}
+                </span>
+                {typeof book.progress === 'number' && (
+                    <div className={styles.progressWrap}>
+                        <div className={styles.progressBar}>
+                            <div className={styles.progressFill} style={{ width: `${book.progress}%` }} />
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     if (variant === 'featured') {
         return (

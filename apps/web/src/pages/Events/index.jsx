@@ -5,6 +5,9 @@ import { doGetBlockedUids } from '@readme/shared/src/services/blockUser';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
+import Modal from '../../components/Modal.jsx';
+import EmptyState from '../../components/EmptyState.jsx';
+import { SkeletonGrid } from '../../components/Skeleton.jsx';
 import EventCard from './components/EventCard.jsx';
 import CreateEventForm from './components/CreateEventForm.jsx';
 import styles from './Events.module.css';
@@ -60,38 +63,40 @@ export default function Events() {
         }
     }
 
-    if (loading) return <div className={styles.page}><Spinner center label="Loading events" /></div>;
+    if (loading) return <div className={styles.page}><SkeletonGrid count={4} /></div>;
 
     return (
         <div className={styles.page}>
             <div className={styles.header}>
                 <h1 className={styles.title}>Events</h1>
-                {!showForm && events.length > 0 && (
-                    <Button onClick={() => setShowForm(true)}>Create event</Button>
-                )}
+                <Button fullWidth={false} onClick={() => setShowForm(true)}>Create event</Button>
             </div>
 
             <ErrorAlert>{error}</ErrorAlert>
 
-            {showForm && (
+            <Modal
+                open={showForm}
+                onClose={() => { setShowForm(false); setCreateError(null); }}
+                title="Create event"
+                size="md"
+            >
                 <CreateEventForm
                     onSubmit={handleCreate}
                     onCancel={() => { setShowForm(false); setCreateError(null); }}
                     submitting={creating}
                     error={createError}
                 />
-            )}
+            </Modal>
 
-            {events.length === 0 && !showForm ? (
-                <div className={styles.empty}>
-                    <p className={styles.emptyTitle}>No upcoming events</p>
-                    <p>Create the first event to get started.</p>
-                    <div style={{ maxWidth: 240, margin: '16px auto 0' }}>
-                        <Button onClick={() => setShowForm(true)}>Create event</Button>
-                    </div>
-                </div>
+            {events.length === 0 ? (
+                <EmptyState
+                    title="No upcoming events"
+                    message="Create the first event to get started."
+                    actionLabel="Create event"
+                    onAction={() => setShowForm(true)}
+                />
             ) : (
-                <div className={styles.list}>
+                <div className={styles.grid}>
                     {events.map((event) => (
                         <EventCard key={event.id} event={event} />
                     ))}

@@ -1,0 +1,29 @@
+.card {
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--bg-selected);
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.interactive {
+    cursor: pointer;
+}
+
+.interactive:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.interactive:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card,
+    .interactive:hover {
+        transition: none;
+        transform: none;
+    }
+}

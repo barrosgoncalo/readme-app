@@ -62,8 +62,9 @@ function ReadOnlyStars({rating}) {
     );
 }
 
-export default function BookDetail() {
-    const {bookId} = useParams();
+export default function BookDetail({ embedded = false, onClose }) {
+    const {bookId: paramBookId} = useParams();
+    const bookId = paramBookId;
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const {currentUser} = useAuth();
@@ -198,12 +199,14 @@ export default function BookDetail() {
     const authors = formatAuthors(catalog?.authors || myBook?.authors || []);
 
     return (
-        <div className={styles.page}>
+        <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}>
             <button
                 type="button"
                 className={styles.backBtn}
                 onClick={() => {
-                    if (fromOrigin === 'chat')
+                    if (embedded && onClose) {
+                        onClose();
+                    } else if (fromOrigin === 'chat')
                         navigate(-1);
                     else
                         navigate(isOwnBook ? WEB_ROUTES.BOOKS : -1);

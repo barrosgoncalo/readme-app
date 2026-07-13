@@ -1,48 +1,75 @@
-import {useEffect, useState} from 'react';
-import {Link, NavLink, Outlet, useNavigate, useLocation} from 'react-router-dom';
-import {doc, onSnapshot} from 'firebase/firestore';
-import {BookOpen, CalendarDays, Map, MessageCircle, Moon, Sun, User} from 'lucide-react';
-import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
-import {doSignOut} from '@readme/shared/src/services/auth';
-import {db} from '@readme/shared/src/services/firebase';
-import {useTheme} from '../contexts/ThemeContext';
-import {WEB_ROUTES} from '../constants/webRoutes';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { BookOpen, CalendarDays, Map, MessageCircle, Moon, Pin, PinOff, Sun, User } from 'lucide-react';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import { doSignOut } from '@readme/shared/src/services/auth';
+import { db } from '@readme/shared/src/services/firebase';
+import { useTheme } from '../contexts/ThemeContext';
+import { ToastProvider } from '../contexts/ToastContext';
+import { WEB_ROUTES } from '../constants/webRoutes';
+import { getContentWidthTier } from '../utils/contentWidth';
 import styles from './AppShell.module.css';
 
 const NAV_ITEMS = [
-    {to: WEB_ROUTES.BOOKS, label: 'My Books', Icon: BookOpen},
-    {to: WEB_ROUTES.EVENTS, label: 'Events', Icon: CalendarDays},
-    {to: WEB_ROUTES.MAP, label: 'Explore', Icon: Map},
-    {to: WEB_ROUTES.CHAT, label: 'Chat', Icon: MessageCircle},
-    {to: WEB_ROUTES.PROFILE, label: 'Profile', Icon: User},
+    { to: WEB_ROUTES.BOOKS, label: 'My Books', Icon: BookOpen },
+    { to: WEB_ROUTES.EVENTS, label: 'Events', Icon: CalendarDays },
+    { to: WEB_ROUTES.MAP, label: 'Explore', Icon: Map },
+    { to: WEB_ROUTES.CHAT, label: 'Chat', Icon: MessageCircle },
+    { to: WEB_ROUTES.PROFILE, label: 'Profile', Icon: User },
 ];
 
+const SIDEBAR_PIN_KEY = 'sidebarPinned';
+const SIDEBAR_COLLAPSED_KEY = 'sidebarCollapsed';
+
+function readStoredBool(key, fallback) {
+    try {
+        const value = localStorage.getItem(key);
+        if (value === null) return fallback;
+        return value === 'true';
+    } catch {
+        return fallback;
+    }
+}
+
 export default function AppShell() {
-    const {currentUser} = useAuth();
-    const {theme, toggle} = useTheme();
+    const { currentUser } = useAuth();
+    const { theme, toggle } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const [username, setUsername] = useState('');
 
     const isExplorePage = location.pathname.startsWith(WEB_ROUTES.MAP);
     const isChatPage = location.pathname.startsWith(WEB_ROUTES.CHAT);
-    const shouldCollapseSidebar = isExplorePage || isChatPage;
-    const [isSidebarOpen, setIsSidebarOpen] = useState(!shouldCollapseSidebar);
+    const prefersRail = isExplorePage || isChatPage;
+
+    const [isPinned, setIsPinned] = useState(() => readStoredBool(SIDEBAR_PIN_KEY, false));
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        const stored = readStoredBool(SIDEBAR_COLLAPSED_KEY, prefersRail);
+        return isPinned ? false : stored;
+    });
+
+    const isSidebarOpen = !isCollapsed;
+    const widthTier = getContentWidthTier(location.pathname);
 
     useEffect(() => {
-        if (shouldCollapseSidebar) {
-            setIsSidebarOpen(false);
-        } else {
-            setIsSidebarOpen(true);
+        if (isPinned) {
+            setIsCollapsed(false);
+            return;
         }
-    }, [shouldCollapseSidebar]);
+        if (prefersRail) {
+            setIsCollapsed(true);
+        }
+    }, [prefersRail, isPinned, location.pathname]);
 
-    const handleLogoClick = (e) => {
-        if (shouldCollapseSidebar) {
-            e.preventDefault();
-            setIsSidebarOpen(!isSidebarOpen);
+    useEffect(() => {
+        try {
+            localStorage.setItem(SIDEBAR_PIN_KEY, String(isPinned));
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
+        } catch {
+            /* ignore */
         }
-    };
+    }, [isPinned, isCollapsed]);
 
     useEffect(() => {
         if (!currentUser?.uid) return;
@@ -58,7 +85,20 @@ export default function AppShell() {
 
     async function onSignOut() {
         await doSignOut();
-        navigate(WEB_ROUTES.LOGIN, {replace: true});
+        navigate(WEB_ROUTES.LOGIN, { replace: true });
+    }
+
+    function toggleCollapse() {
+        if (isPinned) return;
+        setIsCollapsed(prev => !prev);
+    }
+
+    function togglePin() {
+        setIsPinned(prev => {
+            const next = !prev;
+            if (next) setIsCollapsed(false);
+            return next;
+        });
     }
 
     function checkIsActive(to) {
@@ -81,49 +121,84 @@ export default function AppShell() {
     }
 
     return (
-        <div className={`${styles.shell} ${!isSidebarOpen ? styles.shellCollapsed : ''} ${isChatPage ? styles.chatLock : ''}`}>
-            <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
-                <h1 className={styles.wordmark}>
-                    <Link to={WEB_ROUTES.MAP} onClick={handleLogoClick} style={{color: 'inherit', textDecoration: 'none'}}>
-                        README
-                    </Link>
-                </h1>
+        <ToastProvider>
+            <div
+                className={`${styles.shell} ${isCollapsed ? styles.shellCollapsed : ''} ${isChatPage ? styles.chatLock : ''}`}
+            >
+                <aside className={`${styles.sidebar} ${isCollapsed ? styles.sidebarCollapsed : ''}`}>
+                    <div className={styles.sidebarTop}>
+                        <h1 className={styles.wordmark}>
+                            <Link to={WEB_ROUTES.MAP} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                {isCollapsed ? 'R' : 'README'}
+                            </Link>
+                        </h1>
+                        {!isCollapsed && (
+                            <button
+                                type="button"
+                                className={styles.pinBtn}
+                                onClick={togglePin}
+                                title={isPinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+                                aria-label={isPinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+                            >
+                                {isPinned ? <PinOff size={16} /> : <Pin size={16} />}
+                            </button>
+                        )}
+                    </div>
 
-                {isSidebarOpen && (
-                    <>
-                        <nav className={styles.nav}>
-                            {NAV_ITEMS.map(({to, label, Icon}) => (
-                                <NavLink
-                                    key={to}
-                                    to={to}
-                                    className={() =>
-                                        checkIsActive(to) ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
-                                    }
-                                >
-                                    <Icon size={18} aria-hidden/>
-                                    <span>{label}</span>
-                                </NavLink>
-                            ))}
-                        </nav>
-                        <div className={styles.userFooter}>
+                    <nav className={styles.nav}>
+                        {NAV_ITEMS.map(({ to, label, Icon }) => (
+                            <NavLink
+                                key={to}
+                                to={to}
+                                title={isCollapsed ? label : undefined}
+                                className={() =>
+                                    checkIsActive(to) ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+                                }
+                            >
+                                <Icon size={18} aria-hidden />
+                                {!isCollapsed && <span>{label}</span>}
+                            </NavLink>
+                        ))}
+                    </nav>
+
+                    <div className={styles.userFooter}>
+                        {!isCollapsed && (
                             <span className={styles.userName}>
                                 {username || currentUser?.email || 'Reader'}
                             </span>
-                            <div className={styles.footerActions}>
-                                <button type="button" className={styles.iconBtn} onClick={toggle} title="Toggle theme">
-                                    {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
-                                </button>
+                        )}
+                        <div className={styles.footerActions}>
+                            <button type="button" className={styles.iconBtn} onClick={toggle} title="Toggle theme">
+                                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                            </button>
+                            {!isCollapsed && (
                                 <button type="button" className={styles.signOutBtn} onClick={onSignOut}>
                                     Sign out
                                 </button>
-                            </div>
+                            )}
                         </div>
-                    </>
-                )}
-            </aside>
-            <main className={`${styles.content} ${isChatPage ? styles.chatContent : ''}`}>
-                <Outlet context={{ isSidebarOpen }} />
-            </main>
-        </div>
+                    </div>
+
+                    {!isPinned && (
+                        <button
+                            type="button"
+                            className={styles.collapseToggle}
+                            onClick={toggleCollapse}
+                            title={isCollapsed ? 'Expand sidebar' : 'Collapse to icon rail'}
+                            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse to icon rail'}
+                        >
+                            {isCollapsed ? '»' : '«'}
+                        </button>
+                    )}
+                </aside>
+
+                <main className={`${styles.content} ${isChatPage ? styles.chatContent : ''}`}>
+                    <div className={`${styles.contentInner} ${styles[`width_${widthTier}`]}`}>
+                        <Outlet context={{ isSidebarOpen, isCollapsed }} />
+                    </div>
+                </main>
+            </div>
+            <div id="modal-root" />
+        </ToastProvider>
     );
 }

@@ -4,13 +4,14 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { getEvent, getAttendees, isAttending, joinEvent, leaveEvent } from '@readme/shared/src/services/events';
 import { getUsersByIds } from '@readme/shared/src/services/users';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import Spinner from '../../components/Spinner.jsx';
+import { SkeletonList } from '../../components/Skeleton.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
 import styles from './Details.module.css';
 
-export default function EventDetails() {
-    const { eventId } = useParams();
+export default function EventDetails({ embedded = false, eventId: eventIdProp, onClose }) {
+    const { eventId: paramEventId } = useParams();
+    const eventId = eventIdProp || paramEventId;
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
@@ -72,7 +73,7 @@ export default function EventDetails() {
         }
     }
 
-    if (loading) return <div className={styles.page}><Spinner center label="Loading event" /></div>;
+    if (loading) return <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}><SkeletonList count={3} /></div>;
     if (!event) {
         return (
             <div className={styles.page}>
@@ -89,9 +90,13 @@ export default function EventDetails() {
     const organiserName = userNames[event.ownerId]?.username || 'Unknown';
 
     return (
-        <div className={styles.page}>
+        <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}>
             <div className={styles.header}>
-                <button type="button" className={styles.backLink} onClick={() => navigate(WEB_ROUTES.EVENTS)}>
+                <button
+                    type="button"
+                    className={styles.backLink}
+                    onClick={() => embedded && onClose ? onClose() : navigate(WEB_ROUTES.EVENTS)}
+                >
                     ← Back to events
                 </button>
             </div>

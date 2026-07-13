@@ -7,13 +7,15 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Button from '../../components/Button.jsx';
-import Spinner from '../../components/Spinner.jsx';
+import ConfirmDialog from '../../components/ConfirmDialog.jsx';
+import { SkeletonList } from '../../components/Skeleton.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
 import { useToast } from '../../hooks/useToast';
 import styles from './PublicationDetails.module.css';
 
-export default function PublicationDetails() {
-    const { pubId } = useParams();
+export default function PublicationDetails({ embedded = false, pubId: pubIdProp, onClose }) {
+    const { pubId: paramPubId } = useParams();
+    const pubId = pubIdProp || paramPubId;
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [toast, showToast] = useToast(3000);
@@ -24,6 +26,7 @@ export default function PublicationDetails() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [favBusy, setFavBusy] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [mainImageIndex, setMainImageIndex] = useState(0);
 
     useEffect(() => {
@@ -72,22 +75,22 @@ export default function PublicationDetails() {
     }
 
     async function handleDelete() {
-        if (!window.confirm('Delete this publication? This cannot be undone.')) return;
-
         setDeleting(true);
         try {
             await deletePublication(pub.id);
             showToast('Publication deleted');
-            navigate(WEB_ROUTES.MAP);
+            if (embedded && onClose) onClose();
+            else navigate(WEB_ROUTES.MAP);
         } catch (err) {
             showToast('Failed to delete publication');
             console.error(err);
         } finally {
             setDeleting(false);
+            setShowDeleteConfirm(false);
         }
     }
 
-    if (loading) return <Spinner center label="Loading publication" />;
+    if (loading) return <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}><SkeletonList count={4} /></div>;
 
     if (notFound) {
         return (
@@ -104,10 +107,19 @@ export default function PublicationDetails() {
     const mainImage = images[mainImageIndex];
 
     return (
-        <div className={styles.page}>
-            {toast && <div className={styles.toast}>{toast}</div>}
+        <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}>
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete publication?"
+                message="This cannot be undone."
+                confirmLabel="Delete"
+                danger
+                busy={deleting}
+            />
 
-            <PageHeader onBack={() => navigate(-1)} />
+            <PageHeader onBack={() => embedded && onClose ? onClose() : navigate(-1)} />
 
             <div className={styles.container}>
                 {/* Gallery */}
@@ -210,7 +222,7 @@ export default function PublicationDetails() {
 
                         {isOwner && (
                             <Button
-                                onClick={handleDelete}
+                                onClick={() => setShowDeleteConfirm(true)}
                                 disabled={deleting}
                                 style={{ backgroundColor: 'var(--error)' }}
                             >

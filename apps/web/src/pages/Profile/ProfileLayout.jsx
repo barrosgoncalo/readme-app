@@ -1,5 +1,6 @@
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import {
     BookOpen, Pencil, Ban, Lock, Moon, Users, Award, Heart, LogOut, ChevronRight, Camera,
@@ -13,25 +14,21 @@ import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
 import Toggle from '../../components/Toggle.jsx';
 import Card from '../../components/Card.jsx';
-import Following from './Following.jsx';
-import Followers from './Followers.jsx';
-import Favorites from './Favorites.jsx';
-import BlockedUsers from './BlockedUsers.jsx';
 import styles from './Profile.module.css';
-
-const PANELS = {
-    following: 'following',
-    followers: 'followers',
-    favorites: 'favorites',
-    blocked: 'blocked',
-};
 
 function initials(userData) {
     const name = userData?.fullName || userData?.username || '';
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
 }
 
-export default function Profile() {
+const SUB_ROUTES = new Set([
+    WEB_ROUTES.PROFILE_FOLLOWING,
+    WEB_ROUTES.PROFILE_FOLLOWERS,
+    WEB_ROUTES.PROFILE_FAVORITES,
+    WEB_ROUTES.PROFILE_BLOCKED_USERS,
+]);
+
+export default function ProfileLayout() {
     const { currentUser } = useAuth();
     const { theme, toggle } = useTheme();
     const navigate = useNavigate();
@@ -43,16 +40,8 @@ export default function Profile() {
     const [photoURL, setPhotoURL] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState('');
-    const [activePanel, setActivePanel] = useState(null);
 
-    useEffect(() => {
-        const path = location.pathname;
-        if (path === WEB_ROUTES.PROFILE_FOLLOWING) setActivePanel(PANELS.following);
-        else if (path === WEB_ROUTES.PROFILE_FOLLOWERS) setActivePanel(PANELS.followers);
-        else if (path === WEB_ROUTES.PROFILE_FAVORITES) setActivePanel(PANELS.favorites);
-        else if (path === WEB_ROUTES.PROFILE_BLOCKED_USERS) setActivePanel(PANELS.blocked);
-        else if (path === WEB_ROUTES.PROFILE) setActivePanel(null);
-    }, [location.pathname]);
+    const showSubPanel = SUB_ROUTES.has(location.pathname);
 
     useEffect(() => {
         if (!currentUser) return;
@@ -81,36 +70,18 @@ export default function Profile() {
         }
     }
 
-    function openPanel(panel) {
-        setActivePanel(panel);
-        const routes = {
-            [PANELS.following]: WEB_ROUTES.PROFILE_FOLLOWING,
-            [PANELS.followers]: WEB_ROUTES.PROFILE_FOLLOWERS,
-            [PANELS.favorites]: WEB_ROUTES.PROFILE_FAVORITES,
-            [PANELS.blocked]: WEB_ROUTES.PROFILE_BLOCKED_USERS,
-        };
-        navigate(routes[panel], { replace: true });
-    }
-
-    function closePanel() {
-        setActivePanel(null);
-        navigate(WEB_ROUTES.PROFILE, { replace: true });
-    }
-
     if (loading) return <Spinner center label="Loading profile" />;
 
     const settingsGroups = [
         {
             title: 'Content',
-            items: [
-                { icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.BOOKS) },
-            ],
+            items: [{ icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.BOOKS) }],
         },
         {
             title: 'Account',
             items: [
                 { icon: Pencil, label: 'Edit Profile', onClick: () => navigate(WEB_ROUTES.PROFILE_EDIT) },
-                { icon: Ban, label: 'View Blocked Users', onClick: () => openPanel(PANELS.blocked) },
+                { icon: Ban, label: 'View Blocked Users', onClick: () => navigate(WEB_ROUTES.PROFILE_BLOCKED_USERS) },
                 { icon: Lock, label: 'Privacy & Security', onClick: () => navigate(WEB_ROUTES.PROFILE_PRIVACY_SECURITY) },
                 { icon: Moon, label: 'Dark Mode', toggle: true },
             ],
@@ -118,10 +89,10 @@ export default function Profile() {
         {
             title: 'Social',
             items: [
-                { icon: Users, label: 'Following', onClick: () => openPanel(PANELS.following) },
-                { icon: Users, label: 'Followers', onClick: () => openPanel(PANELS.followers) },
+                { icon: Users, label: 'Following', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWING) },
+                { icon: Users, label: 'Followers', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWERS) },
                 { icon: Award, label: 'Level', disabled: true },
-                { icon: Heart, label: 'Favorites', onClick: () => openPanel(PANELS.favorites) },
+                { icon: Heart, label: 'Favorites', onClick: () => navigate(WEB_ROUTES.PROFILE_FAVORITES) },
             ],
         },
     ];
@@ -153,18 +124,18 @@ export default function Profile() {
                     <p className={styles.userEmail}>{currentUser?.email}</p>
 
                     <div className={styles.statsRow}>
-                        <button type="button" className={styles.stat} onClick={() => openPanel(PANELS.followers)}>
+                        <button type="button" className={styles.stat} onClick={() => navigate(WEB_ROUTES.PROFILE_FOLLOWERS)}>
                             <strong>{userData?.followers ?? 0}</strong>
                             <span>Followers</span>
                         </button>
-                        <button type="button" className={styles.stat} onClick={() => openPanel(PANELS.following)}>
+                        <button type="button" className={styles.stat} onClick={() => navigate(WEB_ROUTES.PROFILE_FOLLOWING)}>
                             <strong>{userData?.following ?? 0}</strong>
                             <span>Following</span>
                         </button>
-                        <button type="button" className={styles.stat} onClick={() => navigate(WEB_ROUTES.BOOKS)}>
+                        <Link to={WEB_ROUTES.BOOKS} className={styles.stat}>
                             <strong>—</strong>
                             <span>Books</span>
-                        </button>
+                        </Link>
                     </div>
 
                     <div className={styles.quickActions}>
@@ -176,34 +147,36 @@ export default function Profile() {
                 </Card>
 
                 <div className={styles.rightColumn}>
-                    {activePanel === PANELS.following && <Following embedded onClose={closePanel} />}
-                    {activePanel === PANELS.followers && <Followers embedded onClose={closePanel} />}
-                    {activePanel === PANELS.favorites && <Favorites embedded onClose={closePanel} />}
-                    {activePanel === PANELS.blocked && <BlockedUsers embedded onClose={closePanel} />}
-                    {!activePanel && settingsGroups.map(group => (
-                        <Card key={group.title} className={styles.settingsGroup}>
-                            <p className={styles.groupTitle}>{group.title}</p>
-                            {group.items.map(item => (
-                                <button
-                                    key={item.label}
-                                    type="button"
-                                    className={`${styles.item} ${item.disabled ? styles.disabled : ''}`}
-                                    onClick={item.onClick}
-                                    disabled={item.disabled}
-                                >
-                                    <span className={styles.itemLeft}>
-                                        <span className={styles.iconBox}><item.icon size={20} /></span>
-                                        <span className={styles.itemLabel}>{item.label}</span>
-                                    </span>
-                                    {item.toggle ? (
-                                        <Toggle checked={theme === 'dark'} onChange={toggle} />
-                                    ) : (
-                                        !item.disabled && <ChevronRight size={18} className={styles.chevron} />
-                                    )}
-                                </button>
-                            ))}
-                        </Card>
-                    ))}
+                    {showSubPanel ? (
+                        <div className={styles.subPanel}>
+                            <Outlet />
+                        </div>
+                    ) : (
+                        settingsGroups.map(group => (
+                            <Card key={group.title} className={styles.settingsGroup}>
+                                <p className={styles.groupTitle}>{group.title}</p>
+                                {group.items.map(item => (
+                                    <button
+                                        key={item.label}
+                                        type="button"
+                                        className={`${styles.item} ${item.disabled ? styles.disabled : ''}`}
+                                        onClick={item.onClick}
+                                        disabled={item.disabled}
+                                    >
+                                        <span className={styles.itemLeft}>
+                                            <span className={styles.iconBox}><item.icon size={20} /></span>
+                                            <span className={styles.itemLabel}>{item.label}</span>
+                                        </span>
+                                        {item.toggle ? (
+                                            <Toggle checked={theme === 'dark'} onChange={toggle} />
+                                        ) : (
+                                            !item.disabled && <ChevronRight size={18} className={styles.chevron} />
+                                        )}
+                                    </button>
+                                ))}
+                            </Card>
+                        ))
+                    )}
                 </div>
             </div>
         </div>

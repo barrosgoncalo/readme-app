@@ -17,7 +17,7 @@ import styles from './CreatePublication.module.css';
 export default function CreatePublication() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    const [toast, showToast] = useToast(3000);
+    const [, showToast] = useToast(3000);
 
     const [title, setTitle] = useState('');
     const [author, setAuthor] = useState('');
@@ -89,10 +89,10 @@ export default function CreatePublication() {
 
     return (
         <div className={styles.page}>
-            {toast && <div className={styles.toast}>{toast}</div>}
 
             <PageHeader onBack={() => navigate(-1)} title="New Publication" />
 
+            <div className={styles.layout}>
             <form className={styles.form} onSubmit={handleSubmit}>
                 <div className={styles.section}>
                     <label className={styles.label}>Book Title *</label>
@@ -202,6 +202,7 @@ export default function CreatePublication() {
                     </Button>
                 </div>
             </form>
+            </div>
         </div>
     );
 }

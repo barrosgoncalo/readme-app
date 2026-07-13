@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import {
     myBooksService,
@@ -15,6 +15,8 @@ import { BOOK_STATUS } from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
+import EmptyState from '../../components/EmptyState.jsx';
+import { SkeletonGrid } from '../../components/Skeleton.jsx';
 import BookCard from './components/BookCard.jsx';
 import AddBookForm from './components/AddBookForm.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes.js';
@@ -34,7 +36,7 @@ function groupByMonth(books) {
         .map(([, g]) => g);
 }
 
-export default function Books() {
+export default function Books({ compact = false, selectedBookId = null }) {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
     const navigate = useNavigate();
@@ -49,6 +51,7 @@ export default function Books() {
     const [addError, setAddError] = useState(null);
 
     const [busyId, setBusyId] = useState(null);
+    const [viewMode, setViewMode] = useState('grid');
 
     const load = useCallback(async () => {
         if (!uid) return;
@@ -154,16 +157,38 @@ export default function Books() {
     const monthGroups = groupByMonth(rest);
 
     return (
-        <div className={styles.page}>
-            <div className={styles.header}>
-                <h1 className={styles.title}>Your Reading List</h1>
-                {!showAddForm && (
-                    <button type="button" className={styles.addBtn} onClick={() => setShowAddForm(true)}>
-                        <Plus size={16} />
-                        Add new book
-                    </button>
-                )}
-            </div>
+        <div className={`${styles.page} ${compact ? styles.compact : ''}`}>
+            {!compact && (
+                <div className={styles.header}>
+                    <h1 className={styles.title}>Your Reading List</h1>
+                    <div className={styles.headerActions}>
+                        <div className={styles.viewToggle} role="group" aria-label="View mode">
+                            <button
+                                type="button"
+                                className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.viewBtnActive : ''}`}
+                                onClick={() => setViewMode('grid')}
+                                title="Grid view"
+                            >
+                                <LayoutGrid size={16} />
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.viewBtn} ${viewMode === 'list' ? styles.viewBtnActive : ''}`}
+                                onClick={() => setViewMode('list')}
+                                title="List view"
+                            >
+                                <List size={16} />
+                            </button>
+                        </div>
+                        {!showAddForm && (
+                            <button type="button" className={styles.addBtn} onClick={() => setShowAddForm(true)}>
+                                <Plus size={16} />
+                                Add new book
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <ErrorAlert>{loadError}</ErrorAlert>
 
@@ -177,14 +202,30 @@ export default function Books() {
             )}
 
             {loading ? (
-                <Spinner center label="Loading your books" />
+                <SkeletonGrid count={8} />
             ) : books.length === 0 && !showAddForm ? (
-                <div className={styles.empty}>
-                    <p className={styles.emptyTitle}>Your shelf is empty</p>
-                    <p className={styles.emptyText}>Start building your reading list by adding your first book.</p>
-                    <div style={{ maxWidth: 240, margin: '20px auto 0' }}>
-                        <Button onClick={() => setShowAddForm(true)}>Add your first book</Button>
-                    </div>
+                <EmptyState
+                    title="Your shelf is empty"
+                    message="Start building your reading list by adding your first book."
+                    actionLabel="Add your first book"
+                    onAction={() => setShowAddForm(true)}
+                />
+            ) : viewMode === 'grid' && !compact ? (
+                <div className={styles.bookGrid}>
+                    {books.map(book => (
+                        <BookCard
+                            key={book.id}
+                            book={book}
+                            variant="grid"
+                            isSelected={selectedBookId === book.id}
+                            isFavorite={favoriteIds.has(book.id)}
+                            onToggleFavorite={() => handleToggleFavorite(book.id)}
+                            onRemove={() => handleRemove(book.id)}
+                            onRate={(rating) => handleRate(book.id, rating)}
+                            onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
+                            busy={busyId === book.id}
+                        />
+                    ))}
                 </div>
             ) : (
                 <>
@@ -196,7 +237,8 @@ export default function Books() {
                                     <BookCard
                                         key={book.id}
                                         book={book}
-                                        variant="featured"
+                                        variant={compact ? 'grid' : 'featured'}
+                                        isSelected={selectedBookId === book.id}
                                         isFavorite={favoriteIds.has(book.id)}
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
@@ -217,7 +259,8 @@ export default function Books() {
                                     <BookCard
                                         key={book.id}
                                         book={book}
-                                        variant="row"
+                                        variant={compact ? 'grid' : 'row'}
+                                        isSelected={selectedBookId === book.id}
                                         isFavorite={favoriteIds.has(book.id)}
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}

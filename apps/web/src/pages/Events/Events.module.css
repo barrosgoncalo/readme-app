@@ -1,6 +1,4 @@
 .page {
-    max-width: var(--max-content-width);
-    margin: 0 auto;
     padding: var(--space-5) var(--space-4);
     display: flex;
     flex-direction: column;
@@ -20,22 +18,14 @@
     margin: 0;
 }
 
-.list {
-    display: flex;
-    flex-direction: column;
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: var(--space-3);
 }
 
-.empty {
-    text-align: center;
-    padding: var(--space-5) var(--space-3);
-    background: var(--bg-elem);
-    border-radius: var(--radius-lg);
-    color: var(--subtext);
-}
-
-.emptyTitle {
-    color: var(--text);
-    font-weight: 600;
-    margin: 0 0 var(--space-1) 0;
+@media (max-width: 720px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
 }

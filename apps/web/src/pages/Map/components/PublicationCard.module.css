@@ -1,28 +1,34 @@
 .card {
     display: flex;
-    gap: var(--space-3);
-    padding: var(--space-3);
+    flex-direction: column;
     background: var(--bg-elem);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--bg-selected);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
     position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
 }
 
 .card:hover {
-    background: var(--bg-selected);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
 
 .coverWrap {
-    flex-shrink: 0;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: var(--bg-selected);
 }
 
 .cover {
-    width: 80px;
-    height: 120px;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: var(--radius);
 }
 
 .placeholder {
@@ -30,67 +36,70 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    height: 100%;
 }
 
 .body {
     display: flex;
     flex-direction: column;
     flex: 1;
-    justify-content: space-between;
+    padding: var(--space-3);
+    gap: var(--space-2);
     min-width: 0;
-    position: relative;
 }
 
 .content {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-1);
+    flex: 1;
 }
 
 .title {
     margin: 0;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .authors {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--subtext);
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .seller {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--subtext);
 }
 
 .avatar {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     object-fit: cover;
 }
 
 .avatarPlaceholder {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: var(--primary);
     color: var(--primary-text);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     flex-shrink: 0;
 }
@@ -104,15 +113,17 @@
 .footer {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: var(--space-2);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
+    margin-top: auto;
 }
 
 .status {
     padding: 2px 8px;
     border: 1px solid;
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     color: var(--text);
@@ -120,30 +131,30 @@
 
 .likeCount {
     color: var(--subtext);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
 }
 
 .heartBtn {
     position: absolute;
     top: var(--space-2);
     right: var(--space-2);
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.35);
     border: none;
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--error);
-    transition: all 0.2s;
+    color: #fff;
+    transition: transform var(--transition-fast), background var(--transition-fast);
     padding: 0;
 }
 
 .heartBtn:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.2);
-    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.5);
+    transform: scale(1.08);
 }
 
 .heartBtn:disabled {
@@ -155,18 +166,8 @@
     color: var(--error);
 }
 
-@media (max-width: 600px) {
-    .card {
-        gap: var(--space-2);
-        padding: var(--space-2);
-    }
-
-    .cover {
-        width: 70px;
-        height: 105px;
-    }
-
-    .title {
-        font-size: 0.95rem;
+@media (prefers-reduced-motion: reduce) {
+    .card:hover {
+        transform: none;
     }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Search, Users, Plus } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/search';
@@ -12,6 +12,8 @@ import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
+import { SkeletonGrid } from '../../components/Skeleton.jsx';
+import EmptyState from '../../components/EmptyState.jsx';
 import styles from './Map.module.css';
 
 const EXPLORE_TAB = {
@@ -39,6 +41,7 @@ export default function Explore() {
     const [loadingPubs, setLoadingPubs] = useState(true);
     const [pubsError, setPubsError] = useState(null);
     const [favoriteBusy, setFavoriteBusy] = useState(null);
+    const searchRef = useRef(null);
 
     const loadPublications = useCallback(async () => {
         if (!uid) return;
@@ -132,6 +135,17 @@ export default function Explore() {
         };
     }, [search, currentUser?.uid, activeTab]);
 
+    useEffect(() => {
+        function onKeyDown(e) {
+            if (e.key === '/' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                searchRef.current?.focus();
+            }
+        }
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, []);
+
     const filteredPubs = publications.filter((pub) => {
         const title = (pub.book?.title || '').toLowerCase();
         const author = (pub.book?.author || '').toLowerCase();
@@ -142,23 +156,23 @@ export default function Explore() {
 
     return (
         <div className={styles.page}>
-            <h1 className={styles.title}>Explore, Swap & Discover</h1>
-            <p className={styles.subtitle}>Find other readers or discover books available for trade.</p>
+            <div className={styles.stickyHeader}>
+                <h1 className={styles.title}>Explore, Swap & Discover</h1>
+                <p className={styles.subtitle}>Find other readers or discover books available for trade.</p>
 
-            <div className={styles.searchRow}>
-                <Search size={16} className={styles.searchIcon} />
-                <input
-                    className={styles.searchInput}
-                    type="text"
-                    placeholder={activeTab === EXPLORE_TAB.BOOKS ? "Search books or authors..." : "Search users by name or username..."}
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    autoFocus
-                />
-            </div>
+                <div className={styles.searchRow}>
+                    <Search size={16} className={styles.searchIcon} />
+                    <input
+                        ref={searchRef}
+                        className={styles.searchInput}
+                        type="text"
+                        placeholder={activeTab === EXPLORE_TAB.BOOKS ? "Search books or authors... (press /)" : "Search users by name or username... (press /)"}
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                </div>
 
-            {/* Filtros (Tabs) */}
-            <div className={styles.tabs} role="tablist">
+                <div className={styles.tabs} role="tablist">
                 <button
                     type="button"
                     role="tab"
@@ -178,6 +192,7 @@ export default function Explore() {
                     <Users size={16} /> Users
                 </button>
             </div>
+            </div>
 
             {/* TAB: USERS */}
             {activeTab === EXPLORE_TAB.USERS && (
@@ -194,18 +209,15 @@ export default function Explore() {
                     )}
 
                     {userResults.length > 0 && (
-                        <div className={styles.list}>
-                            {userResults.map((u, i) => (
-                                <div key={u.uid}>
-                                    {i > 0 && <div className={styles.divider} />}
-                                    <Link to={WEB_ROUTES.userProfile(u.uid)} className={styles.row}>
-                                        <UserAvatar user={u} />
-                                        <div className={styles.info}>
-                                            <span className={styles.name}>{u.fullName || u.username || 'Unknown'}</span>
-                                            {u.username && <span className={styles.username}>@{u.username}</span>}
-                                        </div>
-                                    </Link>
-                                </div>
+                        <div className={styles.userGrid}>
+                            {userResults.map((u) => (
+                                <Link key={u.uid} to={WEB_ROUTES.userProfile(u.uid)} className={styles.userCard}>
+                                    <UserAvatar user={u} />
+                                    <div className={styles.info}>
+                                        <span className={styles.name}>{u.fullName || u.username || 'Unknown'}</span>
+                                        {u.username && <span className={styles.username}>@{u.username}</span>}
+                                    </div>
+                                </Link>
                             ))}
                         </div>
                     )}
@@ -222,13 +234,14 @@ export default function Explore() {
                     </Link>
 
                     {loadingPubs ? (
-                        <Spinner center label="Loading publications..." />
+                        <SkeletonGrid count={6} />
                     ) : pubsError ? (
                         <p className={styles.status}>{pubsError}</p>
                     ) : filteredPubs.length === 0 ? (
-                        <p className={styles.status}>
-                            {search.trim() ? "No publications match your search." : "No publications available right now."}
-                        </p>
+                        <EmptyState
+                            title={search.trim() ? 'No matches' : 'No publications yet'}
+                            message={search.trim() ? 'No publications match your search.' : 'No publications available right now.'}
+                        />
                     ) : (
                         <div className={styles.pubGrid}>
                             {filteredPubs.map((pub) => (

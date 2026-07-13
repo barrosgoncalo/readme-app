@@ -9,7 +9,8 @@ import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser'
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import Spinner from '../../components/Spinner.jsx';
+import ConfirmDialog from '../../components/ConfirmDialog.jsx';
+import { SkeletonGrid } from '../../components/Skeleton.jsx';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
 import { useToast } from '../../hooks/useToast';
@@ -53,7 +54,8 @@ export default function PublicProfile() {
     const [isBlocked, setIsBlocked] = useState(false);
     const [followBusy, setFollowBusy] = useState(false);
     const [blockBusy, setBlockBusy] = useState(false);
-    const [toast, showToast] = useToast(3000);
+    const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+    const [, showToast] = useToast(3000);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
 
@@ -117,9 +119,6 @@ export default function PublicProfile() {
 
     async function handleBlock() {
         if (!currentUser || blockBusy) return;
-        if (!window.confirm(`Block ${user.fullName || user.username || 'this user'}? They won't be able to see your profile or contact you.`)) {
-            return;
-        }
         setBlockBusy(true);
         try {
             // If currently following, unfollow first.
@@ -136,10 +135,11 @@ export default function PublicProfile() {
             console.error(e);
         } finally {
             setBlockBusy(false);
+            setShowBlockConfirm(false);
         }
     }
 
-    if (loading) return <Spinner center label="Loading profile" />;
+    if (loading) return <div className={styles.page}><SkeletonGrid count={3} /></div>;
 
     if (notFound) {
         return (
@@ -157,15 +157,18 @@ export default function PublicProfile() {
 
     return (
         <div className={styles.page}>
-            {toast && <div className={styles.toast}>{toast}</div>}
+            <ConfirmDialog
+                open={showBlockConfirm}
+                onClose={() => setShowBlockConfirm(false)}
+                onConfirm={handleBlock}
+                title="Block this user?"
+                message={`${user.fullName || user.username || 'This user'} won't be able to see your profile or contact you.`}
+                confirmLabel="Block"
+                danger
+                busy={blockBusy}
+            />
 
-            <div className={styles.header}>
-                <button className={styles.backBtn} onClick={() => navigate(-1)} aria-label="Back">
-                    <ArrowLeft size={20} />
-                </button>
-            </div>
-
-            <div className={styles.profileCard}>
+            <div className={styles.hero}>
                 <UserAvatar user={user} />
                 <div className={styles.profileInfo}>
                     <h1 className={styles.name}>{user.fullName || user.username || 'Unknown'}</h1>
@@ -202,7 +205,7 @@ export default function PublicProfile() {
                     </button>
                     <button
                         className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                        onClick={handleBlock}
+                        onClick={() => setShowBlockConfirm(true)}
                         disabled={blockBusy}
                     >
                         <Ban size={16} />
@@ -215,42 +218,48 @@ export default function PublicProfile() {
                 <p className={styles.blockedNotice}>You have blocked this user.</p>
             )}
 
-            <h2 className={styles.section}>Books</h2>
-            {books.length === 0 ? (
-                <p className={styles.empty}>This user hasn&rsquo;t added any books yet.</p>
-            ) : (
-                <div className={styles.bookList}>
-                    {books.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
+            <div className={styles.dashboard}>
+                <div className={styles.booksColumn}>
+                    <h2 className={styles.section}>Books</h2>
+                    {books.length === 0 ? (
+                        <p className={styles.empty}>This user hasn&rsquo;t added any books yet.</p>
+                    ) : (
+                        <div className={styles.bookGrid}>
+                            {books.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
+                        </div>
+                    )}
                 </div>
-            )}
 
-            {reviews.length > 0 && (
-                <>
+                <div className={styles.reviewsColumn}>
                     <h2 className={styles.section}>Reviews</h2>
-                    <div className={styles.reviewList}>
-                        {reviews.map(review => (
-                            <div key={review.id} className={styles.reviewItem}>
-                                <div className={styles.reviewHeader}>
-                                    <span className={styles.reviewAuthor}>{review.authorName || 'Anonymous'}</span>
-                                    <span className={styles.reviewRating}>
-                                        {Array(5).fill(0).map((_, i) => (
-                                            <span key={i} style={{ color: i < review.rating ? 'var(--primary)' : 'var(--bg-elem)' }}>
-                                                ★
-                                            </span>
-                                        ))}
-                                    </span>
+                    {reviews.length === 0 ? (
+                        <p className={styles.empty}>No reviews yet.</p>
+                    ) : (
+                        <div className={styles.reviewList}>
+                            {reviews.map(review => (
+                                <div key={review.id} className={styles.reviewItem}>
+                                    <div className={styles.reviewHeader}>
+                                        <span className={styles.reviewAuthor}>{review.authorName || 'Anonymous'}</span>
+                                        <span className={styles.reviewRating}>
+                                            {Array(5).fill(0).map((_, i) => (
+                                                <span key={i} style={{ color: i < review.rating ? 'var(--primary)' : 'var(--bg-elem)' }}>
+                                                    ★
+                                                </span>
+                                            ))}
+                                        </span>
+                                    </div>
+                                    {review.comment && (
+                                        <p className={styles.reviewComment}>{review.comment}</p>
+                                    )}
+                                    <p className={styles.reviewDate}>
+                                        {new Date(review.createdAt).toLocaleDateString()}
+                                    </p>
                                 </div>
-                                {review.comment && (
-                                    <p className={styles.reviewComment}>{review.comment}</p>
-                                )}
-                                <p className={styles.reviewDate}>
-                                    {new Date(review.createdAt).toLocaleDateString()}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

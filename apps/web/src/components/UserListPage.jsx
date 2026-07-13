@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../constants/webRoutes';
-import Spinner from './Spinner.jsx';
+import { SkeletonList } from './Skeleton.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import { useToast } from '../hooks/useToast';
 import styles from './UserListPage.module.css';
@@ -22,7 +22,7 @@ export default function UserListPage({
 }) {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
-    const [toast, showToast] = useToast();
+    const [, showToast] = useToast();
 
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
@@ -67,11 +67,10 @@ export default function UserListPage({
             || (u.username || '').toLowerCase().includes(q);
     });
 
-    if (loading) return <Spinner center label={`Loading ${title.toLowerCase()}`} />;
+    if (loading) return <SkeletonList count={4} />;
 
     return (
         <div className={styles.page}>
-            {toast && <div className={styles.toast}>{toast}</div>}
 
             <div className={styles.header}>
                 <button className={styles.backBtn} onClick={() => navigate(WEB_ROUTES.PROFILE)}>

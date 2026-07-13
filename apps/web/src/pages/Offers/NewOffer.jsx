@@ -28,7 +28,7 @@ export default function NewOffer() {
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [toast, showToast] = useToast(3000);
+    const [, showToast] = useToast(3000);
 
     useEffect(() => {
         if (!uid || !pubId) {
@@ -106,7 +106,6 @@ export default function NewOffer() {
 
     return (
         <div className={styles.page}>
-            {toast && <div className={styles.toast}>{toast}</div>}
 
             <div className={styles.headerWrap}>
                 <PageHeader

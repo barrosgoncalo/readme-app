@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {useSearchParams, useOutletContext} from 'react-router-dom';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
-import Spinner from '../../components/Spinner.jsx';
+import { SkeletonList } from '../../components/Skeleton.jsx';
 import ChatList from './components/ChatList.jsx';
 import ChatConversation from './components/ChatConversation.jsx';
 import styles from './Chat.module.css';
@@ -52,7 +52,7 @@ export default function Chat() {
         return () => unsubMessages();
     }, [activeChatId]);
 
-    if (loading) return <Spinner center label="Loading chats"/>;
+    if (loading) return <SkeletonList count={5} />;
 
     const activeChat = chats.find(c => c.id === activeChatId);
 

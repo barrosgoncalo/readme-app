@@ -11,13 +11,13 @@ import Welcome from '../pages/Welcome.jsx';
 import Login from '../pages/Login.jsx';
 import ForgotPassword from '../pages/ForgotPassword.jsx';
 import Register from '../pages/Register/index.jsx';
-import Books from '../pages/Books/index.jsx';
+import BooksLayout from '../pages/Books/BooksLayout.jsx';
 import BooksScan from '../pages/Books/Scan.jsx';
 import Events from '../pages/Events/index.jsx';
 import MapPage from '../pages/Map/index.jsx';
 import EventDetails from '../pages/Events/Details.jsx';
 import Chat from '../pages/Chat/index.jsx';
-import Profile from '../pages/Profile/index.jsx';
+import ProfileLayout from '../pages/Profile/ProfileLayout.jsx';
 import EditProfile from '../pages/Profile/EditProfile.jsx';
 import ChangePassword from '../pages/Profile/ChangePassword.jsx';
 import PrivacySecurity from '../pages/Profile/PrivacySecurity.jsx';
@@ -27,6 +27,7 @@ import Followers from '../pages/Profile/Followers.jsx';
 import Favorites from '../pages/Profile/Favorites.jsx';
 import PublicProfile from '../pages/Users/PublicProfile.jsx';
 import BookDetail from '../pages/Books/BookDetail.jsx';
+import { PublicationDetailRoute, EventDetailRoute } from '../pages/DetailRoutes.jsx';
 import CreatePublication from '../pages/Publications/CreatePublication.jsx';
 import PublicationDetails from '../pages/Publications/PublicationDetails.jsx';
 import NewOffer from '../pages/Offers/NewOffer.jsx';
@@ -83,23 +84,24 @@ export default function AppRouter() {
                     </RequireAuth>
                 }
             >
-                <Route path={WEB_ROUTES.BOOKS} element={<Books />} />
+                <Route path={WEB_ROUTES.BOOKS} element={<BooksLayout />} />
+                <Route path="/books/:bookId" element={<BooksLayout />} />
                 <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan />} />
-                <Route path="/books/:bookId" element={<BookDetail />} />
                 <Route path={WEB_ROUTES.EVENTS} element={<Events />} />
                 <Route path={WEB_ROUTES.MAP} element={<MapPage />} />
-                <Route path="/events/:eventId" element={<EventDetails />} />
+                <Route path="/events/:eventId" element={<EventDetailRoute />} />
                 <Route path={WEB_ROUTES.CHAT} element={<Chat />} />
-                <Route path={WEB_ROUTES.PROFILE} element={<Profile />} />
+                <Route path={WEB_ROUTES.PROFILE} element={<ProfileLayout />}>
+                    <Route path="following" element={<Following />} />
+                    <Route path="followers" element={<Followers />} />
+                    <Route path="favorites" element={<Favorites />} />
+                    <Route path="blocked-users" element={<BlockedUsers />} />
+                </Route>
                 <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile />} />
                 <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
                 <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
-                <Route path={WEB_ROUTES.PROFILE_BLOCKED_USERS} element={<BlockedUsers />} />
-                <Route path={WEB_ROUTES.PROFILE_FOLLOWING} element={<Following />} />
-                <Route path={WEB_ROUTES.PROFILE_FOLLOWERS} element={<Followers />} />
-                <Route path={WEB_ROUTES.PROFILE_FAVORITES} element={<Favorites />} />
                 <Route path={WEB_ROUTES.PUBLICATION_NEW} element={<CreatePublication />} />
-                <Route path="/publications/:pubId" element={<PublicationDetails />} />
+                <Route path="/publications/:pubId" element={<PublicationDetailRoute />} />
                 <Route path={WEB_ROUTES.OFFERS_NEW} element={<NewOffer />} />
                 <Route path="/users/:uid" element={<PublicProfile />} />
             </Route>

@@ -1,5 +1,6 @@
 /* CSS variables generated from packages/shared/src/constants/theme.ts.
-   Keep in sync with that file. */
+   Keep in sync with that file.
+   Web-only additions below (--width-*, --shadow-*, --transition-*) are not in theme.ts. */
 
 :root {
     color-scheme: light;
@@ -19,7 +20,18 @@
 
     --font-sans: 'Inter', system-ui, sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;
-    --max-content-width: 800px;
+    /* Layout tiers */
+    --width-narrow: 720px;
+    --width-reading: 860px;
+    --width-wide: 1280px;
+    --max-content-width: var(--width-narrow);
+
+    /* Elevation & motion */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.18);
+    --transition-fast: 120ms ease;
+    --transition-base: 200ms ease;
 
     --space-1: 4px;
     --space-2: 8px;
@@ -61,4 +73,8 @@
     --error-bg: rgba(242, 139, 130, 0.14);
     --success: #81C995;
     --success-bg: rgba(129, 201, 149, 0.14);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.24);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.32);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
 }

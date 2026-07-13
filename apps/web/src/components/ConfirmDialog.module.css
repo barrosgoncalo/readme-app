@@ -1,0 +1,7 @@
+.message {
+    margin: 0;
+    padding: var(--space-4);
+    color: var(--subtext);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}

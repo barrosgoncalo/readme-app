@@ -1,39 +1,72 @@
 .card {
     display: flex;
-    gap: var(--space-3);
-    padding: var(--space-3);
+    flex-direction: column;
+    padding: 0;
     background: var(--bg-elem);
-    border: 1px solid var(--border);
+    border: 1px solid var(--bg-selected);
     border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
     text-align: left;
-    border: none;
-    transition: opacity 0.2s;
+    overflow: hidden;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .card:hover {
-    opacity: 0.85;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
-.accent {
-    width: 4px;
-    border-radius: var(--radius);
-    flex-shrink: 0;
+.dateBlock {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-selected);
+    border-bottom: 1px solid var(--bg-selected);
+}
+
+.dayNum {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.monthYear {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.month {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text);
+    letter-spacing: 0.04em;
+}
+
+.year {
+    font-size: 0.78rem;
+    color: var(--subtext);
 }
 
 .body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-2);
+    padding: var(--space-3);
 }
 
 .title {
     font-weight: 600;
     color: var(--text);
-    margin: 0 0 8px 0;
-    font-size: 0.95rem;
+    margin: 0;
+    font-size: 1rem;
+    font-family: var(--font-serif);
 }
 
 .meta {
@@ -47,7 +80,7 @@
     align-items: center;
     gap: 8px;
     color: var(--subtext);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
 .metaItem svg {
@@ -59,6 +92,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
+    margin-top: auto;
 }
 
 .badge {
@@ -68,7 +102,7 @@
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
-    background: var(--bg);
+    background: var(--bg-selected);
     color: var(--text);
 }
 
@@ -77,9 +111,11 @@
     align-items: center;
     gap: 6px;
     color: var(--subtext);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
-.attendees svg {
-    flex-shrink: 0;
+@media (prefers-reduced-motion: reduce) {
+    .card:hover {
+        transform: none;
+    }
 }
