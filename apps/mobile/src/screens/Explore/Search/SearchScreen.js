@@ -6,8 +6,13 @@ import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
 import { searchBookTitles, searchPublicationsByBook, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
+import {useRecentSearches} from "@readme/shared/src/hooks/use-recent-searches";
+import { RECENT_SEARCH_TYPES } from '@readme/shared/src/services/recentSearches';
 import { buildStyles } from '../../../styles/searchStyles';
 import PublicationFilterModal from '../../../components/ui/PublicationFilterModal';
+import { Keyboard } from 'react-native';
+
+const BOOK_HITS_PER_PAGE = 8;
 
 const TABS = {
     BOOKS: 'books',
@@ -38,8 +43,24 @@ export default function SearchScreen({ navigation }) {
     const [conditionFilters, setConditionFilters] = useState([]);
     const [genreFilters, setGenreFilters] = useState([]);
 
+    const recentSearchType = activeTab === TABS.PEOPLE
+        ? RECENT_SEARCH_TYPES.PEOPLE
+        : RECENT_SEARCH_TYPES.BOOKS;
+
+    const { recentSearches, saveRecentSearch, removeRecent, clearRecents } = useRecentSearches(recentSearchType);
+
     const handleUserPress = (user) => {
+        setSearchText(user.username);
+        saveRecentSearch(user.username);
         navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: user.uid });
+    };
+
+    const handleRecentPress = (query) => {
+        Keyboard.dismiss();
+        setSearchText(query);
+        if (activeTab === TABS.BOOKS) {
+            setSelectedBook({ bookId: null, title: query });
+        }
     };
 
     const handleTabChange = (tab) => {
@@ -51,7 +72,7 @@ export default function SearchScreen({ navigation }) {
         setPublications([]);
         setSortBy(SORT_OPTIONS.RELEVANCE);
         setConditionFilters([]);
-        setGenreFilters([]);          // new
+        setGenreFilters([]);
     };
 
     const handleSearchTextChange = (text) => {
@@ -60,12 +81,17 @@ export default function SearchScreen({ navigation }) {
     };
 
     const handleBookSuggestionPress = (book) => {
+        Keyboard.dismiss();
+        const query = [book.title, book.author].filter(Boolean).join(' ');
+        setSearchText(query);
         setSelectedBook({ bookId: book.bookId, title: book.title, author: book.author });
+        saveRecentSearch(query);
     };
 
     const handleSearchSubmit = () => {
         if (activeTab === TABS.BOOKS && searchText.trim()) {
             setSelectedBook({ bookId: null, title: searchText.trim() });
+            saveRecentSearch(searchText);
         }
     };
 
@@ -91,7 +117,7 @@ export default function SearchScreen({ navigation }) {
                     const users = await searchUsers(searchText, currentUser.uid);
                     setResults(users);
                 } else {
-                    const books = await searchBookTitles(searchText);
+                    const books = await searchBookTitles(searchText , BOOK_HITS_PER_PAGE, currentUser.uid);
                     setResults(books);
                 }
             } catch (error) {
@@ -111,7 +137,7 @@ export default function SearchScreen({ navigation }) {
         try {
             const { publications: pubs, page, nbPages } = await searchPublicationsByBook(
                 selectedBook,
-                { page: pageToLoad, sortBy, conditions: conditionFilters, genres: genreFilters }
+                { page: pageToLoad, sortBy, conditions: conditionFilters, genres: genreFilters, excludeUid: currentUser.uid }
             );
             setPublications(pubs);
             setPubPage(page);
@@ -140,6 +166,21 @@ export default function SearchScreen({ navigation }) {
             seller: publication.seller
         });
     };
+
+    const renderRecentItem = useCallback(({ item }) => (
+        <TouchableOpacity style={styles.recentRow} onPress={() => handleRecentPress(item)}>
+            <Iconify icon="lucide:history" size={18} color={theme.subtext} style={styles.recentIcon} />
+            <Text style={styles.recentText} numberOfLines={1}>{item}</Text>
+            <TouchableOpacity
+                style={styles.recentRemoveBtn}
+                onPress={() => removeRecent(item)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+                <Iconify icon="lucide:x" size={16} color={theme.subtext} />
+            </TouchableOpacity>
+        </TouchableOpacity>
+    ), [styles, theme, removeRecent]);
+
 
     const renderUserItem = useCallback(({ item }) => (
         <TouchableOpacity
@@ -313,6 +354,10 @@ export default function SearchScreen({ navigation }) {
                 )}
             </View>
 
+            {/* --- separator --- */}
+            <View style={styles.separator} />
+
+
             {showingPublications ? (
                 <FlatList
                     key="publications-two-column"
@@ -335,7 +380,7 @@ export default function SearchScreen({ navigation }) {
                     ListFooterComponent={publications.length > 0 ? renderPagination : null}
                     ListFooterComponentStyle={styles.footerWrapper}
                 />
-            ) : (
+            ) : searchText.trim() ? (
                 <FlatList
                     key="suggestions-one-column"
                     data={results}
@@ -343,7 +388,7 @@ export default function SearchScreen({ navigation }) {
                     renderItem={renderItem}
                     keyboardShouldPersistTaps="handled"
                     ListEmptyComponent={
-                        !loading && searchText.trim() ? (
+                        !loading ? (
                             <View style={styles.emptyState}>
                                 <Iconify
                                     icon={activeTab === TABS.PEOPLE ? "lucide:user-x" : "lucide:book-x"}
@@ -353,6 +398,24 @@ export default function SearchScreen({ navigation }) {
                                 <Text style={styles.emptyStateText}>
                                     {activeTab === TABS.PEOPLE ? 'No users found' : 'No books found'}
                                 </Text>
+                            </View>
+                        ) : null
+                    }
+                />
+            ) : (
+                <FlatList
+                    key="recents-one-column"
+                    data={recentSearches}
+                    keyExtractor={(item, index) => `${item}-${index}`}
+                    renderItem={renderRecentItem}
+                    keyboardShouldPersistTaps="handled"
+                    ListHeaderComponent={
+                        recentSearches.length > 0 ? (
+                            <View style={styles.recentHeader}>
+                                <Text style={styles.recentHeaderText}>Recent</Text>
+                                <TouchableOpacity onPress={clearRecents}>
+                                    <Text style={styles.recentClearText}>Clear</Text>
+                                </TouchableOpacity>
                             </View>
                         ) : null
                     }

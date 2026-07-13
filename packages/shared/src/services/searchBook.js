@@ -9,7 +9,7 @@ const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
 const algoliaClient = algoliasearch(API_APP_ID_KEY, API_SEARCH_KEY);
 
 const PUBLICATIONS_INDEX = "publications";
-const RESULTS_PER_PAGE = 8; // matches the max-X-per-page requirement
+const DEFAULT_HITS_PER_PAGE = 15;
 
 // Algolia can only re-sort results using replica indices with a custom
 // ranking configured (set up in the Algolia dashboard, or via setSettings
@@ -42,9 +42,13 @@ const SORT_INDEXES = {
  * Deduplicates multiple publications of the same book by checking for
  * matching bookIds OR matching Title+Author combinations.
  */
-export const searchBookTitles = async (searchText, resultLimit = 15) => {
+export const searchBookTitles = async (searchText, resultLimit = DEFAULT_HITS_PER_PAGE, excludeUid = null) => {
     const trimmed = searchText.trim();
     if (!trimmed) return [];
+
+    const filters = excludeUid
+        ? `status:${PUBLICATION_STATUS.AVAILABLE} AND NOT uid:${excludeUid}`
+        : `status:${PUBLICATION_STATUS.AVAILABLE}`;
 
     const { results } = await algoliaClient.search({
         requests: [
@@ -52,8 +56,8 @@ export const searchBookTitles = async (searchText, resultLimit = 15) => {
                 indexName: PUBLICATIONS_INDEX,
                 query: trimmed,
                 restrictSearchableAttributes: ["book.title", "book.author"],
-                filters: `status:${PUBLICATION_STATUS.AVAILABLE}`,
-                hitsPerPage: resultLimit * 5,
+                filters,
+                hitsPerPage: resultLimit,
                 typoTolerance: true,
             },
         ],
@@ -97,8 +101,12 @@ export const searchBookTitles = async (searchText, resultLimit = 15) => {
  * selected book-condition facets (OR'd together within the group, ANDed
  * against status).
  */
-const buildPublicationFilters = (conditions = [], genres = []) => {
+const buildPublicationFilters = (conditions = [], genres = [], excludeUid = null) => {
     let filters = `status:${PUBLICATION_STATUS.AVAILABLE}`;
+
+    if (excludeUid) {
+        filters += ` AND NOT uid:${excludeUid}`;
+    }
 
     if (conditions.length > 0) {
         const conditionGroup = conditions
@@ -116,7 +124,6 @@ const buildPublicationFilters = (conditions = [], genres = []) => {
 
     return filters;
 };
-
 /**
  * Fetches available publications for a given book, paginated 10-at-a-time
  * (Google-style numbered pages), used on the results page after a
@@ -138,7 +145,7 @@ const buildPublicationFilters = (conditions = [], genres = []) => {
  */
 export const searchPublicationsByBook = async (
     { bookId, title, author },
-    { page = 0, hitsPerPage = RESULTS_PER_PAGE, sortBy = SORT_OPTIONS.RELEVANCE, conditions = [], genres = [] } = {}
+    { page = 0, hitsPerPage = DEFAULT_HITS_PER_PAGE, sortBy = SORT_OPTIONS.RELEVANCE, conditions = [], genres = [], excludeUid = null } = {}
 ) => {
     const queryText = [title, author].filter(Boolean).join(" ").trim();
     const indexName = SORT_INDEXES[sortBy] || SORT_INDEXES[SORT_OPTIONS.RELEVANCE];
@@ -147,7 +154,7 @@ export const searchPublicationsByBook = async (
         indexName,
         query: queryText,
         restrictSearchableAttributes: ["book.title", "book.author"],
-        filters: buildPublicationFilters(conditions, genres),
+        filters: buildPublicationFilters(conditions, genres, excludeUid),
         page,
         hitsPerPage,
         typoTolerance: true,

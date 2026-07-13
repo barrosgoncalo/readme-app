@@ -44,9 +44,9 @@ export const Colors = {
         /** (Pill button Muted). */
         pillButtonMuted: '#BFBFBF',
         /** (Pill button Active) */
-        pillButtonActive: '#222B59',
+        pillButtonActive: '#5C3D2E',
         /** (Pill button Muted). */
-        pillButtonMutedText: '#6e6e6e',
+        pillButtonMutedText: '#8e8e8e',
         /** (Pill button Active) */
         pillButtonActiveText: '#e7e7e7',
         cardBackground: '#E8E5E3',
@@ -55,10 +55,6 @@ export const Colors = {
         iconBg: '#C4BDB8',
         icon: '#342F2C',
         verifiedColor: '#1C0E05',
-        /** Pill Colors */
-        followPillButton: 'rgba(50,150,243,0.84)',
-        blockPillButton: 'rgba(230,55,55,0.83)',
-        cancelPillButton: 'rgba(202,197,195,0.85)',
         /** The pitch-black main bar */
         tabBarBackground: '#000000',
         /** The dark gray expanding pill */
@@ -137,7 +133,7 @@ export const Colors = {
         /** (Gray Pill button Muted). */
         pillButtonMuted: '#424242',
         /** (Dark PurplePill button Active) */
-        pillButtonActive: '#293867',
+        pillButtonActive: '#7E5540',
         /** (Dark Gray Pill button TEXT Muted). */
         pillButtonMutedText: '#313131',
         /** (Light gray almost white Pill button TEXT Active) */
@@ -148,10 +144,6 @@ export const Colors = {
         iconBg: '#342F2C',
         icon: '#C4BDB8',
         verifiedColor: '#F58B2E',
-        /** Pill Colors */
-        blockPillButton: '#C9484D',
-        followPillButton: '#3A8FD0',
-        cancelPillButton: '#363230',
         /** Pitch black to anchor the floating bar and provide OLED-friendly contrast*/
         tabBarBackground: '#000000',
         /** Warm Medium-Dark Gray (matches your 'backgroundSelected' color) */
