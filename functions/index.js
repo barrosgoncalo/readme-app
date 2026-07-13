@@ -11,6 +11,7 @@ const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
 const Notification = require("./models/notification");
 const { GAMIFICATION_RANKS } = require("./constants/gamification");
+const { sendPushNotification } = require("./utils/pushNotification");
 
 // Initialize Firebase Admin globally
 initializeApp();
@@ -334,6 +335,14 @@ exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}",
         await Notification.sendToUser(db, targetUid, followRequestNotif, customId);
         
         console.log(`Follow request notification successfully sent to user: ${targetUid}`);
+
+        await sendPushNotification(
+            db,
+            targetUid,
+            "New follow request",
+            `${actorName} requested to follow you.`,
+            { type: "FOLLOW_REQUEST", requestId: event.params.requestId }
+        );
     } catch (error) {
         console.error("Error generating follow request notification:", error);
     }
@@ -369,6 +378,14 @@ exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) 
         await Notification.sendToUser(db, followerUid, newFollowNotif, customId);
         
         console.log(`Acceptance notification successfully sent to user: ${followerUid}`);
+
+        await sendPushNotification(
+            db,
+            followerUid,
+            "Follow accepted",
+            `${actorName} accepted your follow request.`,
+            { type: "NEW_FOLLOW", followId: event.params.followId }
+        );
     } catch (error) {
         console.error("Error generating new follow notification:", error);
     }
