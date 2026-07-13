@@ -205,4 +205,60 @@ export const UsersService = {
             { field: 'targetUid', operator: '==', value: userId }
         ]);
     },
+
+    /**
+    * Subscribes to pending follow requests in real-time.
+    * Automatically fires the callback with the updated integer count whenever requests change.
+    * @returns {function} Unsubscribe function to clean up the listener
+    */
+    subscribeToPendingFollowRequestsCount: (userId, onCountChange) => {
+        if (!userId) return () => {};
+        
+        return DB.subscribeQuery(
+            'followRequests',
+            [{ field: 'targetUid', operator: '==', value: userId }],
+            (requests) => {
+                // Pass the length of the matching array straight to your state setter
+                onCountChange(requests.length);
+            }
+        );
+    },
+
+    /**
+    * Subscribes to all unread notifications (requests, acceptances, swaps, etc.) in real-time.
+    * Automatically fires the callback with the updated integer count.
+    * @returns {function} Unsubscribe function to clean up the listener
+    */
+    subscribeToUnreadNotificationsCount: (userId, onCountChange) => {
+        if (!userId) return () => {};
+        
+        return DB.subscribeQuery(
+            `users/${userId}/notifications`,
+            [{ field: 'isRead', operator: '==', value: false }],
+            (notifications) => {
+                // This captures ANY unread notification document 
+                onCountChange(notifications.length);
+            }
+        );
+    },
+
+    /**
+     * Appends a unique Expo push token to the user's registered devices array
+     * @param {string} uid - The authenticated user's ID
+     * @param {string} token - The unique Expo push token string
+     */
+    async savePushToken(uid, token) {
+        if (!uid || !token) return;
+        
+        try {
+            // Using your DB architecture wrapper to append the token safely to an array
+            await DB.update('users', uid, {
+                pushTokens: DB.arrayUnion ? DB.arrayUnion(token) : [token]
+            });
+            console.log(`[UsersService] Push token successfully registered for user: ${uid}`);
+        } catch (error) {
+            console.error("[UsersService] Failed to save push token to database:", error);
+            throw error;
+        }
+    }
 };

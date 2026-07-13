@@ -125,7 +125,7 @@ export default function ChangePasswordScreen({ navigation }) {
                         <Image 
                             source={require('../../../../assets/images/ShieldWorm.png')} 
                             style={styles.illustration}
-                            resizeMode="contain"
+                            contentFit="contain"
                         />
                     </View>
 

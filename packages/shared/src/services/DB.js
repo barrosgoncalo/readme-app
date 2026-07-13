@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
-    updateDoc, deleteDoc, serverTimestamp,
+    updateDoc, deleteDoc, serverTimestamp, arrayUnion,
     query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit
 } from 'firebase/firestore';
 
@@ -240,4 +240,6 @@ export const DB = {
             }
         );
     },
+
+    arrayUnion: (value) => arrayUnion(value),
 }

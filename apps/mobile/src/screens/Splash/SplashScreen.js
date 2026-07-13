@@ -84,7 +84,7 @@ export default function SplashScreen({ onFinish }) {
                     : require('../../../assets/images/splash-light.png')
                 } 
                 style={styles.logo}
-                resizeMode="contain"
+                contentFit="contain"
                 onLoad={() => setIsLogoLoaded(true)}
             />
 

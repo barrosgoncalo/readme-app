@@ -9,7 +9,7 @@ const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
-// IMPORT YOUR CONSTANTS HERE (Adjust the path to where your shared file is located)
+const Notification = require("./models/notification");
 const { GAMIFICATION_RANKS } = require("./constants/gamification");
 
 // Initialize Firebase Admin globally
@@ -306,44 +306,6 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
     }
 });
 
-
-// ==========================================
-// NOTIFICATIONS ENGINE MODULE (NEW)
-// ==========================================
-const { FieldValue: AdminFieldValue } = require("firebase-admin/firestore");
-
-class Notification {
-    constructor({ type, actorId, actorName, targetId, message }) {
-        this.type = type;         
-        this.actorId = actorId;   
-        this.actorName = actorName; 
-        this.targetId = targetId; 
-        this.message = message;   
-        this.isRead = false;
-    }
-
-    toFirestore() {
-        return {
-            type: this.type,
-            actorId: this.actorId,
-            actorName: this.actorName,
-            targetId: this.targetId,
-            message: this.message,
-            isRead: this.isRead,
-            createdAt: AdminFieldValue.serverTimestamp()
-        };
-    }
-
-    static async sendToUser(database, targetUserId, notificationInstance) {
-        const notifRef = database.collection("users").doc(targetUserId).collection("notifications").doc();
-        const payload = notificationInstance.toFirestore();
-        payload.id = notifRef.id;
-        
-        await notifRef.set(payload);
-        return payload.id;
-    }
-}
-
 // ─── TRIGGER: ON FOLLOW REQUEST CREATED ───
 exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}", async (event) => {
     const requestData = event.data.data();
@@ -356,16 +318,21 @@ exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}",
         const actorDoc = await db.collection("users").doc(requesterUid).get();
         const actorData = actorDoc.data();
         const actorName = actorData?.username || actorData?.displayName || "Someone";
+        // Fetching the user's photo profile URL
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
 
         const followRequestNotif = new Notification({
             type: "FOLLOW_REQUEST",
             actorId: requesterUid,
             actorName: actorName,
+            actorPhotoURL: actorPhotoURL, // Passed into the constructor
             targetId: event.params.requestId,
             message: `${actorName} requested to follow you.`
         });
 
-        await Notification.sendToUser(db, targetUid, followRequestNotif);
+        const customId = `req_${requesterUid}_${targetUid}`;
+        await Notification.sendToUser(db, targetUid, followRequestNotif, customId);
+        
         console.log(`Follow request notification successfully sent to user: ${targetUid}`);
     } catch (error) {
         console.error("Error generating follow request notification:", error);
@@ -382,20 +349,26 @@ exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) 
     const followingUid = followData.followingUid;
 
     try {
-        const actorDoc = await db.collection("users").doc(followerUid).get();
+        const actorDoc = await db.collection("users").doc(followingUid).get();
         const actorData = actorDoc.data();
         const actorName = actorData?.username || actorData?.displayName || "Someone";
+        // Fetching the user's photo profile URL
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
 
         const newFollowNotif = new Notification({
             type: "NEW_FOLLOW",
-            actorId: followerUid,
+            actorId: followingUid,
             actorName: actorName,
+            actorPhotoURL: actorPhotoURL, // Passed into the constructor
             targetId: event.params.followId,
-            message: `${actorName} started following you.`
+            message: `${actorName} accepted your follow request.`
         });
 
-        await Notification.sendToUser(db, followingUid, newFollowNotif);
-        console.log(`New follow notification successfully sent to user: ${followingUid}`);
+        const customId = `accept_${followerUid}_${followingUid}`;
+        
+        await Notification.sendToUser(db, followerUid, newFollowNotif, customId);
+        
+        console.log(`Acceptance notification successfully sent to user: ${followerUid}`);
     } catch (error) {
         console.error("Error generating new follow notification:", error);
     }

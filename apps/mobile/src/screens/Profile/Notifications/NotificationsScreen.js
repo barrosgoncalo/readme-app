@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { UsersService } from '@readme/shared/src/services/users';
+import { DB } from '@readme/shared/src/services/DB';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Iconify } from 'react-native-iconify';
 import { useNotifications } from '@readme/shared/src/hooks/use-notifications';
@@ -11,6 +13,37 @@ export default function NotificationsScreen({ navigation }) {
     const theme = useTheme();
     const { currentUser } = useAuth();
     const { notifications, loading, markAsRead, deleteNotification } = useNotifications();
+
+    // --- AUTO-READ SWEEP LOGIC WITH THE CRASH FIX ---
+    useFocusEffect(
+        useCallback(() => {
+            const markStandardNotificationsAsRead = async () => {
+                if (!currentUser?.uid || !notifications || notifications.length === 0) return;
+
+                // ADDED SAFETY CHECK: "notif &&" ensures it doesn't crash on an empty database document
+                const notificationsToClear = notifications.filter(
+                    (notif) => notif && notif.isRead === false && notif.type !== 'FOLLOW_REQUEST'
+                );
+
+                if (notificationsToClear.length === 0) return;
+
+                try {
+                    await Promise.all(
+                        notificationsToClear.map((notif) =>
+                            DB.update(`users/${currentUser.uid}/notifications`, notif.id, { 
+                                isRead: true 
+                            })
+                        )
+                    );
+                } catch (error) {
+                    console.error("Failed to auto-read notifications:", error);
+                }
+            };
+
+            markStandardNotificationsAsRead();
+        }, [notifications, currentUser?.uid])
+    );
+    // ------------------------------------------------
 
     const handleAcceptRequest = async (requesterUid, notificationId) => {
         try {
@@ -51,7 +84,7 @@ export default function NotificationsScreen({ navigation }) {
 
             <FlatList
                 data={notifications}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item?.id || Math.random().toString()}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                     <View style={{ alignItems: 'center', marginTop: 100 }}>

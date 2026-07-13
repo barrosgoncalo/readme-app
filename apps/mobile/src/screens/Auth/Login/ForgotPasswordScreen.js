@@ -52,7 +52,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 <Image
                     source={require('../../../../assets/images/ForgotPassword.png')}
                     style={styles.forgotPasswordImage}
-                    resizeMode="contain"
+                    contentFit="contain"
                 />
                 <View style={styles.body}>
                     <Text style={{ color: theme.text, fontSize: 15, marginBottom: 20, lineHeight: 22 }}>

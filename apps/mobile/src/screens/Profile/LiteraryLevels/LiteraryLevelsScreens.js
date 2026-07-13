@@ -88,7 +88,7 @@ export default function LiteraryLevelsPage({ navigation, route }) {
                         <Image 
                             source={targetBadge.image} 
                             style={styles.largeBadgeImage}
-                            resizeMode="contain"
+                            contentFit="contain"
                         />
                     </View>
 
@@ -129,7 +129,7 @@ export default function LiteraryLevelsPage({ navigation, route }) {
                                             styles.smallBadgeImage,
                                             !isUnlocked && styles.lockedBadgeImage 
                                         ]}
-                                        resizeMode="contain"
+                                        contentFit="contain"
                                     />
                                 </View>
                                 <Text style={[
@@ -168,7 +168,7 @@ export default function LiteraryLevelsPage({ navigation, route }) {
                                 <Image 
                                     source={selectedBadge.image} 
                                     style={styles.largeBadgeImageModal}
-                                    resizeMode="contain"
+                                    contentFit="contain"
                                 />
                             </View>
 

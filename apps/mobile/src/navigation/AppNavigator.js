@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { ROUTES } from '@readme/shared/src/constants/routes';
+import { UsersService } from '@readme/shared/src/services/users';
+import { registerForPushNotificationsAsync } from '@readme/shared/src/utils/pushTokenHelper';
 
 // Import screens
 import SplashScreen from '../screens/Splash/SplashScreen';
@@ -40,16 +42,40 @@ import ShowQRCodeScreen from '../screens/Swap/QRVerification/ShowQRCodeScreen';
 import SwapScannerScreen from '../screens/Swap/QRVerification/SwapScannerScreen';
 import ReviewSwapperScreen from '../screens/Swap/Review/ReviewSwapperScreen';
 
-
-
 import AppTabs from '../components/app-tabs'; 
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-    const { userLoggedIn, loading: authLoading } = useAuth(); 
+    // Note: Added 'currentUser' here just in case your 'userLoggedIn' is a boolean 
+    // and you need the explicit user object to read the uid.
+    const { userLoggedIn, loading: authLoading, currentUser } = useAuth(); 
     const [isFirstLaunch, setIsFirstLaunch] = useState(null);
     const [showSplash, setShowSplash] = useState(true);
+
+    // ─── NEW: SYNC PUSH TOKEN ON SUCCESSFUL LOGIN ───
+    useEffect(() => {
+        const syncDevicePushToken = async () => {
+            // Determine the user's UID based on how your AuthContext structured it
+            const targetUid = userLoggedIn?.uid || currentUser?.uid;
+            if (!targetUid) return;
+
+            try {
+                const token = await registerForPushNotificationsAsync();
+                if (token) {
+                    await UsersService.savePushToken(targetUid, token);
+                    console.log(`[AppNavigator] Device token successfully synced for UID: ${targetUid}`);
+                }
+            } catch (error) {
+                console.warn("[AppNavigator] Push registration skipped:", error.message);
+            }
+        };
+
+        if (userLoggedIn) {
+            syncDevicePushToken();
+        }
+    }, [userLoggedIn, currentUser]);
+    // ────────────────────────────────────────────────
 
     useEffect(() => {
         const checkIsFirstLaunch = async () => {
@@ -81,7 +107,7 @@ export default function AppNavigator() {
                 {userLoggedIn ? (
                     <>
                         <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
-
+                        {/* ... Rest of your authenticated screens remain exactly the same ... */}
                         <Stack.Screen 
                             name={ROUTES.EDIT_PROFILE} 
                             component={EditProfileScreen} 
@@ -214,36 +240,35 @@ export default function AppNavigator() {
                         />
                     </>
                 ) : (
-                        <>
-                            {showSplash ? (
-                                <Stack.Screen name={ROUTES.SPLASH}>
-                                    {() => <SplashScreen onFinish={handleSplashFinish} />}
-                                </Stack.Screen>
-                            ) : (
-                                    <>
-                                        {isFirstLaunch && (
-                                            <Stack.Screen 
-                                                name={ROUTES.WELCOME}
-                                                component={WelcomeScreen}
-                                            />
-                                        )}
-                                        <Stack.Screen
-                                            name={ROUTES.LOGIN}
-                                            component={LoginScreen}
-                                        />
-                                        <Stack.Screen
-                                            name={ROUTES.REGISTER}
-                                            component={RegisterScreen}
-                                        />
-                                        <Stack.Screen
-                                            name={ROUTES.FORGOT_PASSWORD}
-                                            component={ForgotPasswordScreen}
-                                        />
-
-                                    </>
+                    <>
+                        {showSplash ? (
+                            <Stack.Screen name={ROUTES.SPLASH}>
+                                {() => <SplashScreen onFinish={handleSplashFinish} />}
+                            </Stack.Screen>
+                        ) : (
+                            <>
+                                {isFirstLaunch && (
+                                    <Stack.Screen 
+                                        name={ROUTES.WELCOME}
+                                        component={WelcomeScreen}
+                                    />
                                 )}
-                        </>
-                    )}
+                                <Stack.Screen
+                                    name={ROUTES.LOGIN}
+                                    component={LoginScreen}
+                                />
+                                <Stack.Screen
+                                    name={ROUTES.REGISTER}
+                                    component={RegisterScreen}
+                                />
+                                <Stack.Screen
+                                    name={ROUTES.FORGOT_PASSWORD}
+                                    component={ForgotPasswordScreen}
+                                />
+                            </>
+                        )}
+                    </>
+                )}
             </Stack.Navigator>
         </NavigationContainer>
     );

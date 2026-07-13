@@ -30,7 +30,7 @@ export default function WelcomeScreen({ navigation }) {
                 <Image 
                     source={require('../../../assets/images/welcome-bg.png')} 
                     style={styles.image}
-                    resizeMode="cover"
+                    contentFit="cover"
                 />
             </View>
 

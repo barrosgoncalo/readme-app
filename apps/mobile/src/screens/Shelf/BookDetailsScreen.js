@@ -62,7 +62,7 @@ export default function BookDetailsScreen({ route, navigation }) {
                         <Image 
                             source={{ uri: coverUrl }} 
                             style={styles.coverImage}
-                            resizeMode="cover"
+                            contentFit="cover"
                         />
                     ) : (
                             <View style={[styles.coverImage, styles.placeholderCover, { backgroundColor: theme.backgroundElement || '#EAEAEA', borderColor: theme.border || '#DDDDDD' }]}>

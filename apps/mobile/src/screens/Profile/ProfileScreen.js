@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Colors } from '@readme/shared/src/constants/theme';
@@ -11,8 +11,6 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { useProfileActions } from '@readme/shared/src/hooks/use-profile-actions';
 import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
 
-import { UsersService } from '@readme/shared/src/services/users'; 
-
 export default function ProfileScreen({ navigation }) {
     const theme = useTheme();
     const styles = buildProfileStyles(theme);
@@ -20,12 +18,12 @@ export default function ProfileScreen({ navigation }) {
     const { currentUser, refreshUser } = useAuth(); 
     const [focusKey, setFocusKey] = useState(0);
 
-    const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
-
     const handleScroll = useScrollTabBarControl();
 
     const currentSwapsCompleted = currentUser?.gamification?.completedSwapsCount ?? 0;
     const currentBadge = getHighestUnlockedBadge(currentSwapsCompleted);
+
+    const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
     const {
         uploading, hasNotifications,
@@ -35,25 +33,30 @@ export default function ProfileScreen({ navigation }) {
     const scrollY = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', async () => {
+        const unsubscribeFocus = navigation.addListener('focus', () => {
             setFocusKey(prev => prev + 1);
             if (refreshUser) refreshUser();
-
-            if (currentUser?.uid) {
-                try {
-                    const requests = await UsersService.fetchPendingFollowRequests(currentUser.uid);
-                    setPendingRequestsCount(requests.length);
-                } catch (error) {
-                    console.error("Error fetching requests:", error);
-                }
-            }
         });
-        return unsubscribe;
+
+        let unsubscribeRealTime = () => {}; 
+        if (currentUser?.uid) {
+            const { UsersService } = require('@readme/shared/src/services/users'); // or standard import at top
+
+            unsubscribeRealTime = UsersService.subscribeToUnreadNotificationsCount(
+                currentUser.uid, 
+                (newCount) => setUnreadNotificationsCount(newCount)
+            );
+        }
+
+        return () => {
+            unsubscribeFocus();
+            unsubscribeRealTime();
+        };
     }, [navigation, refreshUser, currentUser?.uid]);
+    // ---------------------------------------------------------------------
 
     return (
-        <View style={styles.container}>
-            <Animated.ScrollView 
+        <View style={styles.container}>            <Animated.ScrollView 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -85,10 +88,10 @@ export default function ProfileScreen({ navigation }) {
                             onPress={() => navigation.navigate(ROUTES.NOTIFICATIONS)}
                         >
                             <Iconify icon="lucide:bell" size={26} color="#FFFFFF" />
-                            {pendingRequestsCount > 0 && (
+                            {unreadNotificationsCount > 0 && (
                                 <View style={{ position: 'absolute', top: 4, right: 4, backgroundColor: Colors.password.red, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 }}>
                                     <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
-                                        {pendingRequestsCount > 99 ? '99+' : pendingRequestsCount}
+                                        {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
                                     </Text>
                                 </View>
                             )}
@@ -107,7 +110,7 @@ export default function ProfileScreen({ navigation }) {
                     <View style={styles.userInfo}>
                         <View style={styles.userNameContainer}>
                             <Text style={styles.userName}>{ currentUser?.username || 'Username' }</Text>
-                            {currentBadge && <Image source={currentBadge.image} style={{ width: 25, height: 25 }} resizeMode="contain" />}
+                            {currentBadge && <Image source={currentBadge.image} style={{ width: 25, height: 25 }} contentFit="contain" />}
                         </View>
                         <Text style={styles.userEmail}>{ currentUser?.email || 'Email' }</Text>
                     </View>
