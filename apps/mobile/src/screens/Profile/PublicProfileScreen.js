@@ -19,9 +19,11 @@ export default function PublicProfileScreen({ navigation, route }) {
 
     const {
         profile, publications, reviews, loading, refreshing, activeTab, setActiveTab,
-        isFollowing, isValidPhoto, currentBadge, displayedFollowers,
+        isFollowing, isRequestPending, isValidPhoto, currentBadge, displayedFollowers,
         loadProfileData, handleFollowToggle, handleOpenOptions,
     } = usePublicProfile(userId, navigation);
+
+    const isLockedPrivateView = profile?.profileVisibility === 'private' && !isFollowing;
 
     const renderPublications = () => {
         if (publications.length === 0) {
@@ -168,12 +170,13 @@ export default function PublicProfileScreen({ navigation, route }) {
                         </View>
 
                         <TouchableOpacity 
-                            style={[styles.followButton, isFollowing && styles.followingButton]} 
+                            style={[styles.followButton, (isFollowing || isRequestPending) && styles.followingButton]} 
                             onPress={handleFollowToggle} 
                             activeOpacity={0.8}
+                            disabled={isRequestPending}
                         > 
-                            <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
-                                {isFollowing ? "Following" : "Follow"}
+                            <Text style={[styles.followButtonText, (isFollowing || isRequestPending) && styles.followingButtonText]}>
+                                {isFollowing ? "Following" : isRequestPending ? "Requested" : "Follow"}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -218,21 +221,39 @@ export default function PublicProfileScreen({ navigation, route }) {
                     </View>
                 </View>
 
-                <View style={styles.tabContainer}>
-                    <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('publications')}>
-                        <Text style={[styles.tabText, activeTab === 'publications' && styles.activeTabText]}>Publications</Text>
-                        {activeTab === 'publications' && <View style={styles.activeIndicator} />}
-                    </TouchableOpacity>
+                {/* --- CONDITIONAL RENDERING STARTS HERE --- */}
+                {isLockedPrivateView ? (
+                    // What shows if the account is private and not followed
+                    <View style={{ padding: 40, alignItems: 'center', marginTop: 20 }}>
+                        <Iconify icon="lucide:lock" size={48} color={theme.borderLight || "#A0A0A0"} />
+                        <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: theme.text, marginTop: 16 }}>
+                            This account is private
+                        </Text>
+                        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: theme.textMuted, textAlign: 'center', marginTop: 8 }}>
+                            Follow this user to see their publications and reviews.
+                        </Text>
+                    </View>
+                ) : (
+                        // What shows normally (Your existing tabs and lists)
+                        <>
+                            <View style={styles.tabContainer}>
+                                <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('publications')}>
+                                    <Text style={[styles.tabText, activeTab === 'publications' && styles.activeTabText]}>Publications</Text>
+                                    {activeTab === 'publications' && <View style={styles.activeIndicator} />}
+                                </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('reviews')}>
-                        <Text style={[styles.tabText, activeTab === 'reviews' && styles.activeTabText]}>Reviews</Text>
-                        {activeTab === 'reviews' && <View style={styles.activeIndicator} />}
-                    </TouchableOpacity>
-                </View>
+                                <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('reviews')}>
+                                    <Text style={[styles.tabText, activeTab === 'reviews' && styles.activeTabText]}>Reviews</Text>
+                                    {activeTab === 'reviews' && <View style={styles.activeIndicator} />}
+                                </TouchableOpacity>
+                            </View>
 
-                <View style={styles.tabContentContainer}>
-                    {activeTab === 'publications' ? renderPublications() : renderReviews()}
-                </View>
+                            <View style={styles.tabContentContainer}>
+                                {activeTab === 'publications' ? renderPublications() : renderReviews()}
+                            </View>
+                        </>
+                    )}
+                {/* --- CONDITIONAL RENDERING ENDS HERE --- */}
             </ScrollView>
         </View>
     );

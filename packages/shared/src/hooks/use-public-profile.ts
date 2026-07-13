@@ -15,6 +15,8 @@ export function usePublicProfile(userId, navigation) {
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('publications');
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isRequestPending, setIsRequestPending] = useState(false);
+
 
     const loadProfileData = useCallback(async (showRefreshIndicator = false) => {
         if (!userId) {
@@ -37,6 +39,7 @@ export function usePublicProfile(userId, navigation) {
             setPublications(publicationsData || []);
             setReviews(reviewsData || []);
             setIsFollowing(profileData?.isCurrentUserFollowing || false);
+            setIsRequestPending(profileData?.isRequestPending || false);
         } catch (error) {
             console.error("Error loading profile data:", error);
             Alert.alert("Error", "Failed to load profile details. Please try again.");
@@ -51,17 +54,31 @@ export function usePublicProfile(userId, navigation) {
     }, [loadProfileData]);
 
     const handleFollowToggle = useCallback(async () => {
+        const isTargetPrivate = profile?.profileVisibility === 'private';
+
+        if (isTargetPrivate && !isFollowing) {
+            setIsRequestPending(true);
+            try {
+                await UsersService.toggleFollowUser(userId, true, true);
+            } catch (error) {
+                console.error("Error sending follow request:", error);
+                setIsRequestPending(false);
+                Alert.alert("Error", "Could not send follow request.");
+            }
+            return;
+        }
+
         const previousFollowingState = isFollowing;
         setIsFollowing(!previousFollowingState);
 
         try {
-            await UsersService.toggleFollowUser(userId, !previousFollowingState);
+            await UsersService.toggleFollowUser(userId, !previousFollowingState, false);
         } catch (error) {
             console.error("Error updating follow status:", error);
             setIsFollowing(previousFollowingState);
             Alert.alert("Error", "Could not update follow status.");
         }
-    }, [userId, isFollowing]);
+    }, [userId, isFollowing, profile]);
 
     const handleBlockUser = useCallback(async () => {
         const currentUserUid = auth?.currentUser?.uid;
@@ -135,6 +152,7 @@ export function usePublicProfile(userId, navigation) {
         activeTab,
         setActiveTab,
         isFollowing,
+        isRequestPending,
         isValidPhoto,
         currentBadge,
         displayedFollowers,

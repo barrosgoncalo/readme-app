@@ -7,7 +7,7 @@ import {
     arrayRemove,
     increment,
 } from "firebase/firestore";
-import { getFollowId, createFollow } from '../models/follow';
+import { getFollowId, createFollow, createFollowRequest } from '../models/follow';
 import { StorageService } from "./storage";
 
 import { DB } from './DB';
@@ -33,36 +33,38 @@ export const UsersService = {
     },
 
     /**
-     * Fetches a user's profile and checks if the current user is following them.
-     * @param {string} userId - The ID of the profile being viewed
-     */
+    * Fetches a user's profile and checks if the current user is following them.
+    * @param {string} userId - The ID of the profile being viewed
+    */
     fetchUserProfile: async (userId) => {
         if (!userId) throw new Error("User ID is required to fetch profile.");
 
         try {
             const userData = await DB.get(USERS_COLLECTION, userId);
-
-            if (!userData) {
-                return null;
-            }
+            if (!userData) return null;
 
             let isCurrentUserFollowing = false;
+            let isRequestPending = false;
             const currentUserId = auth?.currentUser?.uid;
-            
+
             if (currentUserId && currentUserId !== userId) {
-                const followDocId = getFollowId(currentUserId, userId);
-                const followData = await DB.get('follows', followDocId);
-                
+                const relationshipId = getFollowId(currentUserId, userId);
+                const followData = await DB.get('follows', relationshipId);
                 isCurrentUserFollowing = !!followData;
+
+                if (!isCurrentUserFollowing) {
+                    const requestData = await DB.get('followRequests', relationshipId);
+                    isRequestPending = !!requestData;
+                }
             }
 
             return {
                 ...userData,
                 followers: userData.followersCount || 0,
                 following: userData.followingCount || 0,
-                isCurrentUserFollowing: isCurrentUserFollowing
+                isCurrentUserFollowing,
+                isRequestPending,
             };
-
         } catch (error) {
             console.error("Error fetching user profile:", error);
             throw error;
@@ -70,10 +72,10 @@ export const UsersService = {
     },
 
     /**
-     * Fetches a user's list of favorite books.
-     * @param {string} userId - The ID of the user
-     * @returns {Promise<Array>} Array of favorite book IDs
-     */
+    * Fetches a user's list of favorite books.
+    * @param {string} userId - The ID of the user
+    * @returns {Promise<Array>} Array of favorite book IDs
+    */
     fetchUserFavorites: async (userId) => {
         if (!userId) return [];
 
@@ -138,30 +140,69 @@ export const UsersService = {
     },
 
     /**
-     * Toggles the follow status between the current logged-in user and a target user.
-     * @param {string} targetUserId - The ID of the profile being followed (passed from UI)
-     * @param {boolean} shouldFollow - True to follow, False to unfollow (passed from UI)
-     */
-    toggleFollowUser: async (targetUserId, shouldFollow) => {
-        const currentUserId = auth?.currentUser?.uid; 
+    * Toggles follow status. If the target is private and the action is "follow",
+    * this sends a pending request instead of following directly.
+    */
+    toggleFollowUser: async (targetUserId, shouldFollow, isTargetPrivate = false) => {
+        const currentUserId = auth?.currentUser?.uid;
 
         if (!currentUserId) throw new Error("Authentication required to follow users.");
         if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
 
-        const followDocId = getFollowId(currentUserId, targetUserId);
+        const relationshipId = getFollowId(currentUserId, targetUserId);
+
+        if (shouldFollow && isTargetPrivate) {
+            await DB.create('followRequests', createFollowRequest(currentUserId, targetUserId), relationshipId);
+            return;
+        }
 
         if (shouldFollow) {
             await Promise.all([
-                DB.create('follows', createFollow(currentUserId, targetUserId), followDocId),
+                DB.create('follows', createFollow(currentUserId, targetUserId), relationshipId),
                 DB.update(USERS_COLLECTION, currentUserId, { followingCount: increment(1) }),
                 DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(1) })
             ]);
         } else {
             await Promise.all([
-                DB.remove('follows', followDocId),
+                DB.remove('follows', relationshipId),
                 DB.update(USERS_COLLECTION, currentUserId, { followingCount: increment(-1) }),
                 DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(-1) })
             ]);
         }
-    }
+    },
+
+    /**
+    * Accepts a pending follow request: creates the actual follow relationship,
+    * increments counts, and removes the request doc.
+    */
+    acceptFollowRequest: async (targetUserId, requesterUid) => {
+        const relationshipId = getFollowId(requesterUid, targetUserId);
+
+        await Promise.all([
+            DB.create('follows', createFollow(requesterUid, targetUserId), relationshipId),
+            DB.update(USERS_COLLECTION, requesterUid, { followingCount: increment(1) }),
+            DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(1) }),
+            DB.remove('followRequests', relationshipId),
+        ]);
+    },
+
+    /**
+    * Declines a pending follow request: just removes the request doc, no counts change.
+    */
+    declineFollowRequest: async (targetUserId, requesterUid) => {
+        const relationshipId = getFollowId(requesterUid, targetUserId);
+        await DB.remove('followRequests', relationshipId);
+    },
+
+    /**
+    * Fetches raw pending follow requests for a given user (the target).
+    * Returns request docs only (requesterUid, id) — resolving requester profile
+    * details (name/avatar) for display is left to whichever screen consumes this.
+    */
+    fetchPendingFollowRequests: async (userId) => {
+        if (!userId) return [];
+        return await DB.get('followRequests', [
+            { field: 'targetUid', operator: '==', value: userId }
+        ]);
+    },
 };

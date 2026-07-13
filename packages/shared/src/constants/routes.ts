@@ -34,4 +34,5 @@ export const ROUTES = {
     QR_SCANNER: 'ScanQrCode',
     REVIEW_SWAPPER: 'Review',
     MY_BOOKS: 'MyBooks',
+    FOLLOW_REQUESTS: 'FollowRequests',
 } as const;

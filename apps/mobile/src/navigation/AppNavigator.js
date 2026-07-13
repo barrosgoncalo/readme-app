@@ -27,6 +27,7 @@ import PublicationDetailsScreen from '../screens/Publication/PublicationDetailsS
 import StepOneOffer from '../screens/Offer/StepOneOfferScreen';
 import StepTwoOffer from '../screens/Offer/StepTwoOfferScreen';
 import PublicProfileScreen from '../screens/Profile/PublicProfileScreen';
+import FollowRequestsScreen from '../screens/Profile/FollowRequets';
 import MyBooksScreen from '../screens/Profile/MyBooks/MyBooksScreen';
 import MyPublicationDetailsScreen from '../screens/Profile/MyBooks/MyPublicationDetailsScreen';
 import FavoritesScreen from '../screens/Profile/Favorites/FavoritesScreen';
@@ -184,6 +185,11 @@ export default function AppNavigator() {
                         <Stack.Screen 
                             name={ROUTES.REVIEW_SWAPPER} 
                             component={ReviewSwapperScreen} 
+                            options={{ headerShown: false }} 
+                        />
+                        <Stack.Screen 
+                            name={ROUTES.FOLLOW_REQUESTS} 
+                            component={FollowRequestsScreen} 
                             options={{ headerShown: false }} 
                         />
                         <Stack.Screen 

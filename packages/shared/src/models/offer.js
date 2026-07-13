@@ -1,5 +1,3 @@
-// @readme/shared/src/models/offer.js
-
 export const generateVerificationCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 };

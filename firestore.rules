@@ -27,7 +27,7 @@ service cloud.firestore {
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accountStatus'])) 
                     || (isAuthenticated() 
                         && isActive() 
-                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount']))
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount', 'followingCount', 'followers', 'following']))
                     || isAdmin();
 
       allow delete: if isOwner(userId) || isAdmin();
@@ -136,12 +136,31 @@ service cloud.firestore {
       allow read: if isAuthenticated() && isActive();
 
       allow create: if isAuthenticated() && isActive()
-        && request.resource.data.followerUid == request.auth.uid
+        && (request.resource.data.followerUid == request.auth.uid || request.resource.data.followingUid == request.auth.uid)
         && request.resource.data.followingUid is string
         && request.resource.data.followerUid != request.resource.data.followingUid
         && followId == request.resource.data.followerUid + '_' + request.resource.data.followingUid;
 
       allow delete: if isAuthenticated() && isActive() && resource.data.followerUid == request.auth.uid;
+      allow update: if false; 
+    }
+
+    // ─── FOLLOW REQUESTS ───
+    match /followRequests/{requestId} {
+      // Allow active users to read requests (needed to check if a request is pending)
+      allow read: if isAuthenticated() && isActive();
+
+      // Allow creating a request only if the user is the requester and the ID matches your getFollowId pattern
+      allow create: if isAuthenticated() && isActive()
+        && request.resource.data.requesterUid == request.auth.uid
+        && request.resource.data.targetUid is string
+        && request.resource.data.requesterUid != request.resource.data.targetUid
+        && requestId == request.resource.data.requesterUid + '_' + request.resource.data.targetUid;
+
+      // Allow deleting a request if they are the one who sent it (cancel) OR the one receiving it (decline/accept)
+      allow delete: if isAuthenticated() && isActive() 
+        && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
+        
       allow update: if false; 
     }
 

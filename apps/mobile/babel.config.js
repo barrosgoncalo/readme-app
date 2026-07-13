@@ -65,6 +65,7 @@ export default function (api) {
                         'lucide:book-x',
                         'lucide:chevron-left',
                         'lucide:ban',
+                        'lucide:bell',
                         'lucide:check-check',
                         'lucide:sliders-horizontal',
                         'lucide:circle-dot',
