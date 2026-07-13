@@ -1,5 +1,3 @@
-// @readme/shared/src/models/message.js
-
 /**
  * Creates a standardized message object for a chat thread.
  * @param {string} senderId - The UID of the user sending the message

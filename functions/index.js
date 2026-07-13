@@ -13,11 +13,9 @@ const Notification = require("./models/notification");
 const { GAMIFICATION_RANKS } = require("./constants/gamification");
 const { sendPushNotification } = require("./utils/pushNotification");
 
-// Initialize Firebase Admin globally
 initializeApp();
 const db = getFirestore();
 
-// Set global configuration (Applies region & instance limits to ALL functions automatically)
 setGlobalOptions({ 
     region: "europe-west1", 
     maxInstances: 10 
@@ -55,7 +53,7 @@ exports.syncUserToAlgolia = onDocumentWritten("users/{userId}", async (event) =>
 
     const data = snapshot.after.data();
     const objectID = event.params.userId;
-    
+
     // Safely retrieve client at execution time
     const client = getAlgoliaClient();
 
@@ -96,7 +94,7 @@ exports.updateUserRating = onDocumentCreated("reviews/{reviewId}", async (event)
     try {
         await db.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
-            
+
             if (!userDoc.exists) {
                 console.log(`User ${revieweeId} not found. Cannot update rating.`);
                 return;
@@ -130,7 +128,7 @@ exports.syncPublicationToAlgolia = onDocumentWritten("publications/{publicationI
 
     const data = snapshot.after.data();
     const objectID = event.params.publicationId;
-    
+
     // Safely retrieve client at execution time
     const client = getAlgoliaClient();
 
@@ -167,7 +165,7 @@ async function updateUserGamification(userId) {
 
     await db.runTransaction(async (transaction) => {
         const userDoc = await transaction.get(userRef);
-        
+
         if (!userDoc.exists) return;
 
         const userData = userDoc.data();
@@ -220,10 +218,10 @@ exports.deleteBooksOnSwapComplete = onDocumentUpdated("chats/{chatId}/messages/{
             // Fetch chat participants to update their gamification stats
             const chatId = event.params.chatId;
             const chatDoc = await db.collection('chats').doc(chatId).get();
-            
+
             if (chatDoc.exists) {
                 const participants = chatDoc.data().participants || [];
-                
+
                 await Promise.all(
                     participants.map(userId => updateUserGamification(userId))
                 );
@@ -281,7 +279,7 @@ exports.verifySwapCode = onCall(async (request) => {
 exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const cutoffValue = Timestamp.fromDate(thirtyDaysAgo);
 
     try {
@@ -333,7 +331,7 @@ exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}",
 
         const customId = `req_${requesterUid}_${targetUid}`;
         await Notification.sendToUser(db, targetUid, followRequestNotif, customId);
-        
+
         console.log(`Follow request notification successfully sent to user: ${targetUid}`);
 
         await sendPushNotification(
@@ -374,9 +372,9 @@ exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) 
         });
 
         const customId = `accept_${followerUid}_${followingUid}`;
-        
+
         await Notification.sendToUser(db, followerUid, newFollowNotif, customId);
-        
+
         console.log(`Acceptance notification successfully sent to user: ${followerUid}`);
 
         await sendPushNotification(
@@ -445,6 +443,181 @@ exports.onOfferMessageCreated = onDocumentCreated("chats/{chatId}/messages/{mess
         );
     } catch (error) {
         console.error("Error generating offer notification:", error);
+    }
+    return null;
+});
+
+// ==========================================
+// TRIGGER: ON OFFER ACCEPTED
+// ==========================================
+exports.onOfferAccepted = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return null;
+    if (afterData.type !== 'offer') return null;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus === afterStatus || afterStatus !== 'accepted') return null;
+
+    const chatId = event.params.chatId;
+    const recipientId = afterData.senderId;
+
+    try {
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const actorId = participants.find(uid => uid !== recipientId);
+        if (!actorId) return null;
+
+        const actorDoc = await db.collection("users").doc(actorId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const message = `${actorName} accepted your swap offer!`;
+
+        const acceptedNotif = new Notification({
+            type: "OFFER_ACCEPTED",
+            actorId: actorId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, acceptedNotif, `accepted_${event.params.messageId}`);
+        console.log(`Offer-accepted notification sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            "Offer accepted!",
+            message,
+            { type: "OFFER_ACCEPTED", chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating offer-accepted notification:", error);
+    }
+    return null;
+});
+
+// ==========================================
+// TRIGGER: ON OFFER DECLINED
+// ==========================================
+exports.onOfferDeclined = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return null;
+    if (afterData.type !== 'offer') return null;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus === afterStatus || afterStatus !== 'declined') return null;
+
+    const chatId = event.params.chatId;
+    const recipientId = afterData.senderId;
+
+    try {
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const actorId = participants.find(uid => uid !== recipientId);
+        if (!actorId) return null;
+
+        const actorDoc = await db.collection("users").doc(actorId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const message = `${actorName} declined your swap offer.`;
+
+        const declinedNotif = new Notification({
+            type: "OFFER_DECLINED",
+            actorId: actorId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, declinedNotif, `declined_${event.params.messageId}`);
+        console.log(`Offer-declined notification sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            "Offer declined",
+            message,
+            { type: "OFFER_DECLINED", chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating offer-declined notification:", error);
+    }
+    return null;
+});
+
+// ==========================================
+// TRIGGER: ON SWAP CANCELLED
+// ==========================================
+exports.onSwapCancelled = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return null;
+    if (afterData.type !== 'offer') return null;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus === afterStatus || afterStatus !== 'cancelled') return null;
+
+    const chatId = event.params.chatId;
+    const actorId = afterData.offerDetails?.cancelledBy;
+    if (!actorId) return null;
+
+    try {
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const recipientId = participants.find(uid => uid !== actorId); // the other person in the swap
+        if (!recipientId) return null;
+
+        const actorDoc = await db.collection("users").doc(actorId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const message = `${actorName} cancelled the swap agreement.`;
+
+        const cancelledNotif = new Notification({
+            type: "SWAP_CANCELLED",
+            actorId: actorId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, cancelledNotif, `cancelled_${event.params.messageId}`);
+        console.log(`Swap-cancelled notification sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            "Swap cancelled",
+            message,
+            { type: "SWAP_CANCELLED", chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating swap-cancelled notification:", error);
     }
     return null;
 });
