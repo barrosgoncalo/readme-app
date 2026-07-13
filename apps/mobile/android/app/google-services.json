@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "849676892747",
+    "project_id": "readme---bookworms",
+    "storage_bucket": "readme---bookworms.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:849676892747:android:36aec9b9e6580d877b2bce",
+        "android_client_info": {
+          "package_name": "com.anonymous.bookcommunityapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "849676892747-srr6urr1bpdgrplivvemic7skur6pv2q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB24IxtB23MWP9dnGLeQZafVVX-nORg0_Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "849676892747-srr6urr1bpdgrplivvemic7skur6pv2q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "849676892747-npd5vr8tm11jem3prh2lmsvlcinn79tp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.anonymous.BookCommunityApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
