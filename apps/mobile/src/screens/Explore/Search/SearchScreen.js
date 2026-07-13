@@ -72,7 +72,7 @@ export default function SearchScreen({ navigation }) {
     const handleApplyFilters = (newSortBy, newConditions, newGenres) => {
         setSortBy(newSortBy);
         setConditionFilters(newConditions);
-        setGenreFilters(newGenres);   // new
+        setGenreFilters(newGenres);
         setFiltersVisible(false);
     };
 

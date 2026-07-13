@@ -13,7 +13,7 @@
     "babel-preset-expo": "~55.0.8",
     "expo": "~55.0.26",
     "expo-image-picker": "^56.0.18",
-    "firebase": "^12.15.0",
+    "firebase": "^12.16.0",
     "react": "19.2.0",
     "react-native": "0.83.6",
     "react-native-iconify": "^2.0.3",
