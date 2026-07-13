@@ -61,7 +61,7 @@ export default function AppNavigator() {
             }
         };
         checkIsFirstLaunch();
-    }, []);
+    }, [userLoggedIn]);
 
     if (authLoading || isFirstLaunch === null) {
         return (

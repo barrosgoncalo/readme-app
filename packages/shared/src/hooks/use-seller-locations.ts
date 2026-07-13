@@ -44,6 +44,7 @@ export function useSellerLocations(sellerUid) {
                 const getGeocodedPin = async (fullAddressString, pinId, pinTitle) => {
                     try {
                         const result = await Location.geocodeAsync(fullAddressString);
+                        console.log(`[GEOCODE] ${pinTitle}: "${fullAddressString}" ->`, result);
                         if (result.length > 0) {
                             return {
                                 id: pinId,

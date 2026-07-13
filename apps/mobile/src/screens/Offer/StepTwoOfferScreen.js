@@ -5,16 +5,10 @@ import {
     Text,
 } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-
-import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildOfferFlowStyles } from '../../styles/offerFlowStyles';
 
 // Consolidated Domain Architectures
-import { useSellerLocations } from '@readme/shared/src/hooks/use-seller-locations';
-import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
-import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 import LocationPickerMap from '../../components/ui/LocationPickerMap';
 import MapSearchBar from '../../components/ui/MapSearchBar';
@@ -25,7 +19,12 @@ import OfferBottomDock from '../../components/ui/OfferBottomDock';
 import { ChatService } from '@readme/shared/src/services/chat';
 
 // Contexts
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useOffer } from '@readme/shared/src/contexts/OfferContext';
+import { useSellerLocations } from '@readme/shared/src/hooks/use-seller-locations';
+import { useLocationProposal } from '@readme/shared/src/hooks/use-location-proposal';
+import { useFitMarkers } from '@readme/shared/src/hooks/use-fit-markers';
 
 export default function StepTwoOfferScreen({ navigation }) {
     const [mapReady, setMapReady] = useState(false);
@@ -114,6 +113,11 @@ export default function StepTwoOfferScreen({ navigation }) {
     };
 
     // RENDER LAYERS
+    console.log('[MAP DEBUG]', {
+        currentRegion,
+        sellerLocations,
+    });
+
     return (
         <View style={styles.container}>
             <ScreenHeader

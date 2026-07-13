@@ -105,6 +105,12 @@ export default function SelectSwapLocationScreen({ navigation }) {
         }
     };
 
+    console.log('[MAP DEBUG]', {
+        defaultRegion,
+        originalLocation,
+        offerDetails,
+        sellerLocations,
+    });
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <ScreenHeader

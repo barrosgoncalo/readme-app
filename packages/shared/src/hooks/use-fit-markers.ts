@@ -34,6 +34,7 @@ export function useFitMarkers({
 
         if (coordsToFrame.length === 0) return;
 
+        console.log('[FIT DEBUG] coordsToFrame:', coordsToFrame);
         const timeoutId = setTimeout(() => {
             if (coordsToFrame.length === 1) {
                 mapRef.current?.animateToRegion({
