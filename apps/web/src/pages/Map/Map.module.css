@@ -141,7 +141,7 @@
     padding: 6px;
     border-radius: var(--radius-lg);
     border: 1px solid var(--bg-selected);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-1);
     width: fit-content;
 }
 

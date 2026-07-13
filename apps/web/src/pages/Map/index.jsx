@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Search, Users, Plus } from 'lucide-react';
-import { searchUsers } from '@readme/shared/src/services/search';
-import { doGetBlockedUids, doGetBlockedUsers } from '@readme/shared/src/services/blockUser';
-import { fetchAllPublications } from '@readme/shared/src/services/publications';
-import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import {useCallback, useEffect, useState} from 'react';
+import {Link, useSearchParams} from 'react-router-dom';
+import {BookOpen, Search, Users, Plus} from 'lucide-react';
+import {searchUsers} from '@readme/shared/src/services/search';
+import {doGetBlockedUids, doGetBlockedUsers} from '@readme/shared/src/services/blockUser';
+import {fetchAllPublications} from '@readme/shared/src/services/publications';
+import {fetchUserProfile, toggleFavoriteStatus} from '@readme/shared/src/services/users';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import PublicationCard from './components/PublicationCard.jsx';
-import { WEB_ROUTES } from '../../constants/webRoutes';
-import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
+import {WEB_ROUTES} from '../../constants/webRoutes';
+import {PUBLICATION_STATUS} from '@readme/shared/src/constants/status';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
@@ -20,7 +20,7 @@ const EXPLORE_TAB = {
 };
 
 export default function Explore() {
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
     const uid = currentUser?.uid;
     const [searchParams] = useSearchParams();
 
@@ -146,7 +146,7 @@ export default function Explore() {
             <p className={styles.subtitle}>Find other readers or discover books available for trade.</p>
 
             <div className={styles.searchRow}>
-                <Search size={16} className={styles.searchIcon} />
+                <Search size={16} className={styles.searchIcon}/>
                 <input
                     className={styles.searchInput}
                     type="text"
@@ -166,7 +166,7 @@ export default function Explore() {
                     className={`${styles.tab} ${activeTab === EXPLORE_TAB.BOOKS ? styles.tabActive : ''}`}
                     onClick={() => setActiveTab(EXPLORE_TAB.BOOKS)}
                 >
-                    <BookOpen size={16} /> Books
+                    <BookOpen size={16}/> Books
                 </button>
                 <button
                     type="button"
@@ -175,7 +175,7 @@ export default function Explore() {
                     className={`${styles.tab} ${activeTab === EXPLORE_TAB.USERS ? styles.tabActive : ''}`}
                     onClick={() => setActiveTab(EXPLORE_TAB.USERS)}
                 >
-                    <Users size={16} /> Users
+                    <Users size={16}/> Users
                 </button>
             </div>
 
@@ -197,9 +197,9 @@ export default function Explore() {
                         <div className={styles.list}>
                             {userResults.map((u, i) => (
                                 <div key={u.uid}>
-                                    {i > 0 && <div className={styles.divider} />}
+                                    {i > 0 && <div className={styles.divider}/>}
                                     <Link to={WEB_ROUTES.userProfile(u.uid)} className={styles.row}>
-                                        <UserAvatar user={u} />
+                                        <UserAvatar user={u}/>
                                         <div className={styles.info}>
                                             <span className={styles.name}>{u.fullName || u.username || 'Unknown'}</span>
                                             {u.username && <span className={styles.username}>@{u.username}</span>}
@@ -215,14 +215,17 @@ export default function Explore() {
             {/* TAB: BOOKS */}
             {activeTab === EXPLORE_TAB.BOOKS && (
                 <div className={styles.section}>
-                    <Link to={WEB_ROUTES.PUBLICATION_NEW}>
-                        <Button style={{ marginBottom: 'var(--space-3)' }}>
-                            <Plus size={16} /> New Publication
+                    <Link
+                        to={WEB_ROUTES.PUBLICATION_NEW}
+                        style={{display: 'block', marginBottom: 'var(--space-3)'}}
+                    >
+                        <Button>
+                            <Plus size={16}/> New Publication
                         </Button>
                     </Link>
 
                     {loadingPubs ? (
-                        <Spinner center label="Loading publications..." />
+                        <Spinner center label="Loading publications..."/>
                     ) : pubsError ? (
                         <p className={styles.status}>{pubsError}</p>
                     ) : filteredPubs.length === 0 ? (
