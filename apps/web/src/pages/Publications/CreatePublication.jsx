@@ -1,23 +1,26 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Upload, X } from 'lucide-react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@readme/shared/src/services/firebase.web';
-import { createPublicationModel } from '@readme/shared/src/models/publication';
-import { createPublication } from '@readme/shared/src/services/publications';
-import { fetchUserProfile } from '@readme/shared/src/services/users';
-import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { WEB_ROUTES } from '../../constants/webRoutes';
+import {useState} from 'react';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {Upload, X} from 'lucide-react';
+import {getDownloadURL, ref, uploadBytes} from 'firebase/storage';
+import {storage} from '@readme/shared/src/services/firebase.web';
+import {createPublication} from '@readme/shared/src/services/publications';
+import {fetchUserProfile} from '@readme/shared/src/services/users';
+import {createPublicationModel} from '@readme/shared/src/models/publication';
+import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
-import { useToast } from '../../hooks/useToast';
+import {useToast} from '../../hooks/useToast';
+import {WEB_ROUTES} from '../../constants/webRoutes';
 import styles from './CreatePublication.module.css';
 
 export default function CreatePublication() {
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const location = useLocation();
+    const {currentUser} = useAuth();
     const [toast, showToast] = useToast(3000);
+
+    const returnPath = location.state?.from || WEB_ROUTES.MAP;
 
     const [title, setTitle] = useState('');
     const [author, setAuthor] = useState('');
@@ -27,7 +30,7 @@ export default function CreatePublication() {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    if (!currentUser) return <Spinner center label="Loading" />;
+    if (!currentUser) return <Spinner center label="Loading"/>;
 
     const canSubmit = title.trim() && selectedFiles.length > 0 && !loading;
 
@@ -77,8 +80,10 @@ export default function CreatePublication() {
             );
 
             await createPublication(pubId, pubData);
-            showToast('Publication created!');
-            navigate(`${WEB_ROUTES.MAP}?tab=books`);
+
+            navigate(returnPath, {
+                state: { toastMessage: 'Publication created successfully!' }
+            });
         } catch (error) {
             showToast('Failed to create publication. Please try again.');
             console.error(error);
@@ -91,7 +96,7 @@ export default function CreatePublication() {
         <div className={styles.page}>
             {toast && <div className={styles.toast}>{toast}</div>}
 
-            <PageHeader onBack={() => navigate(-1)} title="New Publication" />
+            <PageHeader onBack={() => navigate(-1)} title="New Publication"/>
 
             <form className={styles.form} onSubmit={handleSubmit}>
                 <div className={styles.section}>
@@ -169,7 +174,7 @@ export default function CreatePublication() {
                             className={styles.fileInput}
                         />
                         <label htmlFor="file-input" className={styles.uploadLabel}>
-                            <Upload size={24} />
+                            <Upload size={24}/>
                             <span>Click to select images</span>
                         </label>
                     </div>
@@ -185,7 +190,7 @@ export default function CreatePublication() {
                                         onClick={() => removeFile(i)}
                                         disabled={loading}
                                     >
-                                        <X size={16} />
+                                        <X size={16}/>
                                     </button>
                                 </div>
                             ))}

@@ -59,8 +59,8 @@ export default function MyPublications() {
                 <div className={styles.empty}>
                     <p className={styles.emptyTitle}>No active trades</p>
                     <p className={styles.emptyText}>You haven't listed any books for trade yet.</p>
-                    <Button onClick={() => navigate(WEB_ROUTES.PUBLICATION_NEW)}>
-                        Create a trade
+                    <Button onClick={() => navigate(WEB_ROUTES.PUBLICATION_NEW, { state: { from: WEB_ROUTES.PUBLICATIONS } })}>
+                        New Publication
                     </Button>
                 </div>
             ) : (

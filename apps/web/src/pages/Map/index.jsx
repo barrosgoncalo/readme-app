@@ -1,17 +1,18 @@
 import {useCallback, useEffect, useState} from 'react';
-import {Link, useSearchParams} from 'react-router-dom';
+import {Link, useSearchParams, useLocation} from 'react-router-dom';
 import {BookOpen, Search, Users, Plus} from 'lucide-react';
 import {searchUsers} from '@readme/shared/src/services/search';
 import {doGetBlockedUids, doGetBlockedUsers} from '@readme/shared/src/services/blockUser';
 import {fetchAllPublications} from '@readme/shared/src/services/publications';
 import {fetchUserProfile, toggleFavoriteStatus} from '@readme/shared/src/services/users';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
-import PublicationCard from './components/PublicationCard.jsx';
-import {WEB_ROUTES} from '../../constants/webRoutes';
 import {PUBLICATION_STATUS} from '@readme/shared/src/constants/status';
+import PublicationCard from './components/PublicationCard.jsx';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
+import {useToast} from '../../hooks/useToast';
+import {WEB_ROUTES} from '../../constants/webRoutes';
 import styles from './Map.module.css';
 
 const EXPLORE_TAB = {
@@ -23,6 +24,9 @@ export default function Explore() {
     const {currentUser} = useAuth();
     const uid = currentUser?.uid;
     const [searchParams] = useSearchParams();
+
+    const location = useLocation();
+    const [toast, showToast] = useToast(3000);
 
     const [activeTab, setActiveTab] = useState(
         searchParams.get('tab') === EXPLORE_TAB.USERS ? EXPLORE_TAB.USERS : EXPLORE_TAB.BOOKS
@@ -68,6 +72,13 @@ export default function Explore() {
             setLoadingPubs(false);
         }
     }, [uid]);
+
+    useEffect(() => {
+        if (location.state?.toastMessage) {
+            showToast(location.state.toastMessage);
+            window.history.replaceState({}, document.title);
+        }
+    }, [location, showToast]);
 
     useEffect(() => {
         loadPublications();
@@ -142,6 +153,7 @@ export default function Explore() {
 
     return (
         <div className={styles.page}>
+            {toast && <div className={styles.toast}>{toast}</div>}
             <h1 className={styles.title}>Explore, Swap & Discover</h1>
             <p className={styles.subtitle}>Find other readers or discover books available for trade.</p>
 
