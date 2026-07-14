@@ -8,6 +8,7 @@ import {
 import { db } from '@readme/shared/src/services/firebase.web';
 import { doSignOut } from '@readme/shared/src/services/auth';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
+import { getFollowCounts } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -36,6 +37,7 @@ export default function ProfileLayout() {
     const fileInputRef = useRef(null);
 
     const [userData, setUserData] = useState(null);
+    const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
     const [loading, setLoading] = useState(true);
     const [photoURL, setPhotoURL] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -45,12 +47,16 @@ export default function ProfileLayout() {
 
     useEffect(() => {
         if (!currentUser) return;
-        getDoc(doc(db, 'users', currentUser.uid)).then(snap => {
+        Promise.all([
+            getDoc(doc(db, 'users', currentUser.uid)),
+            getFollowCounts(currentUser.uid),
+        ]).then(([snap, counts]) => {
             if (snap.exists()) {
                 const data = snap.data();
                 setUserData(data);
                 setPhotoURL(data.photoURL || null);
             }
+            setFollowCounts(counts);
         }).finally(() => setLoading(false));
     }, [currentUser]);
 
@@ -125,11 +131,11 @@ export default function ProfileLayout() {
 
                     <div className={styles.statsRow}>
                         <button type="button" className={styles.stat} onClick={() => navigate(WEB_ROUTES.PROFILE_FOLLOWERS)}>
-                            <strong>{userData?.followers ?? 0}</strong>
+                            <strong>{followCounts.followers}</strong>
                             <span>Followers</span>
                         </button>
                         <button type="button" className={styles.stat} onClick={() => navigate(WEB_ROUTES.PROFILE_FOLLOWING)}>
-                            <strong>{userData?.following ?? 0}</strong>
+                            <strong>{followCounts.following}</strong>
                             <span>Following</span>
                         </button>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.stat}>

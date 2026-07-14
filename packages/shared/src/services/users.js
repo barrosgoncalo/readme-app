@@ -1,5 +1,5 @@
 import { auth, db } from './firebase';
-import { collection, doc, getDoc, getDocs, query, where, documentId, arrayUnion, arrayRemove, increment, writeBatch, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getCountFromServer, query, where, documentId, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { getFollowId, createFollow } from '../models/follow';
 
 const USERS_COLLECTION = 'users';
@@ -42,6 +42,26 @@ export async function getUsersByIds(uids) {
 }
 
 /**
+ * Live follower/following counts computed from the `follows` collection
+ * itself, rather than the denormalized `followersCount`/`followingCount`
+ * fields on the user doc — those counters can drift from reality (e.g. a
+ * write that updated the `follows` doc but failed to update the counter)
+ * and nothing else reconciles them. getCountFromServer is billed as a
+ * single read regardless of match count, so this is cheap.
+ */
+export const getFollowCounts = async (uid) => {
+    const [followersSnap, followingSnap] = await Promise.all([
+        getCountFromServer(query(collection(db, 'follows'), where('followingUid', '==', uid))),
+        getCountFromServer(query(collection(db, 'follows'), where('followerUid', '==', uid))),
+    ]);
+
+    return {
+        followers: followersSnap.data().count,
+        following: followingSnap.data().count,
+    };
+};
+
+/**
  * Fetches a user's profile and checks if the current user is following them.
  */
 export const fetchUserProfile = async (userId) => {
@@ -68,11 +88,13 @@ export const fetchUserProfile = async (userId) => {
             isCurrentUserFollowing = followSnap.exists();
         }
 
+        const { followers, following } = await getFollowCounts(userId);
+
         return {
             id: userSnap.id,
             ...userData,
-            followers: userData.followersCount || 0,
-            following: userData.followingCount || 0,
+            followers,
+            following,
             isCurrentUserFollowing: isCurrentUserFollowing
         };
 
@@ -108,25 +130,14 @@ export const toggleFollowUser = async (targetUserId, shouldFollow) => {
     if (!currentUserId) throw new Error("Authentication required to follow users.");
     if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
 
-    const batch = writeBatch(db);
-
     const followDocId = getFollowId(currentUserId, targetUserId);
     const followRef = doc(db, 'follows', followDocId);
 
-    const currentUserRef = doc(db, 'users', currentUserId);
-    const targetUserRef = doc(db, 'users', targetUserId);
-
     if (shouldFollow) {
-        batch.set(followRef, createFollow(currentUserId, targetUserId));
-        batch.update(currentUserRef, { followingCount: increment(1) });
-        batch.update(targetUserRef, { followersCount: increment(1) });
+        await setDoc(followRef, createFollow(currentUserId, targetUserId));
     } else {
-        batch.delete(followRef);
-        batch.update(currentUserRef, { followingCount: increment(-1) });
-        batch.update(targetUserRef, { followersCount: increment(-1) });
+        await deleteDoc(followRef);
     }
-
-    await batch.commit();
 };
 
 /**

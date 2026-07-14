@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 import {useNavigate} from 'react-router-dom';
-import {Send} from 'lucide-react';
+import {Send, Smile} from 'lucide-react';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {fetchUserProfile} from '@readme/shared/src/services/users';
 import {toMillis} from '@readme/shared/src/utils/timestamp';
@@ -8,6 +9,20 @@ import Spinner from '../../../components/Spinner.jsx';
 import {WEB_ROUTES} from '../../../constants/webRoutes';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
+
+const EMOJI_OPTIONS = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃',
+    '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙',
+    '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔',
+    '😐', '😑', '😶', '🙄', '😏', '😬', '🤥', '😌', '😔', '😪',
+    '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🥵', '🥶', '😵',
+    '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '😢',
+    '😭', '😨', '😩', '😰', '😱', '😖', '😣', '😞', '😓', '😥',
+    '😤', '😠', '😡', '🤬', '👍', '👎', '👏', '🙌', '🙏', '💪',
+    '🤝', '👋', '✌️', '🤞', '👌', '🤙', '👀', '❤️', '🧡', '💛',
+    '💚', '💙', '💜', '🖤', '🤍', '💕', '💯', '🔥', '✨', '🎉',
+    '🎊', '⭐', '✅', '❌', '📚', '📖', '☕', '🐱', '🐶', '🐻',
+];
 
 function formatMessageTime(createdAt) {
     const millis = toMillis(createdAt);
@@ -19,7 +34,12 @@ export default function ChatConversation({chat, messages, loading, currentUserId
     const navigate = useNavigate();
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [emojiPickerPos, setEmojiPickerPos] = useState(null);
     const messagesEndRef = useRef(null);
+    const emojiBtnRef = useRef(null);
+    const emojiPickerRef = useRef(null);
+    const inputRef = useRef(null);
     const [otherUser, setOtherUser] = useState(null);
 
     const scrollToBottom = () => {
@@ -29,6 +49,33 @@ export default function ChatConversation({chat, messages, loading, currentUserId
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    useEffect(() => {
+        if (!showEmojiPicker) return;
+
+        function updatePosition() {
+            const rect = emojiBtnRef.current?.getBoundingClientRect();
+            if (rect) setEmojiPickerPos({bottom: window.innerHeight - rect.top + 8, left: rect.left});
+        }
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+
+        function handleClickOutside(e) {
+            if (
+                emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)
+                && emojiBtnRef.current && !emojiBtnRef.current.contains(e.target)
+            ) {
+                setShowEmojiPicker(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showEmojiPicker]);
 
     const otherUserId = chat.participants?.find(p => p !== currentUserId);
 
@@ -55,6 +102,11 @@ export default function ChatConversation({chat, messages, loading, currentUserId
         } finally {
             setSending(false);
         }
+    }
+
+    function handleEmojiSelect(emoji) {
+        setText(prev => prev + emoji);
+        inputRef.current?.focus();
     }
 
     return (
@@ -115,7 +167,38 @@ export default function ChatConversation({chat, messages, loading, currentUserId
 
             {/* Composer */}
             <div className={styles.composer}>
+                <div className={styles.emojiWrap}>
+                    <button
+                        ref={emojiBtnRef}
+                        type="button"
+                        className={styles.emojiBtn}
+                        onClick={() => setShowEmojiPicker(v => !v)}
+                        aria-label="Insert emoji"
+                    >
+                        <Smile size={20}/>
+                    </button>
+                    {showEmojiPicker && emojiPickerPos && createPortal(
+                        <div
+                            ref={emojiPickerRef}
+                            className={styles.emojiPicker}
+                            style={{bottom: emojiPickerPos.bottom, left: emojiPickerPos.left}}
+                        >
+                            {EMOJI_OPTIONS.map((emoji, i) => (
+                                <button
+                                    key={`${emoji}-${i}`}
+                                    type="button"
+                                    className={styles.emojiOption}
+                                    onClick={() => handleEmojiSelect(emoji)}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>,
+                        document.getElementById('modal-root') ?? document.body,
+                    )}
+                </div>
                 <input
+                    ref={inputRef}
                     type="text"
                     className={styles.input}
                     placeholder="Type a message..."

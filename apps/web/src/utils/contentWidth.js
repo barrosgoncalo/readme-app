@@ -8,11 +8,10 @@ const WIDE_PREFIXES = [
     '/publications/',
 ];
 
-// Detail routes that can render as a master-detail split/slide-over (Books,
-// Events, Publications) need the 'wide' tier so the master list keeps its
-// width once the panel breakpoint kicks in — 'reading' would squeeze the
-// whole split view into a narrow column. No detail route currently needs a
-// standalone narrow reading width, so this list is intentionally empty.
+// Detail routes (Books, Events, Publications) need the 'wide' tier to make
+// full use of the screen — 'reading' would squeeze them into a narrow
+// column. No detail route currently needs a standalone narrow reading
+// width, so this list is intentionally empty.
 const READING_PATTERNS = [];
 
 const NARROW_PREFIXES = [

@@ -140,6 +140,60 @@
     cursor: not-allowed;
 }
 
+.emojiWrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.emojiBtn {
+    height: 100%;
+    padding: var(--space-2) var(--space-2);
+    background: transparent;
+    color: var(--subtext);
+    border: 1px solid var(--bg-elem);
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+}
+
+.emojiBtn:hover {
+    color: var(--primary);
+    background: var(--bg-elem);
+}
+
+.emojiPicker {
+    position: fixed;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    padding: var(--space-2);
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    width: 280px;
+    max-height: min(320px, 60vh);
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.emojiOption {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 6px;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.emojiOption:hover {
+    background: var(--bg-selected);
+}
+
 @media (max-width: 720px) {
     .message {
         max-width: 85%;
