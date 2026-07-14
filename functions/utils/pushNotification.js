@@ -15,7 +15,14 @@ async function sendPushNotification(db, userId, title, body, data = {}) {
             return;
         }
 
-        const pushTokens = userDoc.data()?.pushTokens || [];
+        const userData = userDoc.data();
+
+        if (userData?.notificationSettings?.pushEnabled !== true) {
+            console.log(`[Push] User ${userId} has push notifications disabled, skipping.`);
+            return;
+        }
+
+        const pushTokens = userData?.pushTokens || [];
         if (pushTokens.length === 0) {
             console.log(`[Push] No push tokens for user ${userId}, skipping.`);
             return;
