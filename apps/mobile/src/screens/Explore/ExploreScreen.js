@@ -74,12 +74,13 @@ export default function ExploreScreen({ navigation }) {
                     ListHeaderComponent={
                         <>
                             {renderHeader()}
-                            <ActiveSwapsSection
-                                currentUserId={currentUser?.uid}
-                                navigation={navigation}
-                                styles={styles}
-                                colorScheme={colorScheme}
-                            />
+                                <ActiveSwapsSection
+                                    currentUserId={currentUser?.uid}
+                                    navigation={navigation}
+                                    styles={styles}
+                                    colorScheme={colorScheme}
+                                    theme={theme}
+                                />
                         </>
                     }
                     renderItem={({ item }) => (

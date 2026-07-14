@@ -1,51 +1,80 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { Iconify } from 'react-native-iconify';
-import { Image } from 'expo-image';
 
-export const SwapCard = ({ imageUrl, status, styles }) => {
+const DIRECTION = {
+    giving: {
+        icon: 'lucide:send',
+        color: '#0F6E56',
+        actionText: 'Offer sent to',
+    },
+    receiving: {
+        icon: 'lucide:inbox',
+        color: '#993C1D',
+        actionText: 'Offer from',
+    },
+};
+
+export const SwapCard = ({ imageUrl, status, otherUser, currentUserId, chat, styles, theme, colorScheme }) => {
     const isGiving = status === 'giving';
-    const badgeColor = isGiving ? '#4CD964' : '#FF3B30'; 
-    const iconName = isGiving ? 'lucide:arrow-right' : 'lucide:arrow-left';
+    const dir = isGiving ? DIRECTION.giving : DIRECTION.receiving;
+    const name = otherUser?.name || 'Swapper';
+    const initials = name.trim().slice(0, 2).toUpperCase();
 
     return (
-        <View 
-            style={[
-                styles.swapCardWrapper, 
-                { 
-                    width: 100,          // Forces explicit width
-                    height: 150,         // Forces explicit height
-                    marginRight: 16,     // 👈 FORCES THE GAP BETWEEN CARDS
-                    overflow: 'visible', // Ensures the badge can still pop out
-                    position: 'relative' 
-                }
-            ]}
-        >
-            <Image 
-                source={{ uri: imageUrl }}
-                style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    borderRadius: 12,    // 👈 FORCES THE IMAGE CORNERS TO ROUND
-                }}
-                contentFit="cover"
-            />
-            
-            {/* Badge positions absolutely relative to the forced 100x150 container */}
-            <View 
-                style={[
-                    styles.statusBadge, 
-                    { 
-                        backgroundColor: badgeColor, 
-                        borderColor: '#FFFFFF',
-                        position: 'absolute',
-                        top: -4,
-                        right: -4,
-                        zIndex: 10 
-                    }
-                ]}
+        <View style={{ position: 'relative' }}>
+            <View style={[styles.avatarChip, { borderColor: theme.headerBackground }]}>
+                {otherUser?.avatarUrl ? (
+                    <Image
+                        source={{ uri: otherUser.avatarUrl }}
+                        style={{ width: '100%', height: '100%' }}
+                    />
+                ) : (
+                    <View style={{
+                        width: '100%', height: '100%',
+                        backgroundColor: dir.color,
+                        alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF' }}>
+                            {initials}
+                        </Text>
+                    </View>
+                )}
+            </View>
+
+            <View
+                style={styles.swapCardWrapper}
+                accessible
+                accessibilityLabel={`${dir.actionText} ${name}`}
             >
-                <Iconify icon={iconName} size={14} color="#FFFFFF" />
+                <View style={{ position: 'relative' }}>
+                    <View style={styles.swapCardThumbnail}>
+                        <Image
+                            source={{ uri: imageUrl || 'https://via.placeholder.com/150' }}
+                            style={styles.swapCardImage}
+                        />
+                    </View>
+
+                    <View style={[styles.statusBadge, { backgroundColor: dir.color, borderColor: theme.headerBackground }]}>
+                        <Iconify icon={dir.icon} size={12} color="#FFFFFF" />
+                    </View>
+                </View>
+
+                {/* Split into two lines for a subtle, compact footprint */}
+                <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
+                    <Text 
+                        numberOfLines={1} 
+                        style={{ fontSize: 12, fontWeight: '500', color: 'rgba(255, 255, 255, 0.7)', marginBottom: 2 }}
+                    >
+                        {dir.actionText}
+                    </Text>
+                    <Text 
+                        numberOfLines={1} 
+                        style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF' }}
+                    >
+                        {name}
+                    </Text>
+                </View>
             </View>
         </View>
     );

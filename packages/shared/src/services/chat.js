@@ -176,21 +176,32 @@ export const ChatService = {
         ]);
     },
 
-    /**
-     * Creates a new chat (if needed) and sends an initial offer.
-     */
     sendInitialOffer: async (currentUserId, sellerId, targetBook, offeredBooks, location) => {
         let chatId = await _findExistingChatId(currentUserId, sellerId);
-
         const firstImage = targetBook?.imageUrl || null;
 
         if (!chatId) {
-            const receiverName = targetBook?.seller?.username || "Swapper";
+            const [proposerData, receiverData] = await Promise.all([
+                DB.get('users', currentUserId),
+                DB.get('users', sellerId),
+            ]);
+
+            const proposerInfo = {
+                name: proposerData?.username || proposerData?.name || "Swapper",
+                avatarUrl: proposerData?.photoURL || null,
+            };
+            const receiverInfo = {
+                name: receiverData?.username || receiverData?.name || targetBook?.seller?.username || "Swapper",
+                avatarUrl: receiverData?.photoURL || null,
+            };
+
             const newChatData = createChatModel(
                 [currentUserId, sellerId],
                 currentUserId,
                 sellerId,
-                receiverName,
+                proposerInfo,
+                receiverInfo,
+                targetBook.id,
                 firstImage,
                 `Offered swap for ${targetBook.title}`
             );
@@ -203,7 +214,7 @@ export const ChatService = {
 
         await Promise.all([
             DB.create(`chats/${chatId}/messages`, messagePayload),
-            DB.update('chats', chatId, { 
+            DB.update('chats', chatId, {
                 lastMessage: `Swap Offer: ${targetBook.title || 'Book'}`,
                 targetBookImage: firstImage,
                 hiddenFor: []

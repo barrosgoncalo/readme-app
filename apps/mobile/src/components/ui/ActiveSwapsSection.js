@@ -4,7 +4,7 @@ import { SwapCard } from '../../components/ui/SwapCard';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { ChatService } from '@readme/shared/src/services/chat';
 
-export const ActiveSwapsSection = React.memo(({ currentUserId, navigation, styles, colorScheme }) => {
+export const ActiveSwapsSection = React.memo(({ currentUserId, navigation, styles, colorScheme, theme }) => {
     const [activeChats, setActiveChats] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -14,7 +14,6 @@ export const ActiveSwapsSection = React.memo(({ currentUserId, navigation, style
             setLoading(false);
             return;
         }
-
         const unsubscribe = ChatService.subscribeToActiveChats(
             currentUserId,
             (fetchedChats) => {
@@ -27,20 +26,15 @@ export const ActiveSwapsSection = React.memo(({ currentUserId, navigation, style
             }
         );
         return unsubscribe;
-
     }, [currentUserId]);
 
     if (loading || activeChats.length === 0) return null;
 
     return (
-        <View style={styles.swapSectionContainer}> 
-            <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.swapList}
-            >
+        <View style={styles.swapSectionContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.swapList}>
                 {activeChats.map((chat) => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         key={chat.id}
                         activeOpacity={0.8}
                         onPress={() => navigation.navigate(ROUTES.CHAT_ROOM, {
@@ -55,7 +49,16 @@ export const ActiveSwapsSection = React.memo(({ currentUserId, navigation, style
                             elevation: 5,
                         }}
                     >
-                        <SwapCard imageUrl={chat.imageUrl} status={chat.status} styles={styles} />
+                        <SwapCard
+                            imageUrl={chat.imageUrl}
+                            status={chat.status}
+                            otherUser={chat.targetSeller}
+                            chat={chat}
+                            currentUserId={currentUserId}
+                            theme={theme}
+                            colorScheme={colorScheme}
+                            styles={styles}
+                        />
                     </TouchableOpacity>
                 ))}
             </ScrollView>

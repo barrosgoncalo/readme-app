@@ -77,6 +77,7 @@ export default function (api) {
                         'lucide:info',
                         'lucide:history',
                         'lucide:alert-triangle',
+                        'lucide:inbox',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',

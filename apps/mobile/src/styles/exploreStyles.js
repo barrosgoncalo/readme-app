@@ -35,7 +35,7 @@ export const buildExploreStyles = (theme) => {
         },
 
         swapSectionContainer: {
-            backgroundColor: theme.headerBackground,
+            backgroundColor: 'transparent',
             borderRadius: 20,
             paddingVertical: 10,
             marginBottom: 24,
@@ -88,30 +88,49 @@ export const buildExploreStyles = (theme) => {
         },
 
         // SwapCard
-        swapCardWrapper: {
-            width: 76,
-            height: 102,
-            marginRight: 12,
-            borderRadius: 8,
-            backgroundColor: theme.backgroundElement,
-        },
-        swapCardImage: {
-            width: '100%',
-            height: '100%',
-            borderRadius: 6,
-            resizeMode: 'cover',
-        },
-        statusBadge: {
-            position: 'absolute',
-            top: -8,
-            right: -8,
-            width: 24,
-            height: 24,
-            borderRadius: 12,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderWidth: 2,
-            borderColor: theme.backgroundElement,
-        },
+swapCardWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: theme.headerBackground, // same brown as swapSectionContainer
+    width: 220,
+    marginRight: 14,
+},
+swapCardThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: theme.backgroundElement, // placeholder tint while image loads
+},
+swapCardImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+},
+avatarChip: {
+    position: 'absolute',
+    top: -12,
+    left: -12,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    overflow: 'hidden',
+    borderWidth: 2.5,
+    zIndex: 2,
+},
+statusBadge: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+},
     });
 };
