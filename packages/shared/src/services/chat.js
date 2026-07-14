@@ -166,7 +166,7 @@ export const ChatService = {
             chatParentPayload = { ...chatParentPayload, ...chatPayload };
         }
 
-        if (newStatus === (NEGOTIATION_STATUS.CANCELLED || 'cancelled') && cancelledBy) {
+        if (newStatus === (NEGOTIATION_STATUS.CANCELLED) && cancelledBy) {
             messageUpdatePayload['offerDetails.cancelledBy'] = cancelledBy;
         }
 

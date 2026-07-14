@@ -32,6 +32,7 @@ import PublicProfileScreen from '../screens/Profile/PublicProfileScreen';
 import NotificationsScreen from '../screens/Profile/Notifications/NotificationsScreen';
 import MyBooksScreen from '../screens/Profile/MyBooks/MyBooksScreen';
 import MyPublicationDetailsScreen from '../screens/Profile/MyBooks/MyPublicationDetailsScreen';
+import UpdatePublication from '../screens/Publication/UpdatePublicationScreen';
 import FavoritesScreen from '../screens/Profile/Favorites/FavoritesScreen';
 import ReviewsScreen from '../screens/Profile/Reviews/ReviewsScreen';
 import LiteraryLevelsScreen from '../screens/Profile/LiteraryLevels/LiteraryLevelsScreens';
@@ -42,14 +43,14 @@ import ShowQRCodeScreen from '../screens/Swap/QRVerification/ShowQRCodeScreen';
 import SwapScannerScreen from '../screens/Swap/QRVerification/SwapScannerScreen';
 import ReviewSwapperScreen from '../screens/Swap/Review/ReviewSwapperScreen';
 
-import AppTabs from '../components/app-tabs'; 
+import AppTabs from '../components/app-tabs';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-    // Note: Added 'currentUser' here just in case your 'userLoggedIn' is a boolean 
+    // Note: Added 'currentUser' here just in case your 'userLoggedIn' is a boolean
     // and you need the explicit user object to read the uid.
-    const { userLoggedIn, loading: authLoading, currentUser } = useAuth(); 
+    const { userLoggedIn, loading: authLoading, currentUser } = useAuth();
     const [isFirstLaunch, setIsFirstLaunch] = useState(null);
     const [showSplash, setShowSplash] = useState(true);
 
@@ -108,39 +109,39 @@ export default function AppNavigator() {
                     <>
                         <Stack.Screen name={ROUTES.MAIN} component={AppTabs} />
                         {/* ... Rest of your authenticated screens remain exactly the same ... */}
-                        <Stack.Screen 
-                            name={ROUTES.EDIT_PROFILE} 
-                            component={EditProfileScreen} 
+                        <Stack.Screen
+                            name={ROUTES.EDIT_PROFILE}
+                            component={EditProfileScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.PRIVACY_SECURITY} 
-                            component={PrivacySecurityScreen} 
+                        <Stack.Screen
+                            name={ROUTES.PRIVACY_SECURITY}
+                            component={PrivacySecurityScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.CHANGE_PASSWORD} 
-                            component={ChangePasswordScreen} 
+                        <Stack.Screen
+                            name={ROUTES.CHANGE_PASSWORD}
+                            component={ChangePasswordScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.PASSWORD_SUCCESS} 
-                            component={PasswordSuccessScreen} 
+                        <Stack.Screen
+                            name={ROUTES.PASSWORD_SUCCESS}
+                            component={PasswordSuccessScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.BLOCKED_USERS} 
-                            component={BlockedUsersScreen} 
+                        <Stack.Screen
+                            name={ROUTES.BLOCKED_USERS}
+                            component={BlockedUsersScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.BARCODE_SCANNER} 
-                            component={BarcodeScannerScreen} 
+                        <Stack.Screen
+                            name={ROUTES.BARCODE_SCANNER}
+                            component={BarcodeScannerScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.SEARCH_BOOK} 
-                            component={SearchBookScreen} 
+                        <Stack.Screen
+                            name={ROUTES.SEARCH_BOOK}
+                            component={SearchBookScreen}
                             options={{ headerShown: false }}
                         />
                         <Stack.Screen
@@ -163,80 +164,85 @@ export default function AppNavigator() {
                             component={PublicationDetailsScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.STEP_ONE_OFFER} 
-                            component={StepOneOffer} 
+                        <Stack.Screen
+                            name={ROUTES.STEP_ONE_OFFER}
+                            component={StepOneOffer}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.STEP_TWO_OFFER} 
-                            component={StepTwoOffer} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.STEP_TWO_OFFER}
+                            component={StepTwoOffer}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.PUBLIC_PROFILE_SCREEN} 
-                            component={PublicProfileScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.PUBLIC_PROFILE_SCREEN}
+                            component={PublicProfileScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.FAVORITES} 
-                            component={FavoritesScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.FAVORITES}
+                            component={FavoritesScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.CHAT_ROOM} 
-                            component={ChatRoomScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.CHAT_ROOM}
+                            component={ChatRoomScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.SELECT_SWAP_BOOK} 
-                            component={SelectSwapBookScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.SELECT_SWAP_BOOK}
+                            component={SelectSwapBookScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.SELECT_SWAP_LOCATION} 
-                            component={SelectSwapLocationScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.SELECT_SWAP_LOCATION}
+                            component={SelectSwapLocationScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.QR_DISPLAY} 
-                            component={ShowQRCodeScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.QR_DISPLAY}
+                            component={ShowQRCodeScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.QR_SCANNER} 
-                            component={SwapScannerScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.QR_SCANNER}
+                            component={SwapScannerScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.REVIEW_SWAPPER} 
-                            component={ReviewSwapperScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.REVIEW_SWAPPER}
+                            component={ReviewSwapperScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.NOTIFICATIONS} 
-                            component={NotificationsScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.NOTIFICATIONS}
+                            component={NotificationsScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.MY_BOOKS} 
-                            component={MyBooksScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.MY_BOOKS}
+                            component={MyBooksScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.MY_PUBLICATION_DETAILS} 
-                            component={MyPublicationDetailsScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.MY_PUBLICATION_DETAILS}
+                            component={MyPublicationDetailsScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.REVIEWS} 
-                            component={ReviewsScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.REVIEWS}
+                            component={ReviewsScreen}
+                            options={{ headerShown: false }}
                         />
-                        <Stack.Screen 
-                            name={ROUTES.LEVELS} 
-                            component={LiteraryLevelsScreen} 
-                            options={{ headerShown: false }} 
+                        <Stack.Screen
+                            name={ROUTES.LEVELS}
+                            component={LiteraryLevelsScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name={ROUTES.EDIT_PUBLICATION}
+                            component={UpdatePublication}
+                            options={{ headerShown: false }}
                         />
                     </>
                 ) : (
@@ -248,7 +254,7 @@ export default function AppNavigator() {
                         ) : (
                             <>
                                 {isFirstLaunch && (
-                                    <Stack.Screen 
+                                    <Stack.Screen
                                         name={ROUTES.WELCOME}
                                         component={WelcomeScreen}
                                     />

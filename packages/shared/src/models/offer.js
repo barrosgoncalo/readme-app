@@ -18,14 +18,18 @@ export const createOfferModel = (
     locationData = {},
     isCounter = false
 ) => {
+
+    const isSingleBook = offeredBooks.length === 1;
+
     return {
         targetBookId: targetBookId,
         targetBookImage: targetBookImage || null,
         
         offeredBooks: offeredBooks,
+        offeredBookIds: offeredBooks.map(b => b.id),
         
-        finalSelectedBookId: null,
-        finalSelectedBookImage: null,
+        finalSelectedBookId: isSingleBook ? offeredBooks[0].id : null,
+        finalSelectedBookImage: isSingleBook ? offeredBooks[0].image : null,
 
         // Context
         isCounter: isCounter,

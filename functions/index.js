@@ -10,6 +10,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
 const Notification = require("./models/notification");
+const { PUBLICATION_STATUS_AVAILABLE, NEGOTIATION_STATUS } = require("./constants/negotiation");
 const { GAMIFICATION_RANKS } = require("./constants/gamification");
 const { sendPushNotification } = require("./utils/pushNotification");
 
@@ -181,6 +182,49 @@ async function updateUserGamification(userId) {
         });
     });
 }
+
+// Helper function
+async function markOffersUnavailableForBook(bookId) {
+    // Query 1: offers where this book is the target
+    const targetQuery = db.collectionGroup('messages')
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+        .where('offerDetails.targetBookId', '==', bookId);
+
+    // Query 2: offers where this book was one of the offered books
+    const offeredQuery = db.collectionGroup('messages')
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+        .where('offerDetails.offeredBookIds', 'array-contains', bookId);
+
+    const [targetSnap, offeredSnap] = await Promise.all([
+        targetQuery.get(),
+        offeredQuery.get(),
+    ]);
+
+    // Merge + dedupe by doc path, since a doc could theoretically match both
+    const docsById = new Map();
+    [...targetSnap.docs, ...offeredSnap.docs].forEach((doc) => {
+        docsById.set(doc.ref.path, doc.ref);
+    });
+
+    if (docsById.size === 0) {
+        console.log(`No pending offers reference book ${bookId}.`);
+        return;
+    }
+
+    const batch = db.batch();
+    docsById.forEach((ref) => {
+        batch.update(ref, {
+            'offerDetails.status': NEGOTIATION_STATUS.UNAVAILABLE,
+            'offerDetails.unavailableAt': Timestamp.now(),
+        });
+    });
+
+    await batch.commit();
+    console.log(`Marked ${docsById.size} offer(s) as unavailable for book ${bookId}.`);
+}
+
 
 // ==========================================
 // DELETE BOOKS ON SWAP COMPLETED FUNCTION
@@ -620,4 +664,32 @@ exports.onSwapCancelled = onDocumentUpdated("chats/{chatId}/messages/{messageId}
         console.error("Error generating swap-cancelled notification:", error);
     }
     return null;
+});
+
+exports.onPublicationBecameUnavailable = onDocumentWritten("publications/{publicationId}", async (event) => {
+    const publicationId = event.params.publicationId;
+    const before = event.data.before?.exists ? event.data.before.data() : null;
+    const after = event.data.after?.exists ? event.data.after.data() : null;
+
+    if (!before) return;
+
+    console.log(`Checking pub: ${publicationId}`);
+    console.log(`Before status: "${before.status}" | Constant expected: "${PUBLICATION_STATUS_AVAILABLE}"`);
+    console.log(`After status: "${after?.status}"`);
+
+    const wasAvailable = before.status === PUBLICATION_STATUS_AVAILABLE;
+    const isNowUnavailableOrDeleted = !after || after.status !== PUBLICATION_STATUS_AVAILABLE;
+
+    console.log(`wasAvailable: ${wasAvailable} | isNowUnavailableOrDeleted: ${isNowUnavailableOrDeleted}`);
+
+    if (!wasAvailable || !isNowUnavailableOrDeleted) {
+        console.log("Exiting early: Transition criteria not met.");
+        return;
+    }
+
+    try {
+        await markOffersUnavailableForBook(publicationId);
+    } catch (error) {
+        console.error(`Error marking offers unavailable for book ${publicationId}:`, error);
+    }
 });

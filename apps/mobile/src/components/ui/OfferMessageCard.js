@@ -44,6 +44,9 @@ export default function OfferMessageCard({
     } else if (offer?.status === 'completed') {
         statusBg = '#DCFCE7';
         statusTextColor = '#166534';
+    } else if (offer?.status === 'unavailable') {
+        statusBg = '#FEE2E2';
+        statusTextColor = '#991B1B';
     }
 
     const hasSingleBookImage = offer?.offeredBooks?.length === 1 && offer?.offeredBooks[0]?.image;
@@ -353,6 +356,19 @@ export default function OfferMessageCard({
                             </Text>
                         </TouchableOpacity>
                     )}
+                </View>
+
+
+            )}
+            {/* UNAVAILABLE TRADE */}
+            {offer?.status === 'unavailable' && (
+                <View style={styles.completedContainer}>
+                    <View style={styles.completedHeader}>
+                        <Iconify icon="lucide:alert-triangle" size={20} color="#EF4444" />
+                        <Text style={[styles.completedText, { color: '#EF4444', fontSize: 14 }]}>
+                            This trade is no longer available
+                        </Text>
+                    </View>
                 </View>
             )}
         </View>
