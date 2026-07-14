@@ -24,6 +24,7 @@ export default function BookDetailsScreen({ route, navigation }) {
     const coverUrl = bookData.coverUrl;
     const rawDescription = bookData.description || 'No description available for this book.';
     const cleanDescription = rawDescription.replace(/<[^>]+>/g, '');
+
     return (
         <View 
             style={[
