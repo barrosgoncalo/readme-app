@@ -14,7 +14,7 @@ const TABS = {
     PEOPLE: 'people'
 };
 
-const PAGE_WINDOW = 5; // how many page numbers to show at once, Google-style
+const PAGE_WINDOW = 5;
 
 export default function SearchScreen({ navigation }) {
     const theme = useTheme();
