@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useState} from 'react';
 import {Link, useSearchParams, useLocation} from 'react-router-dom';
-import {BookOpen, Search, Users, Plus} from 'lucide-react';
+import {BookOpen, Search, Users, Plus, ArrowUp} from 'lucide-react';
 import {searchUsers} from '@readme/shared/src/services/search';
 import {doGetBlockedUids, doGetBlockedUsers} from '@readme/shared/src/services/blockUser';
 import {fetchAllPublications} from '@readme/shared/src/services/publications';
@@ -44,6 +44,8 @@ export default function Explore() {
     const [pubsError, setPubsError] = useState(null);
     const [favoriteBusy, setFavoriteBusy] = useState(null);
 
+    const [showScrollTop, setShowScrollTop] = useState(false); // Novo estado
+
     const loadPublications = useCallback(async () => {
         if (!uid) return;
 
@@ -72,6 +74,22 @@ export default function Explore() {
             setLoadingPubs(false);
         }
     }, [uid]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 300)
+                setShowScrollTop(true);
+            else
+                setShowScrollTop(false);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    };
 
     useEffect(() => {
         if (location.state?.toastMessage) {
@@ -258,6 +276,15 @@ export default function Explore() {
                         </div>
                     )}
                 </div>
+            )}
+            {showScrollTop && (
+                <button
+                    className={styles.scrollTopBtn}
+                    onClick={scrollToTop}
+                    title="Back to top"
+                >
+                    <ArrowUp size={24} />
+                </button>
             )}
         </div>
     );

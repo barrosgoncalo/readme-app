@@ -187,6 +187,37 @@
     width: 100%;
 }
 
+.scrollTopBtn {
+    position: fixed;
+    top: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%); /* Centra perfeitamente no ecrã */
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%; /* Faz um círculo perfeito */
+    width: 48px; /* Largura fixa */
+    height: 48px; /* Altura fixa igual à largura */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    animation: fadeInDown 0.3s ease;
+}
+
+.scrollTopBtn:hover {
+    transform: translateX(-50%) translateY(-2px);
+    filter: brightness(0.85);
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateX(-50%) translateY(-15px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .toast {
     position: fixed;
     top: var(--space-4);
@@ -198,15 +229,21 @@
     border-radius: var(--radius);
     font-size: 0.9rem;
     font-weight: 500;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
     z-index: 1000;
     white-space: nowrap;
     animation: fadeInDown 0.2s ease;
 }
 
 @keyframes fadeInDown {
-    from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 @media (max-width: 768px) {

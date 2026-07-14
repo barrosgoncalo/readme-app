@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Link, NavLink, Outlet, useNavigate, useLocation} from 'react-router-dom';
+import {Link, NavLink, Outlet, useLocation, useNavigate} from 'react-router-dom';
 import {doc, onSnapshot} from 'firebase/firestore';
 import {BookOpen, CalendarDays, Handshake, MessageCircle, Moon, Sun, User} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
@@ -30,11 +30,10 @@ export default function AppShell() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(!shouldCollapseSidebar);
 
     useEffect(() => {
-        if (shouldCollapseSidebar) {
+        if (shouldCollapseSidebar)
             setIsSidebarOpen(false);
-        } else {
+        else
             setIsSidebarOpen(true);
-        }
     }, [shouldCollapseSidebar]);
 
     const handleLogoClick = (e) => {
@@ -48,9 +47,8 @@ export default function AppShell() {
         if (!currentUser?.uid) return;
 
         const unsubscribe = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
-            if (docSnap.exists()) {
+            if (docSnap.exists())
                 setUsername(docSnap.data().username || '');
-            }
         });
 
         return () => unsubscribe();
@@ -81,10 +79,12 @@ export default function AppShell() {
     }
 
     return (
-        <div className={`${styles.shell} ${!isSidebarOpen ? styles.shellCollapsed : ''} ${isChatPage ? styles.chatLock : ''}`}>
+        <div
+            className={`${styles.shell} ${!isSidebarOpen ? styles.shellCollapsed : ''} ${isChatPage ? styles.chatLock : ''}`}>
             <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
                 <h1 className={styles.wordmark}>
-                    <Link to={WEB_ROUTES.MAP} onClick={handleLogoClick} style={{color: 'inherit', textDecoration: 'none'}}>
+                    <Link to={WEB_ROUTES.MAP} onClick={handleLogoClick}
+                          style={{color: 'inherit', textDecoration: 'none'}}>
                         README
                     </Link>
                 </h1>
@@ -96,6 +96,12 @@ export default function AppShell() {
                                 <NavLink
                                     key={to}
                                     to={to}
+                                    onClick={(e) => {
+                                        if (location.pathname === to) {
+                                            e.preventDefault();
+                                            window.scrollTo({top: 0, behavior: 'smooth'});
+                                        }
+                                    }}
                                     className={() =>
                                         checkIsActive(to) ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
                                     }
@@ -122,7 +128,7 @@ export default function AppShell() {
                 )}
             </aside>
             <main className={`${styles.content} ${isChatPage ? styles.chatContent : ''}`}>
-                <Outlet context={{ isSidebarOpen }} />
+                <Outlet context={{isSidebarOpen}}/>
             </main>
         </div>
     );
