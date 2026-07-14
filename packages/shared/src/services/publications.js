@@ -1,7 +1,7 @@
 import { DB } from './DB';
 import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 import { createPublicationModel } from '../models/publication';
-import { UsersService } from './users'; 
+import { UsersService } from './users';
 import { StorageService } from './storage';
 
 // ==========================================
@@ -130,8 +130,73 @@ export const PublicationService = {
             .map(_mapPublicationSummary)
             .filter(book =>
                 book.ownerId !== currentUserUid &&
-                    !blockedUids.includes(book.ownerId) &&
-                    book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
+                !blockedUids.includes(book.ownerId) &&
+                book.publicationData?.status === PUBLICATION_STATUS.AVAILABLE
             );
+    },
+
+    updatePublication: async (currentUser, publicationId, formData, { existingImages = [], newImages = [] } = {}) => {
+        if (!currentUser?.uid) throw new Error('Authentication required to update a publication.');
+        if (existingImages.length === 0 && newImages.length === 0) {
+            throw new Error('At least one image is required.');
+        }
+
+        let uploadedUrls = [];
+        if (newImages.length > 0) {
+            try {
+                uploadedUrls = await StorageService.uploadImages(newImages, `books/${publicationId}`);
+            } catch (error) {
+                error.stage = 'storage';
+                throw error;
+            }
+        }
+
+        const imageUrls = [...existingImages, ...uploadedUrls];
+
+        const payload = {
+            'book.title': formData.bookName,
+            'book.author': formData.authorName || 'Unknown Author',
+            'book.images': imageUrls,
+            'book.condition': formData.condition,
+            'book.subject': formData.subject,
+            detailsText: formData.description,
+        };
+
+        try {
+            await DB.update('publications', publicationId, payload, true); // true = stamps updatedAt
+        } catch (error) {
+            error.stage = 'firestore';
+            throw error;
+        }
+
+        return { id: publicationId, ...payload };
+    },
+
+    deletePublication: async (currentUser, publicationId) => {
+        if (!currentUser?.uid) throw new Error('Authentication required to delete a publication.');
+
+        const doc = await DB.get('publications', publicationId);
+        if (!doc) throw new Error('Publication not found.');
+
+        if (doc.uid !== currentUser.uid) {
+            const error = new Error('You can only delete your own publications.');
+            error.stage = 'permission';
+            throw error;
+        }
+
+        if (doc.status !== PUBLICATION_STATUS.AVAILABLE) {
+            const error = new Error('This publication can no longer be deleted — it is no longer available.');
+            error.stage = 'validation';
+            throw error;
+        }
+
+        try {
+            await DB.remove('publications', publicationId);
+        } catch (error) {
+            error.stage = 'firestore';
+            throw error;
+        }
+
+        return true;
     },
 }

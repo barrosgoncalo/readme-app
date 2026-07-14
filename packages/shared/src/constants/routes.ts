@@ -21,6 +21,7 @@ export const ROUTES = {
     PUBLICATION_DETAILS: 'PublicationDetails',
     /** @see MyPublicationDetailsParams in screens/Profile/MyBooks/MyPublicationDetailsScreen.js */
     MY_PUBLICATION_DETAILS: 'MyPublicationDetails',
+    EDIT_PUBLICATION: 'UpdatePublication',
     STEP_ONE_OFFER: 'StepOneOffer',
     STEP_TWO_OFFER: 'StepTwoOffer',
     PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen',
