@@ -349,7 +349,6 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
 
             console.log(`--- Processing Chat ID: ${chatId} ---`);
 
-            // 1. Gather all referenced book IDs from this specific chat
             const messagesSnap = await chatRef.collection("messages").get();
             const referencedBookIds = new Set();
 
@@ -371,11 +370,9 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
 
             console.log(`[LOG] Extracted ${referencedBookIds.size} unique book IDs from chat ${chatId}:`, Array.from(referencedBookIds));
 
-            // 2. Delete the chat and its messages FIRST so they don't trigger our safety check below
             await db.recursiveDelete(chatRef);
             console.log(`[LOG] Successfully purged Firestore document for chat ID: ${chatId}`);
 
-            // 3. Check which books no longer exist AND have no other chats referencing them
             for (const bookId of referencedBookIds) {
                 console.log(`[LOG] Evaluating book ID: ${bookId} for storage deletion...`);
                 try {
@@ -388,7 +385,6 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
 
                     console.log(`[LOG] Publication ${bookId} is deleted. Initiating safety queries...`);
                     
-                    // Safety check queries
                     const targetQuery = await db.collectionGroup('messages')
                         .where('offerDetails.targetBookId', '==', bookId)
                         .limit(1)
@@ -401,7 +397,6 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
 
                     console.log(`[LOG] Safety Check Results for ${bookId} - Found as target: ${!targetQuery.empty} | Found as offered: ${!offeredQuery.empty}`);
 
-                    // If it's not found in ANY other chat's messages, it is completely orphaned
                     if (targetQuery.empty && offeredQuery.empty) {
                         console.log(`[LOG] Book ${bookId} is completely orphaned. Wiping from Storage...`);
                         await bucket.deleteFiles({ 
