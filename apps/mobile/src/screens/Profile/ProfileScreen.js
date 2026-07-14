@@ -40,7 +40,7 @@ export default function ProfileScreen({ navigation }) {
 
         let unsubscribeRealTime = () => {}; 
         if (currentUser?.uid) {
-            const { UsersService } = require('@readme/shared/src/services/users'); // or standard import at top
+            const { UsersService } = require('@readme/shared/src/services/users');
 
             unsubscribeRealTime = UsersService.subscribeToUnreadNotificationsCount(
                 currentUser.uid, 
@@ -56,7 +56,8 @@ export default function ProfileScreen({ navigation }) {
     // ---------------------------------------------------------------------
 
     return (
-        <View style={styles.container}>            <Animated.ScrollView 
+        <View style={styles.container}>
+            <Animated.ScrollView 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}

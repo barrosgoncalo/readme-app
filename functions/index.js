@@ -10,6 +10,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
 const Notification = require("./models/notification");
+const { PUBLICATION_STATUS_AVAILABLE, NEGOTIATION_STATUS } = require("./constants/negotiation");
 const { GAMIFICATION_RANKS } = require("./constants/gamification");
 const { sendPushNotification } = require("./utils/pushNotification");
 
@@ -670,15 +671,21 @@ exports.onPublicationBecameUnavailable = onDocumentWritten("publications/{public
     const before = event.data.before?.exists ? event.data.before.data() : null;
     const after = event.data.after?.exists ? event.data.after.data() : null;
 
-    // Ignore creation (before === null) — nothing to react to yet.
     if (!before) return;
+
+    console.log(`Checking pub: ${publicationId}`);
+    console.log(`Before status: "${before.status}" | Constant expected: "${PUBLICATION_STATUS_AVAILABLE}"`);
+    console.log(`After status: "${after?.status}"`);
 
     const wasAvailable = before.status === PUBLICATION_STATUS_AVAILABLE;
     const isNowUnavailableOrDeleted = !after || after.status !== PUBLICATION_STATUS_AVAILABLE;
 
-    // Only fire on the transition INTO unavailable/deleted, not on every
-    // subsequent write to an already-unavailable doc.
-    if (!wasAvailable || !isNowUnavailableOrDeleted) return;
+    console.log(`wasAvailable: ${wasAvailable} | isNowUnavailableOrDeleted: ${isNowUnavailableOrDeleted}`);
+
+    if (!wasAvailable || !isNowUnavailableOrDeleted) {
+        console.log("Exiting early: Transition criteria not met.");
+        return;
+    }
 
     try {
         await markOffersUnavailableForBook(publicationId);

@@ -26,6 +26,7 @@ export const createOfferModel = (
         targetBookImage: targetBookImage || null,
         
         offeredBooks: offeredBooks,
+        offeredBookIds: offeredBooks.map(b => b.id),
         
         finalSelectedBookId: isSingleBook ? offeredBooks[0].id : null,
         finalSelectedBookImage: isSingleBook ? offeredBooks[0].image : null,
