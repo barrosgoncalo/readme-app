@@ -5,7 +5,7 @@ import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookO
 import { SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
 
 const SORT_CHOICES = [
-    { key: SORT_OPTIONS.RELEVANCE, label: 'Best match' },
+    // { key: SORT_OPTIONS.RELEVANCE, label: 'Best match' },
     { key: SORT_OPTIONS.TITLE_ASC, label: 'Title A → Z' },
     { key: SORT_OPTIONS.TITLE_DESC, label: 'Title Z → A' },
     { key: SORT_OPTIONS.FAVORITES_DESC, label: 'Most favorited' },
@@ -18,6 +18,11 @@ const SORT_CHOICES = [
  * Bottom-sheet filter/sort modal for the publications grid.
  * Keeps its own draft state so Cancel doesn't clobber the applied filters,
  * only "Apply" commits the change back up to the parent.
+ *
+ * `resetSortBy` lets each screen define what "no filter applied" means
+ * for sort — Search's default is RELEVANCE (a text query is present),
+ * Explore's default is DATE_DESC (no text query, browsing newest-first).
+ * Defaults to RELEVANCE to preserve existing Search-screen behavior.
  */
 export default function PublicationFilterModal({
                                                    visible,
@@ -28,6 +33,7 @@ export default function PublicationFilterModal({
                                                    initialGenres,
                                                    theme,
                                                    styles,
+                                                   resetSortBy = SORT_OPTIONS.RELEVANCE,
                                                }) {
     const [sortBy, setSortBy] = useState(initialSortBy);
     const [conditions, setConditions] = useState(initialConditions);
@@ -54,7 +60,7 @@ export default function PublicationFilterModal({
     };
 
     const handleReset = () => {
-        setSortBy(SORT_OPTIONS.RELEVANCE);
+        setSortBy(resetSortBy);
         setConditions([]);
         setGenres([]);
     };
