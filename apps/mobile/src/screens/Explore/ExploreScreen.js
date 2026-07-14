@@ -1,26 +1,22 @@
-import React, {useCallback, useEffect, useRef} from 'react';
-import {useFocusEffect} from '@react-navigation/native';
-import {useAuth} from '@readme/shared/src/contexts/AuthContext';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    useColorScheme,
-    View
+    View, Text, TouchableOpacity, FlatList, StatusBar,
+    ActivityIndicator, RefreshControl, useColorScheme
 } from 'react-native';
-import {ROUTES} from '@readme/shared/src/constants/routes';
-import {useTheme} from '@readme/shared/src/hooks/use-theme';
-import {Iconify} from 'react-native-iconify';
-import {buildExploreStyles} from '../../styles/exploreStyles';
-import {useScrollTabBarControl} from '../../hooks/use-scroll-tab-bar-control';
-import {useExploreFeed} from '@readme/shared/src/hooks/use-explore-feed';
-import {useFavoriteStatus} from '@readme/shared/src/hooks/use-favorite-status';
+import { ROUTES } from '@readme/shared/src/constants/routes';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
+import { Iconify } from 'react-native-iconify';
+import { SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
+import { buildExploreStyles } from '../../styles/exploreStyles';
+import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
+import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
+import { useFavoriteStatus } from '@readme/shared/src/hooks/use-favorite-status';
 
-import {ActiveSwapsSection} from '../../components/ui/ActiveSwapsSection';
-import {BookGridItem} from '../../components/ui/BookGridItem';
+import { ActiveSwapsSection } from '../../components/ui/ActiveSwapsSection';
+import { BookGridItem } from '../../components/ui/BookGridItem';
+import PublicationFilterModal from '../../components/ui/PublicationFilterModal';
 
 export default function ExploreScreen({ navigation }) {
     const colorScheme = useColorScheme();
@@ -31,6 +27,12 @@ export default function ExploreScreen({ navigation }) {
 
     const listRef = useRef(null);
 
+    // --- filter/sort state, same shape as SearchScreen's ---
+    const [filtersVisible, setFiltersVisible] = useState(false);
+    const [sortBy, setSortBy] = useState(SORT_OPTIONS.DATE_DESC);
+    const [conditionFilters, setConditionFilters] = useState([]);
+    const [genreFilters, setGenreFilters] = useState([]);
+
     const {
         items: books,
         isLoadingInitial,
@@ -39,10 +41,18 @@ export default function ExploreScreen({ navigation }) {
         loadMore,
         refresh,
         updateItem,
-    } = useExploreFeed({ excludeUid: currentUser?.uid });
+    } = useExploreFeed({
+        excludeUid: currentUser?.uid,
+        sortBy,
+        conditions: conditionFilters,
+        genres: genreFilters,
+    });
 
     const { favoriteIds, toggleFavorite, refreshFavorites } = useFavoriteStatus(currentUser?.uid);
 
+    // Favorites can change on other screens (e.g. publication details),
+    // so re-sync just the favorites set whenever Explore regains focus —
+    // this does NOT re-fetch or reset the books feed/scroll position.
     useFocusEffect(
         useCallback(() => {
             refreshFavorites();
@@ -54,28 +64,55 @@ export default function ExploreScreen({ navigation }) {
     useEffect(() => {
         return navigation.addListener('tabPress', () => {
             if (navigation.isFocused()) {
-                listRef.current?.scrollToOffset({offset: 0, animated: true});
+                listRef.current?.scrollToOffset({ offset: 0, animated: true });
             }
         });
     }, [navigation]);
-
 
     const handleToggleFavorite = useCallback(
         (bookId) => toggleFavorite(bookId, updateItem),
         [toggleFavorite, updateItem]
     );
 
+    const handleApplyFilters = (newSortBy, newConditions, newGenres) => {
+        setSortBy(newSortBy);
+        setConditionFilters(newConditions);
+        setGenreFilters(newGenres);
+        setFiltersVisible(false);
+    };
+
+    const hasActiveFilters = sortBy !== SORT_OPTIONS.DATE_DESC
+        || conditionFilters.length > 0
+        || genreFilters.length > 0;
+
     const renderHeader = () => (
         <View style={styles.headerContainer}>
-            <View style={{ maxWidth: '90%', marginRight: 12 }}>
+            {/* Added paddingRight so long text wraps before hitting the icons */}
+            <View style={{ paddingRight: 80 }}>
                 <Text style={styles.headerTitle} numberOfLines={2} ellipsizeMode="tail">
                     Hello, {currentUser?.username || 'Swapper'}
                 </Text>
                 <Text style={styles.headerSubtitle}>Let's start swapping</Text>
             </View>
-            <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate(ROUTES.SEARCH)}>
-                <Iconify icon="lucide:search" size={28} color={theme.icon} />
-            </TouchableOpacity>
+
+            {/* Changed to use the new absolute positioned style */}
+            <View style={styles.headerActions}>
+                <TouchableOpacity
+                    style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+                    onPress={() => setFiltersVisible(true)}
+                    activeOpacity={0.8}
+                >
+                    <Iconify
+                        icon="lucide:sliders-horizontal"
+                        size={18}
+                        color={hasActiveFilters ? theme.pillButtonActiveText : theme.icon}
+                    />
+                    {hasActiveFilters && <View style={styles.filterBadgeDot} />}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate(ROUTES.SEARCH)}>
+                    <Iconify icon="lucide:search" size={28} color={theme.icon} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 
@@ -140,7 +177,9 @@ export default function ExploreScreen({ navigation }) {
                     )}
                     ListEmptyComponent={
                         <Text style={{ textAlign: 'center', color: theme.subtext, marginTop: 40 }}>
-                            No books published yet. Be the first to swap!
+                            {hasActiveFilters
+                                ? 'No books match these filters'
+                                : 'No books published yet. Be the first to swap!'}
                         </Text>
                     }
                     ListFooterComponent={renderFooter}
@@ -158,6 +197,18 @@ export default function ExploreScreen({ navigation }) {
                     showsVerticalScrollIndicator={false}
                 />
             )}
+
+            <PublicationFilterModal
+                visible={filtersVisible}
+                onClose={() => setFiltersVisible(false)}
+                onApply={handleApplyFilters}
+                initialSortBy={sortBy}
+                initialConditions={conditionFilters}
+                initialGenres={genreFilters}
+                theme={theme}
+                styles={styles}
+                resetSortBy={SORT_OPTIONS.DATE_DESC}
+            />
         </View>
     );
 }
