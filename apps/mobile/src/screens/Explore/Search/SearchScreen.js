@@ -5,7 +5,8 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
-import { searchBookTitles, searchPublicationsByBook, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
+import { searchBookTitles, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
+import { usePublicationSearchFeed } from '@readme/shared/src/hooks/use-publication-search-feed';
 import {useRecentSearches} from "@readme/shared/src/hooks/use-recent-searches";
 import { RECENT_SEARCH_TYPES } from '@readme/shared/src/services/recentSearches';
 import { buildStyles } from '../../../styles/searchStyles';
@@ -19,8 +20,6 @@ const TABS = {
     PEOPLE: 'people'
 };
 
-const PAGE_WINDOW = 5;
-
 export default function SearchScreen({ navigation }) {
     const theme = useTheme();
     const styles = buildStyles(theme);
@@ -32,16 +31,26 @@ export default function SearchScreen({ navigation }) {
     const [loading, setLoading] = useState(false);
 
     const [selectedBook, setSelectedBook] = useState(null);
-    const [publications, setPublications] = useState([]);
-    const [pubPage, setPubPage] = useState(0);
-    const [pubNbPages, setPubNbPages] = useState(1);
-    const [pubLoading, setPubLoading] = useState(false);
 
     // --- filter/sort state for the publications grid ---
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [sortBy, setSortBy] = useState(SORT_OPTIONS.RELEVANCE);
     const [conditionFilters, setConditionFilters] = useState([]);
     const [genreFilters, setGenreFilters] = useState([]);
+
+    // --- infinite-scroll feed for publications matching selectedBook ---
+    const {
+        items: publications,
+        isLoadingInitial: pubLoadingInitial,
+        isLoadingMore: pubLoadingMore,
+        loadMore: loadMorePublications,
+    } = usePublicationSearchFeed({
+        book: selectedBook,
+        sortBy,
+        conditions: conditionFilters,
+        genres: genreFilters,
+        excludeUid: currentUser.uid,
+    });
 
     const recentSearchType = activeTab === TABS.PEOPLE
         ? RECENT_SEARCH_TYPES.PEOPLE
@@ -69,7 +78,6 @@ export default function SearchScreen({ navigation }) {
         setSearchText('');
         setResults([]);
         setSelectedBook(null);
-        setPublications([]);
         setSortBy(SORT_OPTIONS.RELEVANCE);
         setConditionFilters([]);
         setGenreFilters([]);
@@ -129,36 +137,6 @@ export default function SearchScreen({ navigation }) {
 
         return () => clearTimeout(debounce);
     }, [searchText, activeTab, selectedBook, currentUser]);
-
-    // --- publications for the selected book, filtered/sorted, 10-per-page ---
-    const fetchPublicationsPage = useCallback(async (pageToLoad) => {
-        if (!selectedBook) return;
-        setPubLoading(true);
-        try {
-            const { publications: pubs, page, nbPages } = await searchPublicationsByBook(
-                selectedBook,
-                { page: pageToLoad, sortBy, conditions: conditionFilters, genres: genreFilters, excludeUid: currentUser.uid }
-            );
-            setPublications(pubs);
-            setPubPage(page);
-            setPubNbPages(nbPages);
-        } catch (error) {
-            console.error("Erro ao procurar publicações:", error);
-            setPublications([]);
-        } finally {
-            setPubLoading(false);
-        }
-    }, [selectedBook, sortBy, conditionFilters, genreFilters]);   // add genreFilters to deps
-
-
-    useEffect(() => {
-        if (selectedBook) fetchPublicationsPage(0);
-    }, [selectedBook, fetchPublicationsPage]);
-
-    const goToPublicationsPage = (targetPage) => {
-        if (targetPage === pubPage || targetPage < 0 || targetPage >= pubNbPages) return;
-        fetchPublicationsPage(targetPage);
-    };
 
     const handlePublicationPress = (publication) => {
         navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
@@ -227,43 +205,11 @@ export default function SearchScreen({ navigation }) {
         </TouchableOpacity>
     ), [styles, theme]);
 
-    const renderPagination = () => {
-        if (pubNbPages <= 1) return null;
-
-        const start = Math.max(0, Math.min(pubPage - Math.floor(PAGE_WINDOW / 2), pubNbPages - PAGE_WINDOW));
-        const end = Math.min(pubNbPages, start + PAGE_WINDOW);
-        const pages = [];
-        for (let i = Math.max(0, start); i < end; i++) pages.push(i);
-
+    const renderPublicationFooter = () => {
+        if (!pubLoadingMore) return null;
         return (
-            <View style={styles.paginationRow}>
-                <TouchableOpacity
-                    style={styles.pageArrow}
-                    onPress={() => goToPublicationsPage(pubPage - 1)}
-                    disabled={pubPage === 0}
-                >
-                    <Iconify icon="lucide:chevron-left" size={18} color={pubPage === 0 ? theme.subtext : theme.text} />
-                </TouchableOpacity>
-
-                {pages.map((p) => (
-                    <TouchableOpacity
-                        key={p}
-                        style={[styles.pageNumber, p === pubPage && styles.pageNumberActive]}
-                        onPress={() => goToPublicationsPage(p)}
-                    >
-                        <Text style={[styles.pageNumberText, p === pubPage && styles.pageNumberTextActive]}>
-                            {p + 1}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity
-                    style={styles.pageArrow}
-                    onPress={() => goToPublicationsPage(pubPage + 1)}
-                    disabled={pubPage === pubNbPages - 1}
-                >
-                    <Iconify icon="lucide:chevron-right" size={18} color={pubPage === pubNbPages - 1 ? theme.subtext : theme.text} />
-                </TouchableOpacity>
+            <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color={theme.primary} />
             </View>
         );
     };
@@ -290,7 +236,7 @@ export default function SearchScreen({ navigation }) {
                 />
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    {(loading || pubLoading) && <ActivityIndicator size="small" color={theme.secondary} />}
+                    {(loading || pubLoadingInitial) && <ActivityIndicator size="small" color={theme.secondary} />}
 
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
@@ -367,8 +313,10 @@ export default function SearchScreen({ navigation }) {
                     renderItem={renderPublicationCard}
                     columnWrapperStyle={styles.columnWrapper}
                     contentContainerStyle={styles.listContent}
+                    onEndReached={loadMorePublications}
+                    onEndReachedThreshold={0.5}
                     ListEmptyComponent={
-                        !pubLoading ? (
+                        !pubLoadingInitial ? (
                             <View style={styles.emptyState}>
                                 <Iconify icon="lucide:book-x" size={36} color={theme.subtext} />
                                 <Text style={styles.emptyStateText}>
@@ -377,7 +325,7 @@ export default function SearchScreen({ navigation }) {
                             </View>
                         ) : null
                     }
-                    ListFooterComponent={publications.length > 0 ? renderPagination : null}
+                    ListFooterComponent={renderPublicationFooter}
                     ListFooterComponentStyle={styles.footerWrapper}
                 />
             ) : searchText.trim() ? (
