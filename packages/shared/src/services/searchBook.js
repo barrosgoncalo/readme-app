@@ -101,29 +101,34 @@ export const searchBookTitles = async (searchText, resultLimit = DEFAULT_HITS_PE
  * selected book-condition facets (OR'd together within the group, ANDed
  * against status).
  */
-const buildPublicationFilters = (conditions = [], genres = [], excludeUid = null) => {
+const buildPublicationFilters = (conditions = [], genres = [], excludeUid = null, blockedUids = []) => {
     let filters = `status:${PUBLICATION_STATUS.AVAILABLE}`;
 
     if (excludeUid) {
         filters += ` AND NOT uid:${excludeUid}`;
     }
 
+    // Fine for a handful of blocks. If blocklists can grow large (dozens+),
+    // this filter string will hit Algolia's length limit — you'd want a
+    // different strategy then (e.g. a `blockedBy` attribute synced via a
+    // Cloud Function), but this covers your current scale.
+    blockedUids.forEach((uid) => {
+        filters += ` AND NOT uid:${uid}`;
+    });
+
     if (conditions.length > 0) {
-        const conditionGroup = conditions
-            .map((c) => `book.condition:"${c}"`)
-            .join(" OR ");
+        const conditionGroup = conditions.map((c) => `book.condition:"${c}"`).join(" OR ");
         filters += ` AND (${conditionGroup})`;
     }
 
     if (genres.length > 0) {
-        const genreGroup = genres
-            .map((g) => `book.subject:"${g}"`)
-            .join(" OR ");
+        const genreGroup = genres.map((g) => `book.subject:"${g}"`).join(" OR ");
         filters += ` AND (${genreGroup})`;
     }
 
     return filters;
 };
+
 /**
  * Fetches available publications for a given book, paginated 10-at-a-time
  * (Google-style numbered pages), used on the results page after a
@@ -209,5 +214,58 @@ export const searchPublicationsByBook = async (
         nbHits: result.nbHits ?? publications.length,
         sortBy,
         conditions,
+    };
+};
+
+
+/**
+ * Browses ALL available publications (no query text), paginated —
+ * powers the Explore feed. Same filter/sort machinery as
+ * searchPublicationsByBook, just without a text query.
+ */
+export const browsePublications = async ({
+                                             page = 0,
+                                             hitsPerPage = DEFAULT_HITS_PER_PAGE,
+                                             sortBy = SORT_OPTIONS.DATE_DESC,
+                                             conditions = [],
+                                             genres = [],
+                                             excludeUid = null,
+                                             blockedUids = [],
+                                         } = {}) => {
+    const indexName = SORT_INDEXES[sortBy] || SORT_INDEXES[SORT_OPTIONS.RELEVANCE];
+
+    const { results } = await algoliaClient.search({
+        requests: [{
+            indexName,
+            query: '',
+            filters: buildPublicationFilters(conditions, genres, excludeUid, blockedUids),
+            page,
+            hitsPerPage,
+        }],
+    });
+
+    const result = results[0] || {};
+    const hits = result.hits || [];
+
+    const publications = hits.map((hit) => ({
+        id: hit.objectID,
+        uid: hit.uid || null,
+        title: hit.book?.title || "Unknown Title",
+        author: hit.book?.author || "Unknown Author",
+        imageUrl: hit.book?.images?.[0] || null,
+        bookId: hit.book?.bookId || null,
+        condition: hit.book?.condition || "Not specified",
+        subject: hit.book?.subject || "Not specified",
+        seller: { name: hit.sellerName || "Anonymous Swapper", avatarUrl: hit.sellerAvatar || null },
+        favoriteCount: hit.stats?.likesCount || 0,
+        createdAt: hit.createdAt || null,
+        publicationData: hit,
+    }));
+
+    return {
+        publications,
+        page: result.page ?? page,
+        nbPages: result.nbPages ?? 1,
+        nbHits: result.nbHits ?? publications.length,
     };
 };

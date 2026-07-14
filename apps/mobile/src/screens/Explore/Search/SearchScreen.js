@@ -4,8 +4,9 @@ import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { searchUsers } from '@readme/shared/src/services/searchUser';
-import { searchBookTitles, searchPublicationsByBook, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
+import { searchBookTitles, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
+import { usePublicationSearchFeed } from '@readme/shared/src/hooks/use-publication-search-feed';
+import { useUserSearchFeed } from '@readme/shared/src/hooks/use-user-search-feed';
 import {useRecentSearches} from "@readme/shared/src/hooks/use-recent-searches";
 import { RECENT_SEARCH_TYPES } from '@readme/shared/src/services/recentSearches';
 import { buildStyles } from '../../../styles/searchStyles';
@@ -13,13 +14,12 @@ import PublicationFilterModal from '../../../components/ui/PublicationFilterModa
 import { Keyboard } from 'react-native';
 
 const BOOK_HITS_PER_PAGE = 8;
+const PEOPLE_SEARCH_DEBOUNCE_MS = 350;
 
 const TABS = {
     BOOKS: 'books',
     PEOPLE: 'people'
 };
-
-const PAGE_WINDOW = 5;
 
 export default function SearchScreen({ navigation }) {
     const theme = useTheme();
@@ -28,20 +28,45 @@ export default function SearchScreen({ navigation }) {
     const { currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState(TABS.BOOKS);
     const [searchText, setSearchText] = useState('');
+
+    // --- Books tab: autocomplete suggestions (unchanged, one-shot) ---
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
-
     const [selectedBook, setSelectedBook] = useState(null);
-    const [publications, setPublications] = useState([]);
-    const [pubPage, setPubPage] = useState(0);
-    const [pubNbPages, setPubNbPages] = useState(1);
-    const [pubLoading, setPubLoading] = useState(false);
+
+    // --- People tab: debounced query feeding the infinite-scroll feed ---
+    const [debouncedPeopleQuery, setDebouncedPeopleQuery] = useState('');
 
     // --- filter/sort state for the publications grid ---
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [sortBy, setSortBy] = useState(SORT_OPTIONS.RELEVANCE);
     const [conditionFilters, setConditionFilters] = useState([]);
     const [genreFilters, setGenreFilters] = useState([]);
+
+    // --- infinite-scroll feed for publications matching selectedBook ---
+    const {
+        items: publications,
+        isLoadingInitial: pubLoadingInitial,
+        isLoadingMore: pubLoadingMore,
+        loadMore: loadMorePublications,
+    } = usePublicationSearchFeed({
+        book: selectedBook,
+        sortBy,
+        conditions: conditionFilters,
+        genres: genreFilters,
+        excludeUid: currentUser.uid,
+    });
+
+    // --- infinite-scroll feed for the People tab ---
+    const {
+        items: people,
+        isLoadingInitial: peopleLoadingInitial,
+        isLoadingMore: peopleLoadingMore,
+        loadMore: loadMorePeople,
+    } = useUserSearchFeed({
+        searchText: debouncedPeopleQuery,
+        currentUserId: currentUser.uid,
+    });
 
     const recentSearchType = activeTab === TABS.PEOPLE
         ? RECENT_SEARCH_TYPES.PEOPLE
@@ -61,6 +86,8 @@ export default function SearchScreen({ navigation }) {
         if (activeTab === TABS.BOOKS) {
             setSelectedBook({ bookId: null, title: query });
         }
+        // For People, setSearchText above flows into the debounce effect
+        // below and populates debouncedPeopleQuery as usual.
     };
 
     const handleTabChange = (tab) => {
@@ -69,7 +96,7 @@ export default function SearchScreen({ navigation }) {
         setSearchText('');
         setResults([]);
         setSelectedBook(null);
-        setPublications([]);
+        setDebouncedPeopleQuery('');
         setSortBy(SORT_OPTIONS.RELEVANCE);
         setConditionFilters([]);
         setGenreFilters([]);
@@ -92,6 +119,8 @@ export default function SearchScreen({ navigation }) {
         if (activeTab === TABS.BOOKS && searchText.trim()) {
             setSelectedBook({ bookId: null, title: searchText.trim() });
             saveRecentSearch(searchText);
+        } else if (activeTab === TABS.PEOPLE && searchText.trim()) {
+            saveRecentSearch(searchText);
         }
     };
 
@@ -102,7 +131,9 @@ export default function SearchScreen({ navigation }) {
         setFiltersVisible(false);
     };
 
+    // Books-tab autocomplete: unchanged, one-shot debounce.
     useEffect(() => {
+        if (activeTab !== TABS.BOOKS) return;
         if (selectedBook) return;
 
         if (!searchText.trim()) {
@@ -113,52 +144,30 @@ export default function SearchScreen({ navigation }) {
         setLoading(true);
         const debounce = setTimeout(async () => {
             try {
-                if (activeTab === TABS.PEOPLE) {
-                    const users = await searchUsers(searchText, currentUser.uid);
-                    setResults(users);
-                } else {
-                    const books = await searchBookTitles(searchText , BOOK_HITS_PER_PAGE, currentUser.uid);
-                    setResults(books);
-                }
+                const books = await searchBookTitles(searchText, BOOK_HITS_PER_PAGE, currentUser.uid);
+                setResults(books);
             } catch (error) {
                 console.error("Erro na pesquisa:", error);
             } finally {
                 setLoading(false);
             }
-        }, 350);
+        }, PEOPLE_SEARCH_DEBOUNCE_MS);
 
         return () => clearTimeout(debounce);
     }, [searchText, activeTab, selectedBook, currentUser]);
 
-    // --- publications for the selected book, filtered/sorted, 10-per-page ---
-    const fetchPublicationsPage = useCallback(async (pageToLoad) => {
-        if (!selectedBook) return;
-        setPubLoading(true);
-        try {
-            const { publications: pubs, page, nbPages } = await searchPublicationsByBook(
-                selectedBook,
-                { page: pageToLoad, sortBy, conditions: conditionFilters, genres: genreFilters, excludeUid: currentUser.uid }
-            );
-            setPublications(pubs);
-            setPubPage(page);
-            setPubNbPages(nbPages);
-        } catch (error) {
-            console.error("Erro ao procurar publicações:", error);
-            setPublications([]);
-        } finally {
-            setPubLoading(false);
-        }
-    }, [selectedBook, sortBy, conditionFilters, genreFilters]);   // add genreFilters to deps
-
-
+    // People-tab: just debounce searchText into debouncedPeopleQuery.
+    // useUserSearchFeed's own effect reacts to that value changing and
+    // triggers loadInitial — no fetch call here.
     useEffect(() => {
-        if (selectedBook) fetchPublicationsPage(0);
-    }, [selectedBook, fetchPublicationsPage]);
+        if (activeTab !== TABS.PEOPLE) return;
 
-    const goToPublicationsPage = (targetPage) => {
-        if (targetPage === pubPage || targetPage < 0 || targetPage >= pubNbPages) return;
-        fetchPublicationsPage(targetPage);
-    };
+        const debounce = setTimeout(() => {
+            setDebouncedPeopleQuery(searchText.trim());
+        }, PEOPLE_SEARCH_DEBOUNCE_MS);
+
+        return () => clearTimeout(debounce);
+    }, [searchText, activeTab]);
 
     const handlePublicationPress = (publication) => {
         navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
@@ -227,50 +236,34 @@ export default function SearchScreen({ navigation }) {
         </TouchableOpacity>
     ), [styles, theme]);
 
-    const renderPagination = () => {
-        if (pubNbPages <= 1) return null;
-
-        const start = Math.max(0, Math.min(pubPage - Math.floor(PAGE_WINDOW / 2), pubNbPages - PAGE_WINDOW));
-        const end = Math.min(pubNbPages, start + PAGE_WINDOW);
-        const pages = [];
-        for (let i = Math.max(0, start); i < end; i++) pages.push(i);
-
+    const renderPublicationFooter = () => {
+        if (!pubLoadingMore) return null;
         return (
-            <View style={styles.paginationRow}>
-                <TouchableOpacity
-                    style={styles.pageArrow}
-                    onPress={() => goToPublicationsPage(pubPage - 1)}
-                    disabled={pubPage === 0}
-                >
-                    <Iconify icon="lucide:chevron-left" size={18} color={pubPage === 0 ? theme.subtext : theme.text} />
-                </TouchableOpacity>
+            <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color={theme.primary} />
+            </View>
+        );
+    };
 
-                {pages.map((p) => (
-                    <TouchableOpacity
-                        key={p}
-                        style={[styles.pageNumber, p === pubPage && styles.pageNumberActive]}
-                        onPress={() => goToPublicationsPage(p)}
-                    >
-                        <Text style={[styles.pageNumberText, p === pubPage && styles.pageNumberTextActive]}>
-                            {p + 1}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity
-                    style={styles.pageArrow}
-                    onPress={() => goToPublicationsPage(pubPage + 1)}
-                    disabled={pubPage === pubNbPages - 1}
-                >
-                    <Iconify icon="lucide:chevron-right" size={18} color={pubPage === pubNbPages - 1 ? theme.subtext : theme.text} />
-                </TouchableOpacity>
+    const renderPeopleFooter = () => {
+        if (!peopleLoadingMore) return null;
+        return (
+            <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color={theme.primary} />
             </View>
         );
     };
 
     const showingPublications = activeTab === TABS.BOOKS && !!selectedBook;
-    const renderItem = activeTab === TABS.PEOPLE ? renderUserItem : renderBookSuggestionItem;
+    const showingPeopleResults = activeTab === TABS.PEOPLE && !!searchText.trim();
     const hasActiveFilters = sortBy !== SORT_OPTIONS.RELEVANCE || conditionFilters.length > 0 || genreFilters.length > 0;
+
+    // Only true while the debounce timer is pending or the feed hasn't
+    // resolved its first page yet for the *current* text — avoids a
+    // spinner that stays tied to a stale query while typing.
+    const peopleQueryPending = activeTab === TABS.PEOPLE
+        && searchText.trim() !== debouncedPeopleQuery;
+    const peopleLoading = peopleQueryPending || peopleLoadingInitial;
 
     return (
         <View style={styles.container}>
@@ -290,7 +283,10 @@ export default function SearchScreen({ navigation }) {
                 />
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    {(loading || pubLoading) && <ActivityIndicator size="small" color={theme.secondary} />}
+                    {activeTab === TABS.PEOPLE
+                        ? (peopleLoading && <ActivityIndicator size="small" color={theme.secondary} />)
+                        : ((loading || pubLoadingInitial) && <ActivityIndicator size="small" color={theme.secondary} />)
+                    }
 
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
@@ -367,8 +363,10 @@ export default function SearchScreen({ navigation }) {
                     renderItem={renderPublicationCard}
                     columnWrapperStyle={styles.columnWrapper}
                     contentContainerStyle={styles.listContent}
+                    onEndReached={loadMorePublications}
+                    onEndReachedThreshold={0.5}
                     ListEmptyComponent={
-                        !pubLoading ? (
+                        !pubLoadingInitial ? (
                             <View style={styles.emptyState}>
                                 <Iconify icon="lucide:book-x" size={36} color={theme.subtext} />
                                 <Text style={styles.emptyStateText}>
@@ -377,27 +375,40 @@ export default function SearchScreen({ navigation }) {
                             </View>
                         ) : null
                     }
-                    ListFooterComponent={publications.length > 0 ? renderPagination : null}
+                    ListFooterComponent={renderPublicationFooter}
                     ListFooterComponentStyle={styles.footerWrapper}
                 />
-            ) : searchText.trim() ? (
+            ) : showingPeopleResults ? (
+                <FlatList
+                    key="people-one-column"
+                    data={people}
+                    keyExtractor={(item) => item.uid}
+                    renderItem={renderUserItem}
+                    keyboardShouldPersistTaps="handled"
+                    onEndReached={loadMorePeople}
+                    onEndReachedThreshold={0.5}
+                    ListEmptyComponent={
+                        !peopleLoading ? (
+                            <View style={styles.emptyState}>
+                                <Iconify icon="lucide:user-x" size={36} color={theme.subtext} />
+                                <Text style={styles.emptyStateText}>No users found</Text>
+                            </View>
+                        ) : null
+                    }
+                    ListFooterComponent={renderPeopleFooter}
+                />
+            ) : activeTab === TABS.BOOKS && searchText.trim() ? (
                 <FlatList
                     key="suggestions-one-column"
                     data={results}
-                    keyExtractor={(item) => (activeTab === TABS.PEOPLE ? item.uid : item.key)}
-                    renderItem={renderItem}
+                    keyExtractor={(item) => item.key}
+                    renderItem={renderBookSuggestionItem}
                     keyboardShouldPersistTaps="handled"
                     ListEmptyComponent={
                         !loading ? (
                             <View style={styles.emptyState}>
-                                <Iconify
-                                    icon={activeTab === TABS.PEOPLE ? "lucide:user-x" : "lucide:book-x"}
-                                    size={36}
-                                    color={theme.subtext}
-                                />
-                                <Text style={styles.emptyStateText}>
-                                    {activeTab === TABS.PEOPLE ? 'No users found' : 'No books found'}
-                                </Text>
+                                <Iconify icon="lucide:book-x" size={36} color={theme.subtext} />
+                                <Text style={styles.emptyStateText}>No books found</Text>
                             </View>
                         ) : null
                     }
