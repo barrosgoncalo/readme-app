@@ -349,6 +349,54 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
     }
 });
 
+// ==========================================
+// SCHEDULED OLD NOTIFICATIONS PURGE (CRON)
+// ==========================================
+exports.purgeOldNotifications = onSchedule("0 0 * * *", async (event) => {
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+    const cutoffValue = Timestamp.fromDate(fifteenDaysAgo);
+
+    try {
+        const snapshot = await db.collectionGroup("notifications")
+            .where("createdAt", "<=", cutoffValue)
+            .get();
+
+        if (snapshot.empty) {
+            console.log("Cleanup complete: No old notifications found.");
+            return;
+        }
+
+        console.log(`Found ${snapshot.size} old notifications. Initiating deletion process...`);
+
+        const batches = [];
+        let currentBatch = db.batch();
+        let currentBatchSize = 0;
+
+        for (const doc of snapshot.docs) {
+            currentBatch.delete(doc.ref);
+            currentBatchSize++;
+
+            if (currentBatchSize === 500) {
+                batches.push(currentBatch.commit());
+                currentBatch = db.batch();
+                currentBatchSize = 0;
+            }
+        }
+
+        if (currentBatchSize > 0) {
+            batches.push(currentBatch.commit());
+        }
+
+        await Promise.all(batches);
+
+        console.log(`Successfully purged ${snapshot.size} notifications older than 15 days.`);
+    } catch (error) {
+        console.error("Fatal error during notifications cleanup cycle:", error);
+    }
+});
+
 // ─── TRIGGER: ON FOLLOW REQUEST CREATED ───
 exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}", async (event) => {
     const requestData = event.data.data();
