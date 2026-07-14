@@ -1,17 +1,18 @@
 import { StyleSheet } from 'react-native';
+import { Fonts } from '@readme/shared/src/constants/theme';
 
 export const buildStyles = (theme) => StyleSheet.create({
     tabButtonsRow: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 12,
-        paddingHorizontal: 20,
-        marginTop: 16,
-        marginBottom: 12,
+        justifyContent: 'left',
+        gap: 8,
+        paddingHorizontal: 10,
+        marginTop: 0,
+        marginBottom: 15,
     },
     pillButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 44,
+        paddingVertical: 6,
+        paddingHorizontal: 20,
         borderRadius: 100,
         backgroundColor: theme.pillButtonMuted,
     },
@@ -181,8 +182,8 @@ export const buildStyles = (theme) => StyleSheet.create({
     },
     // --- filter button (next to tab pills) ---
     filterButton: {
-        width: 40,
-        height: 40,
+        width: 30,
+        height: 30,
         borderRadius: 20,
         backgroundColor: theme.pillButtonMuted,
         alignItems: 'center',
@@ -292,4 +293,50 @@ export const buildStyles = (theme) => StyleSheet.create({
         fontWeight: '600',
         color: theme.pillButtonActiveText,
     },
+    recentHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 8,
+    },
+    recentHeaderText: {
+        fontSize: 13,
+        fontFamily: Fonts.inter_semi,
+        color: theme.subtext,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    recentClearText: {
+        fontSize: 13,
+        fontFamily: Fonts.inter_medium,
+        color: theme.secondary,
+    },
+    recentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    recentIcon: {
+        marginRight: 12,
+    },
+    recentText: {
+        flex: 1,
+        fontSize: 15,
+        fontFamily: Fonts.inter_regular,
+        color: theme.text,
+    },
+    recentRemoveBtn: {
+        padding: 4,
+        marginLeft: 8,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: theme.borderLight,
+        marginHorizontal: 0,
+        marginBottom: 15,
+    },
+
 });
