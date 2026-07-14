@@ -19,7 +19,7 @@ export const createOfferModel = (
     isCounter = false
 ) => {
 
-    const isSingleBook = offeredBooks.length() === 1;
+    const isSingleBook = offeredBooks.length === 1;
 
     return {
         targetBookId: targetBookId,

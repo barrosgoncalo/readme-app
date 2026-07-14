@@ -56,7 +56,7 @@ export const TradeService = {
      */
     cancelSwap: async (chatId, messageId, targetBookId, finalSelectedBookId, cancelledById) => {
         try {
-            const cancelStatus = NEGOTIATION_STATUS.CANCELLED || 'cancelled';
+            const cancelStatus = NEGOTIATION_STATUS.CANCELLED;
             await ChatService.updateOfferStatus(
                 chatId,
                 messageId,
