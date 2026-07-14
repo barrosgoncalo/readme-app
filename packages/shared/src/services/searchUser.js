@@ -1,4 +1,3 @@
-import { DB } from "./DB";
 import { algoliasearch } from "algoliasearch";
 
 const API_APP_ID_KEY = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID;
@@ -6,41 +5,70 @@ const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
 
 const algoliaClient = algoliasearch(API_APP_ID_KEY, API_SEARCH_KEY);
 
-const getBlockedUserIdSet = async (currentUserUid) => {
-    const [blockedByMe, blockedMe] = await Promise.all([
-        DB.get("blocks", [{ field: "blockerUid", operator: "==", value: currentUserUid }]),
-        DB.get("blocks", [{ field: "blockedUid", operator: "==", value: currentUserUid }]),
-    ]);
+const USERS_INDEX = "users";
+const DEFAULT_HITS_PER_PAGE = 20;
 
-    const ids = new Set();
-    blockedByMe.forEach((block) => ids.add(block.blockedUid));
-    blockedMe.forEach((block) => ids.add(block.blockerUid));
+/**
+ * Builds the Algolia `filters` string excluding the current user and any
+ * blocked users. Filters directly on `objectID` since that's set to the
+ * user's uid when the record is indexed — no separate `uid` facet
+ * attribute needed (Algolia's objectID is filterable by default).
+ */
+const buildUserFilters = (excludeUid = null, blockedUids = []) => {
+    const clauses = [];
 
-    return ids;
+    if (excludeUid) {
+        clauses.push(`NOT objectID:${excludeUid}`);
+    }
+
+    // Same caveat as buildPublicationFilters in searchBook.js: fine for a
+    // handful of blocks, but a filter string built this way will hit
+    // Algolia's length limit if a blocklist grows into the dozens+.
+    blockedUids.forEach((uid) => {
+        clauses.push(`NOT objectID:${uid}`);
+    });
+
+    return clauses.join(" AND ");
 };
 
-export const searchUsers = async (searchText, currentUserUid, resultLimit = 20) => {
+/**
+ * Paginated user search, used on the People tab of the Search screen.
+ *
+ * @param {string} searchText
+ * @param {{ page?: number, hitsPerPage?: number, excludeUid?: string, blockedUids?: string[] }} options - page is 0-indexed, like Algolia
+ */
+export const searchUsers = async (
+    searchText,
+    { page = 0, hitsPerPage = DEFAULT_HITS_PER_PAGE, excludeUid = null, blockedUids = [] } = {}
+) => {
     const trimmed = searchText.trim();
-    if (!trimmed) return [];
+    if (!trimmed) {
+        return { users: [], page: 0, nbPages: 1, nbHits: 0 };
+    }
+
+    const filters = buildUserFilters(excludeUid, blockedUids);
 
     const { results } = await algoliaClient.search({
         requests: [
             {
-                indexName: "users",
+                indexName: USERS_INDEX,
                 query: trimmed,
-                hitsPerPage: resultLimit + 10,
+                ...(filters ? { filters } : {}),
+                page,
+                hitsPerPage,
             },
         ],
     });
 
-    const hits = results[0]?.hits || [];
+    const result = results[0] || {};
+    const hits = result.hits || [];
 
-    const blockedIds = await getBlockedUserIdSet(currentUserUid);
+    const users = hits.map((hit) => ({ uid: hit.objectID, ...hit }));
 
-    return hits
-        .map((hit) => {
-            return { uid: hit.objectID, ...hit };
-        })
-        .filter((user) => user.uid !== currentUserUid && !blockedIds.has(user.uid))
-        .slice(0, resultLimit);
+    return {
+        users,
+        page: result.page ?? page,
+        nbPages: result.nbPages ?? 1,
+        nbHits: result.nbHits ?? users.length,
+    };
 };

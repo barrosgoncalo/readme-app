@@ -4,9 +4,9 @@ import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { searchUsers } from '@readme/shared/src/services/searchUser';
 import { searchBookTitles, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
 import { usePublicationSearchFeed } from '@readme/shared/src/hooks/use-publication-search-feed';
+import { useUserSearchFeed } from '@readme/shared/src/hooks/use-user-search-feed';
 import {useRecentSearches} from "@readme/shared/src/hooks/use-recent-searches";
 import { RECENT_SEARCH_TYPES } from '@readme/shared/src/services/recentSearches';
 import { buildStyles } from '../../../styles/searchStyles';
@@ -14,6 +14,7 @@ import PublicationFilterModal from '../../../components/ui/PublicationFilterModa
 import { Keyboard } from 'react-native';
 
 const BOOK_HITS_PER_PAGE = 8;
+const PEOPLE_SEARCH_DEBOUNCE_MS = 350;
 
 const TABS = {
     BOOKS: 'books',
@@ -27,10 +28,14 @@ export default function SearchScreen({ navigation }) {
     const { currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState(TABS.BOOKS);
     const [searchText, setSearchText] = useState('');
+
+    // --- Books tab: autocomplete suggestions (unchanged, one-shot) ---
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
-
     const [selectedBook, setSelectedBook] = useState(null);
+
+    // --- People tab: debounced query feeding the infinite-scroll feed ---
+    const [debouncedPeopleQuery, setDebouncedPeopleQuery] = useState('');
 
     // --- filter/sort state for the publications grid ---
     const [filtersVisible, setFiltersVisible] = useState(false);
@@ -52,6 +57,17 @@ export default function SearchScreen({ navigation }) {
         excludeUid: currentUser.uid,
     });
 
+    // --- infinite-scroll feed for the People tab ---
+    const {
+        items: people,
+        isLoadingInitial: peopleLoadingInitial,
+        isLoadingMore: peopleLoadingMore,
+        loadMore: loadMorePeople,
+    } = useUserSearchFeed({
+        searchText: debouncedPeopleQuery,
+        currentUserId: currentUser.uid,
+    });
+
     const recentSearchType = activeTab === TABS.PEOPLE
         ? RECENT_SEARCH_TYPES.PEOPLE
         : RECENT_SEARCH_TYPES.BOOKS;
@@ -70,6 +86,8 @@ export default function SearchScreen({ navigation }) {
         if (activeTab === TABS.BOOKS) {
             setSelectedBook({ bookId: null, title: query });
         }
+        // For People, setSearchText above flows into the debounce effect
+        // below and populates debouncedPeopleQuery as usual.
     };
 
     const handleTabChange = (tab) => {
@@ -78,6 +96,7 @@ export default function SearchScreen({ navigation }) {
         setSearchText('');
         setResults([]);
         setSelectedBook(null);
+        setDebouncedPeopleQuery('');
         setSortBy(SORT_OPTIONS.RELEVANCE);
         setConditionFilters([]);
         setGenreFilters([]);
@@ -100,6 +119,8 @@ export default function SearchScreen({ navigation }) {
         if (activeTab === TABS.BOOKS && searchText.trim()) {
             setSelectedBook({ bookId: null, title: searchText.trim() });
             saveRecentSearch(searchText);
+        } else if (activeTab === TABS.PEOPLE && searchText.trim()) {
+            saveRecentSearch(searchText);
         }
     };
 
@@ -110,7 +131,9 @@ export default function SearchScreen({ navigation }) {
         setFiltersVisible(false);
     };
 
+    // Books-tab autocomplete: unchanged, one-shot debounce.
     useEffect(() => {
+        if (activeTab !== TABS.BOOKS) return;
         if (selectedBook) return;
 
         if (!searchText.trim()) {
@@ -121,22 +144,30 @@ export default function SearchScreen({ navigation }) {
         setLoading(true);
         const debounce = setTimeout(async () => {
             try {
-                if (activeTab === TABS.PEOPLE) {
-                    const users = await searchUsers(searchText, currentUser.uid);
-                    setResults(users);
-                } else {
-                    const books = await searchBookTitles(searchText , BOOK_HITS_PER_PAGE, currentUser.uid);
-                    setResults(books);
-                }
+                const books = await searchBookTitles(searchText, BOOK_HITS_PER_PAGE, currentUser.uid);
+                setResults(books);
             } catch (error) {
                 console.error("Erro na pesquisa:", error);
             } finally {
                 setLoading(false);
             }
-        }, 350);
+        }, PEOPLE_SEARCH_DEBOUNCE_MS);
 
         return () => clearTimeout(debounce);
     }, [searchText, activeTab, selectedBook, currentUser]);
+
+    // People-tab: just debounce searchText into debouncedPeopleQuery.
+    // useUserSearchFeed's own effect reacts to that value changing and
+    // triggers loadInitial — no fetch call here.
+    useEffect(() => {
+        if (activeTab !== TABS.PEOPLE) return;
+
+        const debounce = setTimeout(() => {
+            setDebouncedPeopleQuery(searchText.trim());
+        }, PEOPLE_SEARCH_DEBOUNCE_MS);
+
+        return () => clearTimeout(debounce);
+    }, [searchText, activeTab]);
 
     const handlePublicationPress = (publication) => {
         navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
@@ -214,9 +245,25 @@ export default function SearchScreen({ navigation }) {
         );
     };
 
+    const renderPeopleFooter = () => {
+        if (!peopleLoadingMore) return null;
+        return (
+            <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color={theme.primary} />
+            </View>
+        );
+    };
+
     const showingPublications = activeTab === TABS.BOOKS && !!selectedBook;
-    const renderItem = activeTab === TABS.PEOPLE ? renderUserItem : renderBookSuggestionItem;
+    const showingPeopleResults = activeTab === TABS.PEOPLE && !!searchText.trim();
     const hasActiveFilters = sortBy !== SORT_OPTIONS.RELEVANCE || conditionFilters.length > 0 || genreFilters.length > 0;
+
+    // Only true while the debounce timer is pending or the feed hasn't
+    // resolved its first page yet for the *current* text — avoids a
+    // spinner that stays tied to a stale query while typing.
+    const peopleQueryPending = activeTab === TABS.PEOPLE
+        && searchText.trim() !== debouncedPeopleQuery;
+    const peopleLoading = peopleQueryPending || peopleLoadingInitial;
 
     return (
         <View style={styles.container}>
@@ -236,7 +283,10 @@ export default function SearchScreen({ navigation }) {
                 />
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    {(loading || pubLoadingInitial) && <ActivityIndicator size="small" color={theme.secondary} />}
+                    {activeTab === TABS.PEOPLE
+                        ? (peopleLoading && <ActivityIndicator size="small" color={theme.secondary} />)
+                        : ((loading || pubLoadingInitial) && <ActivityIndicator size="small" color={theme.secondary} />)
+                    }
 
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
@@ -328,24 +378,37 @@ export default function SearchScreen({ navigation }) {
                     ListFooterComponent={renderPublicationFooter}
                     ListFooterComponentStyle={styles.footerWrapper}
                 />
-            ) : searchText.trim() ? (
+            ) : showingPeopleResults ? (
+                <FlatList
+                    key="people-one-column"
+                    data={people}
+                    keyExtractor={(item) => item.uid}
+                    renderItem={renderUserItem}
+                    keyboardShouldPersistTaps="handled"
+                    onEndReached={loadMorePeople}
+                    onEndReachedThreshold={0.5}
+                    ListEmptyComponent={
+                        !peopleLoading ? (
+                            <View style={styles.emptyState}>
+                                <Iconify icon="lucide:user-x" size={36} color={theme.subtext} />
+                                <Text style={styles.emptyStateText}>No users found</Text>
+                            </View>
+                        ) : null
+                    }
+                    ListFooterComponent={renderPeopleFooter}
+                />
+            ) : activeTab === TABS.BOOKS && searchText.trim() ? (
                 <FlatList
                     key="suggestions-one-column"
                     data={results}
-                    keyExtractor={(item) => (activeTab === TABS.PEOPLE ? item.uid : item.key)}
-                    renderItem={renderItem}
+                    keyExtractor={(item) => item.key}
+                    renderItem={renderBookSuggestionItem}
                     keyboardShouldPersistTaps="handled"
                     ListEmptyComponent={
                         !loading ? (
                             <View style={styles.emptyState}>
-                                <Iconify
-                                    icon={activeTab === TABS.PEOPLE ? "lucide:user-x" : "lucide:book-x"}
-                                    size={36}
-                                    color={theme.subtext}
-                                />
-                                <Text style={styles.emptyStateText}>
-                                    {activeTab === TABS.PEOPLE ? 'No users found' : 'No books found'}
-                                </Text>
+                                <Iconify icon="lucide:book-x" size={36} color={theme.subtext} />
+                                <Text style={styles.emptyStateText}>No books found</Text>
                             </View>
                         ) : null
                     }

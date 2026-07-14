@@ -2,13 +2,16 @@
  * Wraps an Algolia-style page-based search fn into the
  * {items, nextCursor, hasMore} shape usePaginatedList expects.
  * Cursor here is just an integer page number.
+ *
+ * `itemsKey` lets this be reused across search functions that return
+ * their hits under different keys (e.g. `publications` vs `users`).
  */
-export function algoliaPageAdapter(searchFn) {
+export function algoliaPageAdapter(searchFn, itemsKey = 'publications') {
     return async (cursor) => {
         const page = cursor ?? 0;
         const result = await searchFn({ page });
         return {
-            items: result.publications ?? [],
+            items: result[itemsKey] ?? [],
             nextCursor: page + 1,
             hasMore: (page + 1) < (result.nbPages ?? 1),
         };
