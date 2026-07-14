@@ -8,13 +8,16 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
 
 const Notification = require("./models/notification");
 const { PUBLICATION_STATUS_AVAILABLE, NEGOTIATION_STATUS } = require("./constants/negotiation");
 const { GAMIFICATION_RANKS } = require("./constants/gamification");
 const { sendPushNotification } = require("./utils/pushNotification");
 
-initializeApp();
+initializeApp({
+    storageBucket: "readme---bookworms.firebasestorage.app"
+});
 const db = getFirestore();
 
 setGlobalOptions({ 
@@ -338,14 +341,92 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
 
         console.log(`Found ${snapshot.size} inactive chats. Initiating deletion process...`);
 
+        const bucket = getStorage().bucket();
+
         for (const doc of snapshot.docs) {
-            await db.recursiveDelete(doc.ref);
-            console.log(`Successfully purged chat ID: ${doc.id}`);
+            const chatRef = doc.ref;
+            const chatId = doc.id;
+
+            console.log(`--- Processing Chat ID: ${chatId} ---`);
+
+            // 1. Gather all referenced book IDs from this specific chat
+            const messagesSnap = await chatRef.collection("messages").get();
+            const referencedBookIds = new Set();
+
+            messagesSnap.forEach(msgDoc => {
+                const data = msgDoc.data();
+                if (data.type === 'offer' && data.offerDetails) {
+                    const offer = data.offerDetails;
+                    
+                    if (offer.targetBookId) referencedBookIds.add(offer.targetBookId);
+                    if (offer.finalSelectedBookId) referencedBookIds.add(offer.finalSelectedBookId);
+                    
+                    if (Array.isArray(offer.offeredBookIds)) {
+                        offer.offeredBookIds.forEach(id => {
+                            if (id) referencedBookIds.add(id);
+                        });
+                    }
+                }
+            });
+
+            console.log(`[LOG] Extracted ${referencedBookIds.size} unique book IDs from chat ${chatId}:`, Array.from(referencedBookIds));
+
+            // 2. Delete the chat and its messages FIRST so they don't trigger our safety check below
+            await db.recursiveDelete(chatRef);
+            console.log(`[LOG] Successfully purged Firestore document for chat ID: ${chatId}`);
+
+            // 3. Check which books no longer exist AND have no other chats referencing them
+            for (const bookId of referencedBookIds) {
+                console.log(`[LOG] Evaluating book ID: ${bookId} for storage deletion...`);
+                try {
+                    const pubDoc = await db.collection("publications").doc(bookId).get();
+                    
+                    if (pubDoc.exists) {
+                        console.log(`[LOG] Publication ${bookId} STILL EXISTS in Firestore. Skipping storage deletion.`);
+                        continue; // Move to the next book
+                    }
+
+                    console.log(`[LOG] Publication ${bookId} is deleted. Initiating safety queries...`);
+                    
+                    // Safety check queries
+                    const targetQuery = await db.collectionGroup('messages')
+                        .where('offerDetails.targetBookId', '==', bookId)
+                        .limit(1)
+                        .get();
+
+                    const offeredQuery = await db.collectionGroup('messages')
+                        .where('offerDetails.offeredBookIds', 'array-contains', bookId)
+                        .limit(1)
+                        .get();
+
+                    console.log(`[LOG] Safety Check Results for ${bookId} - Found as target: ${!targetQuery.empty} | Found as offered: ${!offeredQuery.empty}`);
+
+                    // If it's not found in ANY other chat's messages, it is completely orphaned
+                    if (targetQuery.empty && offeredQuery.empty) {
+                        console.log(`[LOG] Book ${bookId} is completely orphaned. Wiping from Storage...`);
+                        await bucket.deleteFiles({ 
+                            prefix: `books/${bookId}/` 
+                        });
+                        console.log(`✅ Safely purged completely orphaned images for book: ${bookId}`);
+                    } else {
+                        console.log(`[LOG] Skipped image deletion for ${bookId}: still referenced in other active chats.`);
+                    }
+                    
+                } catch (internalError) {
+                    // This catch block is highly detailed so we can spot missing indexes instantly
+                    console.error(`❌ [ERROR] Failed processing book ${bookId} in chat ${chatId}. Reason:`, internalError);
+                    
+                    if (internalError.message && internalError.message.includes('FAILED_PRECONDITION')) {
+                        console.error(`🚨 MISSING INDEX DETECTED! Firestore blocked the query for ${bookId}. Click the link in the error above to create it.`);
+                    }
+                }
+            }
+            console.log(`--- Finished Processing Chat ID: ${chatId} ---`);
         }
 
-        console.log("All old conversations successfully processed.");
+        console.log("All old conversations and their orphaned media successfully processed.");
     } catch (error) {
-        console.error("Fatal error during chat cleanup cycle:", error);
+        console.error("Fatal error during overall chat cleanup cycle:", error);
     }
 });
 
