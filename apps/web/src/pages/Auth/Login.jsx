@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+// Import your shared auth service helper
+import { doSignInWithEmailAndPassword } from '@readme/shared/src/services/auth';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -15,11 +16,21 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await signInWithEmailAndPassword(getAuth(), email, password);
-            navigate('/admin', { replace: true });
+            // Call your shared service wrapper
+            const result = await doSignInWithEmailAndPassword(email, password);
+            
+            // Log for debugging to make sure we got the role
+            console.log("Logged in user data:", result.userData);
+
+            if (result.userData?.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                setError("Access denied. You do not have administrative privileges.");
+            }
         } catch (err) {
             console.error("Login failed:", err);
-            setError("Invalid credentials. Please verify your administrative access.");
+            // Show the exact error message thrown by your shared service
+            setError(err.message || "Invalid credentials. Please verify your administrative access.");
         } finally {
             setLoading(false);
         }
@@ -51,7 +62,7 @@ export default function Login() {
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: '#aaa' }}>Email Address</label>
                     <input 
                         type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                        style={{ width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '4px', backgroundColor: '#262626', color: '#fff', boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '4px', backgroundColor: '#262626', color: '#fff', boxSizing: 'border-box', fontSize: '15px' }}
                     />
                 </div>
 
@@ -59,13 +70,13 @@ export default function Login() {
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: '#aaa' }}>Password</label>
                     <input 
                         type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                        style={{ width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '4px', backgroundColor: '#262626', color: '#fff', boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '4px', backgroundColor: '#262626', color: '#fff', boxSizing: 'border-box', fontSize: '15px' }}
                     />
                 </div>
 
                 <button 
                     type="submit" disabled={loading}
-                    style={{ width: '100%', padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+                    style={{ width: '100%', padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px', opacity: loading ? 0.7 : 1 }}
                 >
                     {loading ? 'Authenticating...' : 'Secure Sign In'}
                 </button>
