@@ -126,16 +126,18 @@ export default function UsersPage() {
                                         {user.uid === auth.currentUser?.uid ? (
                                             <span className={styles.youLabel}>You</span>
                                         ) : (
-                                            <button
-                                                className={user.role === 'admin' ? `${styles.actionBtn} ${styles.demote}` : `${styles.actionBtn} ${styles.promote}`}
-                                                disabled={actionLoading !== null}
-                                                onClick={() => handleRoleChange(user.uid, user.role)}
-                                            >
-                                                {actionLoading === user.uid
-                                                    ? 'Saving…'
-                                                    : user.role === 'admin' ? 'Demote' : 'Promote'
-                                                }
-                                            </button>
+                                                        <button
+                                                            className={user.role === 'admin' 
+                                                                ? `${styles.actionBtn} ${styles.demote}` 
+                                                                : `${styles.actionBtn} ${styles.promote}`}
+                                                            disabled={actionLoading === user.uid}
+                                                            onClick={() => handleRoleChange(user.uid, user.role)}
+                                                        >
+                                                            {actionLoading === user.uid
+                                                                ? 'Saving…'
+                                                                : user.role === 'admin' ? 'Demote' : 'Promote'
+                                                            }
+                                                        </button>
                                         )}
                                     </td>
                                 </tr>
