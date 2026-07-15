@@ -4,6 +4,7 @@ export const ADMIN_ROUTES = {
     DASHBOARD: '/admin',
     USERS: '/admin/users',
     REPORTS: '/admin/reports',
+    PUBLICATIONS: '/admin/publications',
     SETTINGS: '/admin/settings',
     LOGS: '/admin/logs',
 };
