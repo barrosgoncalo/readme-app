@@ -7,7 +7,7 @@ import { DB } from './DB';
 
 const REPORTS_COLLECTION = 'reports';
 const MAX_SNAPSHOT_MESSAGES = 25;
-const MAX_MESSAGE_TEXT_LENGTH = 400;
+const MAX_MESSAGE_TEXT_LENGTH = 9000;
 
 const _getMessageTime = (m) => m.createdAt?.toMillis?.() ?? m.clientTimestamp ?? 0;
 
@@ -46,19 +46,24 @@ export const ReportsService = {
     /**
      * Builds the contextSnapshot for a publication report.
      */
+    /**
+     * Builds the contextSnapshot for a publication report.
+     */
     buildPublicationSnapshot: (publication = {}) => {
-        const detailsText = publication?.detailsText || "";
+        // Handle both flat normalized objects and raw nested publication objects
+        const bookData = publication?.book || publication;
+        const detailsText = publication?.detailsText || publication?.description || "";
 
         return {
-            title: publication?.book?.title || "Unknown Title",
-            image: publication?.book?.images?.[0] || null,
-            sellerName: publication?.sellerName || "Anonymous Swapper",
+            title: bookData?.title || "Unknown Title",
+            author: bookData?.author || "Unknown Author", // <-- Added author here
+            images: bookData?.images || [],
+            sellerName: publication?.sellerName || publication?.seller?.name || "Anonymous Swapper",
             detailsText: detailsText.length > MAX_MESSAGE_TEXT_LENGTH
                 ? `${detailsText.slice(0, MAX_MESSAGE_TEXT_LENGTH)}…`
                 : detailsText,
         };
     },
-
     /**
      * Builds the contextSnapshot for an account report.
      */

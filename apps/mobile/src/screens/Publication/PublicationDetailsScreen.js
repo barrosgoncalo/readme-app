@@ -1,6 +1,6 @@
-import React from 'react'; 
+import React from 'react';
 import { View, Text, TouchableOpacity} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; 
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
 
@@ -44,12 +44,12 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const passedData = route?.params?.publication;
     const book = extractBookDetails(passedData);
     const passedSeller = route?.params?.seller;
-    
+
     // Flags for specific public context logic (e.g. public profile feed)
     const hideOfferButton = route?.params?.hideOfferButton || false;
     const hideSellerCard = route?.params?.hideSellerCard || false;
 
-    const { seller, isFavorited, handleToggleFavorite } = usePublicationDetails(book, passedSeller);
+    const { seller, isFavorited, handleToggleFavorite, handleReportPublication, canReport } = usePublicationDetails(book, passedSeller);
 
     const sellerRating = Number(seller?.rating) || 0;
     const sellerReviewCount = Number(seller?.reviewCount ?? seller?.reviews) || 0;
@@ -70,22 +70,29 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         navigation.navigate(ROUTES.STEP_ONE_OFFER);
     };
 
-    // --- Compose UI Parts ---
+// --- Compose UI Parts ---
     const renderTopActions = () => (
         <>
             <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
                 <Iconify icon="lucide:arrow-left" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={handleToggleFavorite}>
-                <Iconify 
-                    icon={isFavorited ? "mdi:cards-heart" : "mdi:cards-heart-outline"} 
-                    size={24} 
-                    color={isFavorited ? theme.heart : theme.pureWhite} 
-                />
-            </TouchableOpacity>
+
+            <View style={{ alignItems: 'center' }}>
+                {canReport && (
+                    <TouchableOpacity style={styles.iconButton} onPress={handleReportPublication}>
+                        <Iconify icon="lucide:flag" size={22} color="#FFFFFF" />
+                    </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.iconButton} onPress={handleToggleFavorite}>
+                    <Iconify
+                        icon={isFavorited ? "mdi:cards-heart" : "mdi:cards-heart-outline"}
+                        size={24}
+                        color={isFavorited ? theme.heart : theme.pureWhite}
+                    />
+                </TouchableOpacity>
+            </View>
         </>
     );
-
     const renderSellerCard = () => {
         if (hideSellerCard) return null;
         return (

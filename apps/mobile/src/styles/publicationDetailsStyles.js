@@ -75,6 +75,7 @@ export const buildBookDetailsStyles = (theme) => {
             justifyContent: 'center',
             alignItems: 'center',
             opacity: 0.9,
+            marginBottom: 10,
         },
         detailsContainer: {
             paddingHorizontal: 20,
