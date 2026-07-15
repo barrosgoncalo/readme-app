@@ -2,11 +2,9 @@
 
 import { algoliasearch } from "algoliasearch";
 import { PUBLICATION_STATUS } from "../constants/status";
+import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY } from '../constants/env';
 
-const API_APP_ID_KEY = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID;
-const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
-
-const algoliaClient = algoliasearch(API_APP_ID_KEY, API_SEARCH_KEY);
+const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
 
 const PUBLICATIONS_INDEX = "publications";
 const DEFAULT_HITS_PER_PAGE = 15;
