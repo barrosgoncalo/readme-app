@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, TextInput, Text, TouchableOpacity, Image } from 'react-native';
+import { Image } from 'expo-image';
+import { View, TextInput, Text, TouchableOpacity } from 'react-native';
 
 export default function StepThreeAddress({
     addressLine1, setAddressLine1,

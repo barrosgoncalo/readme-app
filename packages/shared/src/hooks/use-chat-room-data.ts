@@ -10,11 +10,12 @@ export function useChatRoomData(chatId, currentUserId, targetSeller) {
     );
     const [otherUserAvatar, setOtherUserAvatar] = useState(targetSeller?.avatarUrl || null);
     const [otherUserId, setOtherUserId] = useState(targetSeller?.uid || null);
-
     const [bookImage, setBookImage] = useState(null);
     const [publicationId, setPublicationId] = useState(null);
     const [chatLocation, setChatLocation] = useState(null);
     const [reviewedSwapIds, setReviewedSwapIds] = useState(new Set());
+    const [isChatDisabled, setIsChatDisabled] = useState(false);
+    const [disabledReason, setDisabledReason] = useState(null);
 
     // --- CHAT METADATA ---
     useEffect(() => {
@@ -29,6 +30,8 @@ export function useChatRoomData(chatId, currentUserId, targetSeller) {
                 if (metadata.otherUid) setOtherUserId(metadata.otherUid);
                 if (metadata.otherUserName) setOtherUserName(metadata.otherUserName);
                 if (metadata.otherUserAvatar) setOtherUserAvatar(metadata.otherUserAvatar);
+                setIsChatDisabled(metadata.isChatDisabled ?? false);
+                setDisabledReason(metadata.disabledReason ?? null);
             })
             .catch(error => console.error("Error fetching chat metadata:", error));
         return () => { cancelled = true; };
@@ -75,6 +78,8 @@ export function useChatRoomData(chatId, currentUserId, targetSeller) {
         bookImage,
         publicationId,
         chatLocation,
-        reviewedSwapIds
+        reviewedSwapIds,
+        isChatDisabled,
+        disabledReason,
     };
 }

@@ -32,7 +32,11 @@ export const useNotifications = () => {
                 setNotifications(data as Notification[]);
                 setLoading(false);
             },
-            (error: Error) => {
+            (error: any) => {
+                if (error?.code === 'permission-denied') {
+                    return; 
+                }
+                
                 console.error("Error streaming notifications via DB layer:", error);
                 setLoading(false);
             }
