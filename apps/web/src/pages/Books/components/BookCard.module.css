@@ -280,36 +280,210 @@
     color: var(--secondary);
 }
 
-/* ── Grid card ── */
+/* ── Grid card (cover-forward) ── */
 .gridCard {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-3);
-    background: var(--bg-elem);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--bg-selected);
+    gap: 10px;
+    padding: 4px 4px 8px;
+    background: transparent;
+    border: none;
     cursor: pointer;
-    transition: box-shadow var(--transition-base), transform var(--transition-base);
 }
 
-.gridCard:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+/* The cover is the object — asymmetric radius + grounded shadow read as a book. */
+.coverFrame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: 3px 8px 8px 3px;
+    box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.35);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+    overflow: hidden;
 }
 
-.gridSelected {
-    border-color: var(--primary);
-    box-shadow: var(--shadow-md);
+.gridCard:hover .coverFrame {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 28px -8px rgba(0, 0, 0, 0.42);
+}
+
+.gridSelected .coverFrame {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .gridCover {
     width: 100%;
-    aspect-ratio: 2 / 3;
+    height: 100%;
     object-fit: cover;
-    border-radius: var(--radius);
     display: block;
+}
+
+/* Left-edge spine highlight/shadow, layered over any cover. */
+.spine {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.28) 0,
+        rgba(0, 0, 0, 0.04) 6px,
+        rgba(255, 255, 255, 0.07) 8px,
+        transparent 15px
+    );
+}
+
+/* Generated "cloth cover" for books with no image. */
+.generatedCover {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 14px 12px;
+    gap: 10px;
+    position: relative;
+}
+
+.generatedCover::before,
+.generatedCover::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.generatedCover::before { top: 14px; }
+.generatedCover::after { bottom: 14px; }
+
+.generatedTitle {
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #F2F0EF;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.generatedAuthor {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(242, 240, 239, 0.72);
+}
+
+/* Smaller generated cover for the featured (Currently Reading) card. */
+.generatedCoverSmall {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 8px 6px;
+    gap: 4px;
+    border-radius: 6px;
+}
+
+.generatedTitleSmall {
+    font-family: var(--font-serif);
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #F2F0EF;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.generatedAuthorSmall {
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(242, 240, 239, 0.72);
+}
+
+/* Tiny generated cover for the row thumbnail — a color swatch, no text. */
+.generatedCoverTiny {
+    display: block;
+}
+
+/* Status dot in a cover corner. */
+.cornerDot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover-revealed actions, top-left of the cover. */
+.hoverActions {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.gridCard:hover .hoverActions,
+.gridCard:focus-within .hoverActions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.coverBtn {
+    background: rgba(28, 26, 25, 0.6);
+    border: none;
+    color: #F2F0EF;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(2px);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.coverBtn:hover:not(:disabled) {
+    background: rgba(28, 26, 25, 0.85);
+}
+
+.coverBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.coverBtn.favoriteActive {
+    color: var(--secondary);
+}
+
+/* Reading progress hugging the cover's bottom edge. */
+.coverProgress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    background: rgba(28, 26, 25, 0.25);
+}
+
+.coverProgressFill {
+    height: 100%;
+    background: var(--secondary);
+    transition: width 0.3s ease;
 }
 
 .gridTitle {
@@ -335,7 +509,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .gridCard:hover {
+    .gridCard:hover .coverFrame {
         transform: none;
     }
 }

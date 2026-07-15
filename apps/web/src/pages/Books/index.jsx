@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, LayoutGrid, List } from 'lucide-react';
+import { Plus, LayoutGrid, List, Heart } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import {
     myBooksService,
@@ -11,7 +11,7 @@ import {
 } from '@readme/shared/src/services/booksCatalog';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { sanitizeIsbn } from '@readme/shared/src/utils/isbn';
-import { BOOK_STATUS } from '@readme/shared/src/constants/bookStatus';
+import { BOOK_STATUS, BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Button from '../../components/Button.jsx';
@@ -21,6 +21,17 @@ import BookCard from './components/BookCard.jsx';
 import AddBookForm from './components/AddBookForm.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes.js';
 import styles from './Books.module.css';
+
+const FILTER_ALL = 'all';
+const FILTER_FAVORITES = 'favorites';
+
+const FILTERS = [
+    { key: FILTER_ALL, label: 'All' },
+    { key: BOOK_STATUS.READING, label: BOOK_STATUS_LABELS[BOOK_STATUS.READING] },
+    { key: BOOK_STATUS.WANT, label: BOOK_STATUS_LABELS[BOOK_STATUS.WANT] },
+    { key: BOOK_STATUS.DONE, label: BOOK_STATUS_LABELS[BOOK_STATUS.DONE] },
+    { key: FILTER_FAVORITES, label: 'Favorites' },
+];
 
 function groupByMonth(books) {
     const groups = {};
@@ -52,6 +63,7 @@ export default function Books({ compact = false, selectedBookId = null }) {
 
     const [busyId, setBusyId] = useState(null);
     const [viewMode, setViewMode] = useState('grid');
+    const [activeFilter, setActiveFilter] = useState(FILTER_ALL);
 
     const load = useCallback(async () => {
         if (!uid) return;
@@ -152,8 +164,18 @@ export default function Books({ compact = false, selectedBookId = null }) {
         }
     }
 
-    const currentlyReading = books.filter(b => (b.status || BOOK_STATUS.READING) === BOOK_STATUS.READING);
-    const rest = books.filter(b => (b.status || BOOK_STATUS.READING) !== BOOK_STATUS.READING);
+    const filteredBooks = books.filter(b => {
+        if (activeFilter === FILTER_ALL) return true;
+        if (activeFilter === FILTER_FAVORITES) return favoriteIds.has(b.id);
+        return (b.status || BOOK_STATUS.READING) === activeFilter;
+    });
+
+    const currentlyReading = activeFilter === FILTER_ALL
+        ? filteredBooks.filter(b => (b.status || BOOK_STATUS.READING) === BOOK_STATUS.READING)
+        : [];
+    const rest = activeFilter === FILTER_ALL
+        ? filteredBooks.filter(b => (b.status || BOOK_STATUS.READING) !== BOOK_STATUS.READING)
+        : filteredBooks;
     const monthGroups = groupByMonth(rest);
 
     return (
@@ -190,6 +212,22 @@ export default function Books({ compact = false, selectedBookId = null }) {
                 </div>
             )}
 
+            {!compact && books.length > 0 && (
+                <div className={styles.filterBar} role="group" aria-label="Filter books">
+                    {FILTERS.map(f => (
+                        <button
+                            key={f.key}
+                            type="button"
+                            className={`${styles.filterPill} ${activeFilter === f.key ? styles.filterPillActive : ''}`}
+                            onClick={() => setActiveFilter(f.key)}
+                        >
+                            {f.key === FILTER_FAVORITES && <Heart size={13} />}
+                            {f.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             <ErrorAlert>{loadError}</ErrorAlert>
 
             {showAddForm && (
@@ -210,22 +248,55 @@ export default function Books({ compact = false, selectedBookId = null }) {
                     actionLabel="Add your first book"
                     onAction={() => setShowAddForm(true)}
                 />
+            ) : filteredBooks.length === 0 && !showAddForm ? (
+                <EmptyState
+                    title="No books here"
+                    message="No books match this filter yet."
+                />
             ) : viewMode === 'grid' && !compact ? (
-                <div className={styles.bookGrid}>
-                    {books.map(book => (
-                        <BookCard
-                            key={book.id}
-                            book={book}
-                            variant="grid"
-                            isSelected={selectedBookId === book.id}
-                            isFavorite={favoriteIds.has(book.id)}
-                            onToggleFavorite={() => handleToggleFavorite(book.id)}
-                            onRemove={() => handleRemove(book.id)}
-                            onRate={(rating) => handleRate(book.id, rating)}
-                            onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
-                            busy={busyId === book.id}
-                        />
-                    ))}
+                <div className={styles.gridView}>
+                    {currentlyReading.length > 0 && (
+                        <section>
+                            <p className={styles.sectionLabel}>Currently Reading</p>
+                            <div className={styles.spotlightGrid}>
+                                {currentlyReading.map(book => (
+                                    <BookCard
+                                        key={book.id}
+                                        book={book}
+                                        variant="featured"
+                                        isSelected={selectedBookId === book.id}
+                                        isFavorite={favoriteIds.has(book.id)}
+                                        onToggleFavorite={() => handleToggleFavorite(book.id)}
+                                        onRemove={() => handleRemove(book.id)}
+                                        onRate={(rating) => handleRate(book.id, rating)}
+                                        onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
+                                        busy={busyId === book.id}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {rest.length > 0 && (
+                        <section>
+                            {currentlyReading.length > 0 && <p className={styles.sectionLabel}>On your shelf</p>}
+                            <div className={styles.bookGrid}>
+                                {rest.map(book => (
+                                    <BookCard
+                                        key={book.id}
+                                        book={book}
+                                        variant="grid"
+                                        isSelected={selectedBookId === book.id}
+                                        isFavorite={favoriteIds.has(book.id)}
+                                        onToggleFavorite={() => handleToggleFavorite(book.id)}
+                                        onRemove={() => handleRemove(book.id)}
+                                        onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
+                                        busy={busyId === book.id}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
             ) : (
                 <>

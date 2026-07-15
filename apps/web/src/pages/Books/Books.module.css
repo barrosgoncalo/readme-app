@@ -82,6 +82,56 @@
     color: var(--text);
 }
 
+.filterBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filterPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    color: var(--subtext);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.filterPill:hover {
+    color: var(--text);
+    border-color: var(--subtext);
+}
+
+.filterPillActive {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-text);
+}
+
+.filterPillActive:hover {
+    color: var(--primary-text);
+}
+
+/* ── Grid view: spotlight + shelf ── */
+.gridView {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.spotlightGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-3);
+}
+
 .bookGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -119,6 +169,10 @@
 @media (max-width: 720px) {
     .viewToggle {
         display: none;
+    }
+
+    .spotlightGrid {
+        grid-template-columns: 1fr;
     }
 
     .bookGrid {

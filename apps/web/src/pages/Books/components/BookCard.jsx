@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Heart, Trash2, SquarePen } from 'lucide-react';
 import { BOOK_STATUS, BOOK_STATUS_LABELS } from '@readme/shared/src/constants/bookStatus';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
-import BookCover from '../../../components/BookCover.jsx';
+import { coverColorFor } from '../../../utils/generatedCover.js';
 import styles from './BookCard.module.css';
 
 const STATUS_COLORS = {
@@ -39,10 +39,105 @@ function StarRating({ rating, onRate, size = 'md', disabled }) {
     );
 }
 
+// Cover image, or a generated cloth cover (title/author typeset on a
+// title-hashed color) when there's no usable cover image. Some cover URLs
+// (e.g. Open Library's ISBN lookup without ?default=false) resolve to a
+// broken or suspiciously tiny placeholder rather than failing outright, so
+// both onError and an undersized-image check fall back to the generated
+// cover too.
+function CoverArt({ book, authors, imgClassName, generatedClassName, titleClassName, authorClassName }) {
+    const [imgFailed, setImgFailed] = useState(false);
+
+    if (book.coverUrl && !imgFailed) {
+        return (
+            <img
+                src={book.coverUrl}
+                alt=""
+                className={imgClassName}
+                onError={() => setImgFailed(true)}
+                onLoad={(e) => {
+                    if (e.target.naturalWidth > 0 && e.target.naturalWidth < 10) {
+                        setImgFailed(true);
+                    }
+                }}
+            />
+        );
+    }
+
+    return (
+        <div className={generatedClassName} style={{ backgroundColor: coverColorFor(book.title || '') }}>
+            {titleClassName && <span className={titleClassName}>{book.title || 'Untitled'}</span>}
+            {authorClassName && <span className={authorClassName}>{authors || 'Unknown author'}</span>}
+        </div>
+    );
+}
+
+// The cover-as-object: image or generated cloth cover, spine highlight,
+// status corner dot, hover-revealed favorite/remove actions, and a reading
+// progress bar hugging the bottom edge.
+function CoverFrame({ book, authors, status, isFavorite, onToggleFavorite, onRemove, busy }) {
+    const showProgress = status === BOOK_STATUS.READING && typeof book.progress === 'number';
+    const stop = (e) => e.stopPropagation();
+
+    return (
+        <div className={styles.coverFrame}>
+            <CoverArt
+                book={book}
+                authors={authors}
+                imgClassName={styles.gridCover}
+                generatedClassName={styles.generatedCover}
+                titleClassName={styles.generatedTitle}
+                authorClassName={styles.generatedAuthor}
+            />
+
+            <span className={styles.spine} aria-hidden="true" />
+
+            <span
+                className={`${styles.cornerDot} ${STATUS_COLORS[status]}`}
+                title={BOOK_STATUS_LABELS[status]}
+            />
+
+            <div className={styles.hoverActions} onClick={stop}>
+                <button
+                    type="button"
+                    className={`${styles.coverBtn} ${isFavorite ? styles.favoriteActive : ''}`}
+                    onClick={onToggleFavorite}
+                    disabled={busy}
+                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                    <Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} />
+                </button>
+                <button
+                    type="button"
+                    className={styles.coverBtn}
+                    onClick={onRemove}
+                    disabled={busy}
+                    title="Remove from shelf"
+                >
+                    <Trash2 size={15} />
+                </button>
+            </div>
+
+            {showProgress && (
+                <div className={styles.coverProgress}>
+                    <div className={styles.coverProgressFill} style={{ width: `${book.progress}%` }} />
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function BookCard({ book, variant = 'row', isFavorite, isSelected, onToggleFavorite, onRemove, onRate, onEdit, busy }) {
     const authors = formatAuthors(book.authors);
     const status = book.status || BOOK_STATUS.READING;
     const day = book.addedAt ? new Date(book.addedAt).getDate() : null;
+
+    const cardKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onEdit?.();
+        }
+    };
 
     if (variant === 'grid') {
         return (
@@ -51,32 +146,19 @@ export default function BookCard({ book, variant = 'row', isFavorite, isSelected
                 onClick={onEdit}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onEdit?.();
-                    }
-                }}
+                onKeyDown={cardKeyDown}
             >
-                <BookCover
-                    coverUrl={book.coverUrl}
-                    imgClassName={styles.gridCover}
-                    placeholderClassName={`${styles.gridCover} ${styles.coverPlaceholder}`}
-                    iconSize={24}
+                <CoverFrame
+                    book={book}
+                    authors={authors}
+                    status={status}
+                    isFavorite={isFavorite}
+                    onToggleFavorite={onToggleFavorite}
+                    onRemove={onRemove}
+                    busy={busy}
                 />
                 <p className={styles.gridTitle}>{book.title || 'Untitled'}</p>
                 <p className={styles.gridAuthors}>{authors || 'Unknown author'}</p>
-                <span className={styles.statusPill}>
-                    <span className={`${styles.dot} ${STATUS_COLORS[status]}`} />
-                    {BOOK_STATUS_LABELS[status]}
-                </span>
-                {typeof book.progress === 'number' && (
-                    <div className={styles.progressWrap}>
-                        <div className={styles.progressBar}>
-                            <div className={styles.progressFill} style={{ width: `${book.progress}%` }} />
-                        </div>
-                    </div>
-                )}
             </div>
         );
     }
@@ -85,11 +167,13 @@ export default function BookCard({ book, variant = 'row', isFavorite, isSelected
         return (
             <div className={styles.featured}>
                 <div className={styles.featuredCoverWrap}>
-                    <BookCover
-                        coverUrl={book.coverUrl}
+                    <CoverArt
+                        book={book}
+                        authors={authors}
                         imgClassName={styles.featuredCover}
-                        placeholderClassName={`${styles.featuredCover} ${styles.coverPlaceholder}`}
-                        iconSize={28}
+                        generatedClassName={`${styles.featuredCover} ${styles.generatedCoverSmall}`}
+                        titleClassName={styles.generatedTitleSmall}
+                        authorClassName={styles.generatedAuthorSmall}
                     />
                 </div>
                 <div className={styles.featuredBody}>
@@ -160,11 +244,11 @@ export default function BookCard({ book, variant = 'row', isFavorite, isSelected
                 {authors && <span className={styles.rowAuthors}>{authors}</span>}
                 <StarRating rating={book.rating} onRate={onRate} size="sm" disabled={busy} />
             </div>
-            <BookCover
-                coverUrl={book.coverUrl}
+            <CoverArt
+                book={book}
+                authors={authors}
                 imgClassName={styles.rowThumb}
-                placeholderClassName={`${styles.rowThumb} ${styles.coverPlaceholder}`}
-                iconSize={14}
+                generatedClassName={`${styles.rowThumb} ${styles.generatedCoverTiny}`}
             />
             <div className={styles.rowActions}>
                 <button
