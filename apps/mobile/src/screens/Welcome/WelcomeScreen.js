@@ -4,13 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildStyles } from '../../styles/welcomeStyles';
 
 export default function WelcomeScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const colorScheme = useColorScheme();
+    const theme = useTheme();
     const styles = buildStyles(theme, colorScheme);
 
     const completeWelcomeAndNavigate = async (targetRoute) => {
@@ -30,7 +30,7 @@ export default function WelcomeScreen({ navigation }) {
                 <Image 
                     source={require('../../../assets/images/welcome-bg.png')} 
                     style={styles.image}
-                    resizeMode="cover"
+                    contentFit="cover"
                 />
             </View>
 

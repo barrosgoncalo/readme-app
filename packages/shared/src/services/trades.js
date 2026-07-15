@@ -1,73 +1,86 @@
-import { db } from './firebase';
-import {
-    collection, addDoc, getDocs, query, where, updateDoc, doc, collectionGroup,
-} from 'firebase/firestore';
-import { TRADE_STATUS } from '../constants/trade';
+import { DB } from './DB';
+import { ChatService } from './chat';
+import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
 
-const TRADES_COLLECTION = 'trades';
+export const TradeService = {
 
-export async function createTrade({ bookId, offeredBy, requestedFrom }) {
-    const now = new Date().toISOString();
-    const tradeRef = await addDoc(collection(db, TRADES_COLLECTION), {
-        bookId,
-        offeredBy,
-        requestedFrom,
-        status: TRADE_STATUS.PENDING,
-        createdAt: now,
-        updatedAt: now,
-    });
-    return tradeRef.id;
-}
+    /**
+     * Resolves an offer (Accepts or Rejects it).
+     * Automatically coordinates message status updates and book reservations.
+     */
+    resolveOffer: async (chatId, messageId, newStatus, details = {}) => {
+        const { 
+            proposerId, 
+            receiverId, 
+            targetBookId, 
+            finalSelectedBookId, 
+            finalSelectedBookImage 
+        } = details;
 
-export async function getIncomingTrades(uid) {
-    const q = query(collection(db, TRADES_COLLECTION), where('requestedFrom', '==', uid));
-    const snapshot = await getDocs(q);
-    const trades = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    return trades;
-}
+        try {
+            // 1. Update the message text/metadata via ChatService
+            await ChatService.updateOfferStatus(
+                chatId,
+                messageId,
+                newStatus,
+                proposerId,
+                receiverId,
+                finalSelectedBookId,
+                finalSelectedBookImage
+            );
 
-export async function getOutgoingTrades(uid) {
-    const q = query(collection(db, TRADES_COLLECTION), where('offeredBy', '==', uid));
-    const snapshot = await getDocs(q);
-    const trades = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    return trades;
-}
+            // 2. If accepted, reserve both books in the inventory so others cannot request them
+            if (newStatus === NEGOTIATION_STATUS.ACCEPTED) {
+                const reservePromises = [];
 
-export async function updateTradeStatus(tradeId, status) {
-    const now = new Date().toISOString();
-    const tradeRef = doc(db, TRADES_COLLECTION, tradeId);
-    await updateDoc(tradeRef, {
-        status,
-        updatedAt: now,
-    });
-}
+                if (targetBookId) {
+                    reservePromises.push(DB.update('publications', targetBookId, { status: 'reserved' }));
+                }
+                if (finalSelectedBookId) {
+                    reservePromises.push(DB.update('publications', finalSelectedBookId, { status: 'reserved' }));
+                }
 
-// Returns all books currently flagged as available for trade across every user
-// (excluding `excludeUid`'s own books). One collectionGroup query instead of
-// N per-user queries.
-export async function getAvailableTradeBooks(excludeUid) {
-    const myBooksGroup = collectionGroup(db, 'myBooks');
-    const snapshot = await getDocs(myBooksGroup);
-    const results = [];
+                if (reservePromises.length > 0) {
+                    await Promise.all(reservePromises);
+                }
+            }
+        } catch (error) {
+            console.error("TradeService.resolveOffer failed:", error);
+            throw error;
+        }
+    },
 
-    for (const bookDoc of snapshot.docs) {
-        const ownerId = bookDoc.ref.parent.parent.id;
-        if (ownerId === excludeUid) continue;
+    /**
+     * Cancels an active swap arrangement.
+     * Changes the message status and frees up the books back into the public market.
+     */
+    cancelSwap: async (chatId, messageId, targetBookId, finalSelectedBookId, cancelledById) => {
+        try {
+            const cancelStatus = NEGOTIATION_STATUS.CANCELED;
+            await ChatService.updateOfferStatus(
+                chatId,
+                messageId,
+                cancelStatus,
+                null,
+                null,
+                null,
+                null,
+                cancelledById
+            );
 
-        const data = bookDoc.data();
-        if (!data.availableForTrade) continue;
-
-        results.push({
-            bookId: data.bookId || bookDoc.id,
-            ownerId,
-            addedAt: data.addedAt,
-            title: data.title || null,
-            authors: data.authors || [],
-            coverUrl: data.coverUrl || null,
-        });
+            const releasePromises = [];
+            if (targetBookId) {
+                releasePromises.push(DB.update('publications', targetBookId, { status: 'available' }));
+            }
+            if (finalSelectedBookId) {
+                releasePromises.push(DB.update('publications', finalSelectedBookId, { status: 'available' }));
+            }
+            if (releasePromises.length > 0) {
+                await Promise.all(releasePromises);
+            }
+        } catch (error) {
+            console.error("TradeService.cancelSwap failed:", error);
+            throw error;
+        }
     }
-
-    return results;
-}
+};

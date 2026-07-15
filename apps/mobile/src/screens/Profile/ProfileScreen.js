@@ -1,222 +1,149 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { View, Text, Image, TouchableOpacity, ScrollView, Alert, useColorScheme, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { Iconify } from 'react-native-iconify';
-import * as ImagePicker from 'expo-image-picker';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
-import { doSignOut, doUpdateUserProfile } from '@readme/shared/src/services/auth';
 import { buildProfileStyles } from '../../styles/profileStyles';
-import { uploadProfilePicture } from '@readme/shared/src/services/user';
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../components/ui/MenuComponents';
-
 import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
+import { useProfileActions } from '@readme/shared/src/hooks/use-profile-actions';
+import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
 
 export default function ProfileScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildProfileStyles(theme);
 
     const { currentUser, refreshUser } = useAuth(); 
-    const [uploading, setUploading] = useState(false);
     const [focusKey, setFocusKey] = useState(0);
-
-    const [hasNotifications, setHasNotifications] = useState(
-        currentUser?.notificationSettings?.pushEnabled ?? false
-    );
 
     const handleScroll = useScrollTabBarControl();
 
+    const currentSwapsCompleted = currentUser?.gamification?.completedSwapsCount ?? 0;
+    const currentBadge = getHighestUnlockedBadge(currentSwapsCompleted);
+
+    const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+    const {
+        uploading, hasNotifications,
+        pickImage, handleNotificationsToggle, handleSignOut
+    } = useProfileActions(currentUser, refreshUser);
+
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
+        const unsubscribeFocus = navigation.addListener('focus', () => {
             setFocusKey(prev => prev + 1);
-
-            if (refreshUser) {
-                refreshUser();
-            }
+            if (refreshUser) refreshUser();
         });
 
-        return unsubscribe;
-    }, [navigation, refreshUser]);
+        let unsubscribeRealTime = () => {}; 
+        if (currentUser?.uid) {
+            const { UsersService } = require('@readme/shared/src/services/users');
 
-    const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
-
-        if (!result.canceled) {
-            const imageUri = result.assets[0].uri;
-            handleUpload(imageUri);
+            unsubscribeRealTime = UsersService.subscribeToUnreadNotificationsCount(
+                currentUser.uid, 
+                (newCount) => setUnreadNotificationsCount(newCount)
+            );
         }
-    };
 
-    const handleUpload = async (imageUri) => {
-        setUploading(true);
-        try {
-            await uploadProfilePicture(currentUser.uid, imageUri);
-            alert("Foto atualizada com sucesso!");
-        } catch (error) {
-            alert("Erro ao atualizar a foto.");
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    const handleNotificationsToggle = async (newValue) => {
-        setHasNotifications(newValue);
-        try {
-            await doUpdateUserProfile(currentUser.uid, {
-                'notificationSettings.pushEnabled': newValue
-            });
-
-            await refreshUser();
-
-        } catch (error) {
-            console.error("Error updating notifications settings:", error);
-            Alert.alert("Error", "Failed to update notifications settings. Please try again.");
-            setHasNotifications(!newValue);
-        }
-    }
-
-    const handleSignOut = async () => {
-        console.log("A terminar sessão...");
-        await doSignOut();
-    };
+        return () => {
+            unsubscribeFocus();
+            unsubscribeRealTime();
+        };
+    }, [navigation, refreshUser, currentUser?.uid]);
+    // ---------------------------------------------------------------------
 
     return (
         <View style={styles.container}>
-
-            {/* --- HEADER SECTION(estático) --- */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Account</Text>
-
-                <View>
-                    <TouchableOpacity onPress={pickImage} disabled={uploading}>
-                        <View style={styles.avatarContainer }>
-                            { currentUser?.photoURL ? (
-                                <Image 
-                                    source={{ 
-                                        uri: `${currentUser?.photoURL}?t=${focusKey}_${new Date().getTime()}` 
-
-                                    }} 
-
-                                    style={styles.profilePicture} 
-                                />
-
-                            ) : (
-                                    <Iconify icon="lucide:user" size={45} color={theme.text} />
-                                )}
-
-                            {uploading && (
-                                <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />
-                            )}
-                        </View>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.userInfo}>
-                    <View style={styles.userNameContainer}>
-                        <Text style={styles.userName}>
-                            { currentUser?.username || 'Username' }
-                        </Text>
-                        <Iconify 
-                            icon="material-symbols:verified"
-                            size={20}
-                            color="#F58B2E" />
-                    </View>
-                    <Text style={styles.userEmail}>
-                        { currentUser?.email || 'Email' }
-                    </Text>
-                </View>
-            </View>
-
-            {/* --- BODY SECTION(móvel) --- */}
-            <ScrollView 
+            <Animated.ScrollView 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 bounces={false}
                 overScrollMode="never"
-                onScroll={handleScroll}
                 scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { 
+                        useNativeDriver: true, 
+                        listener: handleScroll // This keeps your tab-bar hiding logic working!
+                    }
+                )}
             >
-                {/* O "Papel" que desliza por cima */}
-                <View style={styles.body}>
+                {/* --- HEADER SECTION (Stays fixed in background) --- */}
+                <Animated.View style={[
+                    styles.header, 
+                    { 
+                        zIndex: 1, 
+                        // This exact translation counters the scroll, gluing it to the screen
+                        transform: [{ translateY: scrollY }] 
+                    }
+                ]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
+                        <Text style={styles.headerTitle}>Account</Text>
+
+                        <TouchableOpacity 
+                            style={{ position: 'relative', padding: 8 }}
+                            onPress={() => navigation.navigate(ROUTES.NOTIFICATIONS)}
+                        >
+                            <Iconify icon="lucide:bell" size={26} color="#FFFFFF" />
+                            {unreadNotificationsCount > 0 && (
+                                <View style={{ position: 'absolute', top: 4, right: 4, backgroundColor: Colors.password.red, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 }}>
+                                    <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+                                        {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.avatarContainer}>
+                        { currentUser?.photoURL ? (
+                            <Image source={{ uri: `${currentUser?.photoURL}?t=${focusKey}_${new Date().getTime()}` }} style={styles.profilePicture} />
+                        ) : (
+                                <Iconify icon="lucide:user" size={45} color={theme.text} />
+                            )}
+                        {uploading && <ActivityIndicator size="large" color="#0000ff" style={{ position: 'absolute' }} />}
+                    </View>
+
+                    <View style={styles.userInfo}>
+                        <View style={styles.userNameContainer}>
+                            <Text style={styles.userName}>{ currentUser?.username || 'Username' }</Text>
+                            {currentBadge && <Image source={currentBadge.image} style={{ width: 25, height: 25 }} contentFit="contain" />}
+                        </View>
+                        <Text style={styles.userEmail}>{ currentUser?.email || 'Email' }</Text>
+                    </View>
+                </Animated.View>
+
+                {/* --- BODY SECTION (Slides over the header) --- */}
+                {/* IMPORTANT: Ensure this view has a solid backgroundColor and zIndex: 2 in your styles */}
+                <View style={[styles.body, { zIndex: 2, elevation: 2, backgroundColor: theme.background }]}>
 
                     {/* GROUP 1 */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="lucide:book"
-                            label="My Books"
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="lucide:heart"
-                            label="Favorites"
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="solar:medal-star-circle-linear"
-                            label="Level"
-                        />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:book" label="My Books" onPress={() => navigation.navigate(ROUTES.MY_BOOKS)} />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:heart" label="Favorites" onPress={() => navigation.navigate(ROUTES.FAVORITES)} />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:star" label="Reviews" onPress={() => navigation.navigate(ROUTES.REVIEWS)} />
+                        <MenuItem styles={styles} theme={theme} icon="solar:medal-star-circle-linear" label="Level" onPress={() => navigation.navigate(ROUTES.LEVELS)} />
                     </MenuGroup>
 
                     {/* GROUP 2 */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="lucide:edit"
-                            label="Edit Profile"
-                            onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)}
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="material-symbols:password"
-                            label="Privacy & Security"
-                            onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)}
-                        />
-                        <MenuItem
-                            styles={styles}
-                            theme={theme}
-                            icon="fluent:presence-blocked-10-regular"
-                            label="View Blocked Users"
-                            onPress={() => navigation.navigate(ROUTES.BLOCKED_USERS)}
-                        />
-                        <MenuSwitchItem
-                            styles={styles}
-                            theme={theme}
-                            icon={hasNotifications ? "fluent:alert-24-regular" : "fluent:alert-off-24-regular"}
-                            label={hasNotifications ? "Allow notifications" : "Pause notifications"}
-                            value={hasNotifications}
-                            onValueChange={handleNotificationsToggle}
-                        />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:edit" label="Edit Profile" onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)} />
+                        <MenuItem styles={styles} theme={theme} icon="material-symbols:password" label="Privacy & Security" onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)} />
+                        <MenuItem styles={styles} theme={theme} icon="fluent:presence-blocked-10-regular" label="View Blocked Users" onPress={() => navigation.navigate(ROUTES.BLOCKED_USERS)} />
+                        <MenuSwitchItem styles={styles} theme={theme} icon={hasNotifications ? "fluent:alert-24-regular" : "fluent:alert-off-24-regular"} label={hasNotifications ? "Allow notifications" : "Pause notifications"} value={hasNotifications} onValueChange={handleNotificationsToggle} />
                     </MenuGroup>
 
                     {/* GROUP 3 */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
-                        <MenuItem 
-                            styles={styles}
-                            theme={theme}
-                            icon="lucide:log-out" 
-                            label="Sign Out" 
-                            textColor={Colors.password.red} 
-                            iconColor={Colors.password.red}
-                            iconBgColor={`${Colors.password.red}35`}
-                            onPress={handleSignOut}
-                        />
+                        <MenuItem styles={styles} theme={theme} icon="lucide:log-out" label="Sign Out" textColor={Colors.password.red} iconColor={Colors.password.red} iconBgColor={`${Colors.password.red}35`} onPress={handleSignOut} />
                     </MenuGroup>
 
                 </View>
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 }

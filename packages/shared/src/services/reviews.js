@@ -1,70 +1,62 @@
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { db } from './firebase';
-import { fetchUserProfile } from './users';
-import { createReviewModel } from '../models/review';
+import { DB } from './DB';
+import { UsersService } from './users';
 
-/**
- * Vai buscar todas as reviews recebidas por um utilizador específico.
- * @param {string} revieweeId - O ID do utilizador alvo.
- * @returns {Promise<Array>} Array com as reviews e dados do autor.
- */
-export const fetchUserReviews = async (revieweeId) => {
-    try {
-        // Assume que a tua coleção no Firestore se chama 'reviews'
-        const q = query(
-            collection(db, 'reviews'),
-            where('revieweeId', '==', revieweeId)
-        );
-        
-        const snapshot = await getDocs(q);
-        const reviewsPromises = snapshot.docs.map(async (doc) => {
-            const reviewData = doc.data();
-            
-            // Opcional mas recomendado: Ir buscar o perfil de quem fez a review para mostrar o nome/foto
-            let authorName = "Unknown User";
-            try {
-                const reviewerProfile = await fetchUserProfile(reviewData.reviewerId);
-                if (reviewerProfile && reviewerProfile.username) {
-                    authorName = reviewerProfile.username;
+export const ReviewService = {
+    fetchUserReviews: async (revieweeId) => {
+        try {
+            const reviews = await DB.get('reviews', [
+                { field: 'revieweeId', operator: '==', value: revieweeId }
+            ]);
+            const reviewsPromises = reviews.map(async (reviewData) => {
+                let authorName = "Unknown User";
+                try {
+                    const reviewerProfile = await UsersService.fetchUserProfile(reviewData.reviewerId);
+                    if (reviewerProfile && reviewerProfile.username) {
+                        authorName = reviewerProfile.username;
+                    }
+                } catch (err) {
+                    console.log("Could not fetch reviewer profile for:", reviewData.reviewerId);
                 }
-            } catch (err) {
-                console.log("Could not fetch reviewer profile for:", reviewData.reviewerId);
-            }
+                return {
+                    ...reviewData,
+                    authorName
+                };
+            });
+            const resolvedReviews = await Promise.all(reviewsPromises);
+            return resolvedReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        } catch (error) {
+            console.error("Error fetching reviews:", error);
+            return [];
+        }
+    },
 
-            return {
-                id: doc.id,
-                ...reviewData,
-                authorName // Injetamos o nome resolvido para facilitar na UI
-            };
-        });
+    subscribeToReviewStatus: (swapId, userId, callback) => {
+        if (!swapId || !userId) return () => {};
+        return DB.subscribeQuery(
+            'reviews',
+            [
+                { field: 'swapId', operator: '==', value: swapId },
+                { field: 'reviewerId', operator: '==', value: userId }
+            ],
+            (matchingReviews) => callback(matchingReviews.length > 0),
+            (error) => console.error(`Error streaming review status for swap "${swapId}":`, error)
+        );
+    },
 
-        const resolvedReviews = await Promise.all(reviewsPromises);
-
-        // Ordenar da mais recente para a mais antiga
-        return resolvedReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    } catch (error) {
-        console.error("Error fetching reviews:", error);
-        return [];
+    /**
+     * Subscribes to the set of swapIds (message IDs) within a given chat
+     * that this user has already reviewed.
+     */
+    subscribeToReviewedSwapsInChat: (chatId, userId, callback) => {
+        if (!chatId || !userId) return () => {};
+        return DB.subscribeQuery(
+            'reviews',
+            [
+                { field: 'chatId', operator: '==', value: chatId },
+                { field: 'reviewerId', operator: '==', value: userId }
+            ],
+            (matchingReviews) => callback(matchingReviews.map(r => r.swapId)),
+            (error) => console.error(`Error streaming reviewed swaps for chat "${chatId}":`, error)
+        );
     }
-};
-
-/**
- * Checks whether reviewerId has already reviewed this swap.
- */
-export const hasUserReviewed = async (swapId, reviewerId) => {
-    const snap = await getDocs(query(collection(db, 'reviews'),
-        where('swapId', '==', swapId), where('reviewerId', '==', reviewerId)));
-    return !snap.empty;
-};
-
-/**
- * Submit a review for a completed swap. Guards against duplicate reviews.
- */
-export const submitReview = async (swapId, chatId, reviewerId, revieweeId, rating, comment = '') => {
-    const dup = await getDocs(query(collection(db, 'reviews'),
-        where('swapId', '==', swapId), where('reviewerId', '==', reviewerId)));
-    if (!dup.empty) throw new Error('You have already reviewed this swap.');
-    await addDoc(collection(db, 'reviews'),
-        createReviewModel(swapId, chatId, reviewerId, revieweeId, rating, comment));
 };

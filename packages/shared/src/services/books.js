@@ -1,142 +1,163 @@
 // @readme/shared/src/services/books.js
-//
-// Shared per-user shelf service (myBooks / favoriteBooks subcollections) +
-// the global /books cache helper. Used by both web and mobile.
-import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc, query, where } from "firebase/firestore";
-import { db } from "./firebase";
 import { createUserBookModel } from "../models/book";
-// RN-native module. On web, vite resolve.alias points this at a stub that
-// rejects — extractCoverColor catches the error and returns the fallback.
 import ImageColors from 'react-native-image-colors';
 
-async function extractCoverColor(coverUrl) {
-    try {
-        const colors = await ImageColors.getColors(coverUrl, {
-            fallback: '#F58B2E',
-            cache: true,
-            key: coverUrl,
-        });
-        let color;
-        if (colors.platform === 'android') {
-            color = colors.vibrant || colors.average || colors.dominant || '#F58B2E';
-        } else if (colors.platform === 'ios') {
-            color = colors.background || colors.detail || colors.primary || '#F58B2E';
-        }
-        if (color === '#000000' || color === '#FFFFFF') color = '#F58B2E';
-        return color || '#F58B2E';
-    } catch {
-        return '#F58B2E';
-    }
-}
+import { DB } from "./DB"; // Adjust path as needed
 
 class BookCollectionService {
+
     constructor(collectionName) {
-        this.collectionName = collectionName;
+        this.collectionName = collectionName; 
     }
 
-    // ── Mobile-style: orchestrates global cache check + shelf write, with
-    //    cover-color extraction (RN only; falls back to default on web).
+    /**
+     * Orchestrates the global cache validation and lightweight link creation.
+     * @param {string} uid - The authenticated user's ID
+     * @param {Object} globalBookData - The full book payload returned from your adapters
+     * @param {string} status - Initial reading status ('reading', 'want_to_read', etc.)
+     * @param {Object} overrides - Any optional page modifications or custom values
+     */
     async saveBookToShelf(uid, globalBookData, status = 'want_to_read', overrides = {}) {
-        const finalOverrides = { ...overrides };
+        let finalOverrides = { ...overrides };
+
         if (!finalOverrides.color && globalBookData.coverUrl) {
-            finalOverrides.color = await extractCoverColor(globalBookData.coverUrl);
+            try {
+                const colors = await ImageColors.getColors(globalBookData.coverUrl, {
+                    fallback: '#F58B2E', 
+                    cache: true,
+                    key: globalBookData.coverUrl,
+                });
+
+                console.log("Extracted Color Palette:", colors);
+
+                if (colors.platform === 'android') {
+                    finalOverrides.color = colors.vibrant || colors.average || colors.dominant || '#F58B2E';
+                } else if (colors.platform === 'ios') {
+                    finalOverrides.color = colors.background || colors.detail || colors.primary || '#F58B2E'; 
+                }
+
+                if (finalOverrides.color === '#000000' || finalOverrides.color === '#FFFFFF') {
+                    finalOverrides.color = '#F58B2E';
+                }
+
+            } catch (error) {
+                console.log("Service: Could not extract image color, skipping...", error);
+                finalOverrides.color = '#F58B2E';
+            }
         }
 
         const bookId = String(globalBookData.bookId);
         const cleanGlobalBook = JSON.parse(JSON.stringify(globalBookData));
+
         cleanGlobalBook.bookId = bookId;
         cleanGlobalBook.addedBy = uid;
         cleanGlobalBook.createdAt = new Date().toISOString();
 
-        const globalBookRef = doc(db, "books", bookId);
-        const globalBookSnap = await getDoc(globalBookRef);
-        if (!globalBookSnap.exists()) {
-            await setDoc(globalBookRef, cleanGlobalBook);
+        const existingGlobalBook = await DB.get("books", bookId);
+
+        if (!existingGlobalBook) {
+            console.log(`[Step 1] Attempting write to global database: /books/${bookId}`);
+            await DB.create("books", cleanGlobalBook, bookId);
+            console.log(`[Step 1] SUCCESS: Saved to global /books collection.`);
+        } else {
+            console.log(`[Step 1] CACHE HIT: "/books/${bookId}" already exists. Skipping global write.`);
         }
 
         const userBookLink = createUserBookModel(uid, bookId, status, finalOverrides);
         const cleanUserLink = JSON.parse(JSON.stringify(userBookLink));
-        const userBookRef = doc(db, "users", uid, this.collectionName, bookId);
-        await setDoc(userBookRef, cleanUserLink);
+
+        const subcollectionPath = `users/${uid}/${this.collectionName}`;
+        
+        console.log(`[Step 2] Attempting write to user shelf: /${subcollectionPath}/${bookId}`);
+        await DB.create(subcollectionPath, cleanUserLink, bookId);
+        console.log(`[Step 2] SUCCESS: Saved to user shelf subcollection.`);
+
         return cleanUserLink;
     }
 
-    // ── Web-style: simple shelf write. Caller is responsible for the global
-    //    /books entry (use createBookIfMissing from booksCatalog.js).
-    async addBook(uid, bookId, extraData = {}) {
-        const bookRef = doc(db, 'users', uid, this.collectionName, bookId);
-        await setDoc(bookRef, {
-            bookId,
-            addedAt: new Date().toISOString(),
-            ...extraData,
-        });
+    /**
+     * Deletes a book from the user's specific shelf.
+     */
+    async deleteBook(userId, bookId) {
+        try {
+            const subcollectionPath = `users/${userId}/${this.collectionName}`;
+            console.log(`[Delete] Attempting to remove book ${bookId} from /${subcollectionPath}`);
+            
+            await DB.remove(subcollectionPath, bookId);
+            
+            console.log(`[Delete] SUCCESS: Removed book from ${this.collectionName}.`);
+        } catch (error) {
+            console.error(`Error deleting book ${bookId} from ${this.collectionName}:`, error);
+            throw error;
+        }
     }
 
-    async deleteBook(uid, bookId) {
-        const bookRef = doc(db, 'users', uid, this.collectionName, bookId);
-        await deleteDoc(bookRef);
-    }
-
-    // Alias for deleteBook — kept so web callers don't have to rename.
-    async removeBook(uid, bookId) {
-        return this.deleteBook(uid, bookId);
-    }
-
+    /**
+     * Generically updates specific fields of a book on the user's shelf.
+     */
     async updateBook(uid, bookId, updates) {
-        const bookRef = doc(db, "users", uid, this.collectionName, bookId);
-        await updateDoc(bookRef, updates);
+        try {
+            const subcollectionPath = `users/${uid}/${this.collectionName}`;
+            console.log(`[Update] Attempting to update fields for ${bookId}:`, updates);
+            
+            await DB.update(subcollectionPath, bookId, updates);
+            
+            console.log(`[Update] SUCCESS: Updated book fields in ${this.collectionName}.`);
+        } catch (error) {
+            console.error(`Error updating book ${bookId} in ${this.collectionName}:`, error);
+            throw error;
+        }
     }
 
-    // Returns user shelf entries merged with the global /books metadata
-    // (each entry has a `bookDetails` field with the global doc data).
+    /**
+     * Fetches the user's lightweight shelf data and populates it with 
+     * matching global metadata from the general books database.
+     */
     async getBooks(uid) {
-        const booksRef = collection(db, "users", uid, this.collectionName);
-        const snapshot = await getDocs(booksRef);
-        return Promise.all(snapshot.docs.map(async (userDoc) => {
-            const userTrackingData = userDoc.data();
-            const globalBookSnap = await getDoc(doc(db, "books", userDoc.id));
+        const subcollectionPath = `users/${uid}/${this.collectionName}`;
+        
+        const userShelfBooks = await DB.get(subcollectionPath, []);
+
+        const fetchPromises = userShelfBooks.map(async (userTrackingData) => {
+            const bookId = userTrackingData.id;
+
+            const globalBookData = await DB.get("books", bookId);
+
             return {
                 ...userTrackingData,
-                bookDetails: globalBookSnap.exists() ? globalBookSnap.data() : null,
+                bookDetails: globalBookData || null
             };
-        }));
-    }
+        });
 
-    // Just the IDs of every book on this shelf — cheaper than getBooks/getBooksData
-    // when the caller only needs membership info (e.g. favorites set).
-    async getBookIds(uid) {
-        const data = await this.getBooksData(uid);
-        return data.map((d) => d.id);
-    }
-
-    // Raw subcollection docs ({ id, bookId, addedAt, ...rest }). No global join.
-    async getBooksData(uid) {
-        const booksRef = collection(db, 'users', uid, this.collectionName);
-        const snapshot = await getDocs(booksRef);
-        return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    }
-
-    async getBookData(uid, bookId) {
-        const snap = await getDoc(doc(db, 'users', uid, this.collectionName, bookId));
-        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+        return await Promise.all(fetchPromises);
     }
 }
 
-export const favoriteBooksService = new BookCollectionService("favoriteBooks");
-export const myBooksService = new BookCollectionService("myBooks");
+export const FavoriteBooksService = new BookCollectionService("favoriteBooks");
+export const MyBooksService = new BookCollectionService("myBooks");
 
-export const globalBooksService = {
-    // Checks the global /books cache by ISBN-10 or ISBN-13.
-    // Returns the matched book (with `bookId`) or null.
+export const GlobalBooksService = {
+    /**
+     * Checks if a book already exists in our global Firebase cache by ISBN
+     */
     async getBookByIsbn(isbn) {
         try {
             const cleanIsbn = String(isbn).replace(/[- ]/g, '');
             const targetField = cleanIsbn.length === 13 ? 'isbn13' : 'isbn10';
-            const q = query(collection(db, 'books'), where(targetField, '==', cleanIsbn));
-            const snap = await getDocs(q);
-            if (snap.empty) return null;
-            const bookDoc = snap.docs[0];
-            return { ...bookDoc.data(), bookId: bookDoc.id };
+            
+            console.log(`[Cache Search] Checking global cache field '${targetField}' for barcode: ${cleanIsbn}`);
+            
+            const matches = await DB.get('books', [
+                { field: targetField, operator: '==', value: cleanIsbn }
+            ]);
+
+            if (matches.length > 0) {
+                console.log(`[Cache Hit] Perfect match found in Firebase for ${targetField}: ${cleanIsbn}!`);
+                return matches[0];
+            }
+            
+            console.log(`[Cache Miss] Barcode ${cleanIsbn} not found in system. Fetching from APIs...`);
+            return null;
         } catch (error) {
             console.error("Error checking global cache:", error);
             return null;

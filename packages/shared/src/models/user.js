@@ -1,5 +1,4 @@
-// @readme/shared/src/models/user.js
-
+import { DEFAULT_STARTING_RANK } from "../constants/gamification";
 
 export const createUserModel = (uid, profileData, provider) => {
     return {
@@ -22,18 +21,21 @@ export const createUserModel = (uid, profileData, provider) => {
 
         rating: 0,
         reviewCount: 0,
+
         favoriteBooks: [],
 
-        createdAt: new Date().toISOString(),
+        gamification: {
+            rank: DEFAULT_STARTING_RANK,
+            completedSwapsCount: 0,
+        },
+
+        createdAt: null,
         photoURL: profileData.photoURL || null,
         role: 'user',
         accountStatus: 'active',
         
         notificationSettings: {
             pushEnabled: false,
-            emailEnabled: false,
-            newFollowers: false,
-            marketingUpdates: false,
         },
 
         authProvider: provider

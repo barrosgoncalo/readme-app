@@ -62,7 +62,7 @@ export default function StepThreeAddress({
             <Image
                 source={require('../../../../assets/images/WormLayed.png')}
                 style={styles.step3Image}
-                resizeMode="contain"
+                contentFit="contain"
             />
 
             <View style={styles.rowButtons}>

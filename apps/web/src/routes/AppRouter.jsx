@@ -2,6 +2,7 @@
 //   loading      → spinner
 //   logged in    → /books (RequireAuth-guarded, behind AppShell)
 //   logged out   → first launch shows /welcome, returning users go to /login
+import { WEB_ROUTES } from '../constants/webRoutes.js';
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
@@ -33,7 +34,6 @@ import PublicationDetails from '../pages/Publications/PublicationDetails.jsx';
 import NewOffer from '../pages/Offers/NewOffer.jsx';
 import AppShell from '../components/AppShell.jsx';
 import RequireAuth from '../auth/RequireAuth.jsx';
-import { WEB_ROUTES } from '../constants/webRoutes.js';
 
 const ALREADY_LAUNCHED_KEY = 'alreadyLaunched';
 

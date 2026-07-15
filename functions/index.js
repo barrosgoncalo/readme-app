@@ -1,37 +1,67 @@
+// ==========================================
+// IMPORTS & INITIALIZATION
+// ==========================================
 const { setGlobalOptions } = require("firebase-functions/v2");
-const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentWritten, onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
 
-// Initialize Firebase Admin for server-side database access
-initializeApp();
+const Notification = require("./models/notification");
+const { PUBLICATION_STATUS_AVAILABLE, NEGOTIATION_STATUS } = require("./constants/negotiation");
+const { GAMIFICATION_RANKS } = require("./constants/gamification");
+const { sendPushNotification } = require("./utils/pushNotification");
+
+initializeApp({
+    storageBucket: "readme---bookworms.firebasestorage.app"
+});
 const db = getFirestore();
 
-// Set global options for all functions
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({ 
+    region: "europe-west1", 
+    maxInstances: 10 
+});
 
-const ALGOLIA_APP_ID = "RHUIQIPTCY";
-// Note: In production, consider using Firebase Secret Manager for admin keys
-const ALGOLIA_ADMIN_KEY = "e8307a98c93b8ca65d21e1ba2faa1e55"; 
+// ==========================================
+// CONFIGURATION CONSTANTS & LAZY INITIALIZATION
+// ==========================================
 const ALGOLIA_INDEX_NAME = "users";
+const ALGOLIA_PUBLICATIONS_INDEX = "publications";
 
-// Direct initialization of the v5 client (without initIndex)
-const client = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_ADMIN_KEY);
+// Keeps the client interface empty until the function is explicitly invoked in production
+let algoliaClient = null;
+
+const getAlgoliaClient = () => {
+    if (!algoliaClient) {
+        const APP_ID = process.env.ALGOLIA_APP_ID;
+        const ADMIN_KEY = process.env.ALGOLIA_ADMIN_KEY; 
+
+        if (!APP_ID || !ADMIN_KEY) {
+            console.error("CRITICAL: Algolia Environment Variables are missing inside the environment context!");
+        }
+
+        algoliaClient = algoliasearch(APP_ID, ADMIN_KEY);
+    }
+    return algoliaClient;
+};
 
 // ==========================================
 // ALGOLIA USER SYNC FUNCTION
 // ==========================================
-// Gen 2 function immune to the region bug
-exports.syncUserToAlgolia = onDocumentWritten({ document: "users/{userId}", region: "europe-west1" }, async (event) => {
+exports.syncUserToAlgolia = onDocumentWritten("users/{userId}", async (event) => {
     const snapshot = event.data;
     if (!snapshot) return;
 
     const data = snapshot.after.data();
     const objectID = event.params.userId;
 
+    // Safely retrieve client at execution time
+    const client = getAlgoliaClient();
+
     try {
-        // If the document was deleted in Firestore, delete it in Algolia
         if (!data) {
             await client.deleteObject({
                 indexName: ALGOLIA_INDEX_NAME,
@@ -41,7 +71,6 @@ exports.syncUserToAlgolia = onDocumentWritten({ document: "users/{userId}", regi
             return;
         }
 
-        // If it was created or updated, save it to Algolia
         await client.saveObject({
             indexName: ALGOLIA_INDEX_NAME,
             body: {
@@ -58,22 +87,18 @@ exports.syncUserToAlgolia = onDocumentWritten({ document: "users/{userId}", regi
 // ==========================================
 // USER RATING UPDATE FUNCTION
 // ==========================================
-exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", region: "europe-west1" }, async (event) => {
-    // 1. Get the data from the newly created review
+exports.updateUserRating = onDocumentCreated("reviews/{reviewId}", async (event) => {
     const newReview = event.data.data();
     if (!newReview) return null;
 
-    const revieweeId = newReview.revieweeId; // The user receiving the rating
-    const newRating = Number(newReview.rating); // The rating given (1 to 5)
-
-    // 2. Reference to the evaluated user's document
+    const revieweeId = newReview.revieweeId;
+    const newRating = Number(newReview.rating);
     const userRef = db.collection('users').doc(revieweeId);
 
     try {
-        // 3. Use a transaction to ensure integrity if multiple reviews arrive at the exact same time
         await db.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
-            
+
             if (!userDoc.exists) {
                 console.log(`User ${revieweeId} not found. Cannot update rating.`);
                 return;
@@ -83,13 +108,11 @@ exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", r
             const currentRating = Number(userData.rating) || 0;
             const currentCount = Number(userData.reviewCount) || 0;
 
-            // 4. Moving average formula to calculate the new rating
             const nextCount = currentCount + 1;
             const nextRating = ((currentRating * currentCount) + newRating) / nextCount;
 
-            // 5. Update the user's profile with the new denormalized data
             transaction.update(userRef, {
-                rating: Number(nextRating.toFixed(2)), // Keep it to 2 decimal places
+                rating: Number(nextRating.toFixed(2)),
                 reviewCount: nextCount
             });
         });
@@ -97,5 +120,700 @@ exports.updateUserRating = onDocumentCreated({ document: "reviews/{reviewId}", r
         console.log(`Rating for user ${revieweeId} updated successfully.`);
     } catch (error) {
         console.error("Error processing the rating Cloud Function:", error);
+    }
+});
+
+// ==========================================
+// ALGOLIA PUBLICATION SYNC FUNCTION
+// ==========================================
+exports.syncPublicationToAlgolia = onDocumentWritten("publications/{publicationId}", async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.after.data();
+    const objectID = event.params.publicationId;
+
+    // Safely retrieve client at execution time
+    const client = getAlgoliaClient();
+
+    try {
+        if (!data) {
+            await client.deleteObject({
+                indexName: ALGOLIA_PUBLICATIONS_INDEX,
+                objectID: objectID
+            });
+            console.log(`Publication ${objectID} successfully deleted from Algolia.`);
+            return;
+        }
+
+        await client.saveObject({
+            indexName: ALGOLIA_PUBLICATIONS_INDEX,
+            body: {
+                objectID,
+                ...data
+            }
+        });
+        console.log(`Publication ${objectID} successfully synced to Algolia.`);
+    } catch (error) {
+        console.error("Error syncing publication with Algolia:", error);
+    }
+});
+
+// ==========================================
+// HELPER: UPDATE USER GAMIFICATION
+// ==========================================
+async function updateUserGamification(userId) {
+    if (!userId) return;
+
+    const userRef = db.collection('users').doc(userId);
+
+    await db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+
+        if (!userDoc.exists) return;
+
+        const userData = userDoc.data();
+        const currentCount = (userData.gamification?.completedSwapsCount || 0) + 1;
+
+        const highestAchievedRank = [...GAMIFICATION_RANKS]
+            .reverse()
+            .find(rank => currentCount >= rank.milestone) || GAMIFICATION_RANKS[0];
+
+        transaction.update(userRef, {
+            'gamification.completedSwapsCount': currentCount,
+            'gamification.rank': highestAchievedRank.title
+        });
+    });
+}
+
+// Helper function
+async function markOffersUnavailableForBook(bookId) {
+    // Query 1: offers where this book is the target
+    const targetQuery = db.collectionGroup('messages')
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+        .where('offerDetails.targetBookId', '==', bookId);
+
+    // Query 2: offers where this book was one of the offered books
+    const offeredQuery = db.collectionGroup('messages')
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+        .where('offerDetails.offeredBookIds', 'array-contains', bookId);
+
+    const [targetSnap, offeredSnap] = await Promise.all([
+        targetQuery.get(),
+        offeredQuery.get(),
+    ]);
+
+    // Merge + dedupe by doc path, since a doc could theoretically match both
+    const docsById = new Map();
+    [...targetSnap.docs, ...offeredSnap.docs].forEach((doc) => {
+        docsById.set(doc.ref.path, doc.ref);
+    });
+
+    if (docsById.size === 0) {
+        console.log(`No pending offers reference book ${bookId}.`);
+        return;
+    }
+
+    const batch = db.batch();
+    docsById.forEach((ref) => {
+        batch.update(ref, {
+            'offerDetails.status': NEGOTIATION_STATUS.UNAVAILABLE,
+            'offerDetails.unavailableAt': Timestamp.now(),
+        });
+    });
+
+    await batch.commit();
+    console.log(`Marked ${docsById.size} offer(s) as unavailable for book ${bookId}.`);
+}
+
+
+// ==========================================
+// DELETE BOOKS ON SWAP COMPLETED FUNCTION
+// ==========================================
+exports.deleteBooksOnSwapComplete = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return;
+    if (afterData.type !== 'offer') return;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus !== 'completed' && afterStatus === 'completed') {
+        const targetBookId = afterData.offerDetails?.targetBookId;
+        const finalSelectedBookId = afterData.offerDetails?.finalSelectedBookId || afterData.offerDetails?.selectedBookId;
+
+        console.log(`Swap completed! Deleting books: Target(${targetBookId}), Selected(${finalSelectedBookId})`);
+
+        try {
+            const batch = db.batch();
+
+            if (targetBookId) {
+                batch.delete(db.collection('publications').doc(targetBookId));
+            }
+            if (finalSelectedBookId) {
+                batch.delete(db.collection('publications').doc(finalSelectedBookId));
+            }
+
+            await batch.commit();
+            console.log("Successfully deleted swapped books via Admin SDK.");
+
+            // --- ADDED GAMIFICATION LOGIC ---
+            // Fetch chat participants to update their gamification stats
+            const chatId = event.params.chatId;
+            const chatDoc = await db.collection('chats').doc(chatId).get();
+
+            if (chatDoc.exists) {
+                const participants = chatDoc.data().participants || [];
+
+                await Promise.all(
+                    participants.map(userId => updateUserGamification(userId))
+                );
+                console.log(`Successfully updated gamification stats for users: ${participants.join(", ")}`);
+            }
+            // --------------------------------
+
+        } catch (error) {
+            console.error("Error deleting books or updating gamification on swap completion:", error);
+        }
+    }
+});
+
+// ==========================================
+// VERIFY SWAP CODE FUNCTION
+// ==========================================
+exports.verifySwapCode = onCall(async (request) => {
+    const { chatId, messageId, scannedCode } = request.data;
+    const uid = request.auth?.uid;
+
+    if (!uid) {
+        throw new HttpsError("unauthenticated", "User must be authenticated to verify a swap.");
+    }
+
+    try {
+        const messageRef = db.collection('chats').doc(chatId).collection('messages').doc(messageId);
+        const doc = await messageRef.get();
+
+        if (!doc.exists) {
+            throw new HttpsError("not-found", "Chat message not found.");
+        }
+
+        const data = doc.data();
+        const expectedCode = data.offerDetails?.verificationCode;
+
+        if (scannedCode !== expectedCode) {
+            throw new HttpsError("invalid-argument", "The scanned code is incorrect.");
+        }
+
+        await messageRef.update({
+            "offerDetails.status": "completed"
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Verification error:", error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "An error occurred during verification.");
+    }
+});
+
+// ==========================================
+// SCHEDULED INACTIVE CHAT PURGE (CRON)
+// ==========================================
+exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const cutoffValue = Timestamp.fromDate(thirtyDaysAgo);
+
+    try {
+        const snapshot = await db.collection("chats")
+            .where("updatedAt", "<=", cutoffValue)
+            .get();
+
+        if (snapshot.empty) {
+            console.log("Cleanup complete: No inactive chats found.");
+            return;
+        }
+
+        console.log(`Found ${snapshot.size} inactive chats. Initiating deletion process...`);
+
+        const bucket = getStorage().bucket();
+
+        for (const doc of snapshot.docs) {
+            const chatRef = doc.ref;
+            const chatId = doc.id;
+
+            console.log(`--- Processing Chat ID: ${chatId} ---`);
+
+            const messagesSnap = await chatRef.collection("messages").get();
+            const referencedBookIds = new Set();
+
+            messagesSnap.forEach(msgDoc => {
+                const data = msgDoc.data();
+                if (data.type === 'offer' && data.offerDetails) {
+                    const offer = data.offerDetails;
+                    
+                    if (offer.targetBookId) referencedBookIds.add(offer.targetBookId);
+                    if (offer.finalSelectedBookId) referencedBookIds.add(offer.finalSelectedBookId);
+                    
+                    if (Array.isArray(offer.offeredBookIds)) {
+                        offer.offeredBookIds.forEach(id => {
+                            if (id) referencedBookIds.add(id);
+                        });
+                    }
+                }
+            });
+
+            console.log(`[LOG] Extracted ${referencedBookIds.size} unique book IDs from chat ${chatId}:`, Array.from(referencedBookIds));
+
+            await db.recursiveDelete(chatRef);
+            console.log(`[LOG] Successfully purged Firestore document for chat ID: ${chatId}`);
+
+            for (const bookId of referencedBookIds) {
+                console.log(`[LOG] Evaluating book ID: ${bookId} for storage deletion...`);
+                try {
+                    const pubDoc = await db.collection("publications").doc(bookId).get();
+                    
+                    if (pubDoc.exists) {
+                        console.log(`[LOG] Publication ${bookId} STILL EXISTS in Firestore. Skipping storage deletion.`);
+                        continue; // Move to the next book
+                    }
+
+                    console.log(`[LOG] Publication ${bookId} is deleted. Initiating safety queries...`);
+                    
+                    const targetQuery = await db.collectionGroup('messages')
+                        .where('offerDetails.targetBookId', '==', bookId)
+                        .limit(1)
+                        .get();
+
+                    const offeredQuery = await db.collectionGroup('messages')
+                        .where('offerDetails.offeredBookIds', 'array-contains', bookId)
+                        .limit(1)
+                        .get();
+
+                    console.log(`[LOG] Safety Check Results for ${bookId} - Found as target: ${!targetQuery.empty} | Found as offered: ${!offeredQuery.empty}`);
+
+                    if (targetQuery.empty && offeredQuery.empty) {
+                        console.log(`[LOG] Book ${bookId} is completely orphaned. Wiping from Storage...`);
+                        await bucket.deleteFiles({ 
+                            prefix: `books/${bookId}/` 
+                        });
+                        console.log(`✅ Safely purged completely orphaned images for book: ${bookId}`);
+                    } else {
+                        console.log(`[LOG] Skipped image deletion for ${bookId}: still referenced in other active chats.`);
+                    }
+                    
+                } catch (internalError) {
+                    // This catch block is highly detailed so we can spot missing indexes instantly
+                    console.error(`❌ [ERROR] Failed processing book ${bookId} in chat ${chatId}. Reason:`, internalError);
+                    
+                    if (internalError.message && internalError.message.includes('FAILED_PRECONDITION')) {
+                        console.error(`🚨 MISSING INDEX DETECTED! Firestore blocked the query for ${bookId}. Click the link in the error above to create it.`);
+                    }
+                }
+            }
+            console.log(`--- Finished Processing Chat ID: ${chatId} ---`);
+        }
+
+        console.log("All old conversations and their orphaned media successfully processed.");
+    } catch (error) {
+        console.error("Fatal error during overall chat cleanup cycle:", error);
+    }
+});
+
+// ==========================================
+// SCHEDULED OLD NOTIFICATIONS PURGE (CRON)
+// ==========================================
+exports.purgeOldNotifications = onSchedule("0 0 * * *", async (event) => {
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+    const cutoffValue = Timestamp.fromDate(fifteenDaysAgo);
+
+    try {
+        const snapshot = await db.collectionGroup("notifications")
+            .where("createdAt", "<=", cutoffValue)
+            .get();
+
+        if (snapshot.empty) {
+            console.log("Cleanup complete: No old notifications found.");
+            return;
+        }
+
+        console.log(`Found ${snapshot.size} old notifications. Initiating deletion process...`);
+
+        const batches = [];
+        let currentBatch = db.batch();
+        let currentBatchSize = 0;
+
+        for (const doc of snapshot.docs) {
+            currentBatch.delete(doc.ref);
+            currentBatchSize++;
+
+            if (currentBatchSize === 500) {
+                batches.push(currentBatch.commit());
+                currentBatch = db.batch();
+                currentBatchSize = 0;
+            }
+        }
+
+        if (currentBatchSize > 0) {
+            batches.push(currentBatch.commit());
+        }
+
+        await Promise.all(batches);
+
+        console.log(`Successfully purged ${snapshot.size} notifications older than 15 days.`);
+    } catch (error) {
+        console.error("Fatal error during notifications cleanup cycle:", error);
+    }
+});
+
+// ─── TRIGGER: ON FOLLOW REQUEST CREATED ───
+exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}", async (event) => {
+    const requestData = event.data.data();
+    if (!requestData) return null;
+
+    const requesterUid = requestData.requesterUid;
+    const targetUid = requestData.targetUid;
+
+    try {
+        const actorDoc = await db.collection("users").doc(requesterUid).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        // Fetching the user's photo profile URL
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const followRequestNotif = new Notification({
+            type: "FOLLOW_REQUEST",
+            actorId: requesterUid,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL, // Passed into the constructor
+            targetId: event.params.requestId,
+            message: `${actorName} requested to follow you.`
+        });
+
+        const customId = `req_${requesterUid}_${targetUid}`;
+        await Notification.sendToUser(db, targetUid, followRequestNotif, customId);
+
+        console.log(`Follow request notification successfully sent to user: ${targetUid}`);
+
+        await sendPushNotification(
+            db,
+            targetUid,
+            "New follow request",
+            `${actorName} requested to follow you.`,
+            { type: "FOLLOW_REQUEST", requestId: event.params.requestId }
+        );
+    } catch (error) {
+        console.error("Error generating follow request notification:", error);
+    }
+    return null;
+});
+
+// ─── TRIGGER: ON FOLLOW COMPLETED (ACCEPTED) ───
+exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) => {
+    const followData = event.data.data();
+    if (!followData) return null;
+
+    const followerUid = followData.followerUid;
+    const followingUid = followData.followingUid;
+
+    try {
+        const actorDoc = await db.collection("users").doc(followingUid).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        // Fetching the user's photo profile URL
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const newFollowNotif = new Notification({
+            type: "NEW_FOLLOW",
+            actorId: followingUid,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL, // Passed into the constructor
+            targetId: event.params.followId,
+            message: `${actorName} accepted your follow request.`
+        });
+
+        const customId = `accept_${followerUid}_${followingUid}`;
+
+        await Notification.sendToUser(db, followerUid, newFollowNotif, customId);
+
+        console.log(`Acceptance notification successfully sent to user: ${followerUid}`);
+
+        await sendPushNotification(
+            db,
+            followerUid,
+            "Follow accepted",
+            `${actorName} accepted your follow request.`,
+            { type: "NEW_FOLLOW", followId: event.params.followId }
+        );
+    } catch (error) {
+        console.error("Error generating new follow notification:", error);
+    }
+    return null;
+});
+
+// ==========================================
+// TRIGGER: ON NEW OFFER / COUNTER-OFFER MESSAGE
+// ==========================================
+exports.onOfferMessageCreated = onDocumentCreated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const messageData = event.data.data();
+    if (!messageData) return null;
+    if (messageData.type !== 'offer') return null;
+
+    const chatId = event.params.chatId;
+    const senderId = messageData.senderId;
+    const offer = messageData.offerDetails;
+    const isCounter = offer?.isCounter === true;
+
+    try {
+        // Determine the recipient: the chat participant who isn't the sender
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const recipientId = participants.find(uid => uid !== senderId);
+        if (!recipientId) return null;
+
+        const actorDoc = await db.collection("users").doc(senderId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const notifType = isCounter ? "COUNTER_OFFER" : "SWAP_OFFER";
+        const message = isCounter
+            ? `${actorName} sent you a counter offer.`
+            : `${actorName} sent you a swap offer.`;
+
+        const offerNotif = new Notification({
+            type: notifType,
+            actorId: senderId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, offerNotif, `offer_${event.params.messageId}`);
+        console.log(`Offer notification (isCounter=${isCounter}) sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            isCounter ? "New counter offer" : "New swap offer",
+            message,
+            { type: notifType, chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating offer notification:", error);
+    }
+    return null;
+});
+
+// ==========================================
+// TRIGGER: ON OFFER ACCEPTED
+// ==========================================
+exports.onOfferAccepted = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return null;
+    if (afterData.type !== 'offer') return null;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus === afterStatus || afterStatus !== 'accepted') return null;
+
+    const chatId = event.params.chatId;
+    const recipientId = afterData.senderId;
+
+    try {
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const actorId = participants.find(uid => uid !== recipientId);
+        if (!actorId) return null;
+
+        const actorDoc = await db.collection("users").doc(actorId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const message = `${actorName} accepted your swap offer!`;
+
+        const acceptedNotif = new Notification({
+            type: "OFFER_ACCEPTED",
+            actorId: actorId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, acceptedNotif, `accepted_${event.params.messageId}`);
+        console.log(`Offer-accepted notification sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            "Offer accepted!",
+            message,
+            { type: "OFFER_ACCEPTED", chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating offer-accepted notification:", error);
+    }
+    return null;
+});
+
+// ==========================================
+// TRIGGER: ON OFFER DECLINED
+// ==========================================
+exports.onOfferDeclined = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return null;
+    if (afterData.type !== 'offer') return null;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus === afterStatus || afterStatus !== 'declined') return null;
+
+    const chatId = event.params.chatId;
+    const recipientId = afterData.senderId;
+
+    try {
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const actorId = participants.find(uid => uid !== recipientId);
+        if (!actorId) return null;
+
+        const actorDoc = await db.collection("users").doc(actorId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const message = `${actorName} declined your swap offer.`;
+
+        const declinedNotif = new Notification({
+            type: "OFFER_DECLINED",
+            actorId: actorId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, declinedNotif, `declined_${event.params.messageId}`);
+        console.log(`Offer-declined notification sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            "Offer declined",
+            message,
+            { type: "OFFER_DECLINED", chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating offer-declined notification:", error);
+    }
+    return null;
+});
+
+// ==========================================
+// TRIGGER: ON SWAP CANCELLED
+// ==========================================
+exports.onSwapCancelled = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return null;
+    if (afterData.type !== 'offer') return null;
+
+    const beforeStatus = beforeData.offerDetails?.status;
+    const afterStatus = afterData.offerDetails?.status;
+
+    if (beforeStatus === afterStatus || afterStatus !== 'cancelled') return null;
+
+    const chatId = event.params.chatId;
+    const actorId = afterData.offerDetails?.cancelledBy;
+    if (!actorId) return null;
+
+    try {
+        const chatDoc = await db.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+
+        const participants = chatDoc.data().participants || [];
+        const recipientId = participants.find(uid => uid !== actorId); // the other person in the swap
+        if (!recipientId) return null;
+
+        const actorDoc = await db.collection("users").doc(actorId).get();
+        const actorData = actorDoc.data();
+        const actorName = actorData?.username || actorData?.displayName || "Someone";
+        const actorPhotoURL = actorData?.photoURL || actorData?.avatarUrl || null;
+
+        const message = `${actorName} cancelled the swap agreement.`;
+
+        const cancelledNotif = new Notification({
+            type: "SWAP_CANCELLED",
+            actorId: actorId,
+            actorName: actorName,
+            actorPhotoURL: actorPhotoURL,
+            targetId: event.params.messageId,
+            message: message
+        });
+
+        await Notification.sendToUser(db, recipientId, cancelledNotif, `cancelled_${event.params.messageId}`);
+        console.log(`Swap-cancelled notification sent to user: ${recipientId}`);
+
+        await sendPushNotification(
+            db,
+            recipientId,
+            "Swap cancelled",
+            message,
+            { type: "SWAP_CANCELLED", chatId, messageId: event.params.messageId }
+        );
+    } catch (error) {
+        console.error("Error generating swap-cancelled notification:", error);
+    }
+    return null;
+});
+
+exports.onPublicationBecameUnavailable = onDocumentWritten("publications/{publicationId}", async (event) => {
+    const publicationId = event.params.publicationId;
+    const before = event.data.before?.exists ? event.data.before.data() : null;
+    const after = event.data.after?.exists ? event.data.after.data() : null;
+
+    if (!before) return;
+
+    console.log(`Checking pub: ${publicationId}`);
+    console.log(`Before status: "${before.status}" | Constant expected: "${PUBLICATION_STATUS_AVAILABLE}"`);
+    console.log(`After status: "${after?.status}"`);
+
+    const wasAvailable = before.status === PUBLICATION_STATUS_AVAILABLE;
+    const isNowUnavailableOrDeleted = !after || after.status !== PUBLICATION_STATUS_AVAILABLE;
+
+    console.log(`wasAvailable: ${wasAvailable} | isNowUnavailableOrDeleted: ${isNowUnavailableOrDeleted}`);
+
+    if (!wasAvailable || !isNowUnavailableOrDeleted) {
+        console.log("Exiting early: Transition criteria not met.");
+        return;
+    }
+
+    try {
+        await markOffersUnavailableForBook(publicationId);
+    } catch (error) {
+        console.error(`Error marking offers unavailable for book ${publicationId}:`, error);
     }
 });

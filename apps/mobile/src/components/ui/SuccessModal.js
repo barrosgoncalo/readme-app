@@ -6,9 +6,8 @@ import {
     TouchableOpacity,
     Modal,
     Image,
-    useColorScheme // <-- 1. Added this
 } from 'react-native';
-import { Fonts, Colors } from '@readme/shared/src/constants/theme'; // <-- 2. Added Colors
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Iconify } from 'react-native-iconify';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -16,8 +15,7 @@ import { buildPublicationSuccessStyles } from '../../styles/publicationSuccessSt
 
 export default function SuccessModal({ visible, onClose, onGoHome, bookName }) {
     // 3. Setup the theme hook
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildPublicationSuccessStyles(theme);
 
     return (

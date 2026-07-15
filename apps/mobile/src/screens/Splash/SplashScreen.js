@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Animated, Image } from 'react-native';
+import { View, Animated, Image, useColorScheme } from 'react-native';
 import * as ExpoSplash from 'expo-splash-screen';
-import { useColorScheme } from '@readme/shared/src/hooks/use-color-scheme';
 import { buildStyles } from '../../styles/splashStyles';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 
 ExpoSplash.preventAutoHideAsync();
 
@@ -18,8 +17,8 @@ export default function SplashScreen({ onFinish }) {
 
     const [isLogoLoaded, setIsLogoLoaded] = useState(false);
 
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const colorScheme = useColorScheme();
+    const theme = useTheme();
     const styles = buildStyles(theme);
 
     useEffect(() => {
@@ -85,7 +84,7 @@ export default function SplashScreen({ onFinish }) {
                     : require('../../../assets/images/splash-light.png')
                 } 
                 style={styles.logo}
-                resizeMode="contain"
+                contentFit="contain"
                 onLoad={() => setIsLogoLoaded(true)}
             />
 

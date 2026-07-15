@@ -2,65 +2,33 @@
 //
 // CRUD for the global books/{bookId} catalog. Per-user shelves (myBooks,
 // favoriteBooks) live in books.js — this module is the shared catalog only.
-import {
-    doc, getDoc, setDoc, collection, getDocs, query, where, documentId,
-} from 'firebase/firestore';
-import { db } from './firebase';
+
+import { documentId } from 'firebase/firestore';
+import { DB } from './DB';
 
 const COLLECTION = 'books';
 
 export async function getBook(bookId) {
-    const snap = await getDoc(doc(db, COLLECTION, bookId));
-    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    return await DB.get(COLLECTION, bookId);
 }
 
-// Idempotent — does nothing if the doc already exists.
-// Caller must pass the uid as addedBy (rules enforce addedBy == request.auth.uid).
 export async function createBookIfMissing(bookId, data) {
-    const ref = doc(db, COLLECTION, bookId);
-    const existing = await getDoc(ref);
-    if (existing.exists()) return;
+    const existing = await DB.get(COLLECTION, bookId);
+    if (existing) return;
 
-    await setDoc(ref, {
+    await DB.create(COLLECTION, {
         isbn: data.isbn || null,
         title: data.title,
         authors: data.authors,
         coverUrl: data.coverUrl || null,
-        description: data.description || null,
-        pageCount: data.pageCount || null,
         addedBy: data.addedBy,
-        createdAt: new Date().toISOString(),
-    });
+    }, bookId);
 }
 
-// Look up a catalog entry by ISBN-10 or ISBN-13. Returns null if not found.
-export async function getBookByIsbn(isbn) {
-    if (!isbn) return null;
-    const cleanIsbn = String(isbn).replace(/[- ]/g, '');
-    const targetField = cleanIsbn.length === 13 ? 'isbn13' : 'isbn10';
-    const q = query(collection(db, COLLECTION), where(targetField, '==', cleanIsbn));
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const d = snap.docs[0];
-    return { id: d.id, ...d.data() };
-}
-
-// Firestore's `in` operator is capped at 10 values — chunk and merge.
 export async function getBooksByIds(ids) {
     if (!ids || ids.length === 0) return [];
 
-    const chunks = [];
-    for (let i = 0; i < ids.length; i += 10) {
-        chunks.push(ids.slice(i, i + 10));
-    }
-
-    const results = await Promise.all(
-        chunks.map(async (chunk) => {
-            const q = query(collection(db, COLLECTION), where(documentId(), 'in', chunk));
-            const snap = await getDocs(q);
-            return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        })
-    );
-
-    return results.flat();
+    return await DB.get(COLLECTION, [
+        { field: documentId(), operator: 'in', value: ids }
+    ]);
 }

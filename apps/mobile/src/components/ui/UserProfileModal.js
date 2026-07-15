@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Modal, View, Text, Image, TouchableOpacity, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { doBlockUser } from '@readme/shared/src/services/blockUser';
+import { doBlockUser } from '@readme/shared/src/services/block';
 import { buildStyles } from '../../styles/userProfileModalStyles';
 
 export default function UserProfileModal({ visible, user, onClose, onBlocked, theme }) {

@@ -17,5 +17,23 @@ export const ROUTES = {
     BOOK_DETAILS: 'BooksDetails',
     SEARCH: 'Search',
     PUBLICATION: 'Publication',
+    /** @see PublicationDetailsParams in screens/Publication/PublicationDetailsScreen.js */
     PUBLICATION_DETAILS: 'PublicationDetails',
+    /** @see MyPublicationDetailsParams in screens/Profile/MyBooks/MyPublicationDetailsScreen.js */
+    MY_PUBLICATION_DETAILS: 'MyPublicationDetails',
+    EDIT_PUBLICATION: 'UpdatePublication',
+    STEP_ONE_OFFER: 'StepOneOffer',
+    STEP_TWO_OFFER: 'StepTwoOffer',
+    PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen',
+    FAVORITES: 'Favorites',
+    REVIEWS: 'Reviews',
+    LEVELS: 'Levels',
+    CHAT_ROOM: 'ChatRoom',
+    SELECT_SWAP_BOOK: 'SelectSwapBook',
+    SELECT_SWAP_LOCATION: 'SelectSwapLocation',
+    QR_DISPLAY: 'DisplayQrCode',
+    QR_SCANNER: 'ScanQrCode',
+    REVIEW_SWAPPER: 'Review',
+    MY_BOOKS: 'MyBooks',
+    NOTIFICATIONS: 'Notifications',
 } as const;

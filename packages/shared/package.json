@@ -4,6 +4,6 @@
   "private": true,
   "main": "src/index.js",
   "dependencies": {
-    "algoliasearch": "^5.55.0"
+    "algoliasearch": "^5.55.1"
   }
 }

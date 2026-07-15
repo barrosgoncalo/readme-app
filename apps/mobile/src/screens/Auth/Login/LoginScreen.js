@@ -18,16 +18,14 @@ import {
     doSignInWithGoogleCredential
 } from '@readme/shared/src/services/auth';
 
-import { useColorScheme } from 'react-native';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { buildAuthStyles } from '../../../styles/authStyles';
 import { buildPasswordStyles } from '../../../styles/passwordStyles';
 
 export default function LoginScreen({ navigation }) {
 
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildAuthStyles(theme);
     const passwordStyles = buildPasswordStyles(theme);
 
@@ -46,7 +44,6 @@ export default function LoginScreen({ navigation }) {
 
         setIsLoading(true);
         try {
-            // Using the unified function that includes the Suspension Bouncer
             const { userData } = await doSignInWithEmailAndPassword(email, password);
             console.log("Logged in successfully as:", userData.role);
         } catch (error) {
@@ -56,7 +53,6 @@ export default function LoginScreen({ navigation }) {
         }
     };
 
-    // Handle Google Login
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
         try {

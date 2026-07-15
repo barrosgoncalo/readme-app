@@ -10,33 +10,25 @@ import {
     Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColorScheme } from 'react-native';
-
 import { doPasswordReset } from '@readme/shared/src/services/auth';
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildAuthStyles } from '../../../styles/authStyles';
 
 export default function ForgotPasswordScreen({ navigation }) {
-    // Dynamic Theme Setup
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildAuthStyles(theme);
 
-    // State Management
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Reset Logic
     const handlePasswordReset = async () => {
         if (!email.trim()) {
             Alert.alert("Missing Input", "Please enter your email address.");
             return;
         }
-
         setIsLoading(true);
         try {
             await doPasswordReset(email.trim());
-
             Alert.alert(
                 "Email Sent", 
                 "Check your inbox for a link to reset your password.",
@@ -53,8 +45,6 @@ export default function ForgotPasswordScreen({ navigation }) {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
             <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-
-                {/* ─── HEADER ─── */}
                 <View style={styles.header}>
                     <Text style={styles.eyebrow}>Recovery</Text>
                     <Text style={styles.title}>Reset Password</Text>
@@ -62,16 +52,12 @@ export default function ForgotPasswordScreen({ navigation }) {
                 <Image
                     source={require('../../../../assets/images/ForgotPassword.png')}
                     style={styles.forgotPasswordImage}
-                    resizeMode="contain"
+                    contentFit="contain"
                 />
-                {/* ─── BODY / INPUTS ─── */}
                 <View style={styles.body}>
-
                     <Text style={{ color: theme.text, fontSize: 15, marginBottom: 20, lineHeight: 22 }}>
                         Enter the email address associated with your account, and we will send you a link to reset your password.
                     </Text>
-
-                    {/* Email Input */}
                     <TextInput
                         placeholder="Email Address"
                         value={email}
@@ -82,8 +68,6 @@ export default function ForgotPasswordScreen({ navigation }) {
                         keyboardType="email-address"
                         placeholderTextColor="#aaa"
                     />
-
-                    {/* Submit Button */}
                     <TouchableOpacity 
                         style={styles.primaryButton} 
                         onPress={handlePasswordReset}
@@ -95,14 +79,11 @@ export default function ForgotPasswordScreen({ navigation }) {
                                 <Text style={styles.buttonText}>Send Reset Link</Text>
                             )}
                     </TouchableOpacity>
-
-                    {/* Footer Link to return to Login */}
                     <View style={styles.loginFooter}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
                             <Text style={styles.loginLink}>Back to Login</Text>
                         </TouchableOpacity>
                     </View>
-
                 </View>
             </ScrollView>
         </SafeAreaView>

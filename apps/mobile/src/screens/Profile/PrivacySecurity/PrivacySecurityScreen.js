@@ -4,25 +4,23 @@ import {
     Text,
     TouchableOpacity,
     Alert,
-    useColorScheme,
     ActivityIndicator,
     StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { buildPrivacySecurityStyles } from '../../../styles/privacySecurityStyles';
 import { Iconify } from 'react-native-iconify';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
-// Import doDeleteUserProfile here
 import { useAuth } from '@readme/shared/src/contexts/AuthContext'; 
 import { doUpdateUserProfile, doDeleteUserProfile } from '@readme/shared/src/services/auth';
 
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../../components/ui/MenuComponents';
 
 export default function PrivacySecurityScreen({ navigation }) {
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildPrivacySecurityStyles(theme);
 
     const { currentUser, refreshUser } = useAuth();
@@ -146,9 +144,9 @@ export default function PrivacySecurityScreen({ navigation }) {
                             theme={theme}
                             icon="uiw:user-delete"
                             label="Delete Account"
-                            textColor={Colors.password?.red || '#F13B2D'}
-                            iconColor={Colors.password?.red || '#F13B2D'}
-                            iconBgColor={`${Colors.password?.red || '#F13B2D'}35`}
+                            textColor={Colors.password?.red}
+                            iconColor={Colors.password?.red}
+                            iconBgColor={`${Colors.password?.red}35`}
                             onPress={handleDeleteAccount}
                         />
                     </MenuGroup>

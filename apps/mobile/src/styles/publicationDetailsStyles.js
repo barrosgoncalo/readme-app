@@ -1,6 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { Fonts } from '@readme/shared/src/constants/theme';
-import { withOpacity } from '@readme/shared/src/utils/colorUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -87,6 +86,7 @@ export const buildBookDetailsStyles = (theme) => {
             color: theme.textDisplay,
             marginBottom: 8,
             textTransform: 'capitalize',
+            letterSpacing: 0.5,
         },
         author: {
             fontFamily: Fonts.inter_regular,
@@ -174,15 +174,18 @@ export const buildBookDetailsStyles = (theme) => {
             marginLeft: 6,
         },
         bottomBar: {
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: theme.backgroundElement,
+            paddingHorizontal: 24, // Gives the button nice side margins
+            paddingTop: 16,
+            paddingBottom: 16, // Extra breathing room before the screen edge
+            backgroundColor: theme.backgroundElement || '#FFFFFF', // Ensures it covers the scrolling content
             borderTopWidth: 1,
-            borderColor: theme.borderLight,
-            paddingTop: 12,
-            paddingBottom: 3,
+            borderTopColor: theme.borderLight || 'rgba(0,0,0,0.05)',
+            // Subtle shadow to separate it from the content above
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.04,
+            shadowRadius: 12,
+            elevation: 8, // For Android
         },
         buttonRow: {
             flexDirection: 'row',
@@ -206,17 +209,26 @@ export const buildBookDetailsStyles = (theme) => {
             color: theme.primary, 
         },
         offerButton: {
-            flex: 1,
-            backgroundColor: theme.primary,
-            borderRadius: 12,
+            width: '100%', // Fills the container (minus the 24px padding on each side)
+            backgroundColor: theme.primary || '#E58A1F',
+            borderRadius: 16, // A smooth squircle shape
             paddingVertical: 16,
-            justifyContent: 'center',
+            flexDirection: 'row', // Aligns icon and text
             alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8, // Space between icon and text (React Native 0.71+)
+            // Glow/Shadow matching the button color for a premium pop
+            shadowColor: theme.primary || '#E58A1F',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
         },
         offerButtonText: {
-            fontFamily: Fonts.inter_semi,
+            color: '#FFFFFF',
             fontSize: 16,
-            color: theme.primaryText,
+            fontWeight: '700',
+            letterSpacing: 0.5, // Slight letter spacing looks more refined
         },
     });
 };

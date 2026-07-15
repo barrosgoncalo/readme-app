@@ -1,28 +1,115 @@
-// @readme/shared/src/services/chatService.js
+import { arrayUnion } from 'firebase/firestore';
+import { createChatModel } from '../models/chat';
+import { createOfferModel, generateVerificationCode } from '../models/offer';
+import { createMessageModel } from '../models/message';
+import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
+import { DB } from './DB';
+import { CloudFunctions } from './cloudFunctions';
 
-import {addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, updateDoc, where} from 'firebase/firestore';
-import {db} from '@readme/shared/src/services/firebase';
-import {createChatModel} from '../models/chat';
-import {createOfferModel, generateVerificationCode} from '../models/offer';
-import {createMessageModel} from '../models/message';
-import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
-import {toMillis} from '../utils/timestamp';
+// ==========================================
+// PRIVATE AUXILIARY HELPERS
+// ==========================================
+
+/**
+ * Searches the DB to see if a chat already exists between two users.
+ */
+const _findExistingChatId = async (currentUserId, sellerId) => {
+    const existingChats = await DB.get('chats', [
+        { field: 'participants', operator: 'array-contains', value: currentUserId }
+    ]);
+
+    const chat = existingChats.find(chatDoc => chatDoc.participants.includes(sellerId));
+    return chat ? chat.id : null;
+};
+
+/**
+ * Formats an array of raw books into the standard snapshot format for offers.
+ */
+const _formatOfferedBooks = (offeredBooks) => {
+    return offeredBooks.map(b => ({
+        id: b.id,
+        title: b.title || "Unknown Book",
+        image: b.imageUrl || b.book?.images?.[0] || b.images?.[0] || null
+    }));
+};
+
+/**
+ * Generates the specific payloads needed when an offer is Accepted.
+ */
+const _buildAcceptedOfferPayloads = (proposerId, receiverId, finalBookId, finalBookImage) => {
+    const msgPayload = {
+        'offerDetails.verificationCode': generateVerificationCode(),
+        'offerDetails.verificationDisplayerId': proposerId,
+        'offerDetails.verificationScannerId': receiverId,
+    };
+    const chatPayload = {};
+
+    if (finalBookId) {
+        msgPayload['offerDetails.finalSelectedBookId'] = finalBookId;
+        msgPayload['offerDetails.finalSelectedBookImage'] = finalBookImage;
+        chatPayload.targetBookImage = finalBookImage;
+    }
+
+    return { msgPayload, chatPayload };
+};
+
+/**
+ * Formats a raw database chat document into the frontend Inbox Preview model.
+ */
+const _mapChatToInboxPreview = (data, currentUserId) => {
+    const isOutgoing = data.proposerId === currentUserId;
+    const otherParticipantUid = data.participants?.find(uid => uid !== currentUserId);
+
+    return {
+        id: data.id,
+        imageUrl: data.targetBookImage || 'https://via.placeholder.com/150',
+        status: isOutgoing ? 'giving' : 'receiving', 
+        targetSeller: {
+            uid: otherParticipantUid,
+            name: isOutgoing 
+                ? (data.receiverName || 'Swapper') 
+                : (data.proposerName || 'Swapper'),
+            avatarUrl: isOutgoing 
+                ? (data.receiverAvatar || null) 
+                : (data.proposerAvatar || null)
+        },
+        updatedAt: data.updatedAt || data.createdAt
+    };
+};
+
+/**
+ * Resolves the other participant's identity for a chat, using piped-in
+ * targetSeller data when available and falling back to a user doc fetch.
+ */
+const _resolveOtherUser = async (chatData, currentUserId, targetSeller) => {
+    let otherUid = targetSeller?.uid;
+
+    if (!otherUid || otherUid === currentUserId) {
+        otherUid = chatData.participants?.find(uid => uid !== currentUserId);
+    }
+
+    const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
+
+    if (otherUid && !hasPipedData) {
+        const userData = await DB.get('users', otherUid);
+        if (userData) {
+            return {
+                otherUid,
+                otherUserName: userData.username || userData.name || "Swapper",
+                otherUserAvatar: userData.photoURL || null,
+            };
+        }
+    }
+
+    return { otherUid: otherUid || null, otherUserName: null, otherUserAvatar: null };
+};
+
+
+// ==========================================
+// EXPORTED SERVICE
+// ==========================================
 
 export const ChatService = {
-
-    /**
-     * Subscribes to real-time messages for a specific chat.
-     */
-    streamMessages: (chatId, onUpdate, onError) => {
-        const messagesRef = collection(db, `chats/${chatId}/messages`);
-        const q = query(messagesRef, orderBy('createdAt', 'desc'));
-
-        return onSnapshot(q, (snapshot) => {
-            const list = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            list.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
-            onUpdate(list);
-        }, onError);
-    },
 
     /**
      * Sends a standard text message.
@@ -31,125 +118,142 @@ export const ChatService = {
         const messagePayload = createMessageModel(currentUserId, text, 'text');
 
         await Promise.all([
-            addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
-            updateDoc(doc(db, 'chats', chatId), {
+            DB.create(`chats/${chatId}/messages`, messagePayload),
+            DB.update('chats', chatId, { 
                 lastMessage: text,
-                updatedAt: new Date().toISOString()
-            })
+                hiddenFor: []
+            }, true)
         ]);
     },
 
     /**
-     * Updates the status of an offer (e.g., 'accepted' or 'declined')
-     * and initializes verification data if accepted.
+     * Hides a chat from the user's inbox.
      */
-    updateOfferStatus: async (chatId, messageId, newStatus, proposerId = null, receiverId = null) => {
-        const messageRef = doc(db, `chats/${chatId}/messages`, messageId);
-
-        const updatePayload = {
-            'offerDetails.status': newStatus
-        };
-
-        if (newStatus === NEGOTIATION_STATUS.ACCEPTED) {
-            updatePayload['offerDetails.verificationCode'] = generateVerificationCode();
-            updatePayload['offerDetails.verificationDisplayerId'] = proposerId;
-            updatePayload['offerDetails.verificationScannerId'] = receiverId;
+    hideChat: async (chatId, currentId) => {
+        try {
+            await DB.update('chats', chatId, {
+                hiddenFor: arrayUnion(currentId)
+            }, true);
+            return { success: true };
+        } catch(error) {
+            console.error("Error hiding chat:", error);
+            throw error;
         }
-
-        await updateDoc(messageRef, updatePayload);
     },
 
     /**
-     * Creates a new chat (if needed) and sends an initial offer.
-     * Returns the chatId so the UI can navigate to it.
+     * Updates the status of an offer and refreshes the parent chat metadata.
      */
-    sendInitialOffer: async (currentUserId, sellerId, targetBook, offeredBooks, location) => {
-        const chatsRef = collection(db, 'chats');
-        let chatId = null;
+    updateOfferStatus: async (
+        chatId, 
+        messageId, 
+        newStatus, 
+        proposerId = null, 
+        receiverId = null,
+        finalSelectedBookId = null,
+        finalSelectedBookImage = null,
+        cancelledBy = null
+    ) => {
+        let messageUpdatePayload = { 'offerDetails.status': newStatus };
+        let chatParentPayload = { hiddenFor: [] };
 
-        const q = query(chatsRef, where('participants', 'array-contains', currentUserId));
-        const querySnapshot = await getDocs(q);
-
-        querySnapshot.forEach((doc) => {
-            if (doc.data().participants.includes(sellerId)) {
-                chatId = doc.id;
-            }
-        });
-
-        const firstImage = targetBook?.imageUrl || targetBook?.book?.images?.[0] || targetBook?.images?.[0] || null;
-        const receiverName = targetBook?.seller?.name || targetBook?.sellerName || "Swapper";
-
-        if (!chatId) {
-            const newChatData = createChatModel(
-                [currentUserId, sellerId],              // participants
-                currentUserId,                          // proposerId
-                sellerId,                               // receiverId
-                receiverName,                           // receiverName
-                targetBook.id,                           // targetBookId
-                firstImage,                              // targetBookImage
-                `Offered swap for ${targetBook.title}`  // lastMessage
+        if (newStatus === NEGOTIATION_STATUS.ACCEPTED) {
+            const { msgPayload, chatPayload } = _buildAcceptedOfferPayloads(
+                proposerId, receiverId, finalSelectedBookId, finalSelectedBookImage
             );
-            const newChatRef = await addDoc(chatsRef, newChatData);
-            chatId = newChatRef.id;
+            
+            messageUpdatePayload = { ...messageUpdatePayload, ...msgPayload };
+            chatParentPayload = { ...chatParentPayload, ...chatPayload };
         }
 
-        const offerPayload = createOfferModel(
-            targetBook.id,
-            firstImage,
-            offeredBooks.map(b => b.id),
-            location
-        );
+        if (newStatus === (NEGOTIATION_STATUS.CANCELLED) && cancelledBy) {
+            messageUpdatePayload['offerDetails.cancelledBy'] = cancelledBy;
+        }
 
+        await Promise.all([
+            DB.update(`chats/${chatId}/messages`, messageId, messageUpdatePayload, true),
+            DB.update('chats', chatId, chatParentPayload, true)
+        ]);
+    },
+
+    sendInitialOffer: async (currentUserId, sellerId, targetBook, offeredBooks, location) => {
+        let chatId = await _findExistingChatId(currentUserId, sellerId);
+        const firstImage = targetBook?.imageUrl || null;
+
+        if (!chatId) {
+            const [proposerData, receiverData] = await Promise.all([
+                DB.get('users', currentUserId),
+                DB.get('users', sellerId),
+            ]);
+
+            const proposerInfo = {
+                name: proposerData?.username || proposerData?.name || "Swapper",
+                avatarUrl: proposerData?.photoURL || null,
+            };
+            const receiverInfo = {
+                name: receiverData?.username || receiverData?.name || targetBook?.seller?.username || "Swapper",
+                avatarUrl: receiverData?.photoURL || null,
+            };
+
+            const newChatData = createChatModel(
+                [currentUserId, sellerId],
+                currentUserId,
+                sellerId,
+                proposerInfo,
+                receiverInfo,
+                targetBook.id,
+                firstImage,
+                `Offered swap for ${targetBook.title}`
+            );
+            chatId = await DB.create('chats', newChatData);
+        }
+
+        const offeredBookSnapshots = _formatOfferedBooks(offeredBooks);
+        const offerPayload = createOfferModel(targetBook.id, firstImage, offeredBookSnapshots, location, false);
         const messagePayload = createMessageModel(currentUserId, `Sent an offer for "${targetBook.title}"`, 'offer', offerPayload);
 
         await Promise.all([
-            addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
-            updateDoc(doc(db, 'chats', chatId), {
+            DB.create(`chats/${chatId}/messages`, messagePayload),
+            DB.update('chats', chatId, {
                 lastMessage: `Swap Offer: ${targetBook.title || 'Book'}`,
                 targetBookImage: firstImage,
-                updatedAt: new Date().toISOString()
-            })
+                hiddenFor: []
+            }, true)
         ]);
 
         return chatId;
     },
 
-    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, selectedBookId, newLocation) => {
+    /**
+     * Sends a counter-proposal based on an original offer.
+     */
+    sendCounterOffer: async (chatId, originalMessageId, currentUserId, originalOffer, newLocation, selectedBookId = null, selectedBookImage = null) => {
         try {
-            // 1. Update the old message to 'countered'
-            const originalMessageRef = doc(db, 'chats', chatId, 'messages', originalMessageId);
-            await updateDoc(originalMessageRef, {
+            await DB.update(`chats/${chatId}/messages`, originalMessageId, {
                 'offerDetails.status': 'countered'
             });
 
-            // 2. Build the Counter-Offer Payload
-            const counterOfferPayload = {
-                targetBookId: originalOffer.targetBookId,
-                targetBookImage: originalOffer.targetBookImage || null,
-                offeredBookIds: originalOffer.offeredBookIds,
-                selectedBookId: selectedBookId,
-                selectedBookImage: originalOffer.selectedBookImage || null,
-                location: newLocation || originalOffer.location || {},
-                isCounter: true,
-                status: 'pending',
-                createdAt: new Date().toISOString()
-            };
-
-            // 3. Create the new message payload
-            const messagePayload = createMessageModel(
-                currentUserId,
-                "Sent a counter proposal",
-                "offer",
-                counterOfferPayload
+            const counterOfferPayload = createOfferModel(
+                originalOffer.targetBookId,
+                originalOffer.targetBookImage,
+                originalOffer.offeredBooks,
+                newLocation || originalOffer.location || {},
+                true
             );
 
-            // 4. Save the new message and update the root chat
+            if (selectedBookId) {
+                counterOfferPayload.selectedBookId = selectedBookId;
+                counterOfferPayload.selectedBookImage = selectedBookImage;
+            }
+
+            const messagePayload = createMessageModel(currentUserId, "Sent a counter proposal", "offer", counterOfferPayload);
+
             await Promise.all([
-                addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
-                updateDoc(doc(db, 'chats', chatId), {
+                DB.create(`chats/${chatId}/messages`, messagePayload),
+                DB.update('chats', chatId, {
                     lastMessage: "Counter Proposal Sent",
-                    updatedAt: new Date().toISOString()
-                })
+                    hiddenFor: []
+                }, true)
             ]);
 
             return true;
@@ -160,95 +264,100 @@ export const ChatService = {
     },
 
     /**
-     * Streams all chats where the user participates, newest first.
+     * Subscribes to the active chat inbox list.
      */
-    streamUserChats: (uid, onUpdate, onError) => {
-        const q = query(collection(db, 'chats'), where('participants', 'array-contains', uid));
-        return onSnapshot(q, (snap) => {
-            const list = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            list.sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt));
-            onUpdate(list);
-        }, onError);
+    subscribeToActiveChats: (currentUserId, onUpdate, onError) => {
+        return DB.subscribeQuery(
+            'chats', 
+            [ { field: 'participants', operator: 'array-contains', value: currentUserId } ],
+            (fetchedDocs) => {
+                const fetchedChats = fetchedDocs
+                    .filter(data => !(data?.hiddenFor || []).includes(currentUserId)) 
+                    .map(data => _mapChatToInboxPreview(data, currentUserId));
+
+                fetchedChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                onUpdate(fetchedChats);
+            }, 
+            onError
+        );
     },
 
     /**
-     * Mark a swap as completed with verification timestamp.
+     * Subscribes to a single message document (used for swap verification status).
      */
-    completeSwap: async (chatId, messageId) => {
-        await updateDoc(doc(db, `chats/${chatId}/messages`, messageId), {
-            'offerDetails.status': 'completed',
-            'offerDetails.verifiedAt': new Date().toISOString(),
-        });
+    subscribeToMessage: (chatId, messageId, onUpdate, onError) => {
+        return DB.subscribeDoc(`chats/${chatId}/messages`, messageId, onUpdate, onError);
     },
 
     /**
-     * Acionada quando o User B escolhe um livro da lista enviada pelo User A.
+     * Subscribes to a specific chat's messages.
      */
-    chooseBookFromOffer: async (chatId, originalMessage, chosenBook, currentUserId, otherUserId, realOfferedId, offeredTitle) => {
-        await ChatService.updateOfferStatus(chatId, originalMessage.id, 'countered', originalMessage.senderId, currentUserId);
+    subscribeToMessages: (chatId, onUpdate, onError) => {
+        return DB.subscribe(`chats/${chatId}/messages`, onUpdate, onError);
+    },
 
-        const offer = originalMessage.offerDetails;
+    /**
+     * Fetches one-time chat metadata: cached book image/location, and
+     * resolves the other participant's identity (using piped data if present).
+     * Returns null if the chat doc doesn't exist.
+     */
+    getChatMetadata: async (chatId, currentUserId, targetSeller) => {
+        const chatData = await DB.get('chats', chatId);
+        if (!chatData) return null;
 
-        const newMessagePayload = {
-            targetBookId: chosenBook.id,
-            targetBookImage: chosenBook.coverUrl || null,
-            offeredBookIds: offer.targetBookId ? [offer.targetBookId] : [],
-            location: offer.location || null,
-            status: 'pending',
+        const { otherUid, otherUserName, otherUserAvatar } = await _resolveOtherUser(
+            chatData, currentUserId, targetSeller
+        );
 
-            // A TUA IDEIA APLICADA AQUI: Guardamos a info de acesso rápido!
-            savedRealOfferedId: realOfferedId || null,
-            savedOfferedTitle: offeredTitle || null,
-
-            isSelectionFrom: originalMessage.id,
-            originalOfferedIds: offer.offeredBookIds,
-            originalTargetId: offer.targetBookId,
-            originalTargetImage: offer.targetBookImage
+        return {
+            publicationId: chatData.targetBookId || null,
+            bookImage: chatData.targetBookImage || null,
+            chatLocation: chatData.location || null,
+            otherUid,
+            otherUserName,
+            otherUserAvatar,
         };
-
-        const messagePayload = createMessageModel(currentUserId, `Selected "${chosenBook.title || 'a book'}" from your offer`, 'offer', newMessagePayload);
-
-        await Promise.all([
-            addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
-            updateDoc(doc(db, 'chats', chatId), {
-                lastMessage: 'Chose a book from the list',
-                updatedAt: new Date().toISOString()
-            })
-        ]);
     },
 
     /**
-     * Acionada quando o User A rejeita a escolha (Decline) e ainda sobram
-     * livros da lista original para continuar a negociação.
+     * Subscribes to a chat's messages ordered newest-first, and marks any
+     * incoming (not-yet-read) messages as read. Returns the unsubscribe fn.
      */
-    declineOfferAndReofferRemaining: async (chatId, messageToDecline, currentUserId, otherUserId) => {
-        await ChatService.updateOfferStatus(chatId, messageToDecline.id, 'declined', messageToDecline.senderId, currentUserId);
+    subscribeToMessagesOrdered: (chatId, currentUserId, onUpdate, onError) => {
+        return DB.subscribeQuery(
+            `chats/${chatId}/messages`,
+            [],
+            (fetchedDocs) => {
+                const getTime = (m) => m.createdAt?.toMillis?.() ?? m.clientTimestamp ?? 0;
+                const sorted = [...fetchedDocs].sort((a, b) => getTime(b) - getTime(a));
+                onUpdate(sorted);
+                ChatService.markMessagesAsRead(chatId, sorted, currentUserId);
+            },
+            onError
+        );
+    },
 
-        const offer = messageToDecline.offerDetails;
+    /**
+     * Marks all messages from the other user as read.
+     */
+    markMessagesAsRead: async (chatId, messages, currentUserId) => {
+        const unreadFromOther = messages.filter(
+            msg => msg.senderId !== currentUserId && !msg.read
+        );
 
-        if (offer.isSelectionFrom && offer.originalOfferedIds) {
+        await Promise.all(
+            unreadFromOther.map(msg =>
+                DB.update(`chats/${chatId}/messages`, msg.id, { read: true }, true).catch(error => {
+                    console.error("Error updating read status:", error);
+                })
+            )
+        );
+    },
 
-            const remainingIds = offer.originalOfferedIds.filter(id => id !== offer.targetBookId);
-
-            if (remainingIds.length > 0) {
-                const newOfferPayload = {
-                    targetBookId: offer.originalTargetId,
-                    targetBookImage: offer.originalTargetImage || null,
-                    offeredBookIds: remainingIds,
-                    location: offer.location || null,
-                    status: 'pending'
-                };
-
-                const messagePayload = createMessageModel(currentUserId, 'Declined and offered remaining books', 'offer', newOfferPayload);
-
-                await Promise.all([
-                    addDoc(collection(db, `chats/${chatId}/messages`), messagePayload),
-                    updateDoc(doc(db, 'chats', chatId), {
-                        lastMessage: 'Declined and offered remaining books',
-                        updatedAt: new Date().toISOString()
-                    })
-                ]);
-            }
-        }
-    }
+    /**
+     * Calls the verifySwapCode Cloud Function to validate a scanned code
+     * and mark the swap as completed.
+     */
+    verifySwapCode: (chatId, messageId, scannedCode) =>
+        CloudFunctions.call('verifySwapCode', { chatId, messageId, scannedCode }),
 };

@@ -5,7 +5,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 
 // Screens
-import BookListScreen from '../screens/Shelf/BookListScreen'; 
+import ReadingListScreen from '../screens/Shelf/ReadingListScreen'; 
 import ExploreScreen from '../screens/Explore/ExploreScreen'; 
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 
@@ -134,7 +134,7 @@ export default function AppTabs() {
                 {/* Nome alterado para evitar colisões de rotas */}
                 <Tab.Screen name="AddPlaceholder" component={ViewPlaceholder} /> 
                 
-                <Tab.Screen name="Shelf" component={BookListScreen} />
+                <Tab.Screen name="Shelf" component={ReadingListScreen} />
                 <Tab.Screen name="Profile" component={ProfileScreen} />
             </Tab.Navigator>
         </TabBarVisibilityContext.Provider>

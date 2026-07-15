@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { getEvent, getAttendees, isAttending, joinEvent, leaveEvent } from '@readme/shared/src/services/events';
-import { getUsersByIds } from '@readme/shared/src/services/users';
+import { getEvent, getAttendees, isAttending, joinEvent, leaveEvent } from '@readme/shared/src/services/events.web';
+import { UsersService } from '@readme/shared/src/services/users';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import { SkeletonList } from '../../components/Skeleton.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
@@ -44,7 +44,7 @@ export default function EventDetails({ embedded = false, eventId: eventIdProp, o
             // Hydrate organiser + attendee names
             const uids = new Set([eventData.ownerId, ...attendeeList.map((a) => a.uid)]);
             if (uids.size > 0) {
-                const names = await getUsersByIds(Array.from(uids));
+                const names = await UsersService.getUsersByIds(Array.from(uids));
                 setUserNames(names);
             }
         } catch (err) {

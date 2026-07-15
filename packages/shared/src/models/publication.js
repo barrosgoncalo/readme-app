@@ -31,10 +31,10 @@ export const createPublicationModel = (uid, sellerName, sellerAvatar, bookData, 
             subject: bookData?.subject || "Not specified"
         },
 
+        createdAt: null,
+
         detailsText: detailsText.trim(),
 
-        // -- Timestamps & Stats --
-        createdAt: new Date().toISOString(),
         stats: {
             likesCount: 0,
             commentsCount: 0

@@ -6,7 +6,6 @@ import {
     Text,
     Alert,
     ScrollView,
-    useColorScheme,
     Platform
 } from 'react-native';
 
@@ -17,8 +16,8 @@ import {
     doSignOut,
 } from '@readme/shared/src/services/auth';
 
-import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 
 // Separated Components
 import { buildAuthStyles } from '../../../styles/authStyles';
@@ -28,7 +27,7 @@ import {
     hasNumbers,
     hasValidLength,
 } from '@readme/shared/src/utils/registerUtils';
-import StepDots from './StepDots';
+import StepDots from './Components/StepDots';
 import StepOneCredentials from './StepOneCredentials';
 import StepTwoPersonal from './StepTwoPersonal';
 import StepThreeAddress from './StepThreeAddress';
@@ -63,8 +62,7 @@ export default function RegisterScreen({ navigation }) {
 
     const [isRegistering, setIsRegistering] = useState(false);
 
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildAuthStyles(theme);
     const passwordStyles = buildPasswordStyles(theme);
 

@@ -1,13 +1,11 @@
-import { db } from './firebase';
-import {
-    collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, deleteDoc, updateDoc, writeBatch,
-} from 'firebase/firestore';
+// @readme/shared/src/services/events.js
+
+import { DB } from './DB';
 
 const EVENTS_COLLECTION = 'events';
 
 export async function createEvent({ ownerId, title, description, type, startsAt, location }) {
-    const now = new Date().toISOString();
-    const eventRef = await addDoc(collection(db, EVENTS_COLLECTION), {
+    return await DB.create(EVENTS_COLLECTION, {
         ownerId,
         title,
         description,
@@ -15,63 +13,54 @@ export async function createEvent({ ownerId, title, description, type, startsAt,
         startsAt,
         location,
         attendeeCount: 0,
-        createdAt: now,
     });
-    return eventRef.id;
 }
 
 export async function getUpcomingEvents() {
     const now = new Date().toISOString();
-    const q = query(collection(db, EVENTS_COLLECTION), where('startsAt', '>=', now));
-    const snapshot = await getDocs(q);
-    const events = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    events.sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
-    return events;
+    
+    const events = await DB.get(EVENTS_COLLECTION, [
+        { field: 'startsAt', operator: '>=', value: now }
+    ]);
+    
+    return events.sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
 }
 
 export async function getEvent(eventId) {
-    const snap = await getDoc(doc(db, EVENTS_COLLECTION, eventId));
-    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    return await DB.get(EVENTS_COLLECTION, eventId);
 }
 
 export async function getAttendees(eventId) {
-    const attendeesRef = collection(db, EVENTS_COLLECTION, eventId, 'attendees');
-    const snapshot = await getDocs(attendeesRef);
-    return snapshot.docs.map((d) => ({ uid: d.id, joinedAt: d.data().joinedAt }));
+    const attendees = await DB.get(`events/${eventId}/attendees`, []);
+    
+    return attendees.map((d) => ({ uid: d.id, joinedAt: d.joinedAt }));
 }
 
 export async function isAttending(eventId, uid) {
-    const snap = await getDoc(doc(db, EVENTS_COLLECTION, eventId, 'attendees', uid));
-    return snap.exists();
+    const snap = await DB.get(`events/${eventId}/attendees`, uid);
+    return !!snap;
 }
 
 export async function joinEvent(eventId, uid) {
-    const batch = writeBatch(db);
+    const event = await getEvent(eventId);
+    if (!event) return;
 
-    const attendeeRef = doc(db, EVENTS_COLLECTION, eventId, 'attendees', uid);
-    batch.set(attendeeRef, {
-        joinedAt: new Date().toISOString(),
-    });
+    const currentCount = event.attendeeCount || 0;
 
-    const eventRef = doc(db, EVENTS_COLLECTION, eventId);
-    batch.update(eventRef, {
-        attendeeCount: (await getEvent(eventId)).attendeeCount + 1,
-    });
-
-    await batch.commit();
+    await Promise.all([
+        DB.create(`events/${eventId}/attendees`, { joinedAt: new Date().toISOString() }, uid),
+        DB.update(EVENTS_COLLECTION, eventId, { attendeeCount: currentCount + 1 })
+    ]);
 }
 
 export async function leaveEvent(eventId, uid) {
-    const batch = writeBatch(db);
-
-    const attendeeRef = doc(db, EVENTS_COLLECTION, eventId, 'attendees', uid);
-    batch.delete(attendeeRef);
-
     const event = await getEvent(eventId);
-    const eventRef = doc(db, EVENTS_COLLECTION, eventId);
-    batch.update(eventRef, {
-        attendeeCount: Math.max(0, event.attendeeCount - 1),
-    });
+    if (!event) return;
 
-    await batch.commit();
+    const currentCount = event.attendeeCount || 0;
+
+    await Promise.all([
+        DB.remove(`events/${eventId}/attendees`, uid),
+        DB.update(EVENTS_COLLECTION, eventId, { attendeeCount: Math.max(0, currentCount - 1) })
+    ]);
 }

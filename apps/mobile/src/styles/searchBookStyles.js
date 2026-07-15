@@ -1,4 +1,6 @@
 import { StyleSheet } from "react-native";
+import { withOpacity } from "@readme/shared/src/utils/colorUtils";
+import { Fonts } from "@readme/shared/src/constants/theme";
 
 export const buildSearchBookStyles = () => StyleSheet.create({
     container: {
@@ -11,7 +13,7 @@ export const buildSearchBookStyles = () => StyleSheet.create({
         paddingTop: 60,
         paddingBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
+        borderBottomColor: withOpacity( '#000000', 0.05 ),
     },
     backBtn: {
         marginRight: 12,
@@ -30,7 +32,7 @@ export const buildSearchBookStyles = () => StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 16,
-        fontFamily: 'Inter-Regular',
+        fontFamily: Fonts.inter_regular,
         height: '100%',
     },
     centerContent: {
@@ -42,17 +44,17 @@ export const buildSearchBookStyles = () => StyleSheet.create({
     loadingText: {
         marginTop: 12,
         fontSize: 15,
-        fontFamily: 'Inter-Medium',
+        fontFamily: Fonts.inter_medium,
     },
     emptyTitle: {
         fontSize: 18,
-        fontFamily: 'Inter-SemiBold',
+        fontFamily: Fonts.inter_semi,
         marginTop: 16,
         marginBottom: 8,
     },
     emptySubtext: {
         fontSize: 15,
-        fontFamily: 'Inter-Regular',
+        fontFamily: Fonts.inter_regular,
         textAlign: 'center',
         lineHeight: 22,
     },
@@ -82,13 +84,13 @@ export const buildSearchBookStyles = () => StyleSheet.create({
     },
     bookTitle: {
         fontSize: 16,
-        fontFamily: 'Inter-SemiBold',
+        fontFamily: Fonts.inter_semi,
         marginBottom: 4,
     },
     bookAuthor: {
         fontSize: 14,
         color: '#666',
-        fontFamily: 'Inter-Regular',
+        fontFamily: Fonts.inter_regular,
         marginBottom: 4,
     },
     actionRow: {
@@ -100,7 +102,7 @@ export const buildSearchBookStyles = () => StyleSheet.create({
     bookPages: {
         fontSize: 12,
         color: '#999',
-        fontFamily: 'Inter-Medium',
+        fontFamily: Fonts.inter_medium,
     },
     addButton: {
         backgroundColor: '#F58B2E',
@@ -116,6 +118,6 @@ export const buildSearchBookStyles = () => StyleSheet.create({
     addButtonText: {
         color: '#FFF',
         fontSize: 13,
-        fontFamily: 'Inter-SemiBold',
+        fontFamily: Fonts.inter_semi,
     }
 });

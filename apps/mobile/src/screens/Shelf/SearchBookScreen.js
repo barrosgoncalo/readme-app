@@ -1,6 +1,4 @@
-// src/screens/SearchBookScreen.js
-
-import React, { useState } from 'react';
+import React from 'react';
 import {
     View,
     Text,
@@ -9,71 +7,27 @@ import {
     FlatList,
     ActivityIndicator,
     Image,
-    Keyboard,
-    Alert,
-    useColorScheme
 } from 'react-native';
 import { buildSearchBookStyles } from '../../styles/searchBookStyles';
 import { Iconify } from 'react-native-iconify';
 import { useNavigation } from '@react-navigation/native';
 
-import { Colors } from '@readme/shared/src/constants/theme';
+import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
-import { GoogleBooksService } from '@readme/shared/src/services/googleBooks';
-import { myBooksService } from '@readme/shared/src/services/books';
+import { useBookSearch } from '@readme/shared/src/hooks/use-book-search';
+import { useSaveBookToShelf } from '@readme/shared/src/hooks/use-save-book-to-shelf';
 
 export default function SearchBookScreen() {
     const navigation = useNavigation();
-    const colorScheme = useColorScheme() ?? 'light';
-    const theme = Colors[colorScheme];
+    const theme = useTheme();
     const styles = buildSearchBookStyles(); 
     const { currentUser } = useAuth();
 
-    // State
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [savingBookId, setSavingBookId] = useState(null);
-    const [hasSearched, setHasSearched] = useState(false);
+    const {
+        searchQuery, setSearchQuery, searchResults, isLoading, hasSearched, handleSearch
+    } = useBookSearch();
 
-    // Handlers
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
-
-        Keyboard.dismiss();
-        setIsLoading(true);
-        setHasSearched(true);
-        setSearchResults([]);
-
-        try {
-            const results = await GoogleBooksService.searchBooks(searchQuery);
-            setSearchResults(results || []);
-        } catch (error) {
-            console.error("Search error:", error);
-            Alert.alert("Error", "Could not complete the search. Please try again.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSaveBook = async (book) => {
-        setSavingBookId(book.bookId);
-
-        try {
-            await myBooksService.saveBookToShelf(currentUser.uid, book, 'reading');
-
-            Alert.alert(
-                'Success!', 
-                `"${book.title}" has been added to your shelf.`,
-                [{ text: 'OK', onPress: () => navigation.popToTop() }]
-            );
-        } catch (error) {
-            console.error("Save error:", error);
-            Alert.alert("Error", "Failed to save the book to your shelf.");
-        } finally {
-            setSavingBookId(null);
-        }
-    };
+    const { savingBookId, saveBook } = useSaveBookToShelf(currentUser?.uid, navigation);
 
     // Rendered Items
     const renderBookItem = ({ item }) => (
@@ -101,7 +55,7 @@ export default function SearchBookScreen() {
 
                     <TouchableOpacity 
                         style={[styles.addButton, savingBookId === item.bookId && styles.addingButton]}
-                        onPress={() => handleSaveBook(item)}
+                        onPress={() => saveBook(item, 'reading')}
                         disabled={savingBookId === item.bookId}
                     >
                         {savingBookId === item.bookId ? (

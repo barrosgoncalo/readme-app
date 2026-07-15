@@ -1,217 +1,264 @@
-import { auth, db } from './firebase';
-import { collection, doc, getDoc, getDocs, getCountFromServer, query, where, documentId, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { getFollowId, createFollow } from '../models/follow';
+// @readme/shared/src/services/users.js
+
+import { auth, storage } from "./firebase";
+import { 
+    documentId,
+    arrayUnion,
+    arrayRemove,
+    increment,
+} from "firebase/firestore";
+import { getFollowId, createFollow, createFollowRequest } from '../models/follow';
+import { StorageService } from "./storage";
+
+import { DB } from './DB';
 
 const USERS_COLLECTION = 'users';
 
-export async function getUserById(uid) {
-    if (!uid) return null;
-    const snap = await getDoc(doc(db, USERS_COLLECTION, uid));
-    if (!snap.exists()) return null;
-    return { id: snap.id, ...snap.data() };
-}
+export const UsersService = {
 
-export async function getUsersByIds(uids) {
-    if (!uids || uids.length === 0) return {};
+    /**
+    * Resolves a display name from either a canonical Firestore user doc
+    * (username/fullName) or a raw Firebase Auth user object (displayName),
+    * in case currentUser is ever the latter.
+    */
+    getDisplayName: (user) => {
+        return user?.username || user?.fullName || user?.displayName || 'Anonymous Swapper';
+    },
 
-    const chunks = [];
-    for (let i = 0; i < uids.length; i += 10) {
-        chunks.push(uids.slice(i, i + 10));
-    }
+    /**
+    * Resolves an avatar URL from either shape.
+    */
+    getAvatarUrl: (user) => {
+        return user?.photoURL || null;
+    },
 
-    const results = await Promise.all(
-        chunks.map(async (chunk) => {
-            const q = query(
-                collection(db, USERS_COLLECTION),
-                where(documentId(), 'in', chunk),
-            );
-            const snapshot = await getDocs(q);
-            const map = {};
-            snapshot.docs.forEach((d) => {
-                map[d.id] = {
-                    username: d.data().username,
-                    fullName: d.data().fullName,
-                    photoURL: d.data().photoURL || null,
-                };
-            });
-            return map;
-        })
-    );
+    /**
+    * Fetches a user's profile and checks if the current user is following them.
+    * @param {string} userId - The ID of the profile being viewed
+    */
+    fetchUserProfile: async (userId) => {
+        if (!userId) throw new Error("User ID is required to fetch profile.");
 
-    return results.reduce((acc, map) => ({ ...acc, ...map }), {});
-}
+        try {
+            const userData = await DB.get(USERS_COLLECTION, userId);
+            if (!userData) return null;
 
-/**
- * Live follower/following counts computed from the `follows` collection
- * itself, rather than the denormalized `followersCount`/`followingCount`
- * fields on the user doc — those counters can drift from reality (e.g. a
- * write that updated the `follows` doc but failed to update the counter)
- * and nothing else reconciles them. getCountFromServer is billed as a
- * single read regardless of match count, so this is cheap.
- */
-export const getFollowCounts = async (uid) => {
-    const [followersSnap, followingSnap] = await Promise.all([
-        getCountFromServer(query(collection(db, 'follows'), where('followingUid', '==', uid))),
-        getCountFromServer(query(collection(db, 'follows'), where('followerUid', '==', uid))),
-    ]);
+            let isCurrentUserFollowing = false;
+            let isRequestPending = false;
+            const currentUserId = auth?.currentUser?.uid;
 
-    return {
-        followers: followersSnap.data().count,
-        following: followingSnap.data().count,
-    };
-};
+            if (currentUserId && currentUserId !== userId) {
+                const relationshipId = getFollowId(currentUserId, userId);
+                const followData = await DB.get('follows', relationshipId);
+                isCurrentUserFollowing = !!followData;
 
-/**
- * Fetches a user's profile and checks if the current user is following them.
- */
-export const fetchUserProfile = async (userId) => {
-    if (!userId) throw new Error("User ID is required to fetch profile.");
+                if (!isCurrentUserFollowing) {
+                    const requestData = await DB.get('followRequests', relationshipId);
+                    isRequestPending = !!requestData;
+                }
+            }
 
-    try {
-        const userRef = doc(db, 'users', userId);
-        const userSnap = await getDoc(userRef);
-
-        if (!userSnap.exists()) {
-            return null;
+            return {
+                ...userData,
+                followers: userData.followersCount || 0,
+                following: userData.followingCount || 0,
+                isCurrentUserFollowing,
+                isRequestPending,
+            };
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            throw error;
         }
+    },
 
-        const userData = userSnap.data();
-        let isCurrentUserFollowing = false;
+    /**
+    * Fetches a user's list of favorite books.
+    * @param {string} userId - The ID of the user
+    * @returns {Promise<Array>} Array of favorite book IDs
+    */
+    fetchUserFavorites: async (userId) => {
+        if (!userId) return [];
 
+        try {
+            const userData = await DB.get(USERS_COLLECTION, userId);
+            return userData?.favoriteBooks || [];
+        } catch (error) {
+            console.error("Error fetching user favorites:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetches multiple users by an array of UIDs, handling Firestore's 10-item 'in' query limit.
+     * Returns a dictionary mapped by UID.
+     */
+    getUsersByIds: async (uids) => {
+        if (!uids || uids.length === 0) return {};
+
+        const users = await DB.get(USERS_COLLECTION, [
+            { field: documentId(), operator: 'in', value: uids }
+        ]);
+
+        // Map into the expected dictionary format
+        const map = {};
+        users.forEach((u) => {
+            map[u.id] = {
+                username: u.username,
+                fullName: u.fullName,
+            };
+        });
+        
+        return map;
+    },
+
+    /**
+     * Executes a dual-document batch update to toggle favorite statuses.
+     */
+    toggleFavoriteStatus: async (userId, bookId, isCurrentlyFavorited) => {
+        await Promise.all([
+            DB.update(USERS_COLLECTION, userId, { 
+                favoriteBooks: !isCurrentlyFavorited ? arrayUnion(bookId) : arrayRemove(bookId) 
+            }),
+            
+            DB.update('publications', bookId, { 
+                "stats.likesCount": increment(!isCurrentlyFavorited ? 1 : -1) 
+            })
+        ]);
+    },
+
+    /**
+     * Uploads a profile picture to Firebase Storage and updates the user's Firestore document.
+     */
+    uploadProfilePicture: async (userId, imageUri) => {
+        const downloadUrl = await StorageService.uploadImage(imageUri, `profile_pictures/${userId}`);
+
+        await DB.update(USERS_COLLECTION, userId, {
+            photoURL: downloadUrl
+        });
+
+        return downloadUrl;
+    },
+
+    /**
+    * Toggles follow status. If the target is private and the action is "follow",
+    * this sends a pending request instead of following directly.
+    */
+    toggleFollowUser: async (targetUserId, shouldFollow, isTargetPrivate = false) => {
         const currentUserId = auth?.currentUser?.uid;
 
-        if (currentUserId && currentUserId !== userId) {
-            const followDocId = getFollowId(currentUserId, userId);
-            const followRef = doc(db, 'follows', followDocId);
-            const followSnap = await getDoc(followRef);
+        if (!currentUserId) throw new Error("Authentication required to follow users.");
+        if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
 
-            isCurrentUserFollowing = followSnap.exists();
+        const relationshipId = getFollowId(currentUserId, targetUserId);
+
+        if (shouldFollow && isTargetPrivate) {
+            await DB.create('followRequests', createFollowRequest(currentUserId, targetUserId), relationshipId);
+            return;
         }
 
-        const { followers, following } = await getFollowCounts(userId);
+        if (shouldFollow) {
+            await Promise.all([
+                DB.create('follows', createFollow(currentUserId, targetUserId), relationshipId),
+                DB.update(USERS_COLLECTION, currentUserId, { followingCount: increment(1) }),
+                DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(1) })
+            ]);
+        } else {
+            await Promise.all([
+                DB.remove('follows', relationshipId),
+                DB.update(USERS_COLLECTION, currentUserId, { followingCount: increment(-1) }),
+                DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(-1) })
+            ]);
+        }
+    },
 
-        return {
-            id: userSnap.id,
-            ...userData,
-            followers,
-            following,
-            isCurrentUserFollowing: isCurrentUserFollowing
-        };
+    /**
+    * Accepts a pending follow request: creates the actual follow relationship,
+    * increments counts, and removes the request doc.
+    */
+    acceptFollowRequest: async (targetUserId, requesterUid) => {
+        const relationshipId = getFollowId(requesterUid, targetUserId);
 
-    } catch (error) {
-        console.error("Error fetching user profile:", error);
-        throw error;
-    }
-};
+        await Promise.all([
+            DB.create('follows', createFollow(requesterUid, targetUserId), relationshipId),
+            DB.update(USERS_COLLECTION, requesterUid, { followingCount: increment(1) }),
+            DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(1) }),
+            DB.remove('followRequests', relationshipId),
+        ]);
+    },
 
-/**
- * Toggle favorite status on a publication.
- */
-export const toggleFavoriteStatus = async (userId, pubId, isCurrentlyFavorited) => {
-    const userDocRef = doc(db, USERS_COLLECTION, userId);
-    const publicationDocRef = doc(db, 'publications', pubId);
+    /**
+    * Declines a pending follow request: just removes the request doc, no counts change.
+    */
+    declineFollowRequest: async (targetUserId, requesterUid) => {
+        const relationshipId = getFollowId(requesterUid, targetUserId);
+        await DB.remove('followRequests', relationshipId);
+    },
 
-    await Promise.all([
-        updateDoc(userDocRef, {
-            favoriteBooks: !isCurrentlyFavorited ? arrayUnion(pubId) : arrayRemove(pubId)
-        }),
-        updateDoc(publicationDocRef, {
-            "stats.likesCount": increment(!isCurrentlyFavorited ? 1 : -1)
-        })
-    ]);
-};
+    /**
+    * Fetches raw pending follow requests for a given user (the target).
+    * Returns request docs only (requesterUid, id) — resolving requester profile
+    * details (name/avatar) for display is left to whichever screen consumes this.
+    */
+    fetchPendingFollowRequests: async (userId) => {
+        if (!userId) return [];
+        return await DB.get('followRequests', [
+            { field: 'targetUid', operator: '==', value: userId }
+        ]);
+    },
 
-/**
- * Toggle follow status between current user and target user.
- */
-export const toggleFollowUser = async (targetUserId, shouldFollow) => {
-    const currentUserId = auth?.currentUser?.uid;
-
-    if (!currentUserId) throw new Error("Authentication required to follow users.");
-    if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
-
-    const followDocId = getFollowId(currentUserId, targetUserId);
-    const followRef = doc(db, 'follows', followDocId);
-
-    if (shouldFollow) {
-        await setDoc(followRef, createFollow(currentUserId, targetUserId));
-    } else {
-        await deleteDoc(followRef);
-    }
-};
-
-/**
- * Fetch list of users the given user is following.
- */
-export const getFollowing = async (uid) => {
-    const q = query(collection(db, 'follows'), where('followerUid', '==', uid));
-    const snapshot = await getDocs(q);
-
-    return Promise.all(
-        snapshot.docs.map(async (followDoc) => {
-            const data = followDoc.data();
-            const followingUid = data.followingUid;
-
-            let username = null;
-            let fullName = null;
-            let avatarUrl = null;
-            try {
-                const userSnap = await getDoc(doc(db, USERS_COLLECTION, followingUid));
-                if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    username = userData.username ?? null;
-                    fullName = userData.fullName ?? null;
-                    avatarUrl = userData.photoURL ?? null;
-                }
-            } catch (error) {
-                console.error(`Failed to fetch profile for following user ${followingUid}:`, error);
+    /**
+    * Subscribes to pending follow requests in real-time.
+    * Automatically fires the callback with the updated integer count whenever requests change.
+    * @returns {function} Unsubscribe function to clean up the listener
+    */
+    subscribeToPendingFollowRequestsCount: (userId, onCountChange) => {
+        if (!userId) return () => {};
+        
+        return DB.subscribeQuery(
+            'followRequests',
+            [{ field: 'targetUid', operator: '==', value: userId }],
+            (requests) => {
+                // Pass the length of the matching array straight to your state setter
+                onCountChange(requests.length);
             }
+        );
+    },
 
-            return {
-                id: followingUid,
-                username,
-                fullName,
-                avatarUrl,
-                createdAt: data.createdAt || null,
-            };
-        })
-    );
-};
-
-/**
- * Fetch list of users following the given user.
- */
-export const getFollowers = async (uid) => {
-    const q = query(collection(db, 'follows'), where('followingUid', '==', uid));
-    const snapshot = await getDocs(q);
-
-    return Promise.all(
-        snapshot.docs.map(async (followDoc) => {
-            const data = followDoc.data();
-            const followerUid = data.followerUid;
-
-            let username = null;
-            let fullName = null;
-            let avatarUrl = null;
-            try {
-                const userSnap = await getDoc(doc(db, USERS_COLLECTION, followerUid));
-                if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    username = userData.username ?? null;
-                    fullName = userData.fullName ?? null;
-                    avatarUrl = userData.photoURL ?? null;
-                }
-            } catch (error) {
-                console.error(`Failed to fetch profile for follower ${followerUid}:`, error);
+    /**
+    * Subscribes to all unread notifications (requests, acceptances, swaps, etc.) in real-time.
+    * Automatically fires the callback with the updated integer count.
+    * @returns {function} Unsubscribe function to clean up the listener
+    */
+    subscribeToUnreadNotificationsCount: (userId, onCountChange) => {
+        if (!userId) return () => {};
+        
+        return DB.subscribeQuery(
+            `users/${userId}/notifications`,
+            [{ field: 'isRead', operator: '==', value: false }],
+            (notifications) => {
+                // This captures ANY unread notification document 
+                onCountChange(notifications.length);
             }
+        );
+    },
 
-            return {
-                id: followerUid,
-                username,
-                fullName,
-                avatarUrl,
-                createdAt: data.createdAt || null,
-            };
-        })
-    );
+    /**
+     * Appends a unique Expo push token to the user's registered devices array
+     * @param {string} uid - The authenticated user's ID
+     * @param {string} token - The unique Expo push token string
+     */
+    async savePushToken(uid, token) {
+        if (!uid || !token) return;
+        
+        try {
+            // Using your DB architecture wrapper to append the token safely to an array
+            await DB.update('users', uid, {
+                pushTokens: DB.arrayUnion ? DB.arrayUnion(token) : [token]
+            });
+            console.log(`[UsersService] Push token successfully registered for user: ${uid}`);
+        } catch (error) {
+            console.error("[UsersService] Failed to save push token to database:", error);
+            throw error;
+        }
+    }
 };

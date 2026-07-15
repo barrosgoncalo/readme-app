@@ -1,4 +1,4 @@
-import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/blockUser';
+import { doGetBlockedUsers, doUnblockUser } from '@readme/shared/src/services/block';
 import UserListPage from '../../components/UserListPage.jsx';
 
 export default function BlockedUsers() {
