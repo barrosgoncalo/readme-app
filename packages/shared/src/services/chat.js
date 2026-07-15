@@ -76,25 +76,23 @@ export const ChatService = {
             }
         });
 
-        // 1. Extract the UI data safely
         const firstImage = targetBook?.imageUrl || targetBook?.book?.images?.[0] || targetBook?.images?.[0] || null;
         const receiverName = targetBook?.seller?.name || targetBook?.sellerName || "Swapper";
 
         if (!chatId) {
-            // 2. Pass all 6 arguments exactly as createChatModel expects them
             const newChatData = createChatModel(
                 [currentUserId, sellerId],              // participants
                 currentUserId,                          // proposerId
                 sellerId,                               // receiverId
                 receiverName,                           // receiverName
-                firstImage,                             // targetBookImage
+                targetBook.id,                           // targetBookId
+                firstImage,                              // targetBookImage
                 `Offered swap for ${targetBook.title}`  // lastMessage
             );
             const newChatRef = await addDoc(chatsRef, newChatData);
             chatId = newChatRef.id;
         }
 
-        // 3. Pass `firstImage` as the 2nd argument so the order matches your model!
         const offerPayload = createOfferModel(
             targetBook.id,
             firstImage,
