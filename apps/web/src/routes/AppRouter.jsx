@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { DB } from '@readme/shared/src/services/DB';
 import { getAuth, signOut } from 'firebase/auth';
-import { ADMIN_ROUTES } from '../constants/adminRoutes.js';
-import AdminShell from '../pages/Admin/AdminShell.jsx';
-import Reports from '../pages/Admin/Reports/index.jsx';
+import { DB } from '@readme/shared/src/services/DB';
 
 import Login from '../pages/Auth/Login.jsx';
 import AdminDashboard from '../pages/Admin/AdminDashboard.jsx';
+import ReportsPage from '../pages/Admin/Reports/ReportsPage.jsx';
+import AdminShell from '../components/AdminShell.jsx';
 
 export default function AppRouter() {
     const authContext = useAuth();
@@ -17,23 +16,8 @@ export default function AppRouter() {
     const [adminRole, setAdminRole] = useState(null);
     const [resolvingRole, setResolvingRole] = useState(true);
 
-    const handleLogout = () => {
-        signOut(getAuth());
-    };
+    const handleLogout = () => signOut(getAuth());
 
-    // 1. Diagnostic Console Log: Inspect exactly what the Auth Context is exposing
-    useEffect(() => {
-        console.log("AppRouter Auth Context State:", {
-            currentUser,
-            userLoggedIn,
-            loading,
-            contextKeys: Object.keys(authContext),
-            // Check if profile/userData is hiding under a different key in your context
-            nestedUserData: authContext.userData || authContext.profile || authContext.userProfile || null
-        });
-    }, [currentUser, userLoggedIn, loading, authContext]);
-
-    // 2. Resolve Role (Context -> Firestore Direct -> Token Claims)
     useEffect(() => {
         const determineRole = async () => {
             if (!userLoggedIn || !currentUser) {
@@ -42,14 +26,12 @@ export default function AppRouter() {
                 return;
             }
 
-            // Path A: Check if role is directly on the currentUser object
             if (currentUser.role) {
                 setAdminRole(currentUser.role);
                 setResolvingRole(false);
                 return;
             }
 
-            // Path B: Check if context has a secondary user profile object
             const nestedProfile = authContext.userData || authContext.profile || authContext.userProfile;
             if (nestedProfile?.role) {
                 setAdminRole(nestedProfile.role);
@@ -57,28 +39,22 @@ export default function AppRouter() {
                 return;
             }
 
-            // Path C: Query Firestore directly (Your console log proved this document exists and has the role!)
             try {
-                const dbProfile = await DB.get("users", currentUser.uid);
+                const dbProfile = await DB.get('users', currentUser.uid);
                 if (dbProfile?.role) {
                     setAdminRole(dbProfile.role);
                     setResolvingRole(false);
                     return;
                 }
             } catch (err) {
-                console.warn("Direct Firestore role query failed, trying token claims:", err);
+                console.warn('Direct Firestore role query failed, trying token claims:', err);
             }
 
-            // Path D: Read Cryptographic Custom Token Claims (Your bootstrap script assigned this!)
             try {
                 const tokenResult = await currentUser.getIdTokenResult();
-                if (tokenResult.claims?.role) {
-                    setAdminRole(tokenResult.claims.role);
-                } else {
-                    setAdminRole('user'); // Fallback to basic user if nothing else is found
-                }
+                setAdminRole(tokenResult.claims?.role || 'user');
             } catch (err) {
-                console.error("Failed to parse cryptographic claims:", err);
+                console.error('Failed to parse token claims:', err);
                 setAdminRole('user');
             } finally {
                 setResolvingRole(false);
@@ -88,75 +64,52 @@ export default function AppRouter() {
         determineRole();
     }, [currentUser, userLoggedIn, authContext]);
 
-    // Show loading state if auth state is initializing OR if we are resolving the admin role
     if (loading || (userLoggedIn && resolvingRole)) {
         return (
-            // CHANGED: backgroundColor to '#f8f9fa' and color to '#212529'
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8f9fa', color: '#212529', fontFamily: 'sans-serif' }}>
-                <h3>Loading Admin System...</h3>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8f9fb', color: '#6b7280', fontFamily: 'sans-serif' }}>
+                <h3>Loading…</h3>
             </div>
         );
     }
 
     return (
         <Routes>
-            <Route path={ADMIN_ROUTES.REPORTS} element={<Reports />} />
-            {/* 1. Unauthenticated Gate */}
             {!userLoggedIn ? (
                 <>
                     <Route path="/login" element={<Login />} />
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </>
-            ) : (
-                /* 2. Authenticated Routes (Only for Admins) */
+            ) : adminRole === 'admin' ? (
                 <>
-                    {adminRole === 'admin' ? (
-                        <>
-                            <Route path="/admin" element={<AdminDashboard />} />
-                            <Route path="*" element={<Navigate to="/admin" replace />} />
-                        </>
-                    ) : (
-                        /* 3. Restricted Trap (For Non-Admins attempting access) */
-                        <Route
-                            path="*"
-                            element={
-                                // CHANGED: backgroundColor to '#f8f9fa' and color to '#212529'
-                                <div style={{ 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    justifyContent: 'center', 
-                                    alignItems: 'center', 
-                                    height: '100vh', 
-                                    fontFamily: 'sans-serif',
-                                    backgroundColor: '#f8f9fa',
-                                    color: '#212529',
-                                    padding: 20
-                                }}>
-                                    <h2 style={{ fontSize: '32px', marginBottom: '10px' }}>🛡️ Access Restricted</h2>
-                                    {/* CHANGED: color to '#6c757d' */}
-                                    <p style={{ color: '#6c757d', marginBottom: '25px', textAlign: 'center' }}>
-                                        This console is exclusively reserved for system administrators.
-                                    </p>
-                                    <button 
-                                        onClick={handleLogout}
-                                        style={{
-                                            padding: '12px 24px',
-                                            backgroundColor: '#dc3545',
-                                            color: '#fff',
-                                            border: 'none',
-                                            borderRadius: 4,
-                                            cursor: 'pointer',
-                                            fontWeight: 'bold',
-                                            fontSize: '15px'
-                                        }}
-                                    >
-                                        Return to Login
-                                    </button>
-                                </div>
-                            }
-                        />
-                    )}
+                    <Route element={<AdminShell />}>
+                        <Route path="/admin/users"   element={<AdminDashboard />} />
+                        <Route path="/admin/reports" element={<ReportsPage />} />
+                    </Route>
+                    <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+                    <Route path="*"     element={<Navigate to="/admin/users" replace />} />
                 </>
+            ) : (
+                <Route
+                    path="*"
+                    element={
+                        <div style={{
+                            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                            alignItems: 'center', height: '100vh', fontFamily: 'sans-serif',
+                            backgroundColor: '#f8f9fb', color: '#111827', padding: 20
+                        }}>
+                            <h2 style={{ fontSize: '28px', marginBottom: '10px' }}>Access Restricted</h2>
+                            <p style={{ color: '#6b7280', marginBottom: '25px', textAlign: 'center' }}>
+                                This console is exclusively reserved for system administrators.
+                            </p>
+                            <button
+                                onClick={handleLogout}
+                                style={{ padding: '10px 20px', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+                            >
+                                Return to Login
+                            </button>
+                        </div>
+                    }
+                />
             )}
         </Routes>
     );
