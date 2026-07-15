@@ -1,7 +1,8 @@
 import {useEffect, useState} from 'react';
-import {Check, ChevronDown, ChevronUp, List, MapPin, Undo2, X} from 'lucide-react';
+import {Ban, Check, ChevronDown, ChevronUp, List, MapPin, X} from 'lucide-react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {ChatService} from '@readme/shared/src/services/chat';
+import {TradeService} from '@readme/shared/src/services/trades';
 import {ReviewService} from '@readme/shared/src/services/reviews';
 import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
 import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
@@ -14,13 +15,15 @@ import BookCover from '../../../components/BookCover.jsx';
 import Spinner from '../../../components/Spinner.jsx';
 import Modal from '../../../components/Modal.jsx';
 import Button from '../../../components/Button.jsx';
+import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
 import styles from './OfferMessage.module.css';
 
 const STATUS_COLORS = {
     pending: 'var(--secondary)',
     accepted: 'var(--success)',
     declined: 'var(--error)',
-    withdrawn: 'var(--subtext)',
+    canceled: 'var(--error)',
+    unavailable: 'var(--error)',
     completed: 'var(--primary)',
     countered: 'var(--bg-elem)',
 };
@@ -33,6 +36,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     const [hasReviewed, setHasReviewed] = useState(false);
     const [reviewError, setReviewError] = useState('');
     const [showMap, setShowMap] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const showBooksModal = searchParams.get('offer') === message.id;
@@ -44,6 +48,10 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
 
     const offer = message.offerDetails;
     const isCompleted = offer?.status === 'completed';
+    const isCanceled = offer?.status === NEGOTIATION_STATUS.CANCELED;
+    const isUnavailable = offer?.status === NEGOTIATION_STATUS.UNAVAILABLE;
+    // A cancelled swap can still be reviewed by whichever party didn't cancel.
+    const canReview = isCompleted || (isCanceled && offer?.cancelledBy !== currentUserId);
 
     useEffect(() => {
         if (showBooksModal && fetchedBooks.length === 0) {
@@ -67,7 +75,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
 
     useEffect(() => {
-        if (!isCompleted) return;
+        if (!canReview) return;
 
         let cancelled = false;
         ReviewService.hasUserReviewed(message.id, currentUserId)
@@ -78,7 +86,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             .catch(err => console.error('Error checking review status:', err));
 
         return () => cancelled = true;
-    }, [isCompleted, message.id, currentUserId]);
+    }, [canReview, message.id, currentUserId]);
 
     useEffect(() => {
         if (offer?.offeredBookIds?.length === 1 && !singleBook) {
@@ -118,12 +126,39 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             else {
                 const receiverId = isOwn ? message.senderId : currentUserId;
                 const senderId = isOwn ? currentUserId : message.senderId;
-                await ChatService.updateOfferStatus(chatId, message.id, newStatus, senderId, receiverId);
+                // TradeService.resolveOffer also reserves the target/offered
+                // books when accepted, so they stop showing up as available
+                // to other users while this swap is in progress.
+                await TradeService.resolveOffer(chatId, message.id, newStatus, {
+                    proposerId: senderId,
+                    receiverId,
+                    targetBookId: offer.targetBookId,
+                    finalSelectedBookId: offer.finalSelectedBookId,
+                    finalSelectedBookImage: offer.finalSelectedBookImage,
+                });
             }
         } catch (err) {
             console.error('Error updating offer:', err);
         } finally {
             setBusy(false);
+        }
+    }
+
+    async function handleCancelSwap() {
+        setBusy(true);
+        try {
+            await TradeService.cancelSwap(
+                chatId,
+                message.id,
+                offer.targetBookId,
+                offer.finalSelectedBookId,
+                currentUserId,
+            );
+        } catch (err) {
+            console.error('Error cancelling swap:', err);
+        } finally {
+            setBusy(false);
+            setShowCancelConfirm(false);
         }
     }
 
@@ -209,7 +244,8 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         [NEGOTIATION_STATUS.PENDING]: 'Pending',
         [NEGOTIATION_STATUS.ACCEPTED]: 'Accepted',
         [NEGOTIATION_STATUS.DECLINED]: 'Declined',
-        [NEGOTIATION_STATUS.WITHDRAWN]: 'Withdrawn',
+        [NEGOTIATION_STATUS.CANCELED]: 'Cancelled',
+        [NEGOTIATION_STATUS.UNAVAILABLE]: 'Unavailable',
         completed: 'Completed',
         countered: 'Countered',
     }[offer.status] || offer.status;
@@ -300,19 +336,6 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                             </button>
                         </div>
                     )}
-
-                    {isOwn && isPending && (
-                        <div className={styles.actions}>
-                            <button
-                                className={`${styles.btn} ${styles.withdraw}`}
-                                onClick={() => handleStatus(NEGOTIATION_STATUS.WITHDRAWN)}
-                                disabled={busy}
-                            >
-                                <Undo2 size={14}/>
-                                Withdraw
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -321,20 +344,54 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             )}
 
             {isAccepted && offer.verificationCode && (
-                <VerificationUI
-                    code={offer.verificationCode}
-                    displayerId={offer.verificationDisplayerId}
-                    scannerId={offer.verificationScannerId}
-                    currentUserId={currentUserId}
-                    onComplete={handleCompleteSwap}
-                    error={verificationError}
-                    busy={busy}
-                />
+                <>
+                    <VerificationUI
+                        code={offer.verificationCode}
+                        displayerId={offer.verificationDisplayerId}
+                        scannerId={offer.verificationScannerId}
+                        currentUserId={currentUserId}
+                        onComplete={handleCompleteSwap}
+                        error={verificationError}
+                        busy={busy}
+                    />
+                    <button
+                        type="button"
+                        className={styles.cancelSwapBtn}
+                        onClick={() => setShowCancelConfirm(true)}
+                        disabled={busy}
+                    >
+                        <Ban size={14}/>
+                        Cancel Swap Agreement
+                    </button>
+                </>
             )}
 
-            {isCompleted && !hasReviewed && (
+            {isCanceled && (
+                <p className={styles.canceledNotice}>
+                    {offer.cancelledBy === currentUserId
+                        ? 'You cancelled this swap agreement.'
+                        : 'The other user cancelled this swap agreement.'}
+                </p>
+            )}
+
+            {isUnavailable && (
+                <p className={styles.canceledNotice}>This trade is no longer available.</p>
+            )}
+
+            {canReview && !hasReviewed && (
                 <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError}/>
             )}
+
+            <ConfirmDialog
+                open={showCancelConfirm}
+                onClose={() => setShowCancelConfirm(false)}
+                onConfirm={handleCancelSwap}
+                title="Cancel swap agreement?"
+                message="The other user will be notified and both books will become available again."
+                confirmLabel="Yes, cancel"
+                danger
+                busy={busy}
+            />
 
             <Modal
                 open={showBooksModal}

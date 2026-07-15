@@ -118,20 +118,47 @@
     opacity: 0.9;
 }
 
-.withdraw {
-    background: var(--bg);
-    color: var(--subtext);
-    border: 1px solid var(--subtext);
-}
-
-.withdraw:hover:not(:disabled) {
-    background: var(--bg-elem);
-    color: var(--text);
-}
-
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.cancelSwapBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: var(--space-2);
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--error);
+    border-radius: var(--radius);
+    color: var(--error);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.cancelSwapBtn:hover:not(:disabled) {
+    background: var(--error-bg);
+}
+
+.cancelSwapBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.canceledNotice {
+    margin: var(--space-2) 0 0;
+    padding: var(--space-2) var(--space-3);
+    background: var(--error-bg);
+    border-radius: var(--radius);
+    color: var(--error);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
 }
 
 .clickableTitle {

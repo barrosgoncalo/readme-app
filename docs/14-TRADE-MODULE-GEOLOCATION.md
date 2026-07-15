@@ -1,7 +1,12 @@
 # Trade module — geolocation additions
 
-> Status: planned, not yet implemented.
-> Pick up after `docs/12-TRADE-MODULE-PLAN.md` is fully shipped.
+> **Status: superseded**, along with `docs/12-TRADE-MODULE-PLAN.md` which this
+> depends on — the open-shelves `myBooks` browse model it's built on was never
+> shipped. What exists instead: each offer carries a single meeting-point
+> location (`offerDetails.location: { id, title, address, latitude, longitude }`,
+> picked on the map when making the offer), not a proximity search over other
+> users' shelves. No geohashing or per-user location opt-in exists. Kept for
+> historical context only.
 
 ## Why this is needed
 
