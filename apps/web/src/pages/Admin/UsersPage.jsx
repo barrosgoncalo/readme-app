@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { httpsCallable, getFunctions } from 'firebase/functions';
+import { alterUserPrivileges } from '@readme/shared/src/services/admin.js';
 import { getAuth } from 'firebase/auth';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import Pagination from '../../components/Pagination.jsx';
@@ -18,7 +18,6 @@ export default function UsersPage() {
 
     const db = getFirestore();
     const auth = getAuth();
-    const functions = getFunctions();
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -39,15 +38,14 @@ export default function UsersPage() {
         const makeAdmin = currentRole !== 'admin';
         setActionLoading(targetUid);
         try {
-            const fn = httpsCallable(functions, 'setAdminStatus');
-            const result = await fn({ targetUid, makeAdmin });
-            if (result.data.success) {
+            const result = await alterUserPrivileges(targetUid, makeAdmin);
+            if (result.success) {
                 setAllUsers(prev =>
                     prev.map(u => u.uid === targetUid ? { ...u, role: makeAdmin ? 'admin' : 'user' } : u)
                 );
             }
         } catch (err) {
-            console.error('Role change failed:', err.code, err.message, err.details);
+            console.error('Role change failed:', err);
         } finally {
             setActionLoading(null);
         }
