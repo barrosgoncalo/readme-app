@@ -10,7 +10,7 @@ service cloud.firestore {
     function hasProfile() { return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     function getMyProfile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
 
-    function isAdmin() { return isAuthenticated() && hasProfile() && getMyProfile().role == 'admin'; }
+    function isAdmin() { return isAuthenticated() && request.auth.token.role == 'admin'; }
     function isActive() { return isAuthenticated() && hasProfile() && getMyProfile().accountStatus == 'active'; }
 
     // ─── USERS ───

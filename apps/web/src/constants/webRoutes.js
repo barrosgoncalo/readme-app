@@ -1,13 +1,11 @@
-// Web route paths. Not to be confused with packages/shared/src/constants/routes.ts,
-// which holds React Navigation route *names* for mobile.
 export const WEB_ROUTES = {
     WELCOME: '/welcome',
     LOGIN: '/login',
     REGISTER: '/register',
     FORGOT_PASSWORD: '/forgot-password',
     BOOKS: '/books',
+    PUBLICATIONS: '/profile/publications',
     BOOKS_SCAN: '/books/scan',
-    TRADES: '/trades',
     EVENTS: '/events',
     MAP: '/map',
     CHAT: '/chat',
@@ -16,6 +14,13 @@ export const WEB_ROUTES = {
     PROFILE_CHANGE_PASSWORD: '/profile/change-password',
     PROFILE_PRIVACY_SECURITY: '/profile/privacy-security',
     PROFILE_BLOCKED_USERS: '/profile/blocked-users',
+    PROFILE_FOLLOWING: '/profile/following',
+    PROFILE_FOLLOWERS: '/profile/followers',
+    PROFILE_FAVORITES: '/profile/favorites',
+    PUBLICATION_NEW: '/publications/new',
+    OFFERS_NEW: '/offers/new',
     eventDetails: (eventId) => `/events/${eventId}`,
     bookDetail: (bookId) => `/books/${bookId}`,
+    publicationDetail: (pubId) => `/publications/${pubId}`,
+    userProfile: (uid) => `/users/${uid}`,
 };

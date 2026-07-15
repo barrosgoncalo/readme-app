@@ -9,6 +9,7 @@ const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
+const { getAuth } = require("firebase-admin/auth");
 
 const Notification = require("./models/notification");
 const { PUBLICATION_STATUS_AVAILABLE, NEGOTIATION_STATUS } = require("./constants/negotiation");
@@ -894,5 +895,48 @@ exports.onAuthAccountDeleted = functionsV1
     } catch (error) {
         console.error(`Error processing account deletion cleanup for user ${userId}:`, error);
         throw error; 
+    }
+});
+
+// ==========================================
+// ADMIN: SET USER ADMIN STATUS
+// ==========================================
+exports.setAdminStatus = onCall(async (request) => {
+    // 1. Force authentication check
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Authentication is required to perform this action.");
+    }
+
+    // 2. TOKEN-BACKED CLAIM CHECK: Only existing admins can assign other admins
+    if (request.auth.token.role !== "admin") {
+        throw new HttpsError("permission-denied", "Unauthorized. Only administrators can change user roles.");
+    }
+
+    const { targetUid, makeAdmin } = request.data;
+
+    if (!targetUid) {
+        throw new HttpsError("invalid-argument", "The 'targetUid' parameter is required.");
+    }
+
+    const newRole = makeAdmin === true ? "admin" : "user";
+
+    try {
+        // 3. Cryptographically bake the role into the target user's Auth Token
+        await getAuth().setCustomUserClaims(targetUid, { role: newRole });
+
+        // 4. Sync the role with their Firestore user document for UI queries
+        await db.collection("users").doc(targetUid).update({
+            role: newRole
+        });
+
+        console.log(`[ADMIN] User ${targetUid} role successfully set to '${newRole}' by Admin ${request.auth.uid}.`);
+        
+        return { 
+            success: true, 
+            message: `User role successfully changed to ${newRole}.` 
+        };
+    } catch (error) {
+        console.error("Error setting admin claims:", error);
+        throw new HttpsError("internal", "An error occurred while updating user privileges.");
     }
 });

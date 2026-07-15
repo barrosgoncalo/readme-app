@@ -31,22 +31,15 @@
     border-color: var(--primary);
 }
 
-/* O nosso botão do olho */
 .eyeButton {
     position: absolute;
     right: 10px;
     background: transparent;
     border: none;
-    color: var(--subtext); /* Vai buscar a cor do texto secundário do teu tema */
+    color: var(--subtext);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-}
-
-/* Esta regra ESCONDE o olho nativo que o Microsoft Edge tenta adicionar sozinho! */
-.input::-ms-reveal,
-.input::-ms-clear {
-    display: none;
 }
