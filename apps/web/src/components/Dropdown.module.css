@@ -1,0 +1,25 @@
+.wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.select {
+    appearance: none;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 9px 32px 9px 12px;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.chevron {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #9ca3af;
+}

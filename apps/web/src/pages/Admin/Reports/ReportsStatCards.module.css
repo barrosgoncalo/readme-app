@@ -1,0 +1,48 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #eef0f3;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.iconWrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.blue { background: #eff6ff; color: #2563eb; }
+.amber { background: #fef3c7; color: #b45309; }
+.green { background: #dcfce7; color: #15803d; }
+.red { background: #fee2e2; color: #b91c1c; }
+
+.value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.sub {
+    font-size: 12px;
+    color: #9ca3af;
+}

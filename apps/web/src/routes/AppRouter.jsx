@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { getAuth, signOut } from 'firebase/auth';
 import { DB } from '@readme/shared/src/services/DB';
+import { getAuth, signOut } from 'firebase/auth';
+import { ADMIN_ROUTES } from '../constants/adminRoutes.js';
+import AdminShell from '../pages/Admin/AdminShell.jsx';
+import Reports from '../pages/Admin/Reports/index.jsx';
 
 import Login from '../pages/Auth/Login.jsx';
 import AdminDashboard from '../pages/Admin/AdminDashboard.jsx';
@@ -10,7 +13,7 @@ import AdminDashboard from '../pages/Admin/AdminDashboard.jsx';
 export default function AppRouter() {
     const authContext = useAuth();
     const { currentUser, userLoggedIn, loading } = authContext;
-    
+
     const [adminRole, setAdminRole] = useState(null);
     const [resolvingRole, setResolvingRole] = useState(true);
 
@@ -96,6 +99,7 @@ export default function AppRouter() {
 
     return (
         <Routes>
+            <Route path={ADMIN_ROUTES.REPORTS} element={<Reports />} />
             {/* 1. Unauthenticated Gate */}
             {!userLoggedIn ? (
                 <>

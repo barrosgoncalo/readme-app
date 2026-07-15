@@ -1,0 +1,52 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.card {
+    background: #f9fafb;
+    border: 1px solid #eef0f3;
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.card p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+
+.link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.danger .cardHeader {
+    color: #b91c1c;
+}
+
+.dangerLink {
+    color: #b91c1c;
+}

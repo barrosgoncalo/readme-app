@@ -1,0 +1,111 @@
+.row td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.reportCell, .personCell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reportIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.reportTitle {
+    font-weight: 600;
+    color: #111827;
+}
+
+.reportSub, .personHandle {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.personName {
+    font-weight: 500;
+    color: #111827;
+}
+
+.reasonCell, .dateCell {
+    color: #4b5563;
+}
+
+.actionsCell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+}
+
+.iconBtn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+.menuWrap {
+    position: relative;
+}
+
+.menu {
+    position: absolute;
+    right: 0;
+    top: 36px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+    z-index: 10;
+}
+
+.menu button {
+    text-align: left;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: #374151;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.menu button:hover {
+    background: #f3f4f6;
+}

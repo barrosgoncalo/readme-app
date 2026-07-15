@@ -1,0 +1,23 @@
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.resolved {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dismissed {
+    background: #fee2e2;
+    color: #b91c1c;
+}
