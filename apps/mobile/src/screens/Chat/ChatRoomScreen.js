@@ -32,8 +32,16 @@ export default function ChatRoomScreen({ route, navigation }) {
         isFetchingBook, handleSendMessage, handleShowQRCode,
         handleOpenScanner, handleResolveOffer, handleCancelSwap,
         handleOpenNavigation, handleOpenOptions, handleBookPress
-    } = useChatActions({ chatId, currentUserId, publicationId, messages, navigation });
-
+    } = useChatActions({
+        chatId,
+        currentUserId,
+        publicationId,
+        messages,
+        navigation,
+        otherUserId,
+        otherUserName,
+        otherUserAvatar
+    });
     const onSendPress = useCallback(() => {
         const text = inputText;
         setInputText('');
