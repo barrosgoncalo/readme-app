@@ -7,17 +7,12 @@
     font-weight: 600;
 }
 
-.pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.resolved {
+.admin {
     background: #dcfce7;
     color: #15803d;
 }
 
-.dismissed {
-    background: #fee2e2;
-    color: #b91c1c;
+.user {
+    background: #f3f4f6;
+    color: #4b5563;
 }

@@ -9,7 +9,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
     return (
         <div className={styles.pagination}>
             <span className={styles.summary}>
-                Showing {from} to {to} of {total} reports
+                Showing {from} to {to} of {total} users
             </span>
 
             <div className={styles.controls}>

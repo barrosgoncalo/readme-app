@@ -1,143 +1,161 @@
-import React, { useState, useEffect } from "react";
-import { getFirestore, collection, getDocs, query, limit } from "firebase/firestore";
-import { getAuth, signOut } from "firebase/auth";
+import { useState, useEffect } from 'react';
+import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { httpsCallable, getFunctions } from 'firebase/functions';
+import { getAuth } from 'firebase/auth';
+import StatusBadge from '../../components/StatusBadge.jsx';
+import Pagination from '../../components/Pagination.jsx';
+import styles from './AdminDashboard.module.css';
 
-// 1. Import your new service (adjust the path to match your project structure)
-import { alterUserPrivileges } from "@readme/shared/src/services/admin";
+const PAGE_SIZE_DEFAULT = 10;
 
 export default function AdminDashboard() {
-    const [users, setUsers] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(PAGE_SIZE_DEFAULT);
 
     const db = getFirestore();
     const auth = getAuth();
+    const functions = getFunctions();
 
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const q = query(collection(db, "users"), limit(50));
-                const querySnapshot = await getDocs(q);
-                const usersList = querySnapshot.docs.map(doc => ({
-                    uid: doc.id,
-                    ...doc.data()
-                }));
-                setUsers(usersList);
-            } catch (error) {
-                console.error("Error fetching users list:", error);
+                const q = query(collection(db, 'users'), orderBy('fullName'));
+                const snap = await getDocs(q);
+                setAllUsers(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() })));
+            } catch (err) {
+                console.error('Error fetching users:', err);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchUsers();
     }, [db]);
 
     const handleRoleChange = async (targetUid, currentRole) => {
-        const makeAdmin = currentRole !== "admin";
-        const confirmMessage = makeAdmin 
-            ? "Are you sure you want to promote this user to Admin?" 
-            : "Are you sure you want to demote this Admin back to a regular User?";
-
-        if (!window.confirm(confirmMessage)) return;
-
+        const makeAdmin = currentRole !== 'admin';
         setActionLoading(targetUid);
-
         try {
-            // 2. Call the service instead of raw Firebase functions
-            const data = await alterUserPrivileges(targetUid, makeAdmin);
-
-            if (data.success) {
-                setUsers(prevUsers => 
-                    prevUsers.map(u => 
-                        u.uid === targetUid ? { ...u, role: makeAdmin ? "admin" : "user" } : u
-                    )
+            const fn = httpsCallable(functions, 'setAdminStatus');
+            const result = await fn({ targetUid, makeAdmin });
+            if (result.data.success) {
+                setAllUsers(prev =>
+                    prev.map(u => u.uid === targetUid ? { ...u, role: makeAdmin ? 'admin' : 'user' } : u)
                 );
-                alert(data.message);
             }
-        } catch (error) {
-            console.error("Failed to alter user privileges:", error);
-            alert(error.message || "A secure execution error occurred during promotion.");
+        } catch (err) {
+            console.error('Role change failed:', err.code, err.message, err.details);
         } finally {
             setActionLoading(null);
         }
     };
 
-    const handleLogout = () => signOut(auth);
-
-    if (loading) {
+    const filtered = allUsers.filter(u => {
+        if (!search) return true;
+        const q = search.toLowerCase();
         return (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "#121212", color: "#fff", fontFamily: "sans-serif" }}>
-                <p>Loading administrative dashboard...</p>
-            </div>
+            (u.fullName || '').toLowerCase().includes(q) ||
+            (u.username || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q)
         );
-    }
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+    const handleSearch = (val) => { setSearch(val); setPage(1); };
+    const handlePageSize = (val) => { setPageSize(val); setPage(1); };
 
     return (
-        <div style={{ padding: "40px 20px", maxWidth: "900px", margin: "0 auto", color: "#212529", fontFamily: "sans-serif" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ margin: 0, fontWeight: "bold" }}>🛡️ Admin Role Manager</h2>
-                <button 
-                    onClick={handleLogout}
-                    style={{ padding: "10px 18px", backgroundColor: "#dc3545", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: 'bold' }}
-                >
-                    Logout
-                </button>
+        <div className={styles.page}>
+            <div className={styles.header}>
+                <div>
+                    <h1 className={styles.title}>Users</h1>
+                    <p className={styles.subtitle}>Manage user accounts and roles.</p>
+                </div>
             </div>
-            <hr style={{ margin: "25px 0", borderColor: "#e9ecef" }} />
-            
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                    <tr style={{ textAlign: "left", borderBottom: "2px solid #dee2e6" }}>
-                        <th style={{ padding: "12px", color: "#495057" }}>User Name</th>
-                        <th style={{ padding: "12px", color: "#495057" }}>Email Identifier</th>
-                        <th style={{ padding: "12px", color: "#495057" }}>Current Role</th>
-                        <th style={{ padding: "12px", color: "#495057" }}>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map(user => (
-                        <tr key={user.uid} style={{ borderBottom: "1px solid #f1f3f5" }}>
-                            <td style={{ padding: "14px 12px", fontWeight: "500" }}>{user.fullName || user.username || "Unnamed User"}</td>
-                            <td style={{ padding: "14px 12px", color: "#6c757d" }}>{user.email || user.userId || "No Email Associated"}</td>
-                            <td style={{ padding: "14px 12px" }}>
-                                <span style={{
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
-                                    fontSize: "12px",
-                                    backgroundColor: user.role === "admin" ? "#d4edda" : "#f1f3f5",
-                                    color: user.role === "admin" ? "#155724" : "#495057",
-                                    fontWeight: "bold"
-                                }}>
-                                    {user.role || "user"}
-                                </span>
-                            </td>
-                            <td style={{ padding: "14px 12px" }}>
-                                {user.uid === auth.currentUser?.uid ? (
-                                    <span style={{ color: "#868e96", fontStyle: "italic", fontSize: "14px" }}>You (Active Session)</span>
-                                ) : (
-                                    <button
-                                        disabled={actionLoading !== null}
-                                        onClick={() => handleRoleChange(user.uid, user.role)}
-                                        style={{
-                                            padding: "6px 14px",
-                                            backgroundColor: user.role === "admin" ? "#dc3545" : "#007bff",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: "pointer",
-                                            opacity: actionLoading ? 0.6 : 1,
-                                            fontWeight: "500"
-                                        }}
-                                    >
-                                        {actionLoading === user.uid ? "Executing..." : user.role === "admin" ? "Demote" : "Promote"}
-                                    </button>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+
+            <div className={styles.card}>
+                <div className={styles.toolbar}>
+                    <div className={styles.searchWrapper}>
+                        <IconLucideSearch size={15} className={styles.searchIcon} />
+                        <input
+                            className={styles.searchInput}
+                            placeholder="Search users..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                {loading ? (
+                    <div className={styles.empty}>Loading users…</div>
+                ) : paged.length === 0 ? (
+                    <div className={styles.empty}>No users found.</div>
+                ) : (
+                    <table className={styles.table}>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paged.map(user => (
+                                <tr key={user.uid}>
+                                    <td>
+                                        <div className={styles.userCell}>
+                                            <div className={styles.avatar}>
+                                                {user.photoURL
+                                                    ? <img src={user.photoURL} alt="" className={styles.avatarImg} />
+                                                    : <IconLucideUser size={16} />
+                                                }
+                                            </div>
+                                            <div>
+                                                <div className={styles.userName}>{user.fullName || user.username || 'Unnamed User'}</div>
+                                                {user.username && <div className={styles.userHandle}>@{user.username}</div>}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className={styles.emailCell}>{user.userId || user.email || '—'}</td>
+                                    <td><StatusBadge status={user.role || 'user'} /></td>
+                                    <td>
+                                        {user.uid === auth.currentUser?.uid ? (
+                                            <span className={styles.youLabel}>You</span>
+                                        ) : (
+                                            <button
+                                                className={user.role === 'admin' ? `${styles.actionBtn} ${styles.demote}` : `${styles.actionBtn} ${styles.promote}`}
+                                                disabled={actionLoading !== null}
+                                                onClick={() => handleRoleChange(user.uid, user.role)}
+                                            >
+                                                {actionLoading === user.uid
+                                                    ? 'Saving…'
+                                                    : user.role === 'admin' ? 'Demote' : 'Promote'
+                                                }
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    total={filtered.length}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={handlePageSize}
+                />
+            </div>
         </div>
     );
 }
+
