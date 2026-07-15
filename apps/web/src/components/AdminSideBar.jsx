@@ -6,7 +6,7 @@ import styles from './AdminSidebar.module.css';
 // but inert (no page built yet) — per instructions, not stubbing them.
 const NAV_ITEMS = [
     { label: 'Dashboard', path: ADMIN_ROUTES.DASHBOARD, icon: <IconLucideLayoutDashboard size={18} />, enabled: false },
-    { label: 'Users', path: ADMIN_ROUTES.USERS, icon: <IconLucideUsers size={18} />, enabled: false },
+    { label: 'Users', path: ADMIN_ROUTES.USERS, icon: <IconLucideUsers size={18} />, enabled: true },
     { label: 'Reports', path: ADMIN_ROUTES.REPORTS, icon: <IconLucideFlag size={18} />, enabled: true },
     { label: 'Settings', path: ADMIN_ROUTES.SETTINGS, icon: <IconLucideSettings size={18} />, enabled: false },
     { label: 'Logs', path: ADMIN_ROUTES.LOGS, icon: <IconLucideFileText size={18} />, enabled: false },
