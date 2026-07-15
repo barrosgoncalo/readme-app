@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { getFirestore, collection, getDocs, query, limit } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
 import { getAuth, signOut } from "firebase/auth";
+
+// 1. Import your new service (adjust the path to match your project structure)
+import { alterUserPrivileges } from "@readme/shared/src/services/admin";
 
 export default function AdminDashboard() {
     const [users, setUsers] = useState([]);
@@ -14,7 +16,6 @@ export default function AdminDashboard() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                // Queries the main root users collection (supports up to 50 entries)
                 const q = query(collection(db, "users"), limit(50));
                 const querySnapshot = await getDocs(q);
                 const usersList = querySnapshot.docs.map(doc => ({
@@ -43,18 +44,16 @@ export default function AdminDashboard() {
         setActionLoading(targetUid);
 
         try {
-            const functions = getFunctions();
-            const setAdminStatus = httpsCallable(functions, "setAdminStatus");
-            
-            const result = await setAdminStatus({ targetUid, makeAdmin });
+            // 2. Call the service instead of raw Firebase functions
+            const data = await alterUserPrivileges(targetUid, makeAdmin);
 
-            if (result.data.success) {
+            if (data.success) {
                 setUsers(prevUsers => 
                     prevUsers.map(u => 
                         u.uid === targetUid ? { ...u, role: makeAdmin ? "admin" : "user" } : u
                     )
                 );
-                alert(result.data.message);
+                alert(data.message);
             }
         } catch (error) {
             console.error("Failed to alter user privileges:", error);
