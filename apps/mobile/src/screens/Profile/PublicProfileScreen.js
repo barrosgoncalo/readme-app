@@ -194,8 +194,6 @@ export default function PublicProfileScreen({ navigation, route }) {
                         </View>
                     )}
 
-                    <Text style={styles.bio}>{profile?.bio || 'No bio available.'}</Text>
-
                     <View style={styles.statsCard}>
                         <View style={styles.statItem}>
                             <View style={styles.statIconContainer}>

@@ -80,7 +80,7 @@ export const buildPublicProfileStyles = (theme) => {
         badgeRow: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 8,
+            marginBottom: 14,
         },
         badgeImage: {
             width: 50,

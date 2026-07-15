@@ -1,4 +1,3 @@
-// @readme/shared/src/services/books.js
 import { createUserBookModel } from "../models/book";
 import ImageColors from 'react-native-image-colors';
 
@@ -64,7 +63,8 @@ class BookCollectionService {
         }
 
         const userBookLink = createUserBookModel(uid, bookId, status, finalOverrides);
-        const cleanUserLink = JSON.parse(JSON.stringify(userBookLink));
+        const { createdAt, ...restOfLink } = userBookLink;
+        const cleanUserLink = { ...JSON.parse(JSON.stringify(restOfLink)), createdAt };
 
         const subcollectionPath = `users/${uid}/${this.collectionName}`;
         

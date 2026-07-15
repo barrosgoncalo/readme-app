@@ -133,8 +133,10 @@ export default function ChatRoomScreen({ route, navigation }) {
                         }
                     }}>
                         <ChatInputBar
-                            theme={theme} inputText={inputText}
-                            setInputText={setInputText} onSendPress={onSendPress}
+                            theme={theme}
+                            inputText={inputText}
+                            setInputText={setInputText}
+                            onSendPress={onSendPress}
                         />
                     </View>
                 </KeyboardAvoidingView>

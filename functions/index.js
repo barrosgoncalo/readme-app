@@ -844,7 +844,7 @@ exports.onAuthAccountDeleted = functionsV1
 
         if (!publicationsSnapshot.empty) {
             publicationsSnapshot.forEach(doc => {
-                batch.delete(doc.ref); // 👈 Queues publication doc for deletion
+                batch.delete(doc.ref);
             });
             hasWrites = true;
             console.log(`Queued ${publicationsSnapshot.size} publications for deletion for user ${userId}`);
