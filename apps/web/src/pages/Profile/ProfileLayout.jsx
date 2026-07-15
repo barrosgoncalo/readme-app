@@ -26,6 +26,7 @@ const SUB_ROUTES = new Set([
     WEB_ROUTES.PROFILE_FOLLOWING,
     WEB_ROUTES.PROFILE_FOLLOWERS,
     WEB_ROUTES.PROFILE_FAVORITES,
+    WEB_ROUTES.PROFILE_LEVEL,
     WEB_ROUTES.PROFILE_BLOCKED_USERS,
 ]);
 
@@ -97,7 +98,7 @@ export default function ProfileLayout() {
             items: [
                 { icon: Users, label: 'Following', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWING) },
                 { icon: Users, label: 'Followers', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWERS) },
-                { icon: Award, label: 'Level', disabled: true },
+                { icon: Award, label: 'Level', onClick: () => navigate(WEB_ROUTES.PROFILE_LEVEL) },
                 { icon: Heart, label: 'Favorites', onClick: () => navigate(WEB_ROUTES.PROFILE_FAVORITES) },
             ],
         },
