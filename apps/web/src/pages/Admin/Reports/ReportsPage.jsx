@@ -1,14 +1,76 @@
-import React from 'react';
+import { useState } from 'react';
+import { useAdminReports } from '@readme/shared/src/hooks/use-admin-reports';
+import Pagination from '../../../components/Pagination.jsx';
+import ReportStatCards from './ReportsStatCards.jsx';
+import ReportsFilterBar from './ReportsFilterBar.jsx';
+import ReportsTable from './ReportsTable.jsx';
+import InfoCards from './InfoCards.jsx';
+import styles from './Reports.module.css';
 
-export default function ReportsPage() {
+export default function Reports() {
+    const [status, setStatus] = useState(null);
+    const [targetType, setTargetType] = useState(null);
+    const [reason, setReason] = useState(null);
+    const [search, setSearch] = useState('');
+    const [dateFrom, setDateFrom] = useState(null);
+    const [dateTo, setDateTo] = useState(null);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+
+    const { reports, userMap, stats, total, totalPages, loading, setReportStatus } = useAdminReports({
+        status,
+        targetType,
+        reason,
+        search,
+        dateFrom,
+        dateTo,
+        page,
+        pageSize,
+    });
+
     return (
-        <div style={{ padding: '40px', color: '#212529', fontFamily: 'sans-serif' }}>
-            <h2 style={{ margin: 0, fontWeight: 700 }}>Reports</h2>
-            <p style={{ color: '#6c757d', marginTop: 8 }}>Review and manage user reports from the platform.</p>
-            <div style={{ marginTop: 40, color: '#adb5bd', textAlign: 'center', paddingTop: 80 }}>
-                <div style={{ fontSize: 48 }}>🚩</div>
-                <p style={{ marginTop: 16 }}>Reports module coming soon.</p>
+        <div className={styles.page}>
+            <div className={styles.header}>
+                <div>
+                    <h1 className={styles.title}>Reports</h1>
+                    <p className={styles.subtitle}>Review and manage user reports from the platform.</p>
+                </div>
+                <button type="button" className={styles.exportBtn}>
+                    <IconLucideDownload size={16} />
+                    Export Reports
+                </button>
             </div>
+
+            <ReportStatCards stats={stats} />
+
+            <ReportsFilterBar
+                search={search}
+                onSearchChange={(v) => { setSearch(v); setPage(1); }}
+                status={status}
+                onStatusChange={(v) => { setStatus(v); setPage(1); }}
+                targetType={targetType}
+                onTargetTypeChange={(v) => { setTargetType(v); setPage(1); }}
+                reason={reason}
+                onReasonChange={(v) => { setReason(v); setPage(1); }}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); setPage(1); }}
+            />
+
+            <div className={styles.tableCard}>
+                <ReportsTable reports={reports} userMap={userMap} loading={loading} onStatusChange={setReportStatus} />
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    total={total}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+                />
+            </div>
+
+            <InfoCards />
         </div>
     );
 }
+
