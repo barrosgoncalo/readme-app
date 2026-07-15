@@ -13,30 +13,32 @@ export default function ReportsTable({ reports, userMap, loading, onStatusChange
     }
 
     return (
-        <table className={styles.table}>
-            <thead>
-            <tr>
-                <th>Report</th>
-                <th>Reporter</th>
-                <th>Reported User</th>
-                <th>Target</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {reports.map((report) => (
-                <ReportRow
-                    key={report.id}
-                    report={report}
-                    reporter={userMap[report.reporterId]}
-                    reportedUser={userMap[report.reportedUserId]}
-                    onStatusChange={onStatusChange}
-                />
-            ))}
-            </tbody>
-        </table>
+        <div className={styles.scroll}>
+            <table className={styles.table}>
+                <thead>
+                <tr>
+                    <th>Report</th>
+                    <th>Reporter</th>
+                    <th>Reported User</th>
+                    <th>Target</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th className={styles.actionsCol}>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {reports.map((report) => (
+                    <ReportRow
+                        key={report.id}
+                        report={report}
+                        reporter={userMap[report.reporterId]}
+                        reportedUser={userMap[report.reportedUserId]}
+                        onStatusChange={onStatusChange}
+                    />
+                ))}
+                </tbody>
+            </table>
+        </div>
     );
 }
