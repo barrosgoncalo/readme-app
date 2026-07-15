@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import AutoImport from 'unplugin-auto-import/vite';
+import Icons from 'unplugin-icons/vite';
+import IconsResolver from 'unplugin-icons/resolver';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Explicitly resolve web files first so cross-platform packages don't load native code
@@ -26,7 +30,14 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react()],
+    plugins: [
+        react(),
+        AutoImport({
+            resolvers: [IconsResolver({ prefix: 'Icon', enabledCollections: ['lucide'] })],
+            dts: 'src/auto-imports.d.ts',
+        }),
+        Icons({ compiler: 'jsx', jsx: 'react', autoInstall: true }),
+    ],
     resolve: {
       extensions,
       alias: {
@@ -35,7 +46,10 @@ export default defineConfig(({ mode }) => {
         // Share package link
         '@readme/shared': path.resolve(__dirname, '../../packages/shared'),
         // React Native web safety net
-        'react-native': 'react-native-web'
+        'react-native': 'react-native-web',
+
+        'react': path.resolve(__dirname, '../../node_modules/react'),
+        'react-dom': path.resolve(__dirname, '../../node_modules/react-dom'),
       },
       dedupe: ['react', 'react-dom', 'react-router-dom']
     },
