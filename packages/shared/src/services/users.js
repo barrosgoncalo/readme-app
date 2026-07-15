@@ -1,11 +1,15 @@
 // @readme/shared/src/services/users.js
 
-import { auth, storage } from "./firebase";
-import { 
+import { auth, db, storage } from "./firebase";
+import {
     documentId,
     arrayUnion,
     arrayRemove,
     increment,
+    collection,
+    query,
+    where,
+    getCountFromServer,
 } from "firebase/firestore";
 import { getFollowId, createFollow, createFollowRequest } from '../models/follow';
 import { StorageService } from "./storage";
@@ -30,6 +34,26 @@ export const UsersService = {
     */
     getAvatarUrl: (user) => {
         return user?.photoURL || null;
+    },
+
+    /**
+    * Live follower/following counts computed from the `follows` collection
+    * itself, rather than the denormalized `followersCount`/`followingCount`
+    * fields on the user doc — those counters can drift from reality (e.g. a
+    * write that updated the `follows` doc but failed to update the counter)
+    * and nothing else reconciles them. getCountFromServer is billed as a
+    * single read regardless of match count, so this is cheap.
+    */
+    getFollowCounts: async (uid) => {
+        const [followersSnap, followingSnap] = await Promise.all([
+            getCountFromServer(query(collection(db, 'follows'), where('followingUid', '==', uid))),
+            getCountFromServer(query(collection(db, 'follows'), where('followerUid', '==', uid))),
+        ]);
+
+        return {
+            followers: followersSnap.data().count,
+            following: followingSnap.data().count,
+        };
     },
 
     /**
@@ -58,10 +82,12 @@ export const UsersService = {
                 }
             }
 
+            const { followers, following } = await UsersService.getFollowCounts(userId);
+
             return {
                 ...userData,
-                followers: userData.followersCount || 0,
-                following: userData.followingCount || 0,
+                followers,
+                following,
                 isCurrentUserFollowing,
                 isRequestPending,
             };
@@ -69,6 +95,54 @@ export const UsersService = {
             console.error("Error fetching user profile:", error);
             throw error;
         }
+    },
+
+    /**
+    * Fetch list of users the given user is following.
+    */
+    getFollowing: async (uid) => {
+        const followDocs = await DB.get('follows', [
+            { field: 'followerUid', operator: '==', value: uid }
+        ]);
+
+        return Promise.all(
+            followDocs.map(async (followDoc) => {
+                const followingUid = followDoc.followingUid;
+                const userData = await DB.get(USERS_COLLECTION, followingUid).catch(() => null);
+
+                return {
+                    id: followingUid,
+                    username: userData?.username ?? null,
+                    fullName: userData?.fullName ?? null,
+                    avatarUrl: userData?.photoURL ?? null,
+                    createdAt: followDoc.createdAt || null,
+                };
+            })
+        );
+    },
+
+    /**
+    * Fetch list of users following the given user.
+    */
+    getFollowers: async (uid) => {
+        const followDocs = await DB.get('follows', [
+            { field: 'followingUid', operator: '==', value: uid }
+        ]);
+
+        return Promise.all(
+            followDocs.map(async (followDoc) => {
+                const followerUid = followDoc.followerUid;
+                const userData = await DB.get(USERS_COLLECTION, followerUid).catch(() => null);
+
+                return {
+                    id: followerUid,
+                    username: userData?.username ?? null,
+                    fullName: userData?.fullName ?? null,
+                    avatarUrl: userData?.photoURL ?? null,
+                    createdAt: followDoc.createdAt || null,
+                };
+            })
+        );
     },
 
     /**

@@ -1,5 +1,6 @@
 import { DB } from './DB';
 import { UsersService } from './users';
+import { createReviewModel } from '../models/review';
 
 export const ReviewService = {
     fetchUserReviews: async (revieweeId) => {
@@ -28,6 +29,27 @@ export const ReviewService = {
             console.error("Error fetching reviews:", error);
             return [];
         }
+    },
+
+    /**
+     * One-shot check for whether reviewerId has already reviewed this swap.
+     */
+    hasUserReviewed: async (swapId, reviewerId) => {
+        const matches = await DB.get('reviews', [
+            { field: 'swapId', operator: '==', value: swapId },
+            { field: 'reviewerId', operator: '==', value: reviewerId },
+        ]);
+        return matches.length > 0;
+    },
+
+    /**
+     * Submit a review for a completed swap. Guards against duplicate reviews.
+     */
+    submitReview: async (swapId, chatId, reviewerId, revieweeId, rating, comment = '') => {
+        const alreadyReviewed = await ReviewService.hasUserReviewed(swapId, reviewerId);
+        if (alreadyReviewed) throw new Error('You have already reviewed this swap.');
+
+        await DB.create('reviews', createReviewModel(swapId, chatId, reviewerId, revieweeId, rating, comment));
     },
 
     subscribeToReviewStatus: (swapId, userId, callback) => {

@@ -5,8 +5,10 @@ import '../../../utils/leafletIcons.js';
 import styles from './LocationMapPreview.module.css';
 
 export default function LocationMapPreview({ location }) {
-    const lat = location?.lat;
-    const lng = location?.lon !== undefined ? location.lon : location?.lng;
+    // createOfferModel (shared) stores latitude/longitude; fall back to the
+    // older lat/lon/lng field names in case this is a pre-existing offer doc.
+    const lat = location?.latitude ?? location?.lat;
+    const lng = location?.longitude ?? location?.lon ?? location?.lng;
 
     const hasCoords = typeof lat === 'number' && typeof lng === 'number';
 

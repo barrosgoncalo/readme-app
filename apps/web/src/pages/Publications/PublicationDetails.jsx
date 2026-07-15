@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Heart, Trash2 } from 'lucide-react';
-import { fetchPublicationById, deletePublication } from '@readme/shared/src/services/publications';
-import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
+import { PublicationService } from '@readme/shared/src/services/publications';
+import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
@@ -36,8 +36,8 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
         (async () => {
             try {
                 const [data, profile] = await Promise.all([
-                    fetchPublicationById(pubId),
-                    currentUser ? fetchUserProfile(currentUser.uid).catch(() => null) : Promise.resolve(null)
+                    PublicationService.fetchPublication(pubId),
+                    currentUser ? UsersService.fetchUserProfile(currentUser.uid).catch(() => null) : Promise.resolve(null)
                 ]);
                 if (cancelled) return;
                 if (!data) {
@@ -63,7 +63,7 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
         if (!currentUser || !pub) return;
         setFavBusy(true);
         try {
-            await toggleFavoriteStatus(currentUser.uid, pub.id, isFavorite);
+            await UsersService.toggleFavoriteStatus(currentUser.uid, pub.id, isFavorite);
             setIsFavorite(!isFavorite);
             showToast(isFavorite ? 'Removed from favorites' : 'Added to favorites');
         } catch (err) {
@@ -77,7 +77,7 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
     async function handleDelete() {
         setDeleting(true);
         try {
-            await deletePublication(pub.id);
+            await PublicationService.deletePublication(currentUser, pub.id);
             showToast('Publication deleted');
             if (embedded && onClose) onClose();
             else navigate(WEB_ROUTES.MAP);

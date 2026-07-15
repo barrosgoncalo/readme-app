@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, UserPlus, UserCheck, Ban } from 'lucide-react';
-import { fetchUserProfile, toggleFollowUser } from '@readme/shared/src/services/users';
-import { fetchUserReviews } from '@readme/shared/src/services/reviews';
+import { UsersService } from '@readme/shared/src/services/users';
+import { ReviewService } from '@readme/shared/src/services/reviews';
 import { myBooksService } from '@readme/shared/src/services/books';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
-import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/blockUser';
+import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/block';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -68,7 +68,7 @@ export default function PublicProfile() {
         let cancelled = false;
         (async () => {
             try {
-                const u = await fetchUserProfile(uid);
+                const u = await UsersService.fetchUserProfile(uid);
                 if (cancelled) return;
                 if (!u) { setNotFound(true); return; }
                 setUser(u);
@@ -91,7 +91,7 @@ export default function PublicProfile() {
                 if (cancelled) return;
                 setBooks(hydrated);
 
-                const userReviews = await fetchUserReviews(uid).catch(() => []);
+                const userReviews = await ReviewService.fetchUserReviews(uid).catch(() => []);
                 if (!cancelled) setReviews(userReviews);
             } finally {
                 if (!cancelled) setLoading(false);
@@ -104,7 +104,7 @@ export default function PublicProfile() {
         if (!currentUser || followBusy) return;
         setFollowBusy(true);
         try {
-            await toggleFollowUser(uid, !isFollowing);
+            await UsersService.toggleFollowUser(uid, !isFollowing);
             const newFollowing = !isFollowing;
             setIsFollowing(newFollowing);
             setFollowers(followers + (newFollowing ? 1 : -1));
@@ -123,7 +123,7 @@ export default function PublicProfile() {
         try {
             // If currently following, unfollow first.
             if (isFollowing) {
-                await toggleFollowUser(uid, false).catch(() => { });
+                await UsersService.toggleFollowUser(uid, false).catch(() => { });
                 setIsFollowing(false);
                 setFollowers(followers - 1);
             }

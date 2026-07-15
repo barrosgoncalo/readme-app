@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {timeAgo} from '@readme/shared/src/utils/timeAgo';
-import {fetchUserProfile} from '@readme/shared/src/services/users';
+import {UsersService} from '@readme/shared/src/services/users';
 import styles from './ChatList.module.css';
 
 function ChatRow({chat, activeChatId, onSelectChat, currentUserId}) {
@@ -9,7 +9,7 @@ function ChatRow({chat, activeChatId, onSelectChat, currentUserId}) {
     useEffect(() => {
         const otherId = chat.participants?.find(p => p !== currentUserId);
         if (otherId)
-            fetchUserProfile(otherId)
+            UsersService.fetchUserProfile(otherId)
                 .then(profile => setOtherUser(profile))
                 .catch(err => console.error(err));
     }, [chat.participants, currentUserId]);

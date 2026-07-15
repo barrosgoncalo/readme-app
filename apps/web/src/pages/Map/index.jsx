@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Search, Users, Plus } from 'lucide-react';
-import { searchUsers } from '@readme/shared/src/services/search';
-import { doGetBlockedUids, doGetBlockedUsers } from '@readme/shared/src/services/blockUser';
-import { fetchAllPublications } from '@readme/shared/src/services/publications';
-import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
+import { searchUsers } from '@readme/shared/src/services/searchUser';
+import { doGetBlockedUids, doGetBlockedUsers } from '@readme/shared/src/services/block';
+import { PublicationService } from '@readme/shared/src/services/publications';
+import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import PublicationCard from './components/PublicationCard.jsx';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import { PUBLICATION_STATUS } from '@readme/shared/src/constants/status';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
@@ -50,20 +49,16 @@ export default function Explore() {
         setPubsError(null);
 
         try {
-            const [allPubs, blockedUids, profile] = await Promise.all([
-                fetchAllPublications(),
-                doGetBlockedUids(uid).catch(() => new Set()),
-                fetchUserProfile(uid).catch(() => null)
+            const [blockedUids, profile] = await Promise.all([
+                doGetBlockedUids(uid).catch(() => []),
+                UsersService.fetchUserProfile(uid).catch(() => null)
             ]);
 
-            // Filter: exclude blocked users, user's own pubs, non-available
-            const filtered = allPubs.filter(pub =>
-                pub.uid !== uid &&
-                !blockedUids.has(pub.uid) &&
-                pub.status === PUBLICATION_STATUS.AVAILABLE
-            );
+            // fetchExplorePublications already excludes the caller's own posts,
+            // blocked users, and non-available publications server-side.
+            const summaries = await PublicationService.fetchExplorePublications(uid, blockedUids);
 
-            setPublications(filtered);
+            setPublications(summaries.map(s => s.publicationData));
             setFavoriteIds(new Set(profile?.favoriteBooks || []));
         } catch (err) {
             setPubsError(err.message || 'Could not load publications.');
@@ -81,7 +76,7 @@ export default function Explore() {
         setFavoriteBusy(pubId);
         try {
             const isFav = favoriteIds.has(pubId);
-            await toggleFavoriteStatus(uid, pubId, isFav);
+            await UsersService.toggleFavoriteStatus(uid, pubId, isFav);
             setFavoriteIds(prev => {
                 const next = new Set(prev);
                 if (isFav) next.delete(pubId);
@@ -114,14 +109,17 @@ export default function Explore() {
 
         const timer = setTimeout(async () => {
             try {
-                const [found, blockedProfiles] = await Promise.all([
-                    searchUsers(q, currentUser?.uid),
-                    currentUser ? doGetBlockedUsers(currentUser.uid).catch(() => []) : Promise.resolve([]),
-                ]);
+                const blockedProfiles = currentUser
+                    ? await doGetBlockedUsers(currentUser.uid).catch(() => [])
+                    : [];
+                const blockedUids = blockedProfiles.map(p => p.id);
 
-                const blockedUids = new Set(blockedProfiles.map(p => p.id));
+                const { users } = await searchUsers(q, {
+                    excludeUid: currentUser?.uid,
+                    blockedUids,
+                });
 
-                if (!cancelled) setUserResults(found.filter(u => !blockedUids.has(u.uid)));
+                if (!cancelled) setUserResults(users);
             } catch {
                 if (!cancelled) setSearchUserError(true);
             } finally {

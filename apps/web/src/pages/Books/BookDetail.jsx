@@ -4,7 +4,7 @@ import {ArrowLeft} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {myBooksService} from '@readme/shared/src/services/books';
 import {getBook} from '@readme/shared/src/services/booksCatalog';
-import {getUserById} from '@readme/shared/src/services/users';
+import {UsersService} from '@readme/shared/src/services/users';
 import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
 import {BOOK_STATUS, BOOK_STATUS_LABELS} from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
@@ -101,7 +101,7 @@ export default function BookDetail({ embedded = false, onClose }) {
         Promise.all([
             getBook(bookId),
             myBooksService.getBookData(targetUid, bookId),
-            isOwnBook ? Promise.resolve(null) : getUserById(ownerUid).catch(() => null),
+            isOwnBook ? Promise.resolve(null) : UsersService.fetchUserProfile(ownerUid).catch(() => null),
         ]).then(([cat, my, owner]) => {
             setCatalog(cat);
             setMyBook(my);

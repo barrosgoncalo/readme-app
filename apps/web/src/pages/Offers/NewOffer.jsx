@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { fetchPublicationById } from '@readme/shared/src/services/publications';
+import { PublicationService } from '@readme/shared/src/services/publications';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { myBooksService } from '@readme/shared/src/services/books';
 import { ChatService } from '@readme/shared/src/services/chat';
@@ -41,7 +41,7 @@ export default function NewOffer() {
         (async () => {
             try {
                 const [pub, myBookDocs] = await Promise.all([
-                    fetchPublicationById(pubId),
+                    PublicationService.fetchPublication(pubId),
                     myBooksService.getBooksData(uid)
                 ]);
 

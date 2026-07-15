@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, X } from 'lucide-react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@readme/shared/src/services/firebase.web';
-import { createPublicationModel } from '@readme/shared/src/models/publication';
-import { createPublication } from '@readme/shared/src/services/publications';
-import { fetchUserProfile } from '@readme/shared/src/services/users';
+import { PublicationService } from '@readme/shared/src/services/publications';
+import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -46,37 +43,25 @@ export default function CreatePublication() {
 
         setLoading(true);
         try {
-            const pubId = crypto.randomUUID();
+            // PublicationService.createPublication reads seller name/avatar off
+            // the passed user object via UsersService.getDisplayName/getAvatarUrl,
+            // which look for .username/.fullName/.photoURL — fields that live on
+            // the Firestore profile, not the raw Firebase Auth user, so merge them in.
+            const userProfile = await UsersService.fetchUserProfile(currentUser.uid).catch(() => null);
+            const sellerUser = { ...currentUser, ...userProfile };
 
-            // Upload images to Firebase Storage
-            const uploadedUrls = await Promise.all(
-                selectedFiles.map(async (file, i) => {
-                    const storageRef = ref(storage, `books/${pubId}/image_${i}`);
-                    await uploadBytes(storageRef, file);
-                    return getDownloadURL(storageRef);
-                })
-            );
-
-            // Fetch current user profile for seller info
-            const userProfile = await fetchUserProfile(currentUser.uid);
-
-            // Create publication doc
-            const pubData = createPublicationModel(
-                currentUser.uid,
-                userProfile?.username || currentUser.email || 'Anonymous Swapper',
-                userProfile?.photoURL || null,
+            await PublicationService.createPublication(
+                sellerUser,
                 {
-                    title: title.trim(),
-                    author: author.trim() || 'Unknown Author',
-                    images: uploadedUrls,
-                    bookId: crypto.randomUUID(),
+                    bookName: title.trim(),
+                    authorName: author.trim() || 'Unknown Author',
                     condition: condition.trim(),
                     subject: subject.trim(),
+                    description: description.trim(),
                 },
-                description.trim()
+                selectedFiles,
             );
 
-            await createPublication(pubId, pubData);
             showToast('Publication created!');
             navigate(`${WEB_ROUTES.MAP}?tab=books`);
         } catch (error) {

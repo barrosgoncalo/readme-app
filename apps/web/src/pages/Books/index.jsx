@@ -60,7 +60,7 @@ export default function Books({ compact = false, selectedBookId = null }) {
         try {
             const [rawMyBooks, favIds] = await Promise.all([
                 myBooksService.getBooksData(uid),
-                favoriteBooksService.getBookIds(uid),
+                favoriteBooksService.getBooks(uid),
             ]);
             const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
             const hydrated = await hydrateMyBooks(rawMyBooks, {

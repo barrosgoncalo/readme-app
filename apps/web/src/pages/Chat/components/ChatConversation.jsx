@@ -3,7 +3,7 @@ import {createPortal} from 'react-dom';
 import {useNavigate} from 'react-router-dom';
 import {Send, Smile} from 'lucide-react';
 import {ChatService} from '@readme/shared/src/services/chat';
-import {fetchUserProfile} from '@readme/shared/src/services/users';
+import {UsersService} from '@readme/shared/src/services/users';
 import {toMillis} from '@readme/shared/src/utils/timestamp';
 import Spinner from '../../../components/Spinner.jsx';
 import {WEB_ROUTES} from '../../../constants/webRoutes';
@@ -82,7 +82,7 @@ export default function ChatConversation({chat, messages, loading, currentUserId
     useEffect(() => {
         const otherId = chat.participants?.find(p => p !== currentUserId);
         if (otherId) {
-            fetchUserProfile(otherId)
+            UsersService.fetchUserProfile(otherId)
                 .then(profile => setOtherUser(profile))
                 .catch(err => console.error(err));
         }

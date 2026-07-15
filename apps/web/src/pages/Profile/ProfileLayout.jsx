@@ -8,7 +8,7 @@ import {
 import { db } from '@readme/shared/src/services/firebase.web';
 import { doSignOut } from '@readme/shared/src/services/auth';
 import { uploadProfilePicture } from '@readme/shared/src/services/user';
-import { getFollowCounts } from '@readme/shared/src/services/users';
+import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -49,7 +49,7 @@ export default function ProfileLayout() {
         if (!currentUser) return;
         Promise.all([
             getDoc(doc(db, 'users', currentUser.uid)),
-            getFollowCounts(currentUser.uid),
+            UsersService.getFollowCounts(currentUser.uid),
         ]).then(([snap, counts]) => {
             if (snap.exists()) {
                 const data = snap.data();

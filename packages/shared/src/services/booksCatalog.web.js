@@ -28,6 +28,17 @@ export async function createBookIfMissing(bookId, data) {
     });
 }
 
+export async function getBookByIsbn(isbn) {
+    if (!isbn) return null;
+    const cleanIsbn = String(isbn).replace(/[- ]/g, '');
+    const targetField = cleanIsbn.length === 13 ? 'isbn13' : 'isbn10';
+    const q = query(collection(db, COLLECTION), where(targetField, '==', cleanIsbn));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    return { id: d.id, ...d.data() };
+}
+
 export async function getBooksByIds(ids) {
     if (!ids || ids.length === 0) return [];
 

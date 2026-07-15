@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {Check, ChevronDown, ChevronUp, List, MapPin, Undo2, X} from 'lucide-react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {ChatService} from '@readme/shared/src/services/chat';
-import {hasUserReviewed, submitReview} from '@readme/shared/src/services/reviews';
+import {ReviewService} from '@readme/shared/src/services/reviews';
 import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
 import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
 import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
@@ -70,7 +70,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         if (!isCompleted) return;
 
         let cancelled = false;
-        hasUserReviewed(message.id, currentUserId)
+        ReviewService.hasUserReviewed(message.id, currentUserId)
             .then(reviewed => {
                 if (!cancelled)
                     setHasReviewed(reviewed);
@@ -149,7 +149,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         setBusy(true);
         setReviewError('');
         try {
-            await submitReview(message.id, chatId, currentUserId, otherUserId, rating, comment);
+            await ReviewService.submitReview(message.id, chatId, currentUserId, otherUserId, rating, comment);
             setHasReviewed(true);
         } catch (err) {
             console.error('Error submitting review:', err);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchPublicationById } from '@readme/shared/src/services/publications';
-import { fetchUserProfile, toggleFavoriteStatus } from '@readme/shared/src/services/users';
+import { PublicationService } from '@readme/shared/src/services/publications';
+import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import PublicationCard from '../Map/components/PublicationCard.jsx';
@@ -25,14 +25,14 @@ export default function Favorites() {
 
         (async () => {
             try {
-                const profile = await fetchUserProfile(uid);
+                const profile = await UsersService.fetchUserProfile(uid);
                 if (cancelled) return;
 
                 const favIds = profile?.favoriteBooks || [];
 
                 // Fetch all publication docs
                 const pubs = await Promise.all(
-                    favIds.map(id => fetchPublicationById(id))
+                    favIds.map(id => PublicationService.fetchPublication(id))
                 );
 
                 if (!cancelled) {
@@ -53,7 +53,7 @@ export default function Favorites() {
         if (!uid) return;
         setFavoriteBusy(pubId);
         try {
-            await toggleFavoriteStatus(uid, pubId, true);
+            await UsersService.toggleFavoriteStatus(uid, pubId, true);
             setFavorites(prev => prev.filter(p => p.id !== pubId));
         } catch (err) {
             console.error('Failed to remove favorite:', err);

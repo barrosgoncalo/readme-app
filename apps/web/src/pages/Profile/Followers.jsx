@@ -1,4 +1,4 @@
-import { getFollowers } from '@readme/shared/src/services/users';
+import { UsersService } from '@readme/shared/src/services/users';
 import UserListPage from '../../components/UserListPage.jsx';
 
 export default function Followers() {
@@ -9,7 +9,7 @@ export default function Followers() {
             pluralCount="PEOPLE"
             emptyText="You don't have any followers yet."
             metaDescription={<>These users are following you to stay updated on your books and activity.</>}
-            loadUsers={getFollowers}
+            loadUsers={UsersService.getFollowers}
             rowClickable
         />
     );
