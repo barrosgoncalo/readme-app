@@ -15,16 +15,21 @@ const formatDate = (timestamp) => {
     return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
+const truncateId = (id) => {
+    if (!id) return '—';
+    return id.length > 15 ? `${id.slice(0, 15)}...` : id;
+};
+
 const targetLabel = (report, reportedUser) => {
     switch (report.targetType) {
         case REPORT_TARGET_TYPE.CHAT:
             return { title: 'Chat', sub: `with @${reportedUser?.username || '—'}` };
         case REPORT_TARGET_TYPE.PUBLICATION:
-            return { title: 'Publication', sub: `ID: ${report.targetId}` };
+            return { title: 'Publication', sub: `ID: ${truncateId(report.targetId)}` };
         case REPORT_TARGET_TYPE.ACCOUNT:
             return { title: 'Account', sub: `@${reportedUser?.username || '—'}` };
         default:
-            return { title: report.targetType, sub: report.targetId };
+            return { title: report.targetType, sub: truncateId(report.targetId) };
     }
 };
 
