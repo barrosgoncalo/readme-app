@@ -4,11 +4,11 @@ import { httpsCallable, getFunctions } from 'firebase/functions';
 import { getAuth } from 'firebase/auth';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import Pagination from '../../components/Pagination.jsx';
-import styles from './AdminDashboard.module.css';
+import styles from './UsersPage.module.css';
 
 const PAGE_SIZE_DEFAULT = 10;
 
-export default function AdminDashboard() {
+export default function UsersPage() {
     const [allUsers, setAllUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
