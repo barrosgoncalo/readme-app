@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { alterUserPrivileges } from '@readme/shared/src/services/admin.js';
+import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import Pagination from '../../components/Pagination.jsx';
@@ -156,4 +156,5 @@ export default function UsersPage() {
         </div>
     );
 }
+
 
