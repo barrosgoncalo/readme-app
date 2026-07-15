@@ -91,7 +91,8 @@ export default function AppRouter() {
     // Show loading state if auth state is initializing OR if we are resolving the admin role
     if (loading || (userLoggedIn && resolvingRole)) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#121212', color: '#fff', fontFamily: 'sans-serif' }}>
+            // CHANGED: backgroundColor to '#f8f9fa' and color to '#212529'
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8f9fa', color: '#212529', fontFamily: 'sans-serif' }}>
                 <h3>Loading Admin System...</h3>
             </div>
         );
@@ -119,6 +120,7 @@ export default function AppRouter() {
                         <Route
                             path="*"
                             element={
+                                // CHANGED: backgroundColor to '#f8f9fa' and color to '#212529'
                                 <div style={{ 
                                     display: 'flex', 
                                     flexDirection: 'column', 
@@ -126,12 +128,13 @@ export default function AppRouter() {
                                     alignItems: 'center', 
                                     height: '100vh', 
                                     fontFamily: 'sans-serif',
-                                    backgroundColor: '#1a1a1a',
-                                    color: '#fff',
+                                    backgroundColor: '#f8f9fa',
+                                    color: '#212529',
                                     padding: 20
                                 }}>
                                     <h2 style={{ fontSize: '32px', marginBottom: '10px' }}>🛡️ Access Restricted</h2>
-                                    <p style={{ color: '#aaa', marginBottom: '25px', textAlign: 'center' }}>
+                                    {/* CHANGED: color to '#6c757d' */}
+                                    <p style={{ color: '#6c757d', marginBottom: '25px', textAlign: 'center' }}>
                                         This console is exclusively reserved for system administrators.
                                     </p>
                                     <button 
