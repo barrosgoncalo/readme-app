@@ -6,6 +6,7 @@ import { DB } from '@readme/shared/src/services/DB';
 
 import Login from '../pages/Auth/Login.jsx';
 import UsersPage from '../pages/Users/UsersPage.jsx';
+import PublicationsPage from '../pages/Publications/Publications.jsx'; // <-- IMPORT THE NEW PAGE
 import ReportsPage from '../pages/Reports/ReportsPage.jsx';
 import AdminShell from '../components/AdminShell.jsx';
 
@@ -82,11 +83,12 @@ export default function AppRouter() {
             ) : adminRole === 'admin' ? (
                 <>
                     <Route element={<AdminShell />}>
-                        <Route path="/admin/users"   element={<UsersPage />} />
-                        <Route path="/admin/reports" element={<ReportsPage />} />
+                        <Route path="/admin/users"        element={<UsersPage />} />
+                        <Route path="/admin/publications" element={<PublicationsPage />} /> {/* <-- NEW ROUTE ADDED HERE */}
+                        <Route path="/admin/reports"      element={<ReportsPage />} />
                     </Route>
                     <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
-                    <Route path="*"     element={<Navigate to="/admin/users" replace />} />
+                    <Route path="*"      element={<Navigate to="/admin/users" replace />} />
                 </>
             ) : (
                 <Route
