@@ -1,0 +1,129 @@
+/* Crucial for making the dropdown float relative to the button */
+.profileContainer {
+    position: relative; 
+}
+
+/* This replaces your old .profile class but as a clickable button */
+.profileTrigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.profileTrigger:hover {
+    background-color: #f3f4f6;
+}
+
+/* Your exact original avatar styling */
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    overflow: hidden; /* Ensures the image doesn't spill out of the circle */
+}
+
+.avatarImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.userName {
+    /* Optional: constrain width if names get too long */
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Chevron arrow animations */
+.chevron {
+    transition: transform 0.2s ease;
+    color: #6b7280;
+}
+
+.chevron.rotate {
+    transform: rotate(180deg);
+}
+
+/* The floating dropdown menu */
+.dropdownMenu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px); /* Hangs just below the trigger button */
+    width: 200px;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.dropdownHeader {
+    padding: 8px 12px;
+}
+
+.userEmail {
+    font-size: 12px;
+    color: #6b7280;
+    word-break: break-all;
+    margin: 0;
+}
+
+.divider {
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+    margin: 6px 0;
+}
+
+/* Logout action styling */
+.logoutBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    color: #ef4444; /* Red to indicate a destructive/exit action */
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.logoutBtn:hover {
+    background-color: #fef2f2;
+}
+
+/* Smooth fade in */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

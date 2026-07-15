@@ -1,3 +1,5 @@
+import { Bell as IconLucideBell } from 'lucide-react';
+import ProfileDropdown from './ProfileDropdown'; // <-- Here is the import!
 import styles from './AdminTopbar.module.css';
 
 export default function AdminTopbar() {
@@ -8,13 +10,9 @@ export default function AdminTopbar() {
                 <button type="button" className={styles.iconBtn}>
                     <IconLucideBell size={18} />
                 </button>
-                <div className={styles.profile}>
-                    <div className={styles.avatar}>
-                        <IconLucideUser size={16} />
-                    </div>
-                    <span>Admin</span>
-                    <IconLucideChevronDown size={16} />
-                </div>
+                
+                {/* Replaces the hardcoded profile wrapper */}
+                <ProfileDropdown />
             </div>
         </header>
     );
