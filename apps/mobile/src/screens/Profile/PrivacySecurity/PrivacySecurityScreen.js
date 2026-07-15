@@ -5,7 +5,9 @@ import {
     TouchableOpacity,
     Alert,
     ActivityIndicator,
-    StyleSheet
+    StyleSheet,
+    Modal,
+    TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { buildPrivacySecurityStyles } from '../../../styles/privacySecurityStyles';
@@ -15,7 +17,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
 import { useAuth } from '@readme/shared/src/contexts/AuthContext'; 
-import { doUpdateUserProfile, doDeleteUserProfile } from '@readme/shared/src/services/auth';
+import { doUpdateUserProfile, doDeleteUserProfile, doReauthenticateWithPassword } from '@readme/shared/src/services/auth';
 
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../../components/ui/MenuComponents';
 
@@ -27,8 +29,10 @@ export default function PrivacySecurityScreen({ navigation }) {
 
     const [isPrivate, setIsPrivate] = useState(currentUser?.profileVisibility === 'private');
     
-    // NEW: State to track if deletion is in progress
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const [isReauthModalVisible, setIsReauthModalVisible] = useState(false);
+    const [password, setPassword] = useState('');
 
     const handlePrivacyToggle = async (newValue) => {
         setIsPrivate(newValue);
@@ -47,7 +51,6 @@ export default function PrivacySecurityScreen({ navigation }) {
         }
     };
 
-    // NEW: Proper Account Deletion Flow
     const handleDeleteAccount = () => {
         Alert.alert(
             "Delete Account",
@@ -62,17 +65,11 @@ export default function PrivacySecurityScreen({ navigation }) {
                         try {
                             if (!currentUser?.uid) throw new Error('Not authenticated.');
                             
-                            // Calls the service function (from your auth.js file)
                             await doDeleteUserProfile(currentUser.uid);
                             
-                            // You don't need to navigate manually here if your AuthContext
-                            // automatically unmounts protected screens when the user becomes null.
                         } catch (error) {
                             if (error.code === 'auth/requires-recent-login') {
-                                Alert.alert(
-                                    "Security Check", 
-                                    "For security reasons, please log out, log back in, and try deleting your account again."
-                                );
+                                setIsReauthModalVisible(true);
                             } else {
                                 Alert.alert('Error', error.message);
                             }
@@ -83,6 +80,29 @@ export default function PrivacySecurityScreen({ navigation }) {
                 }
             ]
         );
+    };
+
+    const handleReauthenticateAndDelete = async () => {
+        if (!password) {
+            Alert.alert("Error", "Please enter your password.");
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            await doReauthenticateWithPassword(password);
+
+            setIsReauthModalVisible(false);
+            setPassword('');
+
+            await doDeleteUserProfile(currentUser.uid);
+
+        } catch (error) {
+            console.error("Reauth error:", error);
+            Alert.alert("Authentication Failed", "The password you entered is incorrect. Please try again.");
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     return (
@@ -154,13 +174,59 @@ export default function PrivacySecurityScreen({ navigation }) {
                 </View>
 
                 {/* --- LOADING OVERLAY --- */}
-                {/* Prevents the user from clicking around while the database wipes their info */}
                 {isDeleting && (
                     <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', zIndex: 999 }]}>
                         <ActivityIndicator size="large" color={Colors.password?.red || '#F13B2D'} />
                         <Text style={{ color: 'white', marginTop: 12, fontWeight: '600' }}>Deleting account...</Text>
                     </View>
                 )}
+
+                <Modal
+                    visible={isReauthModalVisible}
+                    transparent={true}
+                    animationType="fade"
+                >
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }]}>
+                        <View style={{ backgroundColor: theme.background, padding: 24, borderRadius: 12 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 8 }}>Security Check</Text>
+                            <Text style={{ color: theme.textSecondary, marginBottom: 16 }}>
+                                Please enter your password to confirm you want to delete your account.
+                            </Text>
+                            
+                            <TextInput
+                                style={{ 
+                                    borderWidth: 1, borderColor: theme.border, borderRadius: 8, 
+                                    padding: 12, color: theme.text, marginBottom: 20 
+                                }}
+                                placeholder="Enter your password"
+                                placeholderTextColor={theme.textSecondary}
+                                secureTextEntry
+                                value={password}
+                                onChangeText={setPassword}
+                                autoCapitalize="none"
+                            />
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+                                <TouchableOpacity 
+                                    style={{ paddingVertical: 10, paddingHorizontal: 16 }}
+                                    onPress={() => {
+                                        setIsReauthModalVisible(false);
+                                        setPassword('');
+                                    }}
+                                >
+                                    <Text style={{ color: theme.text }}>Cancel</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                    style={{ backgroundColor: Colors.password?.red || '#F13B2D', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 }}
+                                    onPress={handleReauthenticateAndDelete}
+                                >
+                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>Confirm Delete</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
 
             </View>
         </SafeAreaView>

@@ -152,7 +152,12 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                else console.error(`DB.subscribeDoc error on "${collectionPath}/${docId}":`, error);
+                
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.subscribeDoc error on "${collectionPath}/${docId}":`, error);
+                }
             }
         );
     },
@@ -178,7 +183,12 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                else console.error(`DB.stream error on "${path}":`, error);
+                
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.stream error on "${path}":`, error);
+                }
             }
         );
     },
@@ -201,30 +211,31 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                else console.error(`DB.streamQuery error on "${collectionName}":`, error);
+                
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.streamQuery error on "${collectionName}":`, error);
+                }
             }
         );
     },
 
     /**
- * Advanced Query Stream: Supports where-clauses, ordering, and limits.
- * e.g., DB.subscribeAdvanced('users/123/notifications', [], { field: 'createdAt', direction: 'desc' }, 50, (data) => {})
- */
+     * Advanced Query Stream: Supports where-clauses, ordering, and limits.
+     */
     subscribeAdvanced: (path, conditions = [], orderByArg = null, limitAmount = null, onUpdate, onError) => {
         let q = collection(db, path);
 
-        // 1. Apply where filters if they exist
         if (conditions.length > 0) {
             const constraints = conditions.map(c => where(c.field, c.operator, c.value));
             q = query(q, ...constraints);
         }
 
-        // 2. Apply ordering if specified
         if (orderByArg) {
             q = query(q, orderBy(orderByArg.field, orderByArg.direction || 'asc'));
         }
 
-        // 3. Apply limit if specified
         if (limitAmount) {
             q = query(q, limit(limitAmount));
         }
@@ -236,7 +247,12 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                    else console.error(`DB.subscribeAdvanced error on "${path}":`, error);
+                
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.subscribeAdvanced error on "${path}":`, error);
+                }
             }
         );
     },

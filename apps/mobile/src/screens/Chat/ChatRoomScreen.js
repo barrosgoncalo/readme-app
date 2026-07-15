@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
+import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme, Text, StyleSheet } from 'react-native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildChatRoomStyles } from '../../styles/chatRoomStyles';
@@ -8,6 +8,7 @@ import { useChatActions } from '@readme/shared/src/hooks/use-chat-actions';
 import ChatHeader from './Components/ChatHeader';
 import ChatInputBar from './Components/ChatInputBar';
 import MessageListItem from './Components/MessageListItem';
+import SystemDivider from './Components/SystemDivider';
 
 export default function ChatRoomScreen({ route, navigation }) {
     const colorScheme = useColorScheme();
@@ -25,7 +26,8 @@ export default function ChatRoomScreen({ route, navigation }) {
 
     const {
         messages, loading, otherUserName, otherUserAvatar,
-        otherUserId, bookImage, publicationId, chatLocation, reviewedSwapIds
+        otherUserId, bookImage, publicationId, chatLocation, reviewedSwapIds,
+        isChatDisabled, disabledReason 
     } = useChatRoomData(chatId, currentUserId, targetSeller);
 
     const {
@@ -52,6 +54,10 @@ export default function ChatRoomScreen({ route, navigation }) {
     }, [messages, currentUserId]);
 
     const renderMessageItem = useCallback(({ item, index }) => {
+        if (item.type === 'system') {
+            return <SystemDivider action={item.action || disabledReason} theme={theme} />;
+        }
+
         const isMe = item.senderId === currentUserId;
         const isLastInGroup = index === 0 || messages[index - 1]?.senderId !== item.senderId;
         const hasReviewedThisSwap = reviewedSwapIds.has(item.id);
@@ -71,14 +77,18 @@ export default function ChatRoomScreen({ route, navigation }) {
             currentUserId, messages, theme, colorScheme, chatId, targetSeller,
             bookImage, chatLocation, isFetchingBook, reviewedSwapIds, navigation,
             handleBookPress, handleOpenNavigation, handleResolveOffer,
-            handleShowQRCode, handleOpenScanner, handleCancelSwap
+            handleShowQRCode, handleOpenScanner, handleCancelSwap, disabledReason
         ]);
 
     return (
         <View style={styles.container}>
             <ChatHeader
-                theme={theme} navigation={navigation} otherUserId={otherUserId}
-                otherUserAvatar={otherUserAvatar} otherUserName={otherUserName}
+                theme={theme} 
+                navigation={navigation} 
+                otherUserId={otherUserId}
+                otherUserAvatar={otherUserAvatar}
+                otherUserName={isChatDisabled ? 'Deleted User' : otherUserName}
+                isChatDisabled={isChatDisabled}
                 handleOpenOptions={handleOpenOptions}
             />
 
@@ -102,22 +112,25 @@ export default function ChatRoomScreen({ route, navigation }) {
                     />
                 )}
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={8}
-            >
-                <View onLayout={(e) => {
-                    const h = e.nativeEvent.layout.height;
-                    if (h > 0 && Math.abs(h - inputBarHeight) > 1) {
-                        setInputBarHeight(h);
-                    }
-                }}>
-                    <ChatInputBar
-                        theme={theme} inputText={inputText}
-                        setInputText={setInputText} onSendPress={onSendPress}
-                    />
-                </View>
-            </KeyboardAvoidingView>
+            {/* Hide the input bar completely if the chat is disabled */}
+            {!isChatDisabled && (
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    keyboardVerticalOffset={8}
+                >
+                    <View onLayout={(e) => {
+                        const h = e.nativeEvent.layout.height;
+                        if (h > 0 && Math.abs(h - inputBarHeight) > 1) {
+                            setInputBarHeight(h);
+                        }
+                    }}>
+                        <ChatInputBar
+                            theme={theme} inputText={inputText}
+                            setInputText={setInputText} onSendPress={onSendPress}
+                        />
+                    </View>
+                </KeyboardAvoidingView>
+            )}
         </View>
     );
 }

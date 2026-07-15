@@ -7,7 +7,7 @@ const { onDocumentWritten, onDocumentCreated, onDocumentUpdated } = require("fir
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, Timestamp } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
 
 const Notification = require("./models/notification");
@@ -190,15 +190,15 @@ async function updateUserGamification(userId) {
 async function markOffersUnavailableForBook(bookId) {
     // Query 1: offers where this book is the target
     const targetQuery = db.collectionGroup('messages')
-        .where('type', '==', 'offer')
-        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
-        .where('offerDetails.targetBookId', '==', bookId);
+    .where('type', '==', 'offer')
+    .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+    .where('offerDetails.targetBookId', '==', bookId);
 
     // Query 2: offers where this book was one of the offered books
     const offeredQuery = db.collectionGroup('messages')
-        .where('type', '==', 'offer')
-        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
-        .where('offerDetails.offeredBookIds', 'array-contains', bookId);
+    .where('type', '==', 'offer')
+    .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+    .where('offerDetails.offeredBookIds', 'array-contains', bookId);
 
     const [targetSnap, offeredSnap] = await Promise.all([
         targetQuery.get(),
@@ -356,10 +356,10 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
                 const data = msgDoc.data();
                 if (data.type === 'offer' && data.offerDetails) {
                     const offer = data.offerDetails;
-                    
+
                     if (offer.targetBookId) referencedBookIds.add(offer.targetBookId);
                     if (offer.finalSelectedBookId) referencedBookIds.add(offer.finalSelectedBookId);
-                    
+
                     if (Array.isArray(offer.offeredBookIds)) {
                         offer.offeredBookIds.forEach(id => {
                             if (id) referencedBookIds.add(id);
@@ -377,14 +377,14 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
                 console.log(`[LOG] Evaluating book ID: ${bookId} for storage deletion...`);
                 try {
                     const pubDoc = await db.collection("publications").doc(bookId).get();
-                    
+
                     if (pubDoc.exists) {
                         console.log(`[LOG] Publication ${bookId} STILL EXISTS in Firestore. Skipping storage deletion.`);
                         continue; // Move to the next book
                     }
 
                     console.log(`[LOG] Publication ${bookId} is deleted. Initiating safety queries...`);
-                    
+
                     const targetQuery = await db.collectionGroup('messages')
                         .where('offerDetails.targetBookId', '==', bookId)
                         .limit(1)
@@ -406,11 +406,11 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
                     } else {
                         console.log(`[LOG] Skipped image deletion for ${bookId}: still referenced in other active chats.`);
                     }
-                    
+
                 } catch (internalError) {
                     // This catch block is highly detailed so we can spot missing indexes instantly
                     console.error(`❌ [ERROR] Failed processing book ${bookId} in chat ${chatId}. Reason:`, internalError);
-                    
+
                     if (internalError.message && internalError.message.includes('FAILED_PRECONDITION')) {
                         console.error(`🚨 MISSING INDEX DETECTED! Firestore blocked the query for ${bookId}. Click the link in the error above to create it.`);
                     }
@@ -815,5 +815,84 @@ exports.onPublicationBecameUnavailable = onDocumentWritten("publications/{public
         await markOffersUnavailableForBook(publicationId);
     } catch (error) {
         console.error(`Error marking offers unavailable for book ${publicationId}:`, error);
+    }
+});
+
+// ==========================================
+// TRIGGER: ON AUTH ACCOUNT DELETED
+// ==========================================
+const functionsV1 = require('firebase-functions/v1');
+
+/**
+ * Triggered automatically whenever a user's Firebase Authentication account is deleted.
+ * Handles disabling chats, injecting system messages, deleting profile picture files,
+ * and deleting all publications created by this user.
+ */
+exports.onAuthAccountDeleted = functionsV1
+    .region('europe-west1')
+    .auth.user().onDelete(async (user) => {
+    const userId = user.uid; 
+    const batch = db.batch();
+    const bucket = getStorage().bucket();
+    
+    let hasWrites = false; 
+
+    try {
+        const publicationsSnapshot = await db.collection('publications')
+            .where('uid', '==', userId)
+            .get();
+
+        if (!publicationsSnapshot.empty) {
+            publicationsSnapshot.forEach(doc => {
+                batch.delete(doc.ref); // 👈 Queues publication doc for deletion
+            });
+            hasWrites = true;
+            console.log(`Queued ${publicationsSnapshot.size} publications for deletion for user ${userId}`);
+        }
+
+        const chatsSnapshot = await db.collection('chats')
+            .where('participants', 'array-contains', userId)
+            .get();
+
+        if (!chatsSnapshot.empty) {
+            chatsSnapshot.forEach(doc => {
+                batch.update(doc.ref, {
+                    status: 'disabled',
+                    disabledReason: 'deleted' 
+                });
+
+                const messageRef = doc.ref.collection('messages').doc();
+                batch.set(messageRef, {
+                    id: messageRef.id,
+                    type: 'system',
+                    action: 'deleted', 
+                    createdAt: FieldValue.serverTimestamp(),
+                    senderId: 'system'
+                });
+            });
+            hasWrites = true;
+            console.log(`Queued status updates for ${chatsSnapshot.size} chats.`);
+        }
+
+        try {
+            await bucket.deleteFiles({ 
+                prefix: `profile_pictures/${userId}/` 
+            });
+            console.log(`Successfully deleted profile picture storage files for user ${userId}`);
+        } catch (storageError) {
+            console.warn(`Failed to delete storage files for user ${userId} (they might not have had a custom photo):`, storageError);
+        }
+
+        if (hasWrites) {
+            await batch.commit();
+            console.log(`Successfully completed Firestore cleanup batch for user ${userId}`);
+        } else {
+            console.log(`No Firestore documents to clean up for user ${userId}`);
+        }
+
+        return null;
+    } catch (error) {
+        console.error(`Error processing account deletion cleanup for user ${userId}:`, error);
+        throw error; 
     }
 });

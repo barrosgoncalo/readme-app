@@ -88,20 +88,44 @@ const _resolveOtherUser = async (chatData, currentUserId, targetSeller) => {
         otherUid = chatData.participants?.find(uid => uid !== currentUserId);
     }
 
-    const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
-
-    if (otherUid && !hasPipedData) {
-        const userData = await DB.get('users', otherUid);
-        if (userData) {
-            return {
-                otherUid,
-                otherUserName: userData.username || userData.name || "Swapper",
-                otherUserAvatar: userData.photoURL || null,
-            };
-        }
+    if (!otherUid) {
+        return {
+            otherUid: null,
+            otherUserName: 'Deleted User',
+            otherUserAvatar: null,
+            isChatDisabled: true,
+            disabledReason: 'This user is no longer available',
+        };
     }
 
-    return { otherUid: otherUid || null, otherUserName: null, otherUserAvatar: null };
+    // Always verify the user still exists, even if we have piped display data —
+    // piped data can be stale (e.g. sourced from a chat doc for a since-deleted user)
+    const userData = await DB.get('users', otherUid);
+
+    if (!userData) {
+        return {
+            otherUid,
+            otherUserName: 'Deleted User',
+            otherUserAvatar: null,
+            isChatDisabled: true,
+            disabledReason: 'This user has deleted their account',
+        };
+    }
+
+    const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
+
+    if (hasPipedData) {
+        // User confirmed to exist — trust the piped name/avatar, skip re-setting them
+        return { otherUid, otherUserName: null, otherUserAvatar: null, isChatDisabled: false, disabledReason: null };
+    }
+
+    return {
+        otherUid,
+        otherUserName: userData.username || userData.name || "Swapper",
+        otherUserAvatar: userData.photoURL || null,
+        isChatDisabled: false,
+        disabledReason: null,
+    };
 };
 
 
@@ -305,7 +329,7 @@ export const ChatService = {
         const chatData = await DB.get('chats', chatId);
         if (!chatData) return null;
 
-        const { otherUid, otherUserName, otherUserAvatar } = await _resolveOtherUser(
+        const { otherUid, otherUserName, otherUserAvatar, isChatDisabled, disabledReason } = await _resolveOtherUser(
             chatData, currentUserId, targetSeller
         );
 
@@ -316,6 +340,8 @@ export const ChatService = {
             otherUid,
             otherUserName,
             otherUserAvatar,
+            isChatDisabled,
+            disabledReason,
         };
     },
 

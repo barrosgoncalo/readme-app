@@ -1,4 +1,4 @@
-import { auth } from "./firebase";
+import { auth, storage } from "./firebase";
 import {
     createUserWithEmailAndPassword,
     deleteUser,
@@ -11,6 +11,7 @@ import {
     GoogleAuthProvider,
     EmailAuthProvider,
 } from "firebase/auth";
+import { ref, deleteObject } from "firebase/storage";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ACCOUNT_STATUS } from "../constants/authConstants";
 import { createUserModel } from '@readme/shared/src/models/user';
@@ -29,6 +30,29 @@ export const doDeleteUserProfile = async (uid) => {
         
         if (!currentUser || currentUser.uid !== uid) {
             throw new Error("No authenticated user found or UID mismatch.");
+        }
+
+        let photoToDelete = currentUser.photoURL;
+
+        if (!photoToDelete) {
+            const userData = await DB.get("users", uid);
+            if (userData?.photoURL) {
+                photoToDelete = userData.photoURL;
+            }
+        }
+
+        if (photoToDelete) {
+            const isFirebaseStorage = photoToDelete.includes('firebasestorage.googleapis.com') || photoToDelete.startsWith('gs://');
+            
+            if (isFirebaseStorage) {
+                try {
+                    const imageRef = ref(storage, photoToDelete);
+                    await deleteObject(imageRef);
+                    console.log("Successfully deleted user's profile picture from Storage.");
+                } catch (storageError) {
+                    console.warn("Storage deletion failed (the file might not exist anymore):", storageError);
+                }
+            }
         }
 
         await DB.remove('users', uid);
@@ -172,5 +196,22 @@ export const doUpdateUserPassword = async (currentPassword, newPassword) => {
         }
         
         throw new Error("An error occurred while changing your password. Please try again.");
+    }
+};
+
+export const doReauthenticateWithPassword = async (password) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        throw new Error("No user is currently logged in.");
+    }
+
+    try {
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+        return true;
+    } catch (error) {
+        console.error("Reauthentication failed:", error);
+        throw error;
     }
 };

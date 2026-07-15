@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 
@@ -16,28 +16,40 @@ const DIRECTION = {
 };
 
 export const SwapCard = ({ imageUrl, status, otherUser, currentUserId, chat, styles, theme, colorScheme }) => {
+    const [imageError, setImageError] = useState(false);
+
+    // Reset error state if the otherUser or their avatarUrl changes
+    useEffect(() => {
+        setImageError(false);
+    }, [otherUser?.avatarUrl]);
+
     const isGiving = status === 'giving';
     const dir = isGiving ? DIRECTION.giving : DIRECTION.receiving;
-    const name = otherUser?.name || 'Swapper';
-    const initials = name.trim().slice(0, 2).toUpperCase();
+
+    // Detect if the user is deleted
+    const isDeleted = !otherUser || Object.keys(otherUser).length === 0;
+    const name = isDeleted ? 'Deleted User' : (otherUser?.name || 'Swapper');
+
+    // Only attempt to show the avatar if we have a URL and it hasn't failed to load
+    const showAvatar = otherUser?.avatarUrl && !imageError;
 
     return (
         <View style={{ position: 'relative' }}>
-            <View style={[styles.avatarChip, { borderColor: theme.headerBackground }]}>
-                {otherUser?.avatarUrl ? (
+            <View style={[styles.avatarChip, { borderColor: theme.headerBackground, overflow: 'hidden' }]}>
+                {showAvatar ? (
                     <Image
                         source={{ uri: otherUser.avatarUrl }}
                         style={{ width: '100%', height: '100%' }}
+                        onError={() => setImageError(true)} // Intercept 404/403 errors
                     />
                 ) : (
+                    /* Universal User Icon Fallback */
                     <View style={{
                         width: '100%', height: '100%',
-                        backgroundColor: dir.color,
+                        backgroundColor: isDeleted ? '#7F8C8D' : dir.color, // Gray for deleted, directional color for active
                         alignItems: 'center', justifyContent: 'center',
                     }}>
-                        <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF' }}>
-                            {initials}
-                        </Text>
+                        <Iconify icon="lucide:user" size={20} color="#FFFFFF" />
                     </View>
                 )}
             </View>
@@ -79,3 +91,4 @@ export const SwapCard = ({ imageUrl, status, otherUser, currentUserId, chat, sty
         </View>
     );
 };
+
