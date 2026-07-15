@@ -25,11 +25,19 @@ const targetLabel = (report, reportedUser) => {
         case REPORT_TARGET_TYPE.CHAT:
             return { title: 'Chat', sub: `with @${reportedUser?.username || '—'}` };
         case REPORT_TARGET_TYPE.PUBLICATION:
-            return { title: 'Publication', sub: `ID: ${truncateId(report.targetId)}` };
+            return { 
+                title: 'Publication', 
+                sub: `ID: ${truncateId(report.targetId)}`,
+                fullId: report.targetId // NEW: Pass the full ID
+            };
         case REPORT_TARGET_TYPE.ACCOUNT:
             return { title: 'Account', sub: `@${reportedUser?.username || '—'}` };
         default:
-            return { title: report.targetType, sub: truncateId(report.targetId) };
+            return { 
+                title: report.targetType, 
+                sub: truncateId(report.targetId),
+                fullId: report.targetId // NEW: Pass the full ID
+            };
     }
 };
 
@@ -48,7 +56,20 @@ const reportSubtitle = (report) => {
 
 export default function ReportRow({ report, reporter, reportedUser, onStatusChange }) {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
+
     const target = targetLabel(report, reportedUser);
+
+    const handleCopy = async (text) => {
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy ID:', err);
+        }
+    };
 
     return (
         <tr className={styles.row}>
@@ -82,7 +103,18 @@ export default function ReportRow({ report, reporter, reportedUser, onStatusChan
             <td>
                 <div className={styles.targetCell}>
                     <div className={styles.personName}>{target.title}</div>
-                    <div className={styles.personHandle}>{target.sub}</div>
+                    <div 
+                        className={styles.personHandle}
+                        title={target.fullId && !copied ? `Copy full ID: ${target.fullId}` : undefined}
+                        onClick={target.fullId && !copied ? () => handleCopy(target.fullId) : undefined}
+                        style={target.fullId ? { cursor: copied ? 'default' : 'pointer' } : {}}
+                    >
+                        {copied ? (
+                            <span style={{ color: '#10b981', fontWeight: 500 }}>✅ Copied!</span>
+                        ) : (
+                            target.sub
+                        )}
+                    </div>
                 </div>
             </td>
             <td className={styles.reasonCell}>{REPORT_REASON_LABELS[report.reason] || report.reason}</td>
