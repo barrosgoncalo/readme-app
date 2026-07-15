@@ -1,5 +1,3 @@
-import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS, REPORT_STATUS } from '@readme/shared/src/constants/status';
-import StatusBadge from '../../../components/StatusBadge.jsx';
 import ReportRow from './ReportRow.jsx';
 import styles from './ReportsTable.module.css';
 

@@ -1,5 +1,5 @@
 import { REPORT_TARGET_TYPE, REPORT_STATUS, REPORT_REASON_LABELS } from '@readme/shared/src/constants/status';
-import Dropdown from '../../../components/Dropdown';
+import Dropdown from '../../components/Dropdown';
 import styles from './ReportsFilterBar.module.css';
 
 const STATUS_OPTIONS = [
