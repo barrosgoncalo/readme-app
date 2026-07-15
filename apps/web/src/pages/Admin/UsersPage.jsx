@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
-import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
 import { httpsCallable, getFunctions } from 'firebase/functions';
 import { getAuth } from 'firebase/auth';
+import {Search, User} from 'lucide-react';
+import {DB} from '@readme/shared/src/services/DB';
+import {searchUsers} from '@readme/shared/src/services/searchUser';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import Pagination from '../../components/Pagination.jsx';
 import styles from './UsersPage.module.css';
@@ -9,31 +11,78 @@ import styles from './UsersPage.module.css';
 const PAGE_SIZE_DEFAULT = 10;
 
 export default function UsersPage() {
-    const [allUsers, setAllUsers] = useState([]);
+    const [displayedUsers, setDisplayedUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(PAGE_SIZE_DEFAULT);
+    const [totalUsers, setTotalUsers] = useState(0);
 
-    const db = getFirestore();
+    const lastVisibleDocs = useRef({});
+
     const auth = getAuth();
     const functions = getFunctions();
 
+    // Debounce: Prevents overloading Algolia with every typed letter
     useEffect(() => {
-        const fetchUsers = async () => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(1);
+            lastVisibleDocs.current = {};
+        }, 150);
+        return () => clearTimeout(handler);
+    }, [search]);
+
+    // Loading: Alternates between Algolia (search) and DB Service (normal list)
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadUsers = async () => {
+            setLoading(true);
             try {
-                const q = query(collection(db, 'users'), orderBy('fullName'));
-                const snap = await getDocs(q);
-                setAllUsers(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() })));
+                if (debouncedSearch.trim()) {
+                    const {users, nbHits} = await searchUsers(debouncedSearch, {
+                        page: page - 1,
+                        hitsPerPage: pageSize
+                    });
+
+                    if (isMounted) {
+                        setDisplayedUsers(users);
+                        setTotalUsers(nbHits);
+                    }
+                } else {
+                    const total = await DB.count('users');
+                    const cursor = page > 1 ? lastVisibleDocs.current[page - 1] : null;
+
+                    const result = await DB.getPaginated(
+                        'users',
+                        {field: 'fullName', direction: 'asc'},
+                        pageSize,
+                        cursor
+                    );
+
+                    if (isMounted) {
+                        setDisplayedUsers(result.docs);
+                        setTotalUsers(total);
+                        lastVisibleDocs.current[page] = result.lastVisible;
+                    }
+                }
             } catch (err) {
                 console.error('Error fetching users:', err);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
-        fetchUsers();
-    }, [db]);
+
+        loadUsers();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [debouncedSearch, page, pageSize]);
 
     const handleRoleChange = async (targetUid, currentRole) => {
         const makeAdmin = currentRole !== 'admin';
@@ -42,8 +91,8 @@ export default function UsersPage() {
             const fn = httpsCallable(functions, 'setAdminStatus');
             const result = await fn({ targetUid, makeAdmin });
             if (result.data.success) {
-                setAllUsers(prev =>
-                    prev.map(u => u.uid === targetUid ? { ...u, role: makeAdmin ? 'admin' : 'user' } : u)
+                setDisplayedUsers(prev =>
+                    prev.map(u => u.uid === targetUid ? {...u, role: makeAdmin ? 'admin' : 'user'} : u)
                 );
             }
         } catch (err) {
@@ -53,21 +102,17 @@ export default function UsersPage() {
         }
     };
 
-    const filtered = allUsers.filter(u => {
-        if (!search) return true;
-        const q = search.toLowerCase();
-        return (
-            (u.fullName || '').toLowerCase().includes(q) ||
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.email || '').toLowerCase().includes(q)
-        );
-    });
+    const totalPages = Math.max(1, Math.ceil(totalUsers / pageSize));
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+    const handleSearch = (val) => {
+        setSearch(val);
+    };
 
-    const handleSearch = (val) => { setSearch(val); setPage(1); };
-    const handlePageSize = (val) => { setPageSize(val); setPage(1); };
+    const handlePageSize = (val) => {
+        setPageSize(val);
+        setPage(1);
+        lastVisibleDocs.current = {};
+    };
 
     return (
         <div className={styles.page}>
@@ -81,7 +126,7 @@ export default function UsersPage() {
             <div className={styles.card}>
                 <div className={styles.toolbar}>
                     <div className={styles.searchWrapper}>
-                        <IconLucideSearch size={15} className={styles.searchIcon} />
+                        <Search size={15} className={styles.searchIcon}/>
                         <input
                             className={styles.searchInput}
                             placeholder="Search users..."
@@ -92,8 +137,8 @@ export default function UsersPage() {
                 </div>
 
                 {loading ? (
-                    <div className={styles.empty}>Loading users…</div>
-                ) : paged.length === 0 ? (
+                    <div className={styles.empty}>Loading users...</div>
+                ) : displayedUsers.length === 0 ? (
                     <div className={styles.empty}>No users found.</div>
                 ) : (
                     <table className={styles.table}>
@@ -106,14 +151,14 @@ export default function UsersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {paged.map(user => (
+                            {displayedUsers.map(user => (
                                 <tr key={user.uid}>
                                     <td>
                                         <div className={styles.userCell}>
                                             <div className={styles.avatar}>
                                                 {user.photoURL
-                                                    ? <img src={user.photoURL} alt="" className={styles.avatarImg} />
-                                                    : <IconLucideUser size={16} />
+                                                    ? <img src={user.photoURL} alt="" className={styles.avatarImg}/>
+                                                    : <User size={16}/>
                                                 }
                                             </div>
                                             <div>
@@ -122,8 +167,8 @@ export default function UsersPage() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className={styles.emailCell}>{user.userId || user.email || '—'}</td>
-                                    <td><StatusBadge status={user.role || 'user'} /></td>
+                                    <td className={styles.emailCell}>{user.userId || user.email || '-'}</td>
+                                    <td><StatusBadge status={user.role || 'user'}/></td>
                                     <td>
                                         {user.uid === auth.currentUser?.uid ? (
                                             <span className={styles.youLabel}>You</span>
@@ -134,7 +179,7 @@ export default function UsersPage() {
                                                 onClick={() => handleRoleChange(user.uid, user.role)}
                                             >
                                                 {actionLoading === user.uid
-                                                    ? 'Saving…'
+                                                    ? 'Saving...'
                                                     : user.role === 'admin' ? 'Demote' : 'Promote'
                                                 }
                                             </button>
@@ -149,7 +194,7 @@ export default function UsersPage() {
                 <Pagination
                     page={page}
                     totalPages={totalPages}
-                    total={filtered.length}
+                    total={totalUsers}
                     pageSize={pageSize}
                     onPageChange={setPage}
                     onPageSizeChange={handlePageSize}
@@ -158,4 +203,3 @@ export default function UsersPage() {
         </div>
     );
 }
-
