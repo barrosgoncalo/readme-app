@@ -1,37 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search as IconLucideSearch, BookOpen as IconLucideBook, X as IconLucideX, Trash2 as IconLucideTrash } from 'lucide-react';
 import { DB } from '@readme/shared/src/services/DB.js';
+// 1. Import your shared hook
+import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
 import StatusBadge from '../../components/StatusBadge.jsx';
-import Pagination from '../../components/Pagination.jsx';
 import styles from './Publications.module.css';
 
-const PAGE_SIZE_DEFAULT = 10;
-
 export default function Publications() {
-    const [allPublications, setAllPublications] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(PAGE_SIZE_DEFAULT);
-    const [selectedPub, setSelectedPub] = useState(null); // Holds the publication to "open" in detail modal
+    const [selectedPub, setSelectedPub] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
 
-    // Fetch publications ordered by title
-    useEffect(() => {
-        const fetchPublications = async () => {
-            try {
-                // Fetch using your DB wrapper
-                const fetchedData = await DB.getOrderedBy('publications', { field: 'title' });
-                // Maps standard document 'id' to 'uid' or keeps 'id'
-                setAllPublications(fetchedData.map(pub => ({ ...pub, id: pub.id })));
-            } catch (err) {
-                console.error('Error fetching publications:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchPublications();
-    }, []);
+    // 2. Consume the shared hook instead of manual useEffect
+    const {
+        items: allPublications,
+        isLoadingInitial,
+        isLoadingMore,
+        loadMore,
+        refresh
+    } = useExploreFeed({
+        // You can enforce an admin default sort here if you want
+        sortBy: 'DATE_DESC', 
+    });
 
     // Admin action: Delete a publication
     const handleDelete = async (pubId) => {
@@ -39,10 +29,10 @@ export default function Publications() {
         
         setDeletingId(pubId);
         try {
-            // Adjust this call to your DB wrapper's delete method (e.g. DB.delete('publications', pubId))
             await DB.delete('publications', pubId); 
-            setAllPublications(prev => prev.filter(p => p.id !== pubId));
-            setSelectedPub(null); // Close modal if open
+            // 3. Call refresh() from your hook to update the list after deletion
+            refresh();
+            setSelectedPub(null); 
         } catch (err) {
             console.error('Failed to delete publication:', err);
         } finally {
@@ -50,7 +40,7 @@ export default function Publications() {
         }
     };
 
-    // Client-side search filtering
+    // Client-side search filtering (Note: this only filters items currently loaded by the feed)
     const filtered = allPublications.filter(pub => {
         if (!search) return true;
         const q = search.toLowerCase();
@@ -61,12 +51,6 @@ export default function Publications() {
             (pub.genre || '').toLowerCase().includes(q)
         );
     });
-
-    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-    const handleSearch = (val) => { setSearch(val); setPage(1); };
-    const handlePageSize = (val) => { setPageSize(val); setPage(1); };
 
     return (
         <div className={styles.page}>
@@ -85,73 +69,77 @@ export default function Publications() {
                             className={styles.searchInput}
                             placeholder="Search by title, author, owner, or genre..."
                             value={search}
-                            onChange={e => handleSearch(e.target.value)}
+                            onChange={e => setSearch(e.target.value)}
                         />
                     </div>
                 </div>
 
-                {loading ? (
+                {isLoadingInitial ? (
                     <div className={styles.empty}>Loading publications…</div>
-                ) : paged.length === 0 ? (
+                ) : filtered.length === 0 ? (
                     <div className={styles.empty}>No publications found.</div>
                 ) : (
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>Book Title</th>
-                                <th>Author</th>
-                                <th>Genre</th>
-                                <th>Owner</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paged.map(pub => (
-                                <tr key={pub.id}>
-                                    <td>
-                                        <div className={styles.bookCell}>
-                                            <div className={styles.cover}>
-                                                {pub.coverURL ? (
-                                                    <img src={pub.coverURL} alt="" className={styles.coverImg} />
-                                                ) : (
-                                                    <IconLucideBook size={16} />
-                                                )}
-                                            </div>
-                                            <span className={styles.bookTitle}>{pub.title || 'Untitled'}</span>
-                                        </div>
-                                    </td>
-                                    <td className={styles.textCell}>{pub.author || '—'}</td>
-                                    <td className={styles.textCell}>
-                                        <span className={styles.genreTag}>{pub.genre || 'General'}</span>
-                                    </td>
-                                    <td className={styles.ownerCell}>{pub.ownerName || 'Unknown'}</td>
-                                    <td><StatusBadge status={pub.status || 'available'} /></td>
-                                    <td>
-                                        <button 
-                                            className={styles.openBtn}
-                                            onClick={() => setSelectedPub(pub)}
-                                        >
-                                            Open
-                                        </button>
-                                    </td>
+                    <>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Book Title</th>
+                                    <th>Author</th>
+                                    <th>Genre</th>
+                                    <th>Owner</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filtered.map(pub => (
+                                    <tr key={pub.id}>
+                                        <td>
+                                            <div className={styles.bookCell}>
+                                                <div className={styles.cover}>
+                                                    {pub.coverURL ? (
+                                                        <img src={pub.coverURL} alt="" className={styles.coverImg} />
+                                                    ) : (
+                                                        <IconLucideBook size={16} />
+                                                    )}
+                                                </div>
+                                                <span className={styles.bookTitle}>{pub.title || 'Untitled'}</span>
+                                            </div>
+                                        </td>
+                                        <td className={styles.textCell}>{pub.author || '—'}</td>
+                                        <td className={styles.textCell}>
+                                            <span className={styles.genreTag}>{pub.genre || 'General'}</span>
+                                        </td>
+                                        <td className={styles.ownerCell}>{pub.ownerName || 'Unknown'}</td>
+                                        <td><StatusBadge status={pub.status || 'available'} /></td>
+                                        <td>
+                                            <button 
+                                                className={styles.openBtn}
+                                                onClick={() => setSelectedPub(pub)}
+                                            >
+                                                Open
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        
+                        {/* 4. Replaced Pagination component with a Load More button to match the hook's design */}
+                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                            <button 
+                                onClick={loadMore} 
+                                disabled={isLoadingMore}
+                                className={styles.loadMoreBtn} // Make sure to add some CSS for this
+                            >
+                                {isLoadingMore ? 'Loading...' : 'Load More'}
+                            </button>
+                        </div>
+                    </>
                 )}
-
-                <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    total={filtered.length}
-                    pageSize={pageSize}
-                    onPageChange={setPage}
-                    onPageSizeChange={handlePageSize}
-                />
             </div>
 
-            {/* Publication Detail Modal / Drawer */}
+            {/* Publication Detail Modal - (Unchanged) */}
             {selectedPub && (
                 <div className={styles.modalOverlay} onClick={() => setSelectedPub(null)}>
                     <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
