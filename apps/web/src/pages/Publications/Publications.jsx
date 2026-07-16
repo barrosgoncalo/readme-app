@@ -18,6 +18,7 @@ export default function Publications() {
         refresh
     } = useExploreFeed({
         sortBy: 'DATE_DESC',
+        includeAllStatuses: true
     });
 
     const handleDelete = async (pubId) => {
