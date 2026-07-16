@@ -15,7 +15,7 @@ import { ADMIN_ROUTES } from '../constants/adminRoutes';
 import styles from './AdminSidebar.module.css';
 
 const NAV_ITEMS = [
-    { label: 'Dashboard', path: ADMIN_ROUTES.DASHBOARD, icon: <IconLucideLayoutDashboard size={18} />, enabled: false },
+    { label: 'Dashboard', path: ADMIN_ROUTES.DASHBOARD, icon: <IconLucideLayoutDashboard size={18} />, enabled: true },
     { label: 'Users', path: ADMIN_ROUTES.USERS, icon: <IconLucideUsers size={18} />, enabled: true },
     { label: 'Publications', path: ADMIN_ROUTES.PUBLICATIONS, icon: <IconLucideLibrary size={18} />, enabled: true },
     { label: 'Reports', path: ADMIN_ROUTES.REPORTS, icon: <IconLucideFlag size={18} />, enabled: true },
