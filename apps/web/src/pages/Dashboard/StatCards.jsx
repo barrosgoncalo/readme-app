@@ -1,7 +1,11 @@
 import styles from './StatCards.module.css';
 
 export default function StatCards({ loading, reportsTotal, activeAccounts, activeTrades, publications }) {
-    const fmt = (n) => (loading ? '—' : (n ?? 0).toLocaleString());
+    const fmt = (n) => {
+        if (loading) return '—';
+        if (n === null || n === undefined) return '—';
+        return n.toLocaleString();
+    };
 
     return (
         <div className={styles.row}>

@@ -2,7 +2,8 @@ import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
     updateDoc, deleteDoc, serverTimestamp, arrayUnion,
-    query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit, startAfter, getCountFromServer
+    query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit, startAfter, getCountFromServer,
+    collectionGroup
 } from 'firebase/firestore';
 
 export const DB = {
@@ -272,6 +273,19 @@ export const DB = {
             return snap.data().count;
         } catch (error) {
             console.error(`DB.count Error on path "${collectionPath}":`, error);
+            throw error;
+        }
+    },
+
+    countCollectionGroup: async (collectionGroupName, whereArgs = []) => {
+        try {
+            const colRef = collectionGroup(db, collectionGroupName);
+            const constraints = whereArgs.map(w => where(w.field, w.operator, w.value));
+            const q = constraints.length ? query(colRef, ...constraints) : colRef;
+            const snap = await getCountFromServer(q);
+            return snap.data().count;
+        } catch (error) {
+            console.error(`DB.countCollectionGroup Error on group "${collectionGroupName}":`, error);
             throw error;
         }
     },

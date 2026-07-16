@@ -9,6 +9,7 @@ export default function Dashboard() {
     const {
         loading,
         error,
+        warnings,
         reportsTotal,
         reportsByType,
         activeAccounts,
@@ -17,6 +18,8 @@ export default function Dashboard() {
         publications,
         publicationsByCountry,
     } = useAdminDashboard();
+
+    const activeTradesUnavailable = warnings.includes('activeTrades');
 
     return (
         <div className={styles.page}>
@@ -30,6 +33,14 @@ export default function Dashboard() {
             {error && (
                 <div className={styles.errorBanner}>
                     Couldn't load some dashboard data. Try refreshing the page.
+                </div>
+            )}
+
+            {!error && warnings.length > 0 && (
+                <div className={styles.warningBanner}>
+                    {activeTradesUnavailable
+                        ? 'Active trades are temporarily unavailable while Firestore finishes building the required index. Other dashboard metrics are up to date.'
+                        : 'Some dashboard metrics are temporarily unavailable. Try refreshing the page in a moment.'}
                 </div>
             )}
 

@@ -17,14 +17,24 @@ const RANK_ORDER = Object.values(RankTitles);
 const emptyState = {
     loading: true,
     error: null,
+    warnings: [],
     reportsTotal: 0,
     reportsByType: [],
     activeAccounts: 0,
     accountsByRank: [],
-    activeTrades: 0,
+    activeTrades: null,
     publications: 0,
     publicationsByCountry: [],
 };
+
+async function loadMetric(label, loader, fallback) {
+    try {
+        return { label, value: await loader(), warning: null };
+    } catch (error) {
+        console.warn(`useAdminDashboard: ${label} unavailable`, error);
+        return { label, value: fallback, warning: error };
+    }
+}
 
 export function useAdminDashboard() {
     const [state, setState] = useState(emptyState);
@@ -35,69 +45,96 @@ export function useAdminDashboard() {
         const load = async () => {
             try {
                 const [
-                    reportsTotal,
-                    reportsByType,
-                    activeAccounts,
-                    accountsByRank,
-                    activeTrades,
-                    publications,
-                    publicationsByCountry,
+                    reportsTotalResult,
+                    reportsByTypeResult,
+                    activeAccountsResult,
+                    accountsByRankResult,
+                    activeTradesResult,
+                    publicationsResult,
+                    publicationsByCountryResult,
                 ] = await Promise.all([
-                    // Total reports
-                    DB.count('reports'),
+                    loadMetric('reportsTotal', () => DB.count('reports'), 0),
 
-                    // Reports broken down by target type
-                    Promise.all(REPORT_TARGET_TYPES.map(async (targetType) => ({
-                        targetType,
-                        count: await DB.count('reports', [
-                            { field: 'targetType', operator: '==', value: targetType },
-                        ]),
-                    }))),
+                    loadMetric(
+                        'reportsByType',
+                        () => Promise.all(REPORT_TARGET_TYPES.map(async (targetType) => ({
+                            targetType,
+                            count: await DB.count('reports', [
+                                { field: 'targetType', operator: '==', value: targetType },
+                            ]),
+                        }))),
+                        [],
+                    ),
 
-                    // Active accounts
-                    DB.count(USERS_COLLECTION(), [
-                        { field: 'accountStatus', operator: '==', value: ACCOUNT_STATUS.ACTIVE },
-                    ]),
-
-                    // Active accounts, broken down by gamification rank
-                    Promise.all(RANK_ORDER.map(async (rank) => ({
-                        rank,
-                        count: await DB.count(USERS_COLLECTION(), [
+                    loadMetric(
+                        'activeAccounts',
+                        () => DB.count(USERS_COLLECTION(), [
                             { field: 'accountStatus', operator: '==', value: ACCOUNT_STATUS.ACTIVE },
-                            { field: 'gamification.rank', operator: '==', value: rank },
                         ]),
-                    }))),
+                        0,
+                    ),
+
+                    loadMetric(
+                        'accountsByRank',
+                        () => Promise.all(RANK_ORDER.map(async (rank) => ({
+                            rank,
+                            count: await DB.count(USERS_COLLECTION(), [
+                                { field: 'accountStatus', operator: '==', value: ACCOUNT_STATUS.ACTIVE },
+                                { field: 'gamification.rank', operator: '==', value: rank },
+                            ]),
+                        }))),
+                        [],
+                    ),
 
                     // Active trades: accepted offer messages across every chat.
-                    // First run will likely prompt Firestore to ask you to create
-                    // a composite index for this collection-group query — follow
-                    // the link in the console error, it's a one-time setup.
-                    DB.countCollectionGroup('messages', [
-                        { field: 'type', operator: '==', value: 'offer' },
-                        { field: 'status', operator: '==', value: NEGOTIATION_STATUS.ACCEPTED },
-                    ]),
+                    // Requires a one-time Firestore composite index on the messages
+                    // collection group. While the index is building, this metric
+                    // loads as unavailable instead of blocking the whole dashboard.
+                    loadMetric(
+                        'activeTrades',
+                        () => DB.countCollectionGroup('messages', [
+                            { field: 'type', operator: '==', value: 'offer' },
+                            { field: 'offerDetails.status', operator: '==', value: NEGOTIATION_STATUS.ACCEPTED },
+                        ]),
+                        null,
+                    ),
 
-                    // Live publications
-                    DB.count('publications', [
-                        { field: 'status', operator: '==', value: PUBLICATION_STATUS.AVAILABLE },
-                    ]),
+                    loadMetric(
+                        'publications',
+                        () => DB.count('publications', [
+                            { field: 'status', operator: '==', value: PUBLICATION_STATUS.AVAILABLE },
+                        ]),
+                        0,
+                    ),
 
-                    // Publications by country, via Algolia facets
-                    getPublicationsCountsByCountry(),
+                    loadMetric('publicationsByCountry', () => getPublicationsCountsByCountry(), []),
                 ]);
 
                 if (cancelled) return;
 
+                const warnings = [
+                    reportsTotalResult,
+                    reportsByTypeResult,
+                    activeAccountsResult,
+                    accountsByRankResult,
+                    activeTradesResult,
+                    publicationsResult,
+                    publicationsByCountryResult,
+                ]
+                    .filter((result) => result.warning)
+                    .map((result) => result.label);
+
                 setState({
                     loading: false,
                     error: null,
-                    reportsTotal,
-                    reportsByType,
-                    activeAccounts,
-                    accountsByRank,
-                    activeTrades,
-                    publications,
-                    publicationsByCountry,
+                    warnings,
+                    reportsTotal: reportsTotalResult.value,
+                    reportsByType: reportsByTypeResult.value,
+                    activeAccounts: activeAccountsResult.value,
+                    accountsByRank: accountsByRankResult.value,
+                    activeTrades: activeTradesResult.value,
+                    publications: publicationsResult.value,
+                    publicationsByCountry: publicationsByCountryResult.value,
                 });
             } catch (error) {
                 console.error('useAdminDashboard failed to load:', error);

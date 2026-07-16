@@ -34,6 +34,16 @@
     margin-bottom: 20px;
 }
 
+.warningBanner {
+    background: #FFFAEB;
+    border: 1px solid #FEF0C7;
+    color: #B54708;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
