@@ -54,7 +54,7 @@ const reportSubtitle = (report) => {
     }
 };
 
-export default function ReportRow({ report, reporter, reportedUser, onStatusChange }) {
+export default function ReportRow({ report, reporter, reportedUser, onStatusChange, onView }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -122,7 +122,7 @@ export default function ReportRow({ report, reporter, reportedUser, onStatusChan
             <td className={styles.dateCell}>{formatDate(report.createdAt)}</td>
             <td>
                 <div className={styles.actionsCell}>
-                    <button type="button" className={styles.iconBtn}>
+                    <button type="button" className={styles.iconBtn} onClick={() => onView(report)} aria-label="View report details">
                         <IconLucideEye size={16} />
                     </button>
                     <div className={styles.menuWrap}>

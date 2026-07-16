@@ -1,7 +1,7 @@
 import ReportRow from './ReportRow.jsx';
 import styles from './ReportsTable.module.css';
 
-export default function ReportsTable({ reports, userMap, loading, onStatusChange }) {
+export default function ReportsTable({ reports, userMap, loading, onStatusChange, onView }) {
     if (loading) {
         return <div className={styles.empty}>Loading reports…</div>;
     }
@@ -33,6 +33,7 @@ export default function ReportsTable({ reports, userMap, loading, onStatusChange
                         reporter={userMap[report.reporterId]}
                         reportedUser={userMap[report.reportedUserId]}
                         onStatusChange={onStatusChange}
+                        onView={onView}
                     />
                 ))}
                 </tbody>

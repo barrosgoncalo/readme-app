@@ -4,6 +4,7 @@ import Pagination from '../../components/Pagination.jsx';
 import ReportStatCards from './ReportsStatCards.jsx';
 import ReportsFilterBar from './ReportsFilterBar.jsx';
 import ReportsTable from './ReportsTable.jsx';
+import ReportDetailModal from './ReportDetailModal.jsx';
 import InfoCards from './InfoCards.jsx';
 import styles from './Reports.module.css';
 
@@ -16,6 +17,7 @@ export default function Reports() {
     const [dateTo, setDateTo] = useState(null);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [viewReport, setViewReport] = useState(null);
 
     const { reports, userMap, stats, total, totalPages, loading, setReportStatus } = useAdminReports({
         status,
@@ -58,7 +60,7 @@ export default function Reports() {
             />
 
             <div className={styles.tableCard}>
-                <ReportsTable reports={reports} userMap={userMap} loading={loading} onStatusChange={setReportStatus} />
+                <ReportsTable reports={reports} userMap={userMap} loading={loading} onStatusChange={setReportStatus} onView={setViewReport} />
                 <Pagination
                     page={page}
                     totalPages={totalPages}
@@ -70,6 +72,19 @@ export default function Reports() {
             </div>
 
             <InfoCards />
+
+            {viewReport && (
+                <ReportDetailModal
+                    report={viewReport}
+                    reporter={userMap[viewReport.reporterId]}
+                    reportedUser={userMap[viewReport.reportedUserId]}
+                    onClose={() => setViewReport(null)}
+                    onStatusChange={(id, newStatus) => {
+                        setReportStatus(id, newStatus);
+                        setViewReport(null);
+                    }}
+                />
+            )}
         </div>
     );
 }
