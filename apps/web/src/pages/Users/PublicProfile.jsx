@@ -4,6 +4,7 @@ import { ArrowLeft, UserPlus, UserCheck, Ban } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { MyBooksService } from '@readme/shared/src/services/books';
+import { PublicationService } from '@readme/shared/src/services/publications';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/block';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
@@ -13,6 +14,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import { SkeletonGrid } from '../../components/Skeleton.jsx';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
+import PublicationCard from '../Map/components/PublicationCard.jsx';
 import { useToast } from '../../hooks/useToast';
 import styles from './PublicProfile.module.css';
 
@@ -64,7 +66,11 @@ export default function PublicProfile() {
     const navigate = useNavigate();
 
     const [user, setUser] = useState(null);
-    const [books, setBooks] = useState([]);
+    const [shelfBooks, setShelfBooks] = useState([]);
+    const [publications, setPublications] = useState([]);
+    const [favoriteIds, setFavoriteIds] = useState(new Set());
+    const [favoriteBusy, setFavoriteBusy] = useState(null);
+    const [activeTab, setActiveTab] = useState('myBooks');
     const [reviews, setReviews] = useState([]);
     const [isFollowing, setIsFollowing] = useState(false);
     const [followers, setFollowers] = useState(0);
@@ -107,7 +113,17 @@ export default function PublicProfile() {
                 const hydrated = await hydrateMyBooks(rawMyBooks.map(flattenShelfDoc), { apiKey });
 
                 if (cancelled) return;
-                setBooks(hydrated);
+                setShelfBooks(hydrated);
+
+                const pubSummaries = await PublicationService.fetchUserPublications(uid).catch(() => []);
+                if (cancelled) return;
+                setPublications(pubSummaries.map(s => s.publicationData));
+
+                if (currentUser) {
+                    const viewerProfile = await UsersService.fetchUserProfile(currentUser.uid).catch(() => null);
+                    if (cancelled) return;
+                    setFavoriteIds(new Set(viewerProfile?.favoriteBooks || []));
+                }
 
                 const userReviews = await ReviewService.fetchUserReviews(uid).catch(() => []);
                 if (!cancelled) setReviews(userReviews);
@@ -132,6 +148,26 @@ export default function PublicProfile() {
             console.error(e);
         } finally {
             setFollowBusy(false);
+        }
+    }
+
+    async function handleToggleFavorite(pubId) {
+        if (!currentUser) return;
+        setFavoriteBusy(pubId);
+        try {
+            const isFav = favoriteIds.has(pubId);
+            await UsersService.toggleFavoriteStatus(currentUser.uid, pubId, isFav);
+            setFavoriteIds(prev => {
+                const next = new Set(prev);
+                if (isFav) next.delete(pubId);
+                else next.add(pubId);
+                return next;
+            });
+        } catch (err) {
+            showToast('Action failed. Please try again.');
+            console.error(err);
+        } finally {
+            setFavoriteBusy(null);
         }
     }
 
@@ -194,7 +230,7 @@ export default function PublicProfile() {
                     {user.bio && <p className={styles.bio}>{user.bio}</p>}
                     <div className={styles.stats}>
                         <span className={styles.stat}>
-                            <strong>{books.length}</strong> book{books.length === 1 ? '' : 's'}
+                            <strong>{publications.length}</strong> book{publications.length === 1 ? '' : 's'}
                         </span>
                         <span className={styles.stat}>
                             <strong>{followers}</strong> follower{followers === 1 ? '' : 's'}
@@ -238,13 +274,47 @@ export default function PublicProfile() {
 
             <div className={styles.dashboard}>
                 <div className={styles.booksColumn}>
-                    <h2 className={styles.section}>Books</h2>
-                    {books.length === 0 ? (
-                        <p className={styles.empty}>This user hasn&rsquo;t added any books yet.</p>
+                    <div className={styles.tabBar}>
+                        <button
+                            type="button"
+                            className={`${styles.tabBtn} ${activeTab === 'myBooks' ? styles.tabBtnActive : ''}`}
+                            onClick={() => setActiveTab('myBooks')}
+                        >
+                            My Books
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.tabBtn} ${activeTab === 'shelf' ? styles.tabBtnActive : ''}`}
+                            onClick={() => setActiveTab('shelf')}
+                        >
+                            Shelf
+                        </button>
+                    </div>
+
+                    {activeTab === 'myBooks' ? (
+                        publications.length === 0 ? (
+                            <p className={styles.empty}>This user hasn&rsquo;t listed any books for trade yet.</p>
+                        ) : (
+                            <div className={styles.bookGrid}>
+                                {publications.map(pub => (
+                                    <PublicationCard
+                                        key={pub.id}
+                                        pub={pub}
+                                        isFavorite={favoriteIds.has(pub.id)}
+                                        onToggleFavorite={() => handleToggleFavorite(pub.id)}
+                                        busy={favoriteBusy === pub.id}
+                                    />
+                                ))}
+                            </div>
+                        )
                     ) : (
-                        <div className={styles.bookGrid}>
-                            {books.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
-                        </div>
+                        shelfBooks.length === 0 ? (
+                            <p className={styles.empty}>This user hasn&rsquo;t added any books to their shelf yet.</p>
+                        ) : (
+                            <div className={styles.bookGrid}>
+                                {shelfBooks.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
+                            </div>
+                        )
                     )}
                 </div>
 
