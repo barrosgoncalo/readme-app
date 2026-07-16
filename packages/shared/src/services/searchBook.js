@@ -245,7 +245,7 @@ export const browsePublications = async ({
         requests: [{
             indexName,
             query: '',
-            filters: buildPublicationFilters(conditions, genres, excludeUid, blockedUids, includeAllStatuses),
+            filters: buildPublicationFilters(conditions, genres, excludeUid, blockedUids, includeAllStatuses), //MUST BRINGGG
             page,
             hitsPerPage,
         }],
