@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus, UserCheck, Ban } from 'lucide-react';
+import { ArrowLeft, UserPlus, UserCheck, Ban, Flag } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { MyBooksService } from '@readme/shared/src/services/books';
 import { PublicationService } from '@readme/shared/src/services/publications';
+import { ReportsService } from '@readme/shared/src/services/reports';
+import { REPORT_TARGET_TYPE } from '@readme/shared/src/constants/status';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/block';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
@@ -15,6 +17,7 @@ import { SkeletonGrid } from '../../components/Skeleton.jsx';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
 import PublicationCard from '../Map/components/PublicationCard.jsx';
+import ReportModal from '../../components/ReportModal.jsx';
 import { useToast } from '../../hooks/useToast';
 import styles from './PublicProfile.module.css';
 
@@ -79,6 +82,7 @@ export default function PublicProfile() {
     const [followBusy, setFollowBusy] = useState(false);
     const [blockBusy, setBlockBusy] = useState(false);
     const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const [, showToast] = useToast(3000);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
@@ -171,6 +175,18 @@ export default function PublicProfile() {
         }
     }
 
+    async function handleSubmitReport(reason) {
+        if (!currentUser) return;
+        try {
+            const snapshot = ReportsService.buildAccountSnapshot(user);
+            await ReportsService.submitReport(currentUser.uid, REPORT_TARGET_TYPE.ACCOUNT, uid, uid, reason, snapshot);
+            showToast('Thanks — our team will review this profile.');
+        } catch (e) {
+            showToast("We couldn't submit your report. Please try again.");
+            console.error(e);
+        }
+    }
+
     async function handleBlock() {
         if (!currentUser || blockBusy) return;
         setBlockBusy(true);
@@ -222,6 +238,13 @@ export default function PublicProfile() {
                 busy={blockBusy}
             />
 
+            <ReportModal
+                open={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                onSubmit={handleSubmitReport}
+                title="Report this profile"
+            />
+
             <div className={styles.hero}>
                 <UserAvatar user={user} />
                 <div className={styles.profileInfo}>
@@ -264,6 +287,13 @@ export default function PublicProfile() {
                     >
                         <Ban size={16} />
                         Block
+                    </button>
+                    <button
+                        className={`${styles.actionBtn} ${styles.actionBtnSecondary}`}
+                        onClick={() => setShowReportModal(true)}
+                    >
+                        <Flag size={16} />
+                        Report
                     </button>
                 </div>
             )}

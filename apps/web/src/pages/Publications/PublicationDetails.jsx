@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, Trash2 } from 'lucide-react';
+import { Heart, Trash2, Flag } from 'lucide-react';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { UsersService } from '@readme/shared/src/services/users';
+import { ReportsService } from '@readme/shared/src/services/reports';
+import { REPORT_TARGET_TYPE } from '@readme/shared/src/constants/status';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import Button from '../../components/Button.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
+import ReportModal from '../../components/ReportModal.jsx';
 import { SkeletonList } from '../../components/Skeleton.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
 import { useToast } from '../../hooks/useToast';
@@ -27,6 +30,7 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
     const [favBusy, setFavBusy] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const [mainImageIndex, setMainImageIndex] = useState(0);
 
     useEffect(() => {
@@ -74,6 +78,18 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
         }
     }
 
+    async function handleSubmitReport(reason) {
+        if (!currentUser || !pub) return;
+        try {
+            const snapshot = ReportsService.buildPublicationSnapshot(pub);
+            await ReportsService.submitReport(currentUser.uid, REPORT_TARGET_TYPE.PUBLICATION, pub.id, pub.uid, reason, snapshot);
+            showToast('Thanks — our team will review this listing.');
+        } catch (err) {
+            showToast("We couldn't submit your report. Please try again.");
+            console.error(err);
+        }
+    }
+
     async function handleDelete() {
         setDeleting(true);
         try {
@@ -117,6 +133,13 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
                 confirmLabel="Delete"
                 danger
                 busy={deleting}
+            />
+
+            <ReportModal
+                open={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                onSubmit={handleSubmitReport}
+                title="Report this listing"
             />
 
             <PageHeader onBack={() => embedded && onClose ? onClose() : navigate(-1)} />
@@ -218,6 +241,15 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
                                     onClick={() => navigate(`${WEB_ROUTES.OFFERS_NEW}?pub=${pubId}`)}
                                 >
                                     Make an Offer
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    fullWidth={false}
+                                    onClick={() => setShowReportModal(true)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                                >
+                                    <Flag size={16} />
+                                    Report
                                 </Button>
                             </>
                         )}

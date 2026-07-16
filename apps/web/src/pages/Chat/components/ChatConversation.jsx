@@ -1,12 +1,16 @@
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useNavigate} from 'react-router-dom';
-import {Send, Smile} from 'lucide-react';
+import {Send, Smile, Flag} from 'lucide-react';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {UsersService} from '@readme/shared/src/services/users';
+import {ReportsService} from '@readme/shared/src/services/reports';
+import {REPORT_TARGET_TYPE} from '@readme/shared/src/constants/status';
 import {toMillis} from '@readme/shared/src/utils/timestamp';
 import Spinner from '../../../components/Spinner.jsx';
+import ReportModal from '../../../components/ReportModal.jsx';
 import {WEB_ROUTES} from '../../../constants/webRoutes';
+import {useToast} from '../../../hooks/useToast';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
@@ -41,6 +45,8 @@ export default function ChatConversation({chat, messages, loading, currentUserId
     const emojiPickerRef = useRef(null);
     const inputRef = useRef(null);
     const [otherUser, setOtherUser] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [, showToast] = useToast(3000);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
@@ -109,8 +115,30 @@ export default function ChatConversation({chat, messages, loading, currentUserId
         inputRef.current?.focus();
     }
 
+    async function handleSubmitReport(reason) {
+        if (!otherUserId) return;
+        try {
+            const snapshot = ReportsService.buildChatSnapshot(messages, {
+                name: displayName,
+                avatarUrl: otherUser?.photoURL,
+            });
+            await ReportsService.submitReport(currentUserId, REPORT_TARGET_TYPE.CHAT, chat.id, otherUserId, reason, snapshot);
+            showToast('Thanks — our team will review this conversation.');
+        } catch (err) {
+            showToast("We couldn't submit your report. Please try again.");
+            console.error(err);
+        }
+    }
+
     return (
         <div className={styles.conversation}>
+            <ReportModal
+                open={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                onSubmit={handleSubmitReport}
+                title="Report this conversation"
+            />
+
             {/* Header */}
             <div className={styles.header}>
                 <div className={styles.headerContent}>
@@ -127,6 +155,15 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                         <p className={styles.subtitle}>{chat.lastMessage}</p>
                     </div>
                 </div>
+                <button
+                    type="button"
+                    className={styles.reportBtn}
+                    onClick={() => setShowReportModal(true)}
+                    aria-label="Report conversation"
+                    title="Report conversation"
+                >
+                    <Flag size={18}/>
+                </button>
             </div>
 
             {/* Messages */}
