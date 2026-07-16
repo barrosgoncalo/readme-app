@@ -5,13 +5,14 @@ import { browsePublications, SORT_OPTIONS } from '../services/searchBook';
 import { doGetBlockedUids } from '../services/block';
 
 export function useExploreFeed({
-                                   excludeUid = null,
-                                   sortBy = SORT_OPTIONS.DATE_DESC,
-                                   conditions = [],
-                                   genres = [],
-                               } = {}) {
+    excludeUid = null,
+    sortBy = SORT_OPTIONS.DATE_DESC,
+    conditions = [],
+    genres = [],
+    includeAllStatuses = false
+} = {}) {
     const [blockedUids, setBlockedUids] = useState([]);
-    const [blockedLoaded, setBlockedLoaded] = useState(!excludeUid); // no user -> nothing to load
+    const [blockedLoaded, setBlockedLoaded] = useState(!excludeUid);
 
     useEffect(() => {
         let cancelled = false;
@@ -30,7 +31,7 @@ export function useExploreFeed({
 
     const fetchPage = useMemo(
         () => algoliaPageAdapter((params) =>
-            browsePublications({ ...params, sortBy, conditions, genres, excludeUid, blockedUids })
+            browsePublications({ ...params, sortBy, conditions, genres, excludeUid, blockedUids, includeAllStatuses })
         ),
         [sortBy, conditions, genres, excludeUid, blockedUids]
     );
