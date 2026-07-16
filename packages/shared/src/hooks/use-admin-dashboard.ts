@@ -3,14 +3,11 @@
 import { useEffect, useState } from 'react';
 import { DB } from '../services/DB';
 import { getPublicationsCountsByCountry } from '../services/searchBook';
-import { PUBLICATION_STATUS, NEGOTIATION_STATUS } from '../constants/status';
+import { PUBLICATION_STATUS, NEGOTIATION_STATUS, REPORT_REASON_LABELS } from '../constants/status';
 import { ACCOUNT_STATUS } from '../constants/authConstants';
 import { RankTitles } from '../constants/gamification';
 
-// Adjust these to match the actual targetType values you write on report
-// docs (see ReportsService.submitReport callers — targetType is whatever
-// string gets passed there, e.g. 'chat' | 'publication' | 'account').
-const REPORT_TARGET_TYPES = ['chat', 'publication', 'account'];
+const REPORT_REASONS = Object.keys(REPORT_REASON_LABELS);
 
 const RANK_ORDER = Object.values(RankTitles);
 
@@ -57,10 +54,10 @@ export function useAdminDashboard() {
 
                     loadMetric(
                         'reportsByType',
-                        () => Promise.all(REPORT_TARGET_TYPES.map(async (targetType) => ({
-                            targetType,
+                        () => Promise.all(REPORT_REASONS.map(async (reason) => ({
+                            reason,
                             count: await DB.count('reports', [
-                                { field: 'targetType', operator: '==', value: targetType },
+                                { field: 'reason', operator: '==', value: reason },
                             ]),
                         }))),
                         [],

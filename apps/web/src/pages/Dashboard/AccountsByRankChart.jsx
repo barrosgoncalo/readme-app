@@ -14,13 +14,19 @@ export default function AccountsByRankChart({ data = [], loading }) {
     const chartData = data;
 
     return (
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={500}>
             <BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#EAECF0" />
                 <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#667085' }} />
-                <YAxis type="category" dataKey="rank" width={130} tick={{ fontSize: 12, fill: '#344054' }} />
+                <YAxis
+                    type="category"
+                    dataKey="rank"
+                    width={150}
+                    interval={0}
+                    tick={{ fontSize: 15, fill: '#344054' }}
+                />
                 <Tooltip cursor={{ fill: '#F9FAFB' }} />
-                <Bar dataKey="count" fill="#6366F1" radius={[0, 6, 6, 0]} maxBarSize={22} />
+                <Bar dataKey="count" fill="#e7ab51" radius={[0, 6, 6, 0]} maxBarSize={22} />
             </BarChart>
         </ResponsiveContainer>
     );
