@@ -52,6 +52,51 @@
     color: var(--subtext);
 }
 
+/* Generated "cloth cover" for books with no cover image — mirrors the
+   shelf's BookCard treatment so the cover doesn't change on open. */
+.generatedCover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px 16px;
+    gap: 12px;
+    position: relative;
+}
+
+.generatedCover::before,
+.generatedCover::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.generatedCover::before { top: 18px; }
+.generatedCover::after { bottom: 18px; }
+
+.generatedTitle {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #F2F0EF;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.generatedAuthor {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(242, 240, 239, 0.72);
+}
+
 .title {
     font-family: var(--font-serif);
     font-size: 1.65rem;

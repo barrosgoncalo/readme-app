@@ -9,9 +9,39 @@ import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
 import {BOOK_STATUS, BOOK_STATUS_LABELS} from '@readme/shared/src/constants/bookStatus';
 import Spinner from '../../components/Spinner.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
-import BookCover from '../../components/BookCover.jsx';
+import {coverColorFor} from '../../utils/generatedCover.js';
 import {WEB_ROUTES} from '../../constants/webRoutes.js';
 import styles from './BookDetail.module.css';
+
+// Same "cloth cover" treatment as the shelf's BookCard, so a book with no
+// cover image keeps its generated cover instead of falling back to a
+// generic placeholder icon when opened here.
+function HeroCover({coverUrl, title, authors}) {
+    const [imgFailed, setImgFailed] = useState(false);
+
+    if (coverUrl && !imgFailed) {
+        return (
+            <img
+                src={coverUrl}
+                alt=""
+                className={styles.cover}
+                onError={() => setImgFailed(true)}
+                onLoad={(e) => {
+                    if (e.target.naturalWidth > 0 && e.target.naturalWidth < 10) {
+                        setImgFailed(true);
+                    }
+                }}
+            />
+        );
+    }
+
+    return (
+        <div className={`${styles.cover} ${styles.generatedCover}`} style={{backgroundColor: coverColorFor(title || '')}}>
+            <span className={styles.generatedTitle}>{title || 'Untitled'}</span>
+            <span className={styles.generatedAuthor}>{authors || 'Unknown author'}</span>
+        </div>
+    );
+}
 
 function StarRating({rating, onRate, disabled}) {
     const [hovered, setHovered] = useState(null);
@@ -241,12 +271,7 @@ export default function BookDetail({ embedded = false, onClose }) {
 
                 <>
                     <div className={styles.hero}>
-                        <BookCover
-                            coverUrl={displayCoverUrl}
-                            imgClassName={styles.cover}
-                            placeholderClassName={`${styles.cover} ${styles.coverPlaceholder}`}
-                            iconSize={48}
-                        />
+                        <HeroCover coverUrl={displayCoverUrl} title={displayTitle} authors={authors} />
                         <h1 className={styles.title}>{displayTitle}</h1>
                         {authors && <p className={styles.authors}>{authors}</p>}
                         {displayDescription && (
@@ -326,12 +351,7 @@ export default function BookDetail({ embedded = false, onClose }) {
 
                 <>
                     <div className={styles.hero}>
-                        <BookCover
-                            coverUrl={displayCoverUrl}
-                            imgClassName={styles.cover}
-                            placeholderClassName={`${styles.cover} ${styles.coverPlaceholder}`}
-                            iconSize={48}
-                        />
+                        <HeroCover coverUrl={displayCoverUrl} title={displayTitle} authors={authors} />
                         <h1 className={styles.title}>{displayTitle}</h1>
                         {authors && <p className={styles.authors}>{authors}</p>}
                         {displayDescription && (
