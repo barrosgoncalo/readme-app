@@ -31,15 +31,14 @@
     border-radius: 50%;
     border: none;
     background: transparent;
-    color: var(--subtext);
+    color: var(--error);
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.12s, color 0.12s;
+    transition: background 0.12s;
 }
 
 .reportBtn:hover {
     background: var(--bg-elem);
-    color: var(--error);
 }
 
 .bookImage {

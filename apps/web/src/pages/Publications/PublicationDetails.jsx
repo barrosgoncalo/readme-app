@@ -246,7 +246,13 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
                                     variant="ghost"
                                     fullWidth={false}
                                     onClick={() => setShowReportModal(true)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        color: 'var(--error)',
+                                        borderColor: 'var(--error)',
+                                    }}
                                 >
                                     <Flag size={16} />
                                     Report

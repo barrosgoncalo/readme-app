@@ -289,7 +289,7 @@ export default function PublicProfile() {
                         Block
                     </button>
                     <button
-                        className={`${styles.actionBtn} ${styles.actionBtnSecondary}`}
+                        className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
                         onClick={() => setShowReportModal(true)}
                     >
                         <Flag size={16} />
