@@ -183,6 +183,11 @@ service cloud.firestore {
       }
     }
 
+    // ─── MESSAGES (collection group, admin dashboard aggregation) ───
+    match /{path=**}/messages/{messageId} {
+      allow read: if isAdmin();
+    }
+
     // ─── REVIEWS (ADICIONADO) ───
     match /reviews/{reviewId} {
       // Qualquer utilizador autenticado e ativo pode ler avaliações (ex: ver o perfil de outro swapper)
