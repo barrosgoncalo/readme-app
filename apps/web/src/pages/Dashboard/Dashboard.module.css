@@ -1,7 +1,7 @@
 .page {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 30px;
 }
 
 .header {
@@ -63,6 +63,48 @@
     font-weight: 600;
     color: #101828;
     margin: 0 0 16px 0;
+}
+
+.cardHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.cardHeaderRow .cardTitle {
+    margin: 0;
+}
+
+.segmentedControl {
+    display: flex;
+    background: #F2F4F7;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.segmentedOption {
+    border: none;
+    background: transparent;
+    color: #667085;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.segmentedOption:hover {
+    color: #344054;
+}
+
+.segmentedOptionActive,
+.segmentedOptionActive:hover {
+    background: #ffffff;
+    color: #101828;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
 @media (max-width: 1000px) {

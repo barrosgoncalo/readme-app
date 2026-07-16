@@ -1,11 +1,21 @@
+import { useState } from 'react';
 import { useAdminDashboard } from '@readme/shared/src/hooks/use-admin-dashboard';
 import StatCards from './StatCards.jsx';
 import ReportsByTypeChart from './ReportsByTypeChart.jsx';
 import AccountsByRankChart from './AccountsByRankChart.jsx';
 import PublicationsByCountryList from './PublicationsByCountryList.jsx';
+import PublicationsByDateChart from './PublicationsByDateChart.jsx';
 import styles from './Dashboard.module.css';
 
+const GRANULARITY_OPTIONS = [
+    { value: 'day', label: 'Day' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
+];
+
 export default function Dashboard() {
+    const [publicationsDateGranularity, setPublicationsDateGranularity] = useState('month');
+
     const {
         loading,
         error,
@@ -17,7 +27,9 @@ export default function Dashboard() {
         activeTrades,
         publications,
         publicationsByCountry,
-    } = useAdminDashboard();
+        publicationsByDate,
+        publicationsByDateLoading,
+    } = useAdminDashboard({ publicationsDateGranularity });
 
     const activeTradesUnavailable = warnings.includes('activeTrades');
 
@@ -62,6 +74,28 @@ export default function Dashboard() {
                     <h2 className={styles.cardTitle}>Accounts by rank</h2>
                     <AccountsByRankChart data={accountsByRank} loading={loading} />
                 </div>
+            </div>
+
+            <div className={styles.card}>
+                <div className={styles.cardHeaderRow}>
+                    <h2 className={styles.cardTitle}>Publications over time</h2>
+                    <div className={styles.segmentedControl} role="group" aria-label="Chart granularity">
+                        {GRANULARITY_OPTIONS.map((option) => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                className={`${styles.segmentedOption} ${
+                                    publicationsDateGranularity === option.value ? styles.segmentedOptionActive : ''
+                                }`}
+                                aria-pressed={publicationsDateGranularity === option.value}
+                                onClick={() => setPublicationsDateGranularity(option.value)}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <PublicationsByDateChart data={publicationsByDate} loading={publicationsByDateLoading} />
             </div>
 
             <div className={styles.card}>

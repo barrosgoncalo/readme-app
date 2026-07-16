@@ -22,6 +22,8 @@ const emptyState = {
     activeTrades: null,
     publications: 0,
     publicationsByCountry: [],
+    publicationsByDate: [],
+    publicationsByDateLoading: true,
 };
 
 async function loadMetric(label, loader, fallback) {
@@ -33,9 +35,96 @@ async function loadMetric(label, loader, fallback) {
     }
 }
 
-export function useAdminDashboard() {
+// Default lookback window per granularity. Chosen so each bucket count stays
+// readable on the chart (~30 points max) without needing a full date picker.
+function getDateRangeForGranularity(granularity) {
+    const dateTo = new Date();
+    const dateFrom = new Date(dateTo);
+
+    if (granularity === 'day') {
+        dateFrom.setDate(dateFrom.getDate() - 29); // last 30 days, inclusive of today
+    } else if (granularity === 'year') {
+        dateFrom.setFullYear(dateFrom.getFullYear() - 5); // last 6 years, inclusive of this year
+    } else {
+        dateFrom.setMonth(dateFrom.getMonth() - 11); // last 12 months, inclusive of this month
+    }
+
+    return { dateFrom, dateTo };
+}
+
+// Builds contiguous [start, end) buckets covering dateFrom..dateTo at the
+// requested granularity, each with a chart-friendly label.
+function buildDateBuckets(dateFrom, dateTo, granularity) {
+    const buckets = [];
+
+    if (granularity === 'day') {
+        const cursor = new Date(dateFrom);
+        cursor.setHours(0, 0, 0, 0);
+        while (cursor <= dateTo) {
+            const start = new Date(cursor);
+            const end = new Date(cursor);
+            end.setDate(end.getDate() + 1);
+            buckets.push({
+                label: start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                start,
+                end,
+            });
+            cursor.setDate(cursor.getDate() + 1);
+        }
+    } else if (granularity === 'year') {
+        const cursor = new Date(dateFrom.getFullYear(), 0, 1);
+        while (cursor <= dateTo) {
+            const start = new Date(cursor);
+            const end = new Date(cursor.getFullYear() + 1, 0, 1);
+            buckets.push({
+                label: String(start.getFullYear()),
+                start,
+                end,
+            });
+            cursor.setFullYear(cursor.getFullYear() + 1);
+        }
+    } else {
+        // month
+        const cursor = new Date(dateFrom.getFullYear(), dateFrom.getMonth(), 1);
+        while (cursor <= dateTo) {
+            const start = new Date(cursor);
+            const end = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+            buckets.push({
+                label: start.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }),
+                start,
+                end,
+            });
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+    }
+
+    return buckets;
+}
+
+// Counts publications created in each bucket. Deliberately NOT filtered by
+// PUBLICATION_STATUS.AVAILABLE (unlike the `publications` stat card) — this
+// chart is meant to show publishing activity over time, including listings
+// that have since been swapped or removed, not just what's live right now.
+async function loadPublicationsByDate(granularity) {
+    const { dateFrom, dateTo } = getDateRangeForGranularity(granularity);
+    const buckets = buildDateBuckets(dateFrom, dateTo, granularity);
+
+    return Promise.all(
+        buckets.map(async (bucket) => ({
+            label: bucket.label,
+            count: await DB.count('publications', [
+                { field: 'createdAt', operator: '>=', value: bucket.start },
+                { field: 'createdAt', operator: '<', value: bucket.end },
+            ]),
+        })),
+    );
+}
+
+export function useAdminDashboard({ publicationsDateGranularity = 'month' } = {}) {
     const [state, setState] = useState(emptyState);
 
+    // Main dashboard load — runs once. Independent of the date-granularity
+    // toggle so switching Day/Month/Year doesn't re-fetch everything else.
     useEffect(() => {
         let cancelled = false;
 
@@ -121,7 +210,8 @@ export function useAdminDashboard() {
                     .filter((result) => result.warning)
                     .map((result) => result.label);
 
-                setState({
+                setState((prev) => ({
+                    ...prev,
                     loading: false,
                     error: null,
                     warnings,
@@ -132,7 +222,7 @@ export function useAdminDashboard() {
                     activeTrades: activeTradesResult.value,
                     publications: publicationsResult.value,
                     publicationsByCountry: publicationsByCountryResult.value,
-                });
+                }));
             } catch (error) {
                 console.error('useAdminDashboard failed to load:', error);
                 if (!cancelled) {
@@ -144,6 +234,29 @@ export function useAdminDashboard() {
         load();
         return () => { cancelled = true; };
     }, []);
+
+    // Publications-over-time load — re-runs whenever the granularity toggle
+    // changes, without disturbing the rest of the dashboard state.
+    useEffect(() => {
+        let cancelled = false;
+        setState((prev) => ({ ...prev, publicationsByDateLoading: true }));
+
+        loadMetric('publicationsByDate', () => loadPublicationsByDate(publicationsDateGranularity), []).then(
+            (result) => {
+                if (cancelled) return;
+                setState((prev) => ({
+                    ...prev,
+                    publicationsByDate: result.value,
+                    publicationsByDateLoading: false,
+                    warnings: result.warning
+                        ? [...prev.warnings.filter((w) => w !== 'publicationsByDate'), 'publicationsByDate']
+                        : prev.warnings.filter((w) => w !== 'publicationsByDate'),
+                }));
+            },
+        );
+
+        return () => { cancelled = true; };
+    }, [publicationsDateGranularity]);
 
     return state;
 }
