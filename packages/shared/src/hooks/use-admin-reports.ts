@@ -52,7 +52,7 @@ export function useAdminReports({ status, targetType, reason, search, dateFrom, 
         const missing = [...ids].filter((id) => !userMap[id]);
         if (missing.length === 0) return;
 
-        UsersService.getUsersByIds(missing).then((map) => {
+        UsersService.fetchAllUsersProfile(missing).then((map) => {
             setUserMap((prev) => ({ ...prev, ...map }));
         });
     }, [rawReports]);
