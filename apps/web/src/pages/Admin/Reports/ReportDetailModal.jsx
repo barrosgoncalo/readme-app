@@ -1,6 +1,6 @@
 import {useEffect} from 'react';
 import {REPORT_TARGET_TYPE, REPORT_REASON_LABELS} from '@readme/shared/src/constants/status';
-import StatusBadge from '../../components/StatusBadge.jsx';
+import StatusBadge from '../../../components/StatusBadge';
 import styles from './ReportDetailModal.module.css';
 
 const formatDate = (timestamp) => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Search as IconLucideSearch, BookOpen as IconLucideBook, X as IconLucideX, Trash2 as IconLucideTrash } from 'lucide-react';
 import { DB } from '@readme/shared/src/services/DB.js';
 import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
-import StatusBadge from '../../components/StatusBadge.jsx';
+import StatusBadge from '../../../components/StatusBadge';
 import styles from './Publications.module.css';
 
 export default function Publications() {

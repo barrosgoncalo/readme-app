@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAdminReports } from '@readme/shared/src/hooks/use-admin-reports';
-import Pagination from '../../components/Pagination.jsx';
+import Pagination from '../../../components/Pagination.jsx';
 import ReportStatCards from './ReportsStatCards.jsx';
 import ReportsFilterBar from './ReportsFilterBar.jsx';
 import ReportsTable from './ReportsTable.jsx';

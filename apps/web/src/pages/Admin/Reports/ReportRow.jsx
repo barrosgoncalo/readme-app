@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {MessageCircle, Bookmark, UserCircle2, Eye, MoreVertical} from 'lucide-react';
 import {REPORT_TARGET_TYPE, REPORT_REASON_LABELS, REPORT_STATUS} from '@readme/shared/src/constants/status';
-import StatusBadge from '../../components/StatusBadge';
+import StatusBadge from '../../../components/StatusBadge';
 import styles from './ReportRow.module.css';
 
 const TARGET_ICON = {
