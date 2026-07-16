@@ -293,7 +293,6 @@ export default function Books({ compact = false, selectedBookId = null }) {
                                         isFavorite={favoriteIds.has(book.id)}
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
-                                        onRate={(rating) => handleRate(book.id, rating)}
                                         onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
                                         busy={busyId === book.id}
                                     />
@@ -338,7 +337,6 @@ export default function Books({ compact = false, selectedBookId = null }) {
                                         isFavorite={favoriteIds.has(book.id)}
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
-                                        onRate={(rating) => handleRate(book.id, rating)}
                                         onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
                                         busy={busyId === book.id}
                                     />
@@ -360,7 +358,6 @@ export default function Books({ compact = false, selectedBookId = null }) {
                                         isFavorite={favoriteIds.has(book.id)}
                                         onToggleFavorite={() => handleToggleFavorite(book.id)}
                                         onRemove={() => handleRemove(book.id)}
-                                        onRate={(rating) => handleRate(book.id, rating)}
                                         onEdit={() => navigate(WEB_ROUTES.bookDetail(book.id))}
                                         busy={busyId === book.id}
                                     />

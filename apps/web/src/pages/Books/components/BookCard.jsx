@@ -13,27 +13,38 @@ const STATUS_COLORS = {
 
 function StarRating({ rating, onRate, size = 'md', disabled }) {
     const [hovered, setHovered] = useState(null);
-    const active = hovered ?? rating ?? 0;
+    const isReadOnly = !onRate;
+    const active = isReadOnly ? rating ?? 0 : (hovered ?? rating ?? 0);
 
     return (
         <div
             className={`${styles.stars} ${styles[`stars_${size}`]}`}
-            onMouseLeave={() => setHovered(null)}
-            role="group"
-            aria-label="Rating"
+            onMouseLeave={() => !isReadOnly && setHovered(null)}
+            role={isReadOnly ? 'img' : 'group'}
+            aria-label={isReadOnly ? (rating ? `${rating} out of 5 stars` : 'Not rated') : 'Rating'}
         >
             {[1, 2, 3, 4, 5].map(n => (
-                <button
-                    key={n}
-                    type="button"
-                    className={`${styles.starBtn} ${n <= active ? styles.starFilled : styles.starEmpty}`}
-                    onMouseEnter={() => !disabled && setHovered(n)}
-                    onClick={() => !disabled && onRate?.(n === rating ? 0 : n)}
-                    disabled={disabled}
-                    aria-label={`Rate ${n} star${n !== 1 ? 's' : ''}`}
-                >
-                    ★
-                </button>
+                isReadOnly ? (
+                    <span
+                        key={n}
+                        className={`${styles.starBtn} ${n <= active ? styles.starFilled : styles.starEmpty}`}
+                        style={{cursor: 'default'}}
+                    >
+                        ★
+                    </span>
+                ) : (
+                    <button
+                        key={n}
+                        type="button"
+                        className={`${styles.starBtn} ${n <= active ? styles.starFilled : styles.starEmpty}`}
+                        onMouseEnter={() => !disabled && setHovered(n)}
+                        onClick={() => !disabled && onRate(n === rating ? 0 : n)}
+                        disabled={disabled}
+                        aria-label={`Rate ${n} star${n !== 1 ? 's' : ''}`}
+                    >
+                        ★
+                    </button>
+                )
             ))}
         </div>
     );
