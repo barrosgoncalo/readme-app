@@ -85,7 +85,11 @@
     border-radius: 8px;
     font-size: 13px;
     color: #374151;
-    cursor: not-allowed;
+    cursor: pointer;
     text-align: left;
-    opacity: 0.6;
+    width: 100%;
+}
+
+.quickActionBtn:hover {
+    background: #eef0f3;
 }
