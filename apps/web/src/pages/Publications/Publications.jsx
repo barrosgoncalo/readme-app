@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Search as IconLucideSearch, BookOpen as IconLucideBook, X as IconLucideX, Trash2 as IconLucideTrash } from 'lucide-react';
 import { DB } from '@readme/shared/src/services/DB.js';
-// 1. Import your shared hook
 import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import styles from './Publications.module.css';
@@ -11,7 +10,6 @@ export default function Publications() {
     const [selectedPub, setSelectedPub] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
 
-    // 2. Consume the shared hook instead of manual useEffect
     const {
         items: allPublications,
         isLoadingInitial,
@@ -19,20 +17,17 @@ export default function Publications() {
         loadMore,
         refresh
     } = useExploreFeed({
-        // You can enforce an admin default sort here if you want
-        sortBy: 'DATE_DESC', 
+        sortBy: 'DATE_DESC',
     });
 
-    // Admin action: Delete a publication
     const handleDelete = async (pubId) => {
         if (!window.confirm('Are you sure you want to delete this publication? This action cannot be undone.')) return;
-        
+
         setDeletingId(pubId);
         try {
-            await DB.delete('publications', pubId); 
-            // 3. Call refresh() from your hook to update the list after deletion
+            await DB.delete('publications', pubId);
             refresh();
-            setSelectedPub(null); 
+            setSelectedPub(null);
         } catch (err) {
             console.error('Failed to delete publication:', err);
         } finally {
@@ -47,15 +42,18 @@ export default function Publications() {
         return (
             (pub.title || '').toLowerCase().includes(q) ||
             (pub.author || '').toLowerCase().includes(q) ||
-            (pub.ownerName || '').toLowerCase().includes(q) ||
-            (pub.genre || '').toLowerCase().includes(q)
+            (pub.seller?.name || '').toLowerCase().includes(q) ||
+            (pub.subject || '').toLowerCase().includes(q)
         );
     });
 
     return (
         <div className={styles.page}>
             <div className={styles.header}>
-                {/* ... header content stays the same ... */}
+                <div>
+                    <h1 className={styles.title}>Publications</h1>
+                    <p className={styles.subtitle}>Monitor books put up for trade by users.</p>
+                </div>
             </div>
 
             <div className={styles.card}>
@@ -74,17 +72,14 @@ export default function Publications() {
                 {isLoadingInitial ? (
                     <div className={styles.empty}>Loading publications…</div>
                 ) : allPublications.length === 0 ? (
-                    // 1. Check if the database has NO books at all
                     <div className={styles.empty}>No publications available in the database.</div>
                 ) : (
                     <>
                         {filtered.length === 0 ? (
-                            // 2. Check if the CURRENT search yields no results in loaded data
                             <div className={styles.empty}>
                                 No matching publications in currently loaded data. Try loading more!
                             </div>
                         ) : (
-                            // 3. Render the table if we have matches
                             <table className={styles.table}>
                                 <thead>
                                     <tr>
@@ -102,8 +97,8 @@ export default function Publications() {
                                             <td>
                                                 <div className={styles.bookCell}>
                                                     <div className={styles.cover}>
-                                                        {pub.coverURL ? (
-                                                            <img src={pub.coverURL} alt="" className={styles.coverImg} />
+                                                        {pub.imageUrl ? (
+                                                            <img src={pub.imageUrl} alt="" className={styles.coverImg} />
                                                         ) : (
                                                             <IconLucideBook size={16} />
                                                         )}
@@ -113,12 +108,12 @@ export default function Publications() {
                                             </td>
                                             <td className={styles.textCell}>{pub.author || '—'}</td>
                                             <td className={styles.textCell}>
-                                                <span className={styles.genreTag}>{pub.genre || 'General'}</span>
+                                                <span className={styles.genreTag}>{pub.subject || 'General'}</span>
                                             </td>
-                                            <td className={styles.ownerCell}>{pub.ownerName || 'Unknown'}</td>
-                                            <td><StatusBadge status={pub.status || 'available'} /></td>
+                                            <td className={styles.ownerCell}>{pub.seller?.name || 'Unknown'}</td>
+                                            <td><StatusBadge status={pub.publicationData?.status || 'available'} /></td>
                                             <td>
-                                                <button 
+                                                <button
                                                     className={styles.openBtn}
                                                     onClick={() => setSelectedPub(pub)}
                                                 >
@@ -130,13 +125,12 @@ export default function Publications() {
                                 </tbody>
                             </table>
                         )}
-                        
-                        {/* 4. Keep Load More OUTSIDE the filtered check so it's always accessible */}
+
                         <div style={{ textAlign: 'center', padding: '20px' }}>
-                            <button 
-                                onClick={loadMore} 
+                            <button
+                                onClick={loadMore}
                                 disabled={isLoadingMore}
-                                className={styles.loadMoreBtn} 
+                                className={styles.loadMoreBtn}
                             >
                                 {isLoadingMore ? 'Loading...' : 'Load More'}
                             </button>
@@ -145,7 +139,6 @@ export default function Publications() {
                 )}
             </div>
 
-            {/* Publication Detail Modal - (Unchanged) */}
             {selectedPub && (
                 <div className={styles.modalOverlay} onClick={() => setSelectedPub(null)}>
                     <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
@@ -155,12 +148,12 @@ export default function Publications() {
                                 <IconLucideX size={18} />
                             </button>
                         </div>
-                        
+
                         <div className={styles.modalBody}>
                             <div className={styles.detailCoverSection}>
                                 <div className={styles.largeCover}>
-                                    {selectedPub.coverURL ? (
-                                        <img src={selectedPub.coverURL} alt="" />
+                                    {selectedPub.imageUrl ? (
+                                        <img src={selectedPub.imageUrl} alt="" />
                                     ) : (
                                         <IconLucideBook size={48} />
                                     )}
@@ -168,7 +161,7 @@ export default function Publications() {
                                 <div className={styles.detailTitleBlock}>
                                     <h3>{selectedPub.title}</h3>
                                     <p className={styles.detailAuthor}>by {selectedPub.author || 'Unknown'}</p>
-                                    <StatusBadge status={selectedPub.status || 'available'} />
+                                    <StatusBadge status={selectedPub.publicationData?.status || 'available'} />
                                 </div>
                             </div>
 
@@ -177,7 +170,7 @@ export default function Publications() {
                             <div className={styles.metaGrid}>
                                 <div>
                                     <span className={styles.metaLabel}>Genre</span>
-                                    <p className={styles.metaValue}>{selectedPub.genre || '—'}</p>
+                                    <p className={styles.metaValue}>{selectedPub.subject || '—'}</p>
                                 </div>
                                 <div>
                                     <span className={styles.metaLabel}>Condition</span>
@@ -185,25 +178,25 @@ export default function Publications() {
                                 </div>
                                 <div>
                                     <span className={styles.metaLabel}>Owner</span>
-                                    <p className={styles.metaValue}>{selectedPub.ownerName || '—'}</p>
+                                    <p className={styles.metaValue}>{selectedPub.seller?.name || '—'}</p>
                                 </div>
                                 <div>
                                     <span className={styles.metaLabel}>Owner Email</span>
-                                    <p className={styles.metaValue}>{selectedPub.ownerEmail || '—'}</p>
+                                    <p className={styles.metaValue}>{selectedPub.publicationData?.ownerEmail || '—'}</p>
                                 </div>
                             </div>
 
                             <div className={styles.descriptionBlock}>
                                 <span className={styles.metaLabel}>Description / Notes</span>
                                 <p className={styles.descriptionText}>
-                                    {selectedPub.description || 'No description provided by the user.'}
+                                    {selectedPub.publicationData?.description || 'No description provided by the user.'}
                                 </p>
                             </div>
                         </div>
 
                         <div className={styles.modalFooter}>
-                            <button 
-                                className={styles.deleteActionBtn} 
+                            <button
+                                className={styles.deleteActionBtn}
                                 onClick={() => handleDelete(selectedPub.id)}
                                 disabled={deletingId !== null}
                             >
