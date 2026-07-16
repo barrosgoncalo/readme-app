@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { getAuth, signOut } from 'firebase/auth';
+import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth';
 import { User, ChevronDown, LogOut } from 'lucide-react';
 import styles from './ProfileDropdown.module.css'; // Add styles here
 
 export default function ProfileDropdown() {
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
     const dropdownRef = useRef(null);
     const auth = getAuth();
-    const currentUser = auth.currentUser;
+
+    useEffect(() => {
+        return onAuthStateChanged(auth, (user) => setCurrentUser(user));
+    }, [auth]);
 
     const toggleDropdown = () => setDropdownOpen(prev => !prev);
 
