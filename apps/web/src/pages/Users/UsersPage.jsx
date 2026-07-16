@@ -5,7 +5,7 @@ import { alterUserPrivileges } from '@readme/shared/src/services/admin';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import Pagination from '../../components/Pagination.jsx';
 import UserDetailModal from '../../components/UserDetailModal.jsx';
-import styles from './AdminDashboard.module.css';
+import styles from './UsersPage.module.css';
 
 const CSV_COLUMNS = [
     { header: 'Full Name', get: (u) => u.fullName || '' },

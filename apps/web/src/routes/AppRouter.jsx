@@ -5,8 +5,8 @@ import { getAuth, signOut } from 'firebase/auth';
 import { DB } from '@readme/shared/src/services/DB';
 
 import Login from '../pages/Auth/Login.jsx';
-import AdminDashboard from '../pages/Admin/AdminDashboard.jsx';
-import ReportsPage from '../pages/Admin/Reports/ReportsPage.jsx';
+import AdminDashboard from '../pages/Users/UsersPage.jsx';
+import ReportsPage from '../pages/Reports/ReportsPage.jsx';
 import SettingsPage from '../pages/Admin/Settings/SettingsPage.jsx';
 import AdminShell from '../components/AdminShell.jsx';
 
