@@ -280,7 +280,7 @@ export default function PublicProfile() {
                             className={`${styles.tabBtn} ${activeTab === 'myBooks' ? styles.tabBtnActive : ''}`}
                             onClick={() => setActiveTab('myBooks')}
                         >
-                            My Books
+                            Books
                         </button>
                         <button
                             type="button"
