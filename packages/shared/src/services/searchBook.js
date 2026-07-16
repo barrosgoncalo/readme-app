@@ -148,8 +148,13 @@ const buildPublicationFilters = (conditions = [], genres = [], excludeUid = null
  */
 export const searchPublicationsByBook = async (
     { bookId, title, author },
-    { page = 0, hitsPerPage = DEFAULT_HITS_PER_PAGE, sortBy = SORT_OPTIONS.RELEVANCE, conditions = [], genres = [], excludeUid = null } = {}
+    { page = 0, hitsPerPage = DEFAULT_HITS_PER_PAGE, sortBy = SORT_OPTIONS.RELEVANCE, conditions = [], genres = [], excludeUid = null, bypassCache = false } = {}
 ) => {
+
+    if (bypassCache) {
+        await algoliaClient.clearCache();
+    }
+
     const queryText = [title, author].filter(Boolean).join(" ").trim();
     const indexName = SORT_INDEXES[sortBy] || SORT_INDEXES[SORT_OPTIONS.RELEVANCE];
 
@@ -229,8 +234,14 @@ export const browsePublications = async ({
     genres = [],
     excludeUid = null,
     blockedUids = [],
-    includeAllStatuses
+    includeAllStatuses,
+    bypassCache = false,
 } = {}) => {
+
+    if (bypassCache) {
+        await algoliaClient.clearCache();
+    }
+
     const indexName = SORT_INDEXES[sortBy] || SORT_INDEXES[SORT_OPTIONS.RELEVANCE];
 
     const { results } = await algoliaClient.search({

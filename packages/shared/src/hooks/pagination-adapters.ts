@@ -7,11 +7,9 @@
  * their hits under different keys (e.g. `publications` vs `users`).
  */
 export function algoliaPageAdapter(searchFn, itemsKey = 'publications') {
-    return async (cursor) => {
-        console.log('[adapter] called', cursor);
+    return async (cursor, { fresh = false } = {}) => {
         const page = cursor ?? 0;
-        const result = await searchFn({ page });
-        console.log('[adapter] result', result);
+        const result = await searchFn({ page, bypassCache: fresh });
         return {
             items: result[itemsKey] ?? [],
             nextCursor: page + 1,
