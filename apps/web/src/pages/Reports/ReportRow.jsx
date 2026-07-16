@@ -60,10 +60,8 @@ const reportSubtitle = (report) => {
     }
 };
 
-export default function ReportRow({report, reporter, reportedUser, onStatusChange, onView}) {
-    const [menuOpen, setMenuOpen] = useState(false);
+export default function ReportRow({report, reporter, reportedUser, onStatusChange, onView, isOpen, onToggleMenu}) {
     const [copied, setCopied] = useState(false);
-
     const target = targetLabel(report, reportedUser);
 
     const handleCopy = async (text) => {
@@ -143,21 +141,19 @@ export default function ReportRow({report, reporter, reportedUser, onStatusChang
                         <IconLucideEye size={16}/>
                     </button>
                     <div className={styles.menuWrap}>
-                        <button type="button" className={styles.iconBtn} onClick={() => setMenuOpen((o) => !o)}>
+                        {/* 1. Usa a função que vem da tabela no onClick */}
+                        <button type="button" className={styles.iconBtn} onClick={onToggleMenu}>
                             <IconLucideMoreVertical size={16}/>
                         </button>
-                        {menuOpen && (
+
+                        {/* 2. Verifica a prop isOpen em vez do estado local */}
+                        {isOpen && (
                             <div className={styles.menu}>
-                                <button type="button" onClick={() => {
-                                    onStatusChange(report.id, REPORT_STATUS.ACTIONED);
-                                    setMenuOpen(false);
-                                }}>
+                                <button type="button" onClick={() => onStatusChange(report.id, REPORT_STATUS.ACTIONED)}>
                                     Mark actioned
                                 </button>
-                                <button type="button" onClick={() => {
-                                    onStatusChange(report.id, REPORT_STATUS.DISMISSED);
-                                    setMenuOpen(false);
-                                }}>
+                                <button type="button"
+                                        onClick={() => onStatusChange(report.id, REPORT_STATUS.DISMISSED)}>
                                     Dismiss
                                 </button>
                             </div>
