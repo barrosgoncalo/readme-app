@@ -8,6 +8,8 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .title {
@@ -91,8 +93,13 @@
 }
 
 /* Table */
+.scroll {
+    overflow-x: auto;
+}
+
 .table {
     width: 100%;
+    min-width: 640px;
     border-collapse: collapse;
     font-size: 14px;
 }

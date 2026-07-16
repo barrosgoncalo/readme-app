@@ -80,6 +80,7 @@ export default function Publications() {
                                 No matching publications in currently loaded data. Try loading more!
                             </div>
                         ) : (
+                            <div className={styles.scroll}>
                             <table className={styles.table}>
                                 <thead>
                                     <tr>
@@ -124,6 +125,7 @@ export default function Publications() {
                                     ))}
                                 </tbody>
                             </table>
+                            </div>
                         )}
 
                         <div style={{ textAlign: 'center', padding: '20px' }}>

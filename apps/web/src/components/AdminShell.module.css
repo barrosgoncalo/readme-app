@@ -15,3 +15,9 @@
     flex: 1;
     padding: 32px;
 }
+
+@media (max-width: 900px) {
+    .content {
+        padding: 16px;
+    }
+}

@@ -129,6 +129,7 @@ export default function AdminDashboard() {
                 ) : paged.length === 0 ? (
                     <div className={styles.empty}>No users found.</div>
                 ) : (
+                    <div className={styles.scroll}>
                     <table className={styles.table}>
                         <thead>
                             <tr>
@@ -187,6 +188,7 @@ export default function AdminDashboard() {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 )}
 
                 <Pagination
