@@ -27,7 +27,7 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
         const checkFavoriteStatus = async () => {
             if (!currentUser || !book?.id) return;
             try {
-                const userData = await UsersService.fetchUserProfile(currentUser.uid) as any;
+                const userData = await UsersService.fetchSummaryUserProfile(currentUser.uid) as any;
                 if (userData && userData.favoriteBooks) {
                     setIsFavorited(userData.favoriteBooks.includes(book.id));
                 }
@@ -45,7 +45,7 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
             if (!sellerId) return;
 
             try {
-                const sellerData = await UsersService.fetchUserProfile(sellerId) as any;
+                const sellerData = await UsersService.fetchSummaryUserProfile(sellerId) as any;
                 if (sellerData) {
                     const displayName = sellerData.username || sellerData.fullName || sellerData.name || 'Anonymous Swapper';
                     const fetchedAvatar = sellerData.photoURL || sellerData.profilePicture || sellerData.avatar;

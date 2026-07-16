@@ -25,7 +25,7 @@ export default function FollowRequestsScreen({ navigation }) {
             const profiles = await Promise.all(
                 requestDocs.map(async (doc) => {
                     // Changed from getUserProfile to fetchUserProfile
-                    const profile = await UsersService.fetchUserProfile(doc.requesterUid); 
+                    const profile = await UsersService.fetchSummaryUserProfile(doc.requesterUid); 
                     return { ...profile, requestId: doc.id };
                 })
             );

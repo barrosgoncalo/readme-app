@@ -36,7 +36,7 @@ export const UsersService = {
     * Fetches a user's profile and checks if the current user is following them.
     * @param {string} userId - The ID of the profile being viewed
     */
-    fetchUserProfile: async (userId) => {
+    fetchSummaryUserProfile: async (userId) => {
         if (!userId) throw new Error("User ID is required to fetch profile.");
 
         try {
@@ -70,6 +70,9 @@ export const UsersService = {
             throw error;
         }
     },
+
+
+    // AQUUUUUUUUUUUUUUUUUUUUUUIIIIIIIIIIIIIIIIIIIIII
 
     /**
     * Fetches a user's list of favorite books.

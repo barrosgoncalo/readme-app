@@ -10,7 +10,7 @@ export const ReviewService = {
             const reviewsPromises = reviews.map(async (reviewData) => {
                 let authorName = "Unknown User";
                 try {
-                    const reviewerProfile = await UsersService.fetchUserProfile(reviewData.reviewerId);
+                    const reviewerProfile = await UsersService.fetchSummaryUserProfile(reviewData.reviewerId);
                     if (reviewerProfile && reviewerProfile.username) {
                         authorName = reviewerProfile.username;
                     }

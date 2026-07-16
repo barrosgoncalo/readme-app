@@ -33,7 +33,7 @@ export function usePublicProfile(userId, navigation) {
 
         try {
             const [profileData, publicationsData, reviewsData] = await Promise.all([
-                UsersService.fetchUserProfile(userId),
+                UsersService.fetchSummaryUserProfile(userId),
                 PublicationService.fetchUserPublications(userId),
                 ReviewService.fetchUserReviews(userId)
             ]);
