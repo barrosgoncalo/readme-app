@@ -5,12 +5,12 @@ import { getAuth, signOut } from 'firebase/auth';
 import { DB } from '@readme/shared/src/services/DB';
 
 import Login from '../pages/Auth/Login.jsx';
+import UsersPage from '../pages/Users/UsersPage.jsx';
 import Dashboard from '../pages/Dashboard/Dashboard.jsx';
 import ReportsPage from '../pages/Reports/ReportsPage.jsx';
-import SettingsPage from '../pages/Admin/Settings/SettingsPage.jsx';
-import UsersPage from '../pages/Users/UsersPage.jsx';
 import PublicationsPage from '../pages/Publications/Publications.jsx';
 import AdminShell from '../components/AdminShell.jsx';
+import SettingsPage from '../pages/Admin/Settings/SettingsPage.jsx';
 
 export default function AppRouter() {
     const authContext = useAuth();
