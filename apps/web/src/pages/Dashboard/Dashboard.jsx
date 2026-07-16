@@ -54,12 +54,12 @@ export default function Dashboard() {
 
             <div className={styles.grid}>
                 <div className={styles.card}>
-                    <h2 className={styles.cardTitle}>Reports by type</h2>
+                    <h2 className={styles.cardTitle}>Reports by reason</h2>
                     <ReportsByTypeChart data={reportsByType} loading={loading} />
                 </div>
 
                 <div className={styles.card}>
-                    <h2 className={styles.cardTitle}>Active accounts by rank</h2>
+                    <h2 className={styles.cardTitle}>Accounts by rank</h2>
                     <AccountsByRankChart data={accountsByRank} loading={loading} />
                 </div>
             </div>

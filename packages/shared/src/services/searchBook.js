@@ -1,8 +1,10 @@
 // @readme/shared/src/services/searchBook.js
 
 import { algoliasearch } from "algoliasearch";
+import { documentId } from "firebase/firestore";
 import { PUBLICATION_STATUS } from "../constants/status";
 import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY } from '../constants/env';
+import { DB } from './DB';
 
 const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
 
@@ -269,36 +271,47 @@ export const browsePublications = async ({
 };
 
 /**
- * ADMIN DASHBOARD: returns publication counts grouped by seller country,
- * sourced from a single Algolia facet query (hitsPerPage: 0 means no hits
- * are transferred, just the facet counts) — much cheaper than reading
- * every publication doc out of Firestore just to tally countries.
- *
- * REQUIRES: a `sellerCountry` attribute on your publication records
- * (denormalize it from the seller's institutionalAddress.country when
- * you write the publication, the same way sellerName/sellerAvatar are
- * denormalized today), added to `attributesForFaceting` in the Algolia
- * dashboard/index settings. If you'd rather facet on something else
- * (e.g. book.subject), just change FACET_ATTRIBUTE below.
+ * ADMIN DASHBOARD: returns publication counts grouped by seller country.
+ * Reads available publications from Firestore, resolves each seller's
+ * institutionalAddress.country, and aggregates the counts.
  */
-const FACET_ATTRIBUTE = 'sellerCountry';
-
 export const getPublicationsCountsByCountry = async () => {
-    const { results } = await algoliaClient.search({
-        requests: [
-            {
-                indexName: PUBLICATIONS_INDEX,
-                query: '',
-                filters: `status:${PUBLICATION_STATUS.AVAILABLE}`,
-                facets: [FACET_ATTRIBUTE],
-                hitsPerPage: 0,
-            },
-        ],
-    });
+    const publications = await DB.get('publications', [
+        { field: 'status', operator: '==', value: PUBLICATION_STATUS.AVAILABLE },
+    ]);
 
-    const facetCounts = results[0]?.facets?.[FACET_ATTRIBUTE] || {};
+    if (!publications?.length) return [];
 
-    return Object.entries(facetCounts)
+    const pubsByUid = {};
+    for (const pub of publications) {
+        const uid = pub.uid;
+        if (!uid) continue;
+        pubsByUid[uid] = (pubsByUid[uid] || 0) + 1;
+    }
+
+    const uids = Object.keys(pubsByUid);
+    if (!uids.length) return [];
+
+    const users = await DB.get('users', [
+        { field: documentId(), operator: 'in', value: uids },
+    ]);
+
+    const countryCounts = {};
+    const fetchedUids = new Set();
+
+    for (const user of users) {
+        fetchedUids.add(user.id);
+        const country = user.institutionalAddress?.country?.trim() || 'Unknown';
+        countryCounts[country] = (countryCounts[country] || 0) + pubsByUid[user.id];
+    }
+
+    for (const uid of uids) {
+        if (!fetchedUids.has(uid)) {
+            countryCounts.Unknown = (countryCounts.Unknown || 0) + pubsByUid[uid];
+        }
+    }
+
+    return Object.entries(countryCounts)
         .map(([country, count]) => ({ country, count }))
         .sort((a, b) => b.count - a.count);
 };

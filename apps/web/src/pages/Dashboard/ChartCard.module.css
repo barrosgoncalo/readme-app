@@ -4,3 +4,21 @@
     color: #667085;
     font-size: 14px;
 }
+
+.trendSummary {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.trendTotal {
+    font-size: 24px;
+    font-weight: 600;
+    color: #101828;
+}
+
+.trendLabel {
+    font-size: 13px;
+    color: #667085;
+}
