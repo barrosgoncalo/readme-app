@@ -86,7 +86,7 @@ export default function AppRouter() {
                 <>
                     <Route element={<AdminShell />}>
                         <Route path="/admin/users"        element={<UsersPage />} />
-                        <Route path="/admin/publications" element={<PublicationsPage />} /> {/* <-- NEW ROUTE ADDED HERE */}
+                        <Route path="/admin/publications" element={<PublicationsPage />} />
                         <Route path="/admin/reports"      element={<ReportsPage />} />
                         <Route path="/admin/dashboard"    element={<Dashboard />} />
                         <Route path="/admin/settings" element={<SettingsPage />} />
