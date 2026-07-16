@@ -1,17 +1,6 @@
 import { NavLink } from 'react-router-dom';
-import { 
-    LayoutDashboard as IconLucideLayoutDashboard, 
-    Users as IconLucideUsers, 
-    BookOpen as IconLucideBookOpen, 
-    Flag as IconLucideFlag, 
-    Settings as IconLucideSettings, 
-    FileText as IconLucideFileText, 
-    Search as IconLucideSearch, 
-    Ban as IconLucideBan, 
-    UserX as IconLucideUserX,
-    Library as IconLucideLibrary // Icon for the new Publications tab
-} from 'lucide-react';
-import { ADMIN_ROUTES } from '../constants/adminRoutes'; 
+import { ADMIN_ROUTES } from '../constants/adminRoutes';
+import { useQuickActions } from '../contexts/QuickActionsContext.jsx';
 import styles from './AdminSidebar.module.css';
 
 const NAV_ITEMS = [
@@ -19,18 +8,20 @@ const NAV_ITEMS = [
     { label: 'Users', path: ADMIN_ROUTES.USERS, icon: <IconLucideUsers size={18} />, enabled: true },
     { label: 'Publications', path: ADMIN_ROUTES.PUBLICATIONS, icon: <IconLucideLibrary size={18} />, enabled: true },
     { label: 'Reports', path: ADMIN_ROUTES.REPORTS, icon: <IconLucideFlag size={18} />, enabled: true },
-    { label: 'Settings', path: ADMIN_ROUTES.SETTINGS, icon: <IconLucideSettings size={18} />, enabled: false },
+    { label: 'Settings', path: ADMIN_ROUTES.SETTINGS, icon: <IconLucideSettings size={18} />, enabled: true },
     { label: 'Logs', path: ADMIN_ROUTES.LOGS, icon: <IconLucideFileText size={18} />, enabled: false },
 ];
 
 const QUICK_ACTIONS = [
-    { label: 'Search Users', icon: <IconLucideSearch size={16} /> },
-    { label: 'Ban User', icon: <IconLucideBan size={16} /> },
-    { label: 'View Banned Users', icon: <IconLucideUserX size={16} /> },
-    { label: 'Report Reasons', icon: <IconLucideFlag size={16} /> },
+    { label: 'Search Users',      icon: <IconLucideSearch size={16} />,  action: 'searchUsers' },
+    { label: 'Ban User',          icon: <IconLucideBan size={16} />,     action: 'banUser' },
+    { label: 'View Banned Users', icon: <IconLucideUserX size={16} />,   action: 'bannedUsers' },
+    { label: 'Report Reasons',    icon: <IconLucideFlag size={16} />,    action: 'reportReasons' },
 ];
 
 export default function AdminSidebar() {
+    const { openAction } = useQuickActions();
+
     return (
         <aside className={styles.sidebar}>
             <div className={styles.logo}>
@@ -62,10 +53,15 @@ export default function AdminSidebar() {
 
             <div className={styles.quickActions}>
                 <span className={styles.quickActionsTitle}>Quick actions</span>
-                {QUICK_ACTIONS.map((action) => (
-                    <button key={action.label} type="button" className={styles.quickActionBtn} disabled>
-                        {action.icon}
-                        <span>{action.label}</span>
+                {QUICK_ACTIONS.map((qa) => (
+                    <button
+                        key={qa.action}
+                        type="button"
+                        className={styles.quickActionBtn}
+                        onClick={() => openAction(qa.action)}
+                    >
+                        {qa.icon}
+                        <span>{qa.label}</span>
                     </button>
                 ))}
             </div>

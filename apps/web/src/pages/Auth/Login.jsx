@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// Import your shared auth service helper
 import { doSignInWithEmailAndPassword } from '@readme/shared/src/services/auth';
+import styles from './Login.module.css';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -16,69 +16,57 @@ export default function Login() {
         setLoading(true);
 
         try {
-            // Call your shared service wrapper
             const result = await doSignInWithEmailAndPassword(email, password);
-            
-            // Log for debugging to make sure we got the role
-            console.log("Logged in user data:", result.userData);
 
             if (result.userData?.role === 'admin') {
                 navigate('/admin', { replace: true });
             } else {
-                setError("Access denied. You do not have administrative privileges.");
+                setError('Access denied. You do not have administrative privileges.');
             }
         } catch (err) {
-            console.error("Login failed:", err);
-            // Show the exact error message thrown by your shared service
-            setError(err.message || "Invalid credentials. Please verify your administrative access.");
+            setError(err.message || 'Invalid credentials. Please verify your administrative access.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div style={{ 
-            display: 'flex', justifyContent: 'center', alignItems: 'center', 
-            height: '100vh', backgroundColor: '#121212', fontFamily: 'sans-serif' 
-        }}>
-            <form onSubmit={handleSubmit} style={{
-                width: '100%', maxWidth: '380px', padding: '40px',
-                backgroundColor: '#1e1e1e', borderRadius: '8px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.5)', color: '#fff'
-            }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '30px', fontWeight: 'bold' }}>🛡️ Admin Portal</h2>
-                
-                {error && (
-                    <div style={{
-                        padding: '12px', backgroundColor: 'rgba(220, 53, 69, 0.15)',
-                        border: '1px solid #dc3545', borderRadius: '4px',
-                        color: '#f8d7da', fontSize: '14px', marginBottom: '20px', textAlign: 'center'
-                    }}>
-                        {error}
-                    </div>
-                )}
+        <div className={styles.page}>
+            <form onSubmit={handleSubmit} className={styles.card}>
+                <div className={styles.logo}>
+                    <IconLucideBookOpen size={22} />
+                    <span>SwapBooks Admin</span>
+                </div>
+                <p className={styles.subtitle}>Sign in to manage the platform.</p>
 
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: '#aaa' }}>Email Address</label>
-                    <input 
-                        type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                        style={{ width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '4px', backgroundColor: '#262626', color: '#fff', boxSizing: 'border-box', fontSize: '15px' }}
+                {error && <div className={styles.error}>{error}</div>}
+
+                <div className={styles.field}>
+                    <label className={styles.label} htmlFor="email">Email Address</label>
+                    <input
+                        id="email"
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={styles.input}
                     />
                 </div>
 
-                <div style={{ marginBottom: '30px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: '#aaa' }}>Password</label>
-                    <input 
-                        type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                        style={{ width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '4px', backgroundColor: '#262626', color: '#fff', boxSizing: 'border-box', fontSize: '15px' }}
+                <div className={styles.field}>
+                    <label className={styles.label} htmlFor="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={styles.input}
                     />
                 </div>
 
-                <button 
-                    type="submit" disabled={loading}
-                    style={{ width: '100%', padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px', opacity: loading ? 0.7 : 1 }}
-                >
-                    {loading ? 'Authenticating...' : 'Secure Sign In'}
+                <button type="submit" disabled={loading} className={styles.submitBtn}>
+                    {loading ? 'Signing in…' : 'Sign In'}
                 </button>
             </form>
         </div>

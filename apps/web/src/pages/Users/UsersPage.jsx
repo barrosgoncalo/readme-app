@@ -1,20 +1,51 @@
 import { useState, useEffect } from 'react';
-import { alterUserPrivileges } from '@readme/shared/src/services/admin.js';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { alterUserPrivileges } from '@readme/shared/src/services/admin';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import Pagination from '../../components/Pagination.jsx';
-import styles from './UsersPage.module.css';
+import UserDetailModal from '../../components/UserDetailModal.jsx';
+import styles from './AdminDashboard.module.css';
+
+const CSV_COLUMNS = [
+    { header: 'Full Name', get: (u) => u.fullName || '' },
+    { header: 'Username', get: (u) => u.username || '' },
+    { header: 'Email', get: (u) => u.userId || u.email || '' },
+    { header: 'Role', get: (u) => u.role || 'user' },
+    { header: 'Account Status', get: (u) => u.accountStatus || '' },
+    { header: 'UID', get: (u) => u.uid },
+];
+
+const escapeCsvCell = (value) => {
+    const str = String(value ?? '');
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+};
+
+const exportUsersToCsv = (users) => {
+    const rows = [
+        CSV_COLUMNS.map((c) => c.header),
+        ...users.map((u) => CSV_COLUMNS.map((c) => escapeCsvCell(c.get(u)))),
+    ];
+    const csv = rows.map((row) => row.join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+};
 
 const PAGE_SIZE_DEFAULT = 10;
 
-export default function UsersPage() {
+export default function AdminDashboard() {
     const [allUsers, setAllUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(PAGE_SIZE_DEFAULT);
+    const [viewUser, setViewUser] = useState(null);
 
     const db = getFirestore();
     const auth = getAuth();
@@ -45,7 +76,7 @@ export default function UsersPage() {
                 );
             }
         } catch (err) {
-            console.error('Role change failed:', err);
+            console.error('Role change failed:', err.code, err.message, err.details);
         } finally {
             setActionLoading(null);
         }
@@ -74,6 +105,10 @@ export default function UsersPage() {
                     <h1 className={styles.title}>Users</h1>
                     <p className={styles.subtitle}>Manage user accounts and roles.</p>
                 </div>
+                <button type="button" className={styles.exportBtn} onClick={() => exportUsersToCsv(filtered)}>
+                    <IconLucideDownload size={16} />
+                    Export Users
+                </button>
             </div>
 
             <div className={styles.card}>
@@ -123,22 +158,30 @@ export default function UsersPage() {
                                     <td className={styles.emailCell}>{user.userId || user.email || '—'}</td>
                                     <td><StatusBadge status={user.role || 'user'} /></td>
                                     <td>
-                                        {user.uid === auth.currentUser?.uid ? (
-                                            <span className={styles.youLabel}>You</span>
-                                        ) : (
-                                                        <button
-                                                            className={user.role === 'admin' 
-                                                                ? `${styles.actionBtn} ${styles.demote}` 
-                                                                : `${styles.actionBtn} ${styles.promote}`}
-                                                            disabled={actionLoading === user.uid}
-                                                            onClick={() => handleRoleChange(user.uid, user.role)}
-                                                        >
-                                                            {actionLoading === user.uid
-                                                                ? 'Saving…'
-                                                                : user.role === 'admin' ? 'Demote' : 'Promote'
-                                                            }
-                                                        </button>
-                                        )}
+                                        <div className={styles.actionsCell}>
+                                            <button
+                                                type="button"
+                                                className={styles.iconBtn}
+                                                onClick={() => setViewUser(user)}
+                                                aria-label="View user details"
+                                            >
+                                                <IconLucideEye size={16} />
+                                            </button>
+                                            {user.uid === auth.currentUser?.uid ? (
+                                                <span className={styles.youLabel}>You</span>
+                                            ) : (
+                                                <button
+                                                    className={user.role === 'admin' ? `${styles.actionBtn} ${styles.demote}` : `${styles.actionBtn} ${styles.promote}`}
+                                                    disabled={actionLoading !== null}
+                                                    onClick={() => handleRoleChange(user.uid, user.role)}
+                                                >
+                                                    {actionLoading === user.uid
+                                                        ? 'Saving…'
+                                                        : user.role === 'admin' ? 'Demote' : 'Promote'
+                                                    }
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -155,8 +198,9 @@ export default function UsersPage() {
                     onPageSizeChange={handlePageSize}
                 />
             </div>
+
+            {viewUser && <UserDetailModal user={viewUser} onClose={() => setViewUser(null)} />}
         </div>
     );
 }
-
 

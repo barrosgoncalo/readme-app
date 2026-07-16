@@ -25,6 +25,7 @@ declare global {
   const IconLucideFlag: typeof import('~icons/lucide/flag').default
   const IconLucideInfo: typeof import('~icons/lucide/info').default
   const IconLucideLayoutDashboard: typeof import('~icons/lucide/layout-dashboard').default
+  const IconLucideLibrary: typeof import('~icons/lucide/library').default
   const IconLucideMessageCircle: typeof import('~icons/lucide/message-circle').default
   const IconLucideMoreVertical: typeof import('~icons/lucide/more-vertical').default
   const IconLucideSearch: typeof import('~icons/lucide/search').default
@@ -33,4 +34,5 @@ declare global {
   const IconLucideUserCircle2: typeof import('~icons/lucide/user-circle2').default
   const IconLucideUserX: typeof import('~icons/lucide/user-x').default
   const IconLucideUsers: typeof import('~icons/lucide/users').default
+  const IconLucideX: typeof import('~icons/lucide/x').default
 }

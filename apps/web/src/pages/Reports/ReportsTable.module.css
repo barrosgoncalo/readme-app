@@ -1,6 +1,17 @@
+/* Wide 8-column table scrolls inside its own container so the page body
+   never scrolls horizontally and the Actions column is never clipped. */
+.scroll {
+    overflow-x: auto;
+}
+
 .table {
     width: 100%;
+    min-width: 900px;
     border-collapse: collapse;
+}
+
+.actionsCol {
+    text-align: right;
 }
 
 .table thead th {
