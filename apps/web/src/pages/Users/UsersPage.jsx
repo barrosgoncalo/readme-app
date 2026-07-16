@@ -1,3 +1,4 @@
+// amazing comment
 import { useState, useEffect, useRef } from 'react';
 import { getAuth } from 'firebase/auth';
 import { alterUserPrivileges } from '@readme/shared/src/services/admin';
