@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router-dom';
-import { ADMIN_ROUTES } from '../constants/adminRoutes'; 
+import { ADMIN_ROUTES } from '../constants/adminRoutes';
+import { useQuickActions } from '../contexts/QuickActionsContext.jsx';
 import styles from './AdminSidebar.module.css';
 
-// Only Reports has a real route right now. The rest are labeled
-// but inert (no page built yet) — per instructions, not stubbing them.
 const NAV_ITEMS = [
     { label: 'Dashboard', path: ADMIN_ROUTES.DASHBOARD, icon: <IconLucideLayoutDashboard size={18} />, enabled: false },
     { label: 'Users', path: ADMIN_ROUTES.USERS, icon: <IconLucideUsers size={18} />, enabled: true },
@@ -13,13 +12,15 @@ const NAV_ITEMS = [
 ];
 
 const QUICK_ACTIONS = [
-    { label: 'Search Users', icon: <IconLucideSearch size={16} /> },
-    { label: 'Ban User', icon: <IconLucideBan size={16} /> },
-    { label: 'View Banned Users', icon: <IconLucideUserX size={16} /> },
-    { label: 'Report Reasons', icon: <IconLucideFlag size={16} /> },
+    { label: 'Search Users',      icon: <IconLucideSearch size={16} />,  action: 'searchUsers' },
+    { label: 'Ban User',          icon: <IconLucideBan size={16} />,     action: 'banUser' },
+    { label: 'View Banned Users', icon: <IconLucideUserX size={16} />,   action: 'bannedUsers' },
+    { label: 'Report Reasons',    icon: <IconLucideFlag size={16} />,    action: 'reportReasons' },
 ];
 
 export default function AdminSidebar() {
+    const { openAction } = useQuickActions();
+
     return (
         <aside className={styles.sidebar}>
             <div className={styles.logo}>
@@ -51,10 +52,15 @@ export default function AdminSidebar() {
 
             <div className={styles.quickActions}>
                 <span className={styles.quickActionsTitle}>Quick actions</span>
-                {QUICK_ACTIONS.map((action) => (
-                    <button key={action.label} type="button" className={styles.quickActionBtn} disabled>
-                        {action.icon}
-                        <span>{action.label}</span>
+                {QUICK_ACTIONS.map((qa) => (
+                    <button
+                        key={qa.action}
+                        type="button"
+                        className={styles.quickActionBtn}
+                        onClick={() => openAction(qa.action)}
+                    >
+                        {qa.icon}
+                        <span>{qa.label}</span>
                     </button>
                 ))}
             </div>
