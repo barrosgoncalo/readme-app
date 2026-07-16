@@ -7,6 +7,7 @@ import { DB } from '@readme/shared/src/services/DB';
 import Login from '../pages/Auth/Login.jsx';
 import AdminDashboard from '../pages/Admin/AdminDashboard.jsx';
 import ReportsPage from '../pages/Admin/Reports/ReportsPage.jsx';
+import SettingsPage from '../pages/Admin/Settings/SettingsPage.jsx';
 import AdminShell from '../components/AdminShell.jsx';
 
 export default function AppRouter() {
@@ -82,8 +83,9 @@ export default function AppRouter() {
             ) : adminRole === 'admin' ? (
                 <>
                     <Route element={<AdminShell />}>
-                        <Route path="/admin/users"   element={<AdminDashboard />} />
-                        <Route path="/admin/reports" element={<ReportsPage />} />
+                        <Route path="/admin/users"    element={<AdminDashboard />} />
+                        <Route path="/admin/reports"  element={<ReportsPage />} />
+                        <Route path="/admin/settings" element={<SettingsPage />} />
                     </Route>
                     <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
                     <Route path="*"     element={<Navigate to="/admin/users" replace />} />
