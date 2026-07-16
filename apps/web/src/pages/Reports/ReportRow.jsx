@@ -1,12 +1,13 @@
 import {useState} from 'react';
+import {MessageCircle, Bookmark, UserCircle2, Eye, MoreVertical} from 'lucide-react';
 import {REPORT_TARGET_TYPE, REPORT_REASON_LABELS, REPORT_STATUS} from '@readme/shared/src/constants/status';
 import StatusBadge from '../../components/StatusBadge';
 import styles from './ReportRow.module.css';
 
 const TARGET_ICON = {
-    [REPORT_TARGET_TYPE.CHAT]: <IconLucideMessageCircle size={18}/>,
-    [REPORT_TARGET_TYPE.PUBLICATION]: <IconLucideBookmark size={18}/>,
-    [REPORT_TARGET_TYPE.ACCOUNT]: <IconLucideUserCircle2 size={18}/>,
+    [REPORT_TARGET_TYPE.CHAT]: <MessageCircle size={18}/>,
+    [REPORT_TARGET_TYPE.PUBLICATION]: <Bookmark size={18}/>,
+    [REPORT_TARGET_TYPE.ACCOUNT]: <UserCircle2 size={18}/>,
 };
 
 const formatDate = (timestamp) => {
@@ -34,7 +35,7 @@ const targetLabel = (report, reportedUser) => {
             return {
                 title: 'Publication',
                 sub: `ID: ${truncateId(report.targetId)}`,
-                fullId: report.targetId // NEW: Pass the full ID
+                fullId: report.targetId
             };
         case REPORT_TARGET_TYPE.ACCOUNT:
             return {title: 'Account', sub: `@${reportedUser?.username || '—'}`};
@@ -42,7 +43,7 @@ const targetLabel = (report, reportedUser) => {
             return {
                 title: report.targetType,
                 sub: truncateId(report.targetId),
-                fullId: report.targetId // NEW: Pass the full ID
+                fullId: report.targetId
             };
     }
 };
@@ -138,15 +139,13 @@ export default function ReportRow({report, reporter, reportedUser, onStatusChang
                 <div className={styles.actionsCell}>
                     <button type="button" className={styles.iconBtn} onClick={() => onView(report)}
                             aria-label="View report details">
-                        <IconLucideEye size={16}/>
+                        <Eye size={16}/>
                     </button>
                     <div className={styles.menuWrap}>
-                        {/* 1. Usa a função que vem da tabela no onClick */}
                         <button type="button" className={styles.iconBtn} onClick={onToggleMenu}>
-                            <IconLucideMoreVertical size={16}/>
+                            <MoreVertical size={16}/>
                         </button>
 
-                        {/* 2. Verifica a prop isOpen em vez do estado local */}
                         {isOpen && (
                             <div className={styles.menu}>
                                 <button type="button" onClick={() => onStatusChange(report.id, REPORT_STATUS.ACTIONED)}>
