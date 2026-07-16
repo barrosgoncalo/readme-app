@@ -87,8 +87,8 @@ export default function AdminDashboard() {
         const q = search.toLowerCase();
         return (
             (u.fullName || '').toLowerCase().includes(q) ||
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.email || '').toLowerCase().includes(q)
+                (u.username || '').toLowerCase().includes(q) ||
+                (u.email || '').toLowerCase().includes(q)
         );
     });
 
@@ -127,69 +127,69 @@ export default function AdminDashboard() {
                 {loading ? (
                     <div className={styles.empty}>Loading users…</div>
                 ) : paged.length === 0 ? (
-                    <div className={styles.empty}>No users found.</div>
-                ) : (
-                    <div className={styles.scroll}>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paged.map(user => (
-                                <tr key={user.uid}>
-                                    <td>
-                                        <div className={styles.userCell}>
-                                            <div className={styles.avatar}>
-                                                {user.photoURL
-                                                    ? <img src={user.photoURL} alt="" className={styles.avatarImg} />
-                                                    : <IconLucideUser size={16} />
-                                                }
-                                            </div>
-                                            <div>
-                                                <div className={styles.userName}>{user.fullName || user.username || 'Unnamed User'}</div>
-                                                {user.username && <div className={styles.userHandle}>@{user.username}</div>}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className={styles.emailCell}>{user.userId || user.email || '—'}</td>
-                                    <td><StatusBadge status={user.role || 'user'} /></td>
-                                    <td>
-                                        <div className={styles.actionsCell}>
-                                            <button
-                                                type="button"
-                                                className={styles.iconBtn}
-                                                onClick={() => setViewUser(user)}
-                                                aria-label="View user details"
-                                            >
-                                                <IconLucideEye size={16} />
-                                            </button>
-                                            {user.uid === auth.currentUser?.uid ? (
-                                                <span className={styles.youLabel}>You</span>
-                                            ) : (
-                                                <button
-                                                    className={user.role === 'admin' ? `${styles.actionBtn} ${styles.demote}` : `${styles.actionBtn} ${styles.promote}`}
-                                                    disabled={actionLoading !== null}
-                                                    onClick={() => handleRoleChange(user.uid, user.role)}
-                                                >
-                                                    {actionLoading === user.uid
-                                                        ? 'Saving…'
-                                                        : user.role === 'admin' ? 'Demote' : 'Promote'
-                                                    }
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    </div>
-                )}
+                        <div className={styles.empty}>No users found.</div>
+                    ) : (
+                            <div className={styles.scroll}>
+                                <table className={styles.table}>
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {paged.map(user => (
+                                            <tr key={user.uid}>
+                                                <td>
+                                                    <div className={styles.userCell}>
+                                                        <div className={styles.avatar}>
+                                                            {user.photoURL
+                                                                ? <img src={user.photoURL} alt="" className={styles.avatarImg} />
+                                                                : <IconLucideUser size={16} />
+                                                            }
+                                                        </div>
+                                                        <div>
+                                                            <div className={styles.userName}>{user.fullName || user.username || 'Unnamed User'}</div>
+                                                            {user.username && <div className={styles.userHandle}>@{user.username}</div>}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className={styles.emailCell}>{user.userId || user.email || '—'}</td>
+                                                <td><StatusBadge status={user.role || 'user'} /></td>
+                                                <td>
+                                                    <div className={styles.actionsCell}>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.iconBtn}
+                                                            onClick={() => setViewUser(user)}
+                                                            aria-label="View user details"
+                                                        >
+                                                            <IconLucideEye size={16} />
+                                                        </button>
+                                                        {user.uid === auth.currentUser?.uid ? (
+                                                            <span className={styles.youLabel}>You</span>
+                                                        ) : (
+                                                                <button
+                                                                    className={user.role === 'admin' ? `${styles.actionBtn} ${styles.demote}` : `${styles.actionBtn} ${styles.promote}`}
+                                                                    disabled={actionLoading === user.uid}
+                                                                    onClick={() => handleRoleChange(user.uid, user.role)}
+                                                                >
+                                                                    {actionLoading === user.uid
+                                                                        ? 'Saving…'
+                                                                        : user.role === 'admin' ? 'Demote' : 'Promote'
+                                                                    }
+                                                                </button>
+                                                            )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
 
                 <Pagination
                     page={page}
