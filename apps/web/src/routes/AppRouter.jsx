@@ -5,8 +5,10 @@ import { getAuth, signOut } from 'firebase/auth';
 import { DB } from '@readme/shared/src/services/DB';
 
 import Login from '../pages/Auth/Login.jsx';
-import AdminDashboard from '../pages/Users/UsersPage.jsx';
+import UsersPage from '../pages/Users/UsersPage.jsx';
+import Dashboard from '../pages/Dashboard/Dashboard.jsx';
 import ReportsPage from '../pages/Reports/ReportsPage.jsx';
+import PublicationsPage from '../pages/Publications/Publications.jsx';
 import SettingsPage from '../pages/Admin/Settings/SettingsPage.jsx';
 import AdminShell from '../components/AdminShell.jsx';
 
@@ -83,8 +85,10 @@ export default function AppRouter() {
             ) : adminRole === 'admin' ? (
                 <>
                     <Route element={<AdminShell />}>
-                        <Route path="/admin/users"    element={<AdminDashboard />} />
-                        <Route path="/admin/reports"  element={<ReportsPage />} />
+                        <Route path="/admin/users"        element={<UsersPage />} />
+                        <Route path="/admin/publications" element={<PublicationsPage />} /> {/* <-- NEW ROUTE ADDED HERE */}
+                        <Route path="/admin/reports"      element={<ReportsPage />} />
+                        <Route path="/admin/dashboard"    element={<Dashboard />} />
                         <Route path="/admin/settings" element={<SettingsPage />} />
                     </Route>
                     <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
