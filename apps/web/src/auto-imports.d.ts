@@ -32,4 +32,5 @@ declare global {
   const IconLucideUserCircle2: typeof import('~icons/lucide/user-circle2').default
   const IconLucideUserX: typeof import('~icons/lucide/user-x').default
   const IconLucideUsers: typeof import('~icons/lucide/users').default
+  const IconLucideX: typeof import('~icons/lucide/x').default
 }
