@@ -8,7 +8,7 @@ import Login from '../pages/Auth/Login.jsx';
 import UsersPage from '../pages/Users/UsersPage.jsx';
 import Dashboard from '../pages/Dashboard/Dashboard.jsx';
 import ReportsPage from '../pages/Reports/ReportsPage.jsx';
-import PublicationsPage from '../pages/Publications/Publications.jsx'; // <-- IMPORT THE NEW PAGE
+import PublicationsPage from '../pages/Publications/Publications.jsx';
 import AdminShell from '../components/AdminShell.jsx';
 
 export default function AppRouter() {
