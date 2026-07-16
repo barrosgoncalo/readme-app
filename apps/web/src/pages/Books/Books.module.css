@@ -1,0 +1,181 @@
+.page {
+    padding: var(--space-5) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.compact {
+    padding: var(--space-3);
+    gap: var(--space-3);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.viewToggle {
+    display: flex;
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    border-radius: var(--radius);
+    padding: 2px;
+}
+
+.viewBtn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: calc(var(--radius) - 2px);
+    color: var(--subtext);
+    display: flex;
+    align-items: center;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.viewBtn:hover {
+    color: var(--text);
+}
+
+.viewBtnActive {
+    background: var(--bg-selected);
+    color: var(--primary);
+}
+
+.title {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    color: var(--primary);
+    margin: 0;
+    line-height: 1.15;
+}
+
+.addBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--subtext);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    transition: background var(--transition-fast), color var(--transition-fast);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.addBtn:hover {
+    background: var(--bg-selected);
+    color: var(--text);
+}
+
+.filterBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filterPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    color: var(--subtext);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.filterPill:hover {
+    color: var(--text);
+    border-color: var(--subtext);
+}
+
+.filterPillActive {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-text);
+}
+
+.filterPillActive:hover {
+    color: var(--primary-text);
+}
+
+/* ── Grid view: spotlight + shelf ── */
+.gridView {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.spotlightGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-3);
+}
+
+.bookGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--space-3);
+}
+
+.sectionLabel {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--subtext);
+    margin: 0 0 var(--space-2) 0;
+    padding-left: 2px;
+}
+
+.currentList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.groupList {
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    border: 1px solid var(--bg-selected);
+}
+
+.groupList > *:not(:last-child) {
+    border-bottom: 1px solid var(--bg-selected);
+}
+
+@media (max-width: 720px) {
+    .viewToggle {
+        display: none;
+    }
+
+    .spotlightGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .bookGrid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}

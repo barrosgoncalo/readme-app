@@ -1,0 +1,378 @@
+.card {
+    width: 240px;
+    min-width: 240px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--bg-elem);
+}
+
+.own {
+    align-self: flex-end;
+    background: var(--bg-selected);
+}
+
+.other {
+    align-self: flex-start;
+    background: var(--bg-elem);
+}
+
+.image {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+}
+
+.content {
+    padding: var(--space-2) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.locationBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--subtext);
+    text-align: left;
+}
+
+.locationBtn:hover {
+    color: var(--primary);
+}
+
+.locationText {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.status {
+    padding: 2px 8px;
+    border: 1px solid;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text);
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.btn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.accept {
+    background: var(--success);
+    color: white;
+}
+
+.accept:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.decline {
+    background: var(--error);
+    color: white;
+}
+
+.decline:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancelSwapBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: var(--space-2);
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--error);
+    border-radius: var(--radius);
+    color: var(--error);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.cancelSwapBtn:hover:not(:disabled) {
+    background: var(--error-bg);
+}
+
+.cancelSwapBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.canceledNotice {
+    margin: var(--space-2) 0 0;
+    padding: var(--space-2) var(--space-3);
+    background: var(--error-bg);
+    border-radius: var(--radius);
+    color: var(--error);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.clickableTitle {
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.clickableTitle:hover {
+    opacity: 0.8;
+}
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: var(--space-4);
+    text-align: left;
+}
+
+.modalContent {
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 640px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    align-self: center;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-elem);
+    border-bottom: 1px solid var(--bg-selected);
+}
+
+.modalTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    font-family: var(--font-serif);
+}
+
+.closeModal {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--subtext);
+    padding: 4px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.closeModal:hover {
+    background: var(--bg-selected);
+    color: var(--text);
+}
+
+.modalBody {
+    padding: var(--space-3) var(--space-4);
+    overflow-y: auto;
+    gap: var(--space-2);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.offeredBookItem {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-2);
+    background: var(--bg-elem);
+    border-radius: var(--radius);
+    border: 1px solid var(--bg-selected);
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.2s, transform 0.1s;
+}
+
+.offeredBookItem:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.obCover {
+    width: 48px;
+    height: 70px;
+    border-radius: 4px;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.obPlaceholder {
+    width: 48px;
+    height: 70px;
+    border-radius: 4px;
+    background: var(--bg-selected);
+    color: var(--subtext);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.obInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.obTitle {
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.obAuthor {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--subtext);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chooseBtn {
+    background: var(--primary);
+    color: white;
+}
+
+.chooseBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.selectable {
+    cursor: pointer;
+}
+
+.selectable:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.selectedBook {
+    border-color: var(--success) !important;
+    background: rgba(76, 175, 80, 0.08) !important;
+}
+
+.checkIcon {
+    margin-left: auto;
+    align-self: center;
+    color: var(--success);
+    padding-right: var(--space-2);
+}
+
+.obDetailsLink {
+    font-size: 0.8rem;
+    color: var(--primary);
+    text-decoration: none;
+    margin-top: auto;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.obDetailsLink:hover {
+    text-decoration: underline;
+}
+
+.modalFooter {
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-elem);
+    border-top: 1px solid var(--bg-selected);
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+    .card {
+        width: 220px;
+        min-width: 220px;
+    }
+
+    .image {
+        height: 100px;
+    }
+}

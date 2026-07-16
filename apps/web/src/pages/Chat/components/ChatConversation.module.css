@@ -1,0 +1,225 @@
+.conversation {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--bg);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 12px var(--space-3);
+    border-bottom: 1px solid var(--bg-elem);
+}
+
+.headerContent {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.reportBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--error);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s;
+}
+
+.reportBtn:hover {
+    background: var(--bg-elem);
+}
+
+.bookImage {
+    width: 40px;
+    height: 60px;
+    border-radius: var(--radius);
+    object-fit: cover;
+}
+
+.name {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+    line-height: 1.2;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.name:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.subtitle {
+    margin: 2px 0 0 0;
+    font-size: 0.85rem;
+    color: var(--subtext);
+}
+
+.messagesContainer {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.messageRow {
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    max-width: 70%;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+}
+
+.own {
+    align-self: flex-end;
+    background: var(--primary);
+    color: var(--primary-text);
+}
+
+.other {
+    align-self: flex-start;
+    background: var(--bg-elem);
+    color: var(--text);
+}
+
+.text {
+    margin: 0;
+    word-wrap: break-word;
+}
+
+.time {
+    margin: var(--space-1) 0 0 0;
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.empty {
+    color: var(--subtext);
+    text-align: center;
+    padding: var(--space-5);
+}
+
+.composer {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-top: 1px solid var(--bg-elem);
+    background: var(--bg);
+}
+
+.input {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--bg-elem);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.sendBtn {
+    padding: var(--space-2) var(--space-3);
+    background: var(--primary);
+    color: var(--primary-text);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sendBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.sendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.emojiWrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.emojiBtn {
+    height: 100%;
+    padding: var(--space-2) var(--space-2);
+    background: transparent;
+    color: var(--subtext);
+    border: 1px solid var(--bg-elem);
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+}
+
+.emojiBtn:hover {
+    color: var(--primary);
+    background: var(--bg-elem);
+}
+
+.emojiPicker {
+    position: fixed;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    padding: var(--space-2);
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    width: 280px;
+    max-height: min(320px, 60vh);
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.emojiOption {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 6px;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.emojiOption:hover {
+    background: var(--bg-selected);
+}
+
+@media (max-width: 720px) {
+    .message {
+        max-width: 85%;
+    }
+}

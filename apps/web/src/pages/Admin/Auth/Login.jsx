@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { doSignInWithEmailAndPassword } from '@readme/shared/src/services/auth';
 import styles from './Login.module.css';
 
-export default function Login() {
+export default function AdminLogin() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');

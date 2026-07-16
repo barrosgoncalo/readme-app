@@ -13,7 +13,7 @@ const GRANULARITY_OPTIONS = [
     { value: 'year', label: 'Year' },
 ];
 
-export default function Dashboard() {
+export default function AdminDashboard() {
     const [publicationsDateGranularity, setPublicationsDateGranularity] = useState('month');
 
     const {

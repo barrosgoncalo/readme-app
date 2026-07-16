@@ -8,7 +8,7 @@ import ReportDetailModal from './ReportDetailModal.jsx';
 import InfoCards from './InfoCards.jsx';
 import styles from './Reports.module.css';
 
-export default function Reports() {
+export default function AdminReports() {
     const [status, setStatus] = useState(null);
     const [targetType, setTargetType] = useState(null);
     const [reason, setReason] = useState(null);
