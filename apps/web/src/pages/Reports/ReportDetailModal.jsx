@@ -138,13 +138,6 @@ export default function ReportDetailModal({ report, reporter, reportedUser, onCl
                     <button
                         type="button"
                         className={styles.actionBtn}
-                        onClick={() => onStatusChange(report.id, 'reviewed')}
-                    >
-                        Mark reviewed
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.actionBtn}
                         onClick={() => onStatusChange(report.id, 'actioned')}
                     >
                         Mark actioned

@@ -131,9 +131,6 @@ export default function ReportRow({ report, reporter, reportedUser, onStatusChan
                         </button>
                         {menuOpen && (
                             <div className={styles.menu}>
-                                <button type="button" onClick={() => { onStatusChange(report.id, REPORT_STATUS.REVIEWED); setMenuOpen(false); }}>
-                                    Mark reviewed
-                                </button>
                                 <button type="button" onClick={() => { onStatusChange(report.id, REPORT_STATUS.ACTIONED); setMenuOpen(false); }}>
                                     Mark actioned
                                 </button>
