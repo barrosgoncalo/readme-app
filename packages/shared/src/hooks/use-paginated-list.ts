@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from 'react';
-
 /**
  * Generic infinite-scroll pagination.
  *
@@ -22,9 +21,13 @@ export function usePaginatedList({
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState(null);
-
     const cursorRef = useRef(null);
     const seenIdsRef = useRef(new Set());
+    // Tracks the most recently-issued loadInitial/refresh call. StrictMode
+    // (and rapid filter changes) can fire two of these back-to-back; when
+    // an older call's response lands after a newer one has already reset
+    // state, it must not be allowed to touch items/seenIdsRef anymore.
+    const requestIdRef = useRef(0);
 
     const resetState = useCallback(() => {
         cursorRef.current = null;
@@ -32,7 +35,6 @@ export function usePaginatedList({
         setHasMore(true);
         setError(null);
     }, []);
-
     const appendPage = useCallback((page) => {
         const fresh = page.items.filter((it) => {
             const id = getId(it);
@@ -40,7 +42,6 @@ export function usePaginatedList({
             seenIdsRef.current.add(id);
             return true;
         });
-
         setItems((prev) => {
             const next = prev.concat(fresh);
             if (next.length <= maxItems) return next;
@@ -50,25 +51,24 @@ export function usePaginatedList({
             dropped.forEach((it) => seenIdsRef.current.delete(getId(it)));
             return next.slice(dropCount);
         });
-
         cursorRef.current = page.nextCursor;
         setHasMore(page.hasMore);
     }, [getId, maxItems]);
-
     const loadInitial = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
         resetState();
         setIsLoadingInitial(true);
         try {
             const page = await fetchPage(null);
+            if (requestId !== requestIdRef.current) return; // superseded by a newer call
             setItems([]);
             appendPage(page);
         } catch (e) {
-            setError(e);
+            if (requestId === requestIdRef.current) setError(e);
         } finally {
-            setIsLoadingInitial(false);
+            if (requestId === requestIdRef.current) setIsLoadingInitial(false);
         }
     }, [fetchPage, resetState, appendPage]);
-
     const loadMore = useCallback(async () => {
         if (isLoadingMore || isLoadingInitial || isRefreshing || !hasMore) return;
         setIsLoadingMore(true);
@@ -81,25 +81,24 @@ export function usePaginatedList({
             setIsLoadingMore(false);
         }
     }, [fetchPage, isLoadingMore, isLoadingInitial, isRefreshing, hasMore, appendPage]);
-
     const refresh = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
         resetState();
         setIsRefreshing(true);
         try {
             const page = await fetchPage(null);
+            if (requestId !== requestIdRef.current) return; // superseded by a newer call
             setItems([]);
             appendPage(page);
         } catch (e) {
-            setError(e);
+            if (requestId === requestIdRef.current) setError(e);
         } finally {
-            setIsRefreshing(false);
+            if (requestId === requestIdRef.current) setIsRefreshing(false);
         }
     }, [fetchPage, resetState, appendPage]);
-
     const updateItem = useCallback((id, updater) => {
         setItems((prev) => prev.map((it) => (getId(it) === id ? updater(it) : it)));
     }, [getId]);
-
     // Removes an item from the in-memory list only (does not affect any
     // underlying source-of-truth data). Also frees its id from the
     // dedupe set, so if it legitimately reappears on a later page it
@@ -108,7 +107,6 @@ export function usePaginatedList({
         setItems((prev) => prev.filter((it) => getId(it) !== id));
         seenIdsRef.current.delete(id);
     }, [getId]);
-
     return {
         items, isLoadingInitial, isLoadingMore, isRefreshing, hasMore, error,
         loadInitial, loadMore, refresh,

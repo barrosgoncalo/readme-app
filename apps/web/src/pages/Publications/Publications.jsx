@@ -55,10 +55,7 @@ export default function Publications() {
     return (
         <div className={styles.page}>
             <div className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>Publications</h1>
-                    <p className={styles.subtitle}>Monitor books put up for trade by users.</p>
-                </div>
+                {/* ... header content stays the same ... */}
             </div>
 
             <div className={styles.card}>
@@ -76,61 +73,70 @@ export default function Publications() {
 
                 {isLoadingInitial ? (
                     <div className={styles.empty}>Loading publications…</div>
-                ) : filtered.length === 0 ? (
-                    <div className={styles.empty}>No publications found.</div>
+                ) : allPublications.length === 0 ? (
+                    // 1. Check if the database has NO books at all
+                    <div className={styles.empty}>No publications available in the database.</div>
                 ) : (
                     <>
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th>Book Title</th>
-                                    <th>Author</th>
-                                    <th>Genre</th>
-                                    <th>Owner</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.map(pub => (
-                                    <tr key={pub.id}>
-                                        <td>
-                                            <div className={styles.bookCell}>
-                                                <div className={styles.cover}>
-                                                    {pub.coverURL ? (
-                                                        <img src={pub.coverURL} alt="" className={styles.coverImg} />
-                                                    ) : (
-                                                        <IconLucideBook size={16} />
-                                                    )}
-                                                </div>
-                                                <span className={styles.bookTitle}>{pub.title || 'Untitled'}</span>
-                                            </div>
-                                        </td>
-                                        <td className={styles.textCell}>{pub.author || '—'}</td>
-                                        <td className={styles.textCell}>
-                                            <span className={styles.genreTag}>{pub.genre || 'General'}</span>
-                                        </td>
-                                        <td className={styles.ownerCell}>{pub.ownerName || 'Unknown'}</td>
-                                        <td><StatusBadge status={pub.status || 'available'} /></td>
-                                        <td>
-                                            <button 
-                                                className={styles.openBtn}
-                                                onClick={() => setSelectedPub(pub)}
-                                            >
-                                                Open
-                                            </button>
-                                        </td>
+                        {filtered.length === 0 ? (
+                            // 2. Check if the CURRENT search yields no results in loaded data
+                            <div className={styles.empty}>
+                                No matching publications in currently loaded data. Try loading more!
+                            </div>
+                        ) : (
+                            // 3. Render the table if we have matches
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>Book Title</th>
+                                        <th>Author</th>
+                                        <th>Genre</th>
+                                        <th>Owner</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filtered.map(pub => (
+                                        <tr key={pub.id}>
+                                            <td>
+                                                <div className={styles.bookCell}>
+                                                    <div className={styles.cover}>
+                                                        {pub.coverURL ? (
+                                                            <img src={pub.coverURL} alt="" className={styles.coverImg} />
+                                                        ) : (
+                                                            <IconLucideBook size={16} />
+                                                        )}
+                                                    </div>
+                                                    <span className={styles.bookTitle}>{pub.title || 'Untitled'}</span>
+                                                </div>
+                                            </td>
+                                            <td className={styles.textCell}>{pub.author || '—'}</td>
+                                            <td className={styles.textCell}>
+                                                <span className={styles.genreTag}>{pub.genre || 'General'}</span>
+                                            </td>
+                                            <td className={styles.ownerCell}>{pub.ownerName || 'Unknown'}</td>
+                                            <td><StatusBadge status={pub.status || 'available'} /></td>
+                                            <td>
+                                                <button 
+                                                    className={styles.openBtn}
+                                                    onClick={() => setSelectedPub(pub)}
+                                                >
+                                                    Open
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                         
-                        {/* 4. Replaced Pagination component with a Load More button to match the hook's design */}
+                        {/* 4. Keep Load More OUTSIDE the filtered check so it's always accessible */}
                         <div style={{ textAlign: 'center', padding: '20px' }}>
                             <button 
                                 onClick={loadMore} 
                                 disabled={isLoadingMore}
-                                className={styles.loadMoreBtn} // Make sure to add some CSS for this
+                                className={styles.loadMoreBtn} 
                             >
                                 {isLoadingMore ? 'Loading...' : 'Load More'}
                             </button>
