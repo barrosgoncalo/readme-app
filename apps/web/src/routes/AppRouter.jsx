@@ -6,6 +6,7 @@ import { DB } from '@readme/shared/src/services/DB';
 
 import Login from '../pages/Auth/Login.jsx';
 import UsersPage from '../pages/Users/UsersPage.jsx';
+import Dashboard from '../pages/Dashboard/Dashboard.jsx';
 import ReportsPage from '../pages/Reports/ReportsPage.jsx';
 import AdminShell from '../components/AdminShell.jsx';
 
@@ -84,6 +85,7 @@ export default function AppRouter() {
                     <Route element={<AdminShell />}>
                         <Route path="/admin/users"   element={<UsersPage />} />
                         <Route path="/admin/reports" element={<ReportsPage />} />
+                        <Route path="/admin/dashboard" element={<Dashboard />} />
                     </Route>
                     <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
                     <Route path="*"     element={<Navigate to="/admin/users" replace />} />

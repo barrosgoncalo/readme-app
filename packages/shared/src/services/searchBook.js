@@ -267,3 +267,38 @@ export const browsePublications = async ({
         nbHits: result.nbHits ?? publications.length,
     };
 };
+
+/**
+ * ADMIN DASHBOARD: returns publication counts grouped by seller country,
+ * sourced from a single Algolia facet query (hitsPerPage: 0 means no hits
+ * are transferred, just the facet counts) — much cheaper than reading
+ * every publication doc out of Firestore just to tally countries.
+ *
+ * REQUIRES: a `sellerCountry` attribute on your publication records
+ * (denormalize it from the seller's institutionalAddress.country when
+ * you write the publication, the same way sellerName/sellerAvatar are
+ * denormalized today), added to `attributesForFaceting` in the Algolia
+ * dashboard/index settings. If you'd rather facet on something else
+ * (e.g. book.subject), just change FACET_ATTRIBUTE below.
+ */
+const FACET_ATTRIBUTE = 'sellerCountry';
+
+export const getPublicationsCountsByCountry = async () => {
+    const { results } = await algoliaClient.search({
+        requests: [
+            {
+                indexName: PUBLICATIONS_INDEX,
+                query: '',
+                filters: `status:${PUBLICATION_STATUS.AVAILABLE}`,
+                facets: [FACET_ATTRIBUTE],
+                hitsPerPage: 0,
+            },
+        ],
+    });
+
+    const facetCounts = results[0]?.facets?.[FACET_ATTRIBUTE] || {};
+
+    return Object.entries(facetCounts)
+        .map(([country, count]) => ({ country, count }))
+        .sort((a, b) => b.count - a.count);
+};

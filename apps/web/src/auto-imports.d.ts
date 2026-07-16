@@ -7,6 +7,7 @@
 export {}
 declare global {
   const IconLucideAlertTriangle: typeof import('~icons/lucide/alert-triangle').default
+  const IconLucideArrowLeftRight: typeof import('~icons/lucide/arrow-left-right').default
   const IconLucideBan: typeof import('~icons/lucide/ban').default
   const IconLucideBell: typeof import('~icons/lucide/bell').default
   const IconLucideBookOpen: typeof import('~icons/lucide/book-open').default

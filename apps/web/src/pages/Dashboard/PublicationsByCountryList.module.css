@@ -1,0 +1,65 @@
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 10px 160px 1fr 70px 56px;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid #F2F4F7;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.country {
+    font-size: 14px;
+    color: #344054;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.barTrack {
+    height: 8px;
+    border-radius: 4px;
+    background: #F2F4F7;
+    overflow: hidden;
+}
+
+.barFill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+}
+
+.count {
+    font-size: 14px;
+    font-weight: 600;
+    color: #101828;
+    text-align: right;
+}
+
+.pct {
+    font-size: 13px;
+    color: #667085;
+    text-align: right;
+}
+
+.placeholder {
+    padding: 40px 0;
+    text-align: center;
+    color: #667085;
+    font-size: 14px;
+}
