@@ -1,27 +1,34 @@
-import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS } from '@readme/shared/src/constants/status';
+import {useEffect} from 'react';
+import {REPORT_TARGET_TYPE, REPORT_REASON_LABELS} from '@readme/shared/src/constants/status';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import styles from './ReportDetailModal.module.css';
 
 const formatDate = (timestamp) => {
     if (!timestamp) return '—';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 };
 
 const formatMessageTime = (createdAt) => {
     if (!createdAt) return '';
     const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
-    return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
 };
 
-function ChatSnapshot({ snapshot }) {
+function ChatSnapshot({snapshot}) {
     const messages = snapshot?.recentMessages || [];
     return (
         <div className={styles.chatBox}>
             <div className={styles.chatHeader}>
                 <div className={styles.avatar}>
                     {snapshot?.otherUserAvatar
-                        ? <img src={snapshot.otherUserAvatar} alt="" className={styles.avatarImg} />
+                        ? <img src={snapshot.otherUserAvatar} alt="" className={styles.avatarImg}/>
                         : (snapshot?.otherUserName?.[0]?.toUpperCase() || '?')
                     }
                 </div>
@@ -44,11 +51,11 @@ function ChatSnapshot({ snapshot }) {
     );
 }
 
-function PublicationSnapshot({ snapshot }) {
+function PublicationSnapshot({snapshot}) {
     return (
         <div className={styles.pubBox}>
             {snapshot?.images?.[0] && (
-                <img src={snapshot.images[0]} alt="" className={styles.pubImage} />
+                <img src={snapshot.images[0]} alt="" className={styles.pubImage}/>
             )}
             <div className={styles.pubInfo}>
                 <div className={styles.pubTitle}>{snapshot?.title || 'Unknown Title'}</div>
@@ -62,12 +69,12 @@ function PublicationSnapshot({ snapshot }) {
     );
 }
 
-function AccountSnapshot({ snapshot }) {
+function AccountSnapshot({snapshot}) {
     return (
         <div className={styles.accountBox}>
-            <div className={styles.avatar} style={{ width: 44, height: 44 }}>
+            <div className={styles.avatar} style={{width: 44, height: 44}}>
                 {snapshot?.avatarUrl
-                    ? <img src={snapshot.avatarUrl} alt="" className={styles.avatarImg} />
+                    ? <img src={snapshot.avatarUrl} alt="" className={styles.avatarImg}/>
                     : (snapshot?.username?.[0]?.toUpperCase() || '?')
                 }
             </div>
@@ -82,7 +89,14 @@ const SNAPSHOT_COMPONENTS = {
     [REPORT_TARGET_TYPE.ACCOUNT]: AccountSnapshot,
 };
 
-export default function ReportDetailModal({ report, reporter, reportedUser, onClose, onStatusChange }) {
+export default function ReportDetailModal({report, reporter, reportedUser, onClose, onStatusChange}) {
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
     if (!report) return null;
 
     const SnapshotComponent = SNAPSHOT_COMPONENTS[report.targetType];
@@ -96,14 +110,14 @@ export default function ReportDetailModal({ report, reporter, reportedUser, onCl
                         <div className={styles.subtitle}>Reported {formatDate(report.createdAt)}</div>
                     </div>
                     <button type="button" className={styles.closeBtn} onClick={onClose}>
-                        <IconLucideX size={18} />
+                        <IconLucideX size={18}/>
                     </button>
                 </div>
 
                 <div className={styles.body}>
                     <div className={styles.metaRow}>
                         <span className={styles.metaLabel}>Status</span>
-                        <StatusBadge status={report.status} />
+                        <StatusBadge status={report.status}/>
                     </div>
                     <div className={styles.metaRow}>
                         <span className={styles.metaLabel}>Target type</span>
@@ -117,19 +131,21 @@ export default function ReportDetailModal({ report, reporter, reportedUser, onCl
                     <div className={styles.peopleRow}>
                         <div className={styles.personBlock}>
                             <span className={styles.metaLabel}>Reporter</span>
-                            <div className={styles.personName}>{reporter?.fullName || reporter?.username || 'Unknown'}</div>
+                            <div
+                                className={styles.personName}>{reporter?.fullName || reporter?.username || 'Unknown'}</div>
                             <div className={styles.personHandle}>@{reporter?.username || '—'}</div>
                         </div>
                         <div className={styles.personBlock}>
                             <span className={styles.metaLabel}>Reported user</span>
-                            <div className={styles.personName}>{reportedUser?.fullName || reportedUser?.username || 'Unknown'}</div>
+                            <div
+                                className={styles.personName}>{reportedUser?.fullName || reportedUser?.username || 'Unknown'}</div>
                             <div className={styles.personHandle}>@{reportedUser?.username || '—'}</div>
                         </div>
                     </div>
 
                     <div className={styles.sectionTitle}>Context</div>
                     {SnapshotComponent
-                        ? <SnapshotComponent snapshot={report.contextSnapshot} />
+                        ? <SnapshotComponent snapshot={report.contextSnapshot}/>
                         : <p className={styles.emptyNote}>No context available for this report type.</p>
                     }
                 </div>

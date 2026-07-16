@@ -211,12 +211,14 @@
 }
 
 .pubImage {
-    width: 64px;
-    height: 64px;
-    border-radius: 8px;
+    width: 84px;
+    height: 120px;
+    border-radius: 6px;
     object-fit: cover;
     flex-shrink: 0;
     background: #f3f4f6;
+    border: 1px solid #e5e7eb; /* Adiciona uma borda subtil para capas brancas */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); /* Sombra ligeira para destacar o livro */
 }
 
 .pubInfo {
