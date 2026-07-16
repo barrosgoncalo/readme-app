@@ -2,7 +2,11 @@
 
 **Author:** investigation on branch `phase2/web-mobile-unification-anaom`
 **Date:** 2026-07-15
-**Status:** planning — merge NOT yet performed (see §3 for why)
+**Status:** superseded by execution. Stages 0–2 (adopt main's architecture,
+take the shared layer wholesale, reconcile web's pages against it) are done on
+`integration/main-merge-anaom` — see `docs/RECONCILIATION_CHANGELOG.md` for
+what was actually done and `docs/RECONCILIATION_TODO.md` for what's left,
+including the Stage 3 feature ports (§6 below) which have not been started.
 
 ## 1. TL;DR
 

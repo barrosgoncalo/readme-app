@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {ArrowLeft} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
-import {myBooksService} from '@readme/shared/src/services/books';
+import {MyBooksService} from '@readme/shared/src/services/books';
 import {getBook} from '@readme/shared/src/services/booksCatalog';
 import {UsersService} from '@readme/shared/src/services/users';
 import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
@@ -42,6 +42,22 @@ function StarRating({rating, onRate, disabled}) {
             )}
         </div>
     );
+}
+
+// MyBooksService has no single-book getter — flatten the tracking doc found
+// in the full getBooks(uid) list. bookDetails (title/authors/coverUrl) is
+// also available separately via `catalog` (getBook), so this is mostly for
+// status/rating/notes/progress.
+function flattenMyBook(doc) {
+    if (!doc) return null;
+    const details = doc.bookDetails || {};
+    return {
+        ...doc,
+        title: details.title || null,
+        authors: details.authors || [],
+        coverUrl: details.coverUrl || null,
+        progress: doc.progressPercentage ?? 0,
+    };
 }
 
 function ReadOnlyStars({rating}) {
@@ -100,9 +116,10 @@ export default function BookDetail({ embedded = false, onClose }) {
 
         Promise.all([
             getBook(bookId),
-            myBooksService.getBookData(targetUid, bookId),
+            MyBooksService.getBooks(targetUid),
             isOwnBook ? Promise.resolve(null) : UsersService.fetchUserProfile(ownerUid).catch(() => null),
-        ]).then(([cat, my, owner]) => {
+        ]).then(([cat, myBooks, owner]) => {
+            const my = flattenMyBook(myBooks.find(b => b.id === bookId) || null);
             setCatalog(cat);
             setMyBook(my);
             setOwnerProfile(owner);
@@ -116,7 +133,7 @@ export default function BookDetail({ embedded = false, onClose }) {
     async function handleStatusChange(status) {
         setMyBook(prev => ({...prev, status}));
         try {
-            await myBooksService.updateBook(uid, bookId, {status});
+            await MyBooksService.updateBook(uid, bookId, {status});
         } catch {
             setMyBook(prev => ({...prev, status: myBook?.status}));
         }
@@ -126,7 +143,7 @@ export default function BookDetail({ embedded = false, onClose }) {
         const newRating = rating === 0 ? null : rating;
         setMyBook(prev => ({...prev, rating: newRating}));
         try {
-            await myBooksService.updateBook(uid, bookId, {rating: newRating});
+            await MyBooksService.updateBook(uid, bookId, {rating: newRating});
         } catch {
             setMyBook(prev => ({...prev, rating: myBook?.rating}));
         }
@@ -141,7 +158,7 @@ export default function BookDetail({ embedded = false, onClose }) {
         notesTimer.current = setTimeout(async () => {
             setSavingNotes(true);
             try {
-                await myBooksService.updateBook(uid, bookId, {notes: val});
+                await MyBooksService.updateBook(uid, bookId, {notes: val});
                 setNotesSaved(true);
                 setTimeout(() => setNotesSaved(false), 2000);
             } finally {
@@ -173,7 +190,7 @@ export default function BookDetail({ embedded = false, onClose }) {
                 const pageCount = catalog?.pageCount || 0;
                 const pct = pageCount > 0 ? Math.round((finalPage / pageCount) * 100) : Math.min(finalPage, 100);
 
-                const updates = {currentPage: finalPage, progress: pct};
+                const updates = {currentPage: finalPage, progressPercentage: pct};
                 let newStatus = status;
 
                 if (pageCount > 0 && finalPage >= pageCount && status !== BOOK_STATUS.DONE) {
@@ -184,7 +201,7 @@ export default function BookDetail({ embedded = false, onClose }) {
                     newStatus = BOOK_STATUS.DONE;
                 }
 
-                await myBooksService.updateBook(uid, bookId, updates);
+                await MyBooksService.updateBook(uid, bookId, updates);
                 setMyBook(prev => ({...prev, currentPage: finalPage, progress: pct, status: newStatus}));
             } finally {
                 setSavingProgress(false);

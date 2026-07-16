@@ -59,6 +59,16 @@ has `index.jsx` (mobile) and `web.jsx` (web). Web imports from
 - **Routing:** all paths centralized in `apps/web/src/constants/webRoutes.js`
   (`WEB_ROUTES`). Router in `apps/web/src/routes/AppRouter.jsx`; authed routes
   render inside `AppShell` behind `RequireAuth`.
+- **Shelf vs. My Books — do not conflate these.** Shelf (`/books`,
+  `WEB_ROUTES.BOOKS`, `users/{uid}/myBooks`, `MyBooksService`) is a personal
+  reading list — status/progress/rating on books the user is reading. My
+  Books (`/profile/my-books`, `WEB_ROUTES.PROFILE_MY_BOOKS`, the top-level
+  `publications` collection filtered by `uid`) is the set of books a user has
+  published as available for trade — these are what show up in Explore and
+  what get offered during a swap. Don't use `myBooksService`/`MyBooksService`/
+  `WEB_ROUTES.BOOKS` when the intent is the user's published listings — use
+  `PublicationService.fetchUserPublications(uid)` instead (see
+  `NewOffer.jsx`'s offer-creation flow for the canonical example).
 - **Layout system:** `AppShell` applies a per-route content **width tier**
   (`wide` 1280 / `reading` 860 / `narrow` 720 / `full`) via
   `apps/web/src/utils/contentWidth.js`. Sidebar collapses to a 64px icon rail
@@ -103,3 +113,9 @@ first-time setup. Mobile Firebase config lives in `packages/shared/src/services/
 - `docs/12-TRADE-MODULE-PLAN.md`, `docs/13-EVENTS-MODULE-PLAN.md`,
   `docs/14-TRADE-MODULE-GEOLOCATION.md` — feature module plans
 - `docs/PLAN_UI_OVERHAUL.md` — web UI overhaul plan (web-only; no mobile changes)
+- `docs/PLAN_WEB_MOBILE_MERGE.md` — the investigation that motivated
+  reconciling web against main's shared-layer rewrite
+- `docs/RECONCILIATION_CHANGELOG.md` — what's been done to reconcile web
+  against main (shared services, Shelf/My Books split, bug fixes)
+- `docs/RECONCILIATION_TODO.md` — what's still open from that reconciliation
+  (known bugs, untested flows, deferred work)

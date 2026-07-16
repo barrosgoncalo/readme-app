@@ -1,12 +1,12 @@
 // @readme/shared/src/services/searchBook.js
 
 import { algoliasearch } from "algoliasearch";
+import { documentId } from "firebase/firestore";
 import { PUBLICATION_STATUS } from "../constants/status";
+import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY } from '../constants/env';
+import { DB } from './DB';
 
-const API_APP_ID_KEY = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID;
-const API_SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
-
-const algoliaClient = algoliasearch(API_APP_ID_KEY, API_SEARCH_KEY);
+const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
 
 const PUBLICATIONS_INDEX = "publications";
 const DEFAULT_HITS_PER_PAGE = 15;
@@ -268,4 +268,50 @@ export const browsePublications = async ({
         nbPages: result.nbPages ?? 1,
         nbHits: result.nbHits ?? publications.length,
     };
+};
+
+/**
+ * ADMIN DASHBOARD: returns publication counts grouped by seller country.
+ * Reads available publications from Firestore, resolves each seller's
+ * institutionalAddress.country, and aggregates the counts.
+ */
+export const getPublicationsCountsByCountry = async () => {
+    const publications = await DB.get('publications', [
+        { field: 'status', operator: '==', value: PUBLICATION_STATUS.AVAILABLE },
+    ]);
+
+    if (!publications?.length) return [];
+
+    const pubsByUid = {};
+    for (const pub of publications) {
+        const uid = pub.uid;
+        if (!uid) continue;
+        pubsByUid[uid] = (pubsByUid[uid] || 0) + 1;
+    }
+
+    const uids = Object.keys(pubsByUid);
+    if (!uids.length) return [];
+
+    const users = await DB.get('users', [
+        { field: documentId(), operator: 'in', value: uids },
+    ]);
+
+    const countryCounts = {};
+    const fetchedUids = new Set();
+
+    for (const user of users) {
+        fetchedUids.add(user.id);
+        const country = user.institutionalAddress?.country?.trim() || 'Unknown';
+        countryCounts[country] = (countryCounts[country] || 0) + pubsByUid[user.id];
+    }
+
+    for (const uid of uids) {
+        if (!fetchedUids.has(uid)) {
+            countryCounts.Unknown = (countryCounts.Unknown || 0) + pubsByUid[uid];
+        }
+    }
+
+    return Object.entries(countryCounts)
+        .map(([country, count]) => ({ country, count }))
+        .sort((a, b) => b.count - a.count);
 };

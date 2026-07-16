@@ -90,20 +90,44 @@ const _resolveOtherUser = async (chatData, currentUserId, targetSeller) => {
         otherUid = chatData.participants?.find(uid => uid !== currentUserId);
     }
 
-    const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
-
-    if (otherUid && !hasPipedData) {
-        const userData = await DB.get('users', otherUid);
-        if (userData) {
-            return {
-                otherUid,
-                otherUserName: userData.username || userData.name || "Swapper",
-                otherUserAvatar: userData.photoURL || null,
-            };
-        }
+    if (!otherUid) {
+        return {
+            otherUid: null,
+            otherUserName: 'Deleted User',
+            otherUserAvatar: null,
+            isChatDisabled: true,
+            disabledReason: 'This user is no longer available',
+        };
     }
 
-    return { otherUid: otherUid || null, otherUserName: null, otherUserAvatar: null };
+    // Always verify the user still exists, even if we have piped display data —
+    // piped data can be stale (e.g. sourced from a chat doc for a since-deleted user)
+    const userData = await DB.get('users', otherUid);
+
+    if (!userData) {
+        return {
+            otherUid,
+            otherUserName: 'Deleted User',
+            otherUserAvatar: null,
+            isChatDisabled: true,
+            disabledReason: 'This user has deleted their account',
+        };
+    }
+
+    const hasPipedData = targetSeller?.name && targetSeller.name !== "Anonymous Swapper" && targetSeller.avatarUrl;
+
+    if (hasPipedData) {
+        // User confirmed to exist — trust the piped name/avatar, skip re-setting them
+        return { otherUid, otherUserName: null, otherUserAvatar: null, isChatDisabled: false, disabledReason: null };
+    }
+
+    return {
+        otherUid,
+        otherUserName: userData.username || userData.name || "Swapper",
+        otherUserAvatar: userData.photoURL || null,
+        isChatDisabled: false,
+        disabledReason: null,
+    };
 };
 
 
@@ -112,43 +136,6 @@ const _resolveOtherUser = async (chatData, currentUserId, targetSeller) => {
 // ==========================================
 
 export const ChatService = {
-
-    /**
-     * Subscribes to real-time raw chat docs for a user's inbox. Unlike
-     * subscribeToActiveChats (which maps into the mobile "Inbox Preview"
-     * shape), this returns the chat docs as-is — the web chat UI reads
-     * fields like participants/sellerName/targetBookImage directly.
-     */
-    streamUserChats: (uid, onUpdate, onError) => {
-        return DB.subscribeQuery(
-            'chats',
-            [{ field: 'participants', operator: 'array-contains', value: uid }],
-            (docs) => {
-                const sorted = [...docs].sort((a, b) => {
-                    const getTime = (m) => m.updatedAt?.toMillis?.() ?? new Date(m.updatedAt || m.createdAt || 0).getTime();
-                    return getTime(b) - getTime(a);
-                });
-                onUpdate(sorted);
-            },
-            onError
-        );
-    },
-
-    /**
-     * Subscribes to a chat's raw message docs, newest first.
-     */
-    streamMessages: (chatId, onUpdate, onError) => {
-        return DB.subscribeQuery(
-            `chats/${chatId}/messages`,
-            [],
-            (docs) => {
-                const getTime = (m) => m.createdAt?.toMillis?.() ?? m.clientTimestamp ?? 0;
-                const sorted = [...docs].sort((a, b) => getTime(b) - getTime(a));
-                onUpdate(sorted);
-            },
-            onError
-        );
-    },
 
     /**
      * Sends a standard text message.
@@ -322,6 +309,43 @@ export const ChatService = {
     },
 
     /**
+     * Subscribes to real-time raw chat docs for a user's inbox. Unlike
+     * subscribeToActiveChats (which maps into the mobile "Inbox Preview"
+     * shape), this returns the chat docs as-is — the web chat UI reads
+     * fields like participants/sellerName/targetBookImage directly.
+     */
+    streamUserChats: (uid, onUpdate, onError) => {
+        return DB.subscribeQuery(
+            'chats',
+            [{ field: 'participants', operator: 'array-contains', value: uid }],
+            (docs) => {
+                const sorted = [...docs].sort((a, b) => {
+                    const getTime = (m) => m.updatedAt?.toMillis?.() ?? new Date(m.updatedAt || m.createdAt || 0).getTime();
+                    return getTime(b) - getTime(a);
+                });
+                onUpdate(sorted);
+            },
+            onError
+        );
+    },
+
+    /**
+     * Subscribes to a chat's raw message docs, newest first.
+     */
+    streamMessages: (chatId, onUpdate, onError) => {
+        return DB.subscribeQuery(
+            `chats/${chatId}/messages`,
+            [],
+            (docs) => {
+                const getTime = (m) => m.createdAt?.toMillis?.() ?? m.clientTimestamp ?? 0;
+                const sorted = [...docs].sort((a, b) => getTime(b) - getTime(a));
+                onUpdate(sorted);
+            },
+            onError
+        );
+    },
+
+    /**
      * Subscribes to a single message document (used for swap verification status).
      */
     subscribeToMessage: (chatId, messageId, onUpdate, onError) => {
@@ -344,7 +368,7 @@ export const ChatService = {
         const chatData = await DB.get('chats', chatId);
         if (!chatData) return null;
 
-        const { otherUid, otherUserName, otherUserAvatar } = await _resolveOtherUser(
+        const { otherUid, otherUserName, otherUserAvatar, isChatDisabled, disabledReason } = await _resolveOtherUser(
             chatData, currentUserId, targetSeller
         );
 
@@ -355,6 +379,8 @@ export const ChatService = {
             otherUid,
             otherUserName,
             otherUserAvatar,
+            isChatDisabled,
+            disabledReason,
         };
     },
 
@@ -392,6 +418,13 @@ export const ChatService = {
             )
         );
     },
+
+    /**
+     * Calls the verifySwapCode Cloud Function to validate a scanned code
+     * and mark the swap as completed.
+     */
+    verifySwapCode: (chatId, messageId, scannedCode) =>
+        CloudFunctions.call('verifySwapCode', { chatId, messageId, scannedCode }),
 
     /**
      * Marks an offer message as completed once the verification code checks out.
@@ -472,11 +505,4 @@ export const ChatService = {
             }
         }
     },
-
-    /**
-     * Calls the verifySwapCode Cloud Function to validate a scanned code
-     * and mark the swap as completed.
-     */
-    verifySwapCode: (chatId, messageId, scannedCode) =>
-        CloudFunctions.call('verifySwapCode', { chatId, messageId, scannedCode }),
 };

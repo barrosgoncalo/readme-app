@@ -10,7 +10,7 @@ import { mapGoogleBook } from '../models/book';
  *   3. ISBN repair: for legacy books with ISBN-shaped IDs and no title,
  *      try the global cache then Google Books API.
  *
- * @param {object[]} myBookDocs  Raw docs from myBooksService.getBooksData()
+ * @param {object[]} myBookDocs  Flattened Shelf docs (see callers' flattenShelfDoc helpers)
  * @param {object}  [options]
  * @param {string}  [options.apiKey]    Google Books API key (skips API step if absent)
  * @param {function} [options.onRepair] Called after each ISBN repair with (bookId, {title,authors,coverUrl,description}).

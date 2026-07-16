@@ -190,7 +190,9 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
                         </div>
 
                         <div className={styles.stats}>
-                            <span>❤️ {pub.stats?.likesCount || 0}</span>
+                            <span className={styles.likeCount}>
+                                <Heart size={16} fill="currentColor" /> {pub.stats?.likesCount || 0}
+                            </span>
                         </div>
                     </div>
 

@@ -28,6 +28,7 @@ const SUB_ROUTES = new Set([
     WEB_ROUTES.PROFILE_FAVORITES,
     WEB_ROUTES.PROFILE_LEVEL,
     WEB_ROUTES.PROFILE_BLOCKED_USERS,
+    WEB_ROUTES.PROFILE_MY_BOOKS,
 ]);
 
 export default function ProfileLayout() {
@@ -82,7 +83,7 @@ export default function ProfileLayout() {
     const settingsGroups = [
         {
             title: 'Content',
-            items: [{ icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.BOOKS) }],
+            items: [{ icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.PROFILE_MY_BOOKS) }],
         },
         {
             title: 'Account',
@@ -141,12 +142,13 @@ export default function ProfileLayout() {
                         </button>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.stat}>
                             <strong>—</strong>
-                            <span>Books</span>
+                            <span>Shelf</span>
                         </Link>
                     </div>
 
                     <div className={styles.quickActions}>
-                        <Link to={WEB_ROUTES.BOOKS} className={styles.quickBtn}>My Books</Link>
+                        <Link to={WEB_ROUTES.BOOKS} className={styles.quickBtn}>Shelf</Link>
+                        <Link to={WEB_ROUTES.PROFILE_MY_BOOKS} className={styles.quickBtn}>My Books</Link>
                         <button type="button" className={`${styles.quickBtn} ${styles.danger}`} onClick={doSignOut}>
                             <LogOut size={16} /> Sign Out
                         </button>

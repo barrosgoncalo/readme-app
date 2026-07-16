@@ -2,7 +2,8 @@ import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
     updateDoc, deleteDoc, serverTimestamp, arrayUnion,
-    query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit
+    query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit, startAfter, getCountFromServer,
+    collectionGroup
 } from 'firebase/firestore';
 
 export const DB = {
@@ -152,7 +153,12 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                else console.error(`DB.subscribeDoc error on "${collectionPath}/${docId}":`, error);
+                
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.subscribeDoc error on "${collectionPath}/${docId}":`, error);
+                }
             }
         );
     },
@@ -164,7 +170,7 @@ export const DB = {
     subscribe: (path, onUpdate, onError) => {
         const pathSegments = path.split('/').filter(Boolean);
         const isDocument = pathSegments.length % 2 === 0;
-        
+
         const q = isDocument ? doc(db, path) : collection(db, path);
 
         return onSnapshot(
@@ -178,7 +184,12 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                else console.error(`DB.stream error on "${path}":`, error);
+
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.stream error on "${path}":`, error);
+                }
             }
         );
     },
@@ -201,30 +212,31 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                else console.error(`DB.streamQuery error on "${collectionName}":`, error);
+                
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.streamQuery error on "${collectionName}":`, error);
+                }
             }
         );
     },
 
     /**
- * Advanced Query Stream: Supports where-clauses, ordering, and limits.
- * e.g., DB.subscribeAdvanced('users/123/notifications', [], { field: 'createdAt', direction: 'desc' }, 50, (data) => {})
- */
+     * Advanced Query Stream: Supports where-clauses, ordering, and limits.
+     */
     subscribeAdvanced: (path, conditions = [], orderByArg = null, limitAmount = null, onUpdate, onError) => {
         let q = collection(db, path);
 
-        // 1. Apply where filters if they exist
         if (conditions.length > 0) {
             const constraints = conditions.map(c => where(c.field, c.operator, c.value));
             q = query(q, ...constraints);
         }
 
-        // 2. Apply ordering if specified
         if (orderByArg) {
             q = query(q, orderBy(orderByArg.field, orderByArg.direction || 'asc'));
         }
 
-        // 3. Apply limit if specified
         if (limitAmount) {
             q = query(q, limit(limitAmount));
         }
@@ -236,9 +248,75 @@ export const DB = {
             },
             (error) => {
                 if (onError) onError(error);
-                    else console.error(`DB.subscribeAdvanced error on "${path}":`, error);
+                
+                if (error?.code === 'permission-denied') return;
+
+                if (!onError) {
+                    console.error(`DB.subscribeAdvanced error on "${path}":`, error);
+                }
             }
         );
+    },
+
+    /**
+     * Returns the total count of documents in a collection (useful for pagination)
+     */
+    count: async (collectionPath, conditions = []) => {
+        try {
+            let q = collection(db, collectionPath);
+            if (conditions.length > 0) {
+                const constraints = conditions.map(c => where(c.field, c.operator, c.value));
+                q = query(q, ...constraints);
+            }
+            const snap = await getCountFromServer(q);
+
+            return snap.data().count;
+        } catch (error) {
+            console.error(`DB.count Error on path "${collectionPath}":`, error);
+            throw error;
+        }
+    },
+
+    countCollectionGroup: async (collectionGroupName, whereArgs = []) => {
+        try {
+            const colRef = collectionGroup(db, collectionGroupName);
+            const constraints = whereArgs.map(w => where(w.field, w.operator, w.value));
+            const q = constraints.length ? query(colRef, ...constraints) : colRef;
+            const snap = await getCountFromServer(q);
+            return snap.data().count;
+        } catch (error) {
+            console.error(`DB.countCollectionGroup Error on group "${collectionGroupName}":`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetches a page of documents, supporting cursors (startAfter) and limits.
+     * Returns the documents and the last document cursor to use for the next page.
+     */
+    getPaginated: async (collectionPath, orderByArg, limitAmount, lastVisibleDoc = null, conditions = []) => {
+        try {
+            const colRef = collection(db, collectionPath);
+            const constraints = conditions.map(w => where(w.field, w.operator, w.value));
+
+            constraints.push(orderBy(orderByArg.field, orderByArg.direction || 'asc'));
+
+            if (lastVisibleDoc)
+                constraints.push(startAfter(lastVisibleDoc));
+
+            constraints.push(limit(limitAmount));
+
+            const q = query(colRef, ...constraints);
+            const snap = await getDocs(q);
+
+            return {
+                docs: snap.docs.map(d => ({ id: d.id, ...d.data() })),
+                lastVisible: snap.docs[snap.docs.length - 1] || null
+            };
+        } catch (error) {
+            console.error(`DB.getPaginated Error on path "${collectionPath}":`, error);
+            throw error;
+        }
     },
 
     arrayUnion: (value) => arrayUnion(value),

@@ -5,8 +5,19 @@ import { ChatService } from '@readme/shared/src/services/chat';
 import { TradeService } from '@readme/shared/src/services/trades';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { LocationService } from '@readme/shared/src/services/location';
+import { ReportsService } from '@readme/shared/src/services/reports';
+import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS } from '@readme/shared/src/constants/status';
 
-export function useChatActions({ chatId, currentUserId, publicationId, messages, navigation }) {
+export function useChatActions({
+                                   chatId,
+                                   currentUserId,
+                                   publicationId,
+                                   messages,
+                                   navigation,
+                                   otherUserId,
+                                   otherUserName,
+                                   otherUserAvatar
+                               }) {
     const [isFetchingBook, setIsFetchingBook] = useState(false);
 
     const handleSendMessage = async (textToSend, restoreInputText) => {
@@ -16,12 +27,12 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
             await ChatService.sendTextMessage(chatId, currentUserId, textToSend);
         } catch (error) {
             console.error("Error sending message:", error);
-            restoreInputText(textToSend); 
+            restoreInputText(textToSend);
         }
     };
 
     const handleShowQRCode = (code, messageId) => {
-        navigation.navigate(ROUTES.QR_DISPLAY, { 
+        navigation.navigate(ROUTES.QR_DISPLAY, {
             verificationCode: code,
             chatId: chatId,
             messageId: messageId
@@ -36,15 +47,15 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
     };
 
     const handleResolveOffer = async (
-        messageId, 
-        newStatus, 
-        bookId = null, 
+        messageId,
+        newStatus,
+        bookId = null,
         senderIdOfOffer = null,
         finalSelectedBookId = null,
         finalSelectedBookImage = null
     ) => {
         try {
-            const targetBookId = bookId || publicationId; 
+            const targetBookId = bookId || publicationId;
 
             await TradeService.resolveOffer(chatId, messageId, newStatus, {
                 proposerId: senderIdOfOffer,
@@ -66,16 +77,16 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
             "Are you sure you want to cancel this agreed swap? The other user will be notified and allowed to review their experience with you.",
             [
                 { text: "No, keep it", style: "cancel" },
-                { 
-                    text: "Yes, Cancel", 
-                    style: "destructive", 
+                {
+                    text: "Yes, Cancel",
+                    style: "destructive",
                     onPress: async () => {
                         try {
                             const targetBookId = bookId || publicationId;
                             await TradeService.cancelSwap(
-                                chatId, 
-                                messageId, 
-                                targetBookId, 
+                                chatId,
+                                messageId,
+                                targetBookId,
                                 finalSelectedBookId,
                                 currentUserId
                             );
@@ -84,7 +95,7 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
                             console.error("Error cancelling swap:", error);
                             Alert.alert("Error", "Could not cancel the swap. Please try again.");
                         }
-                    } 
+                    }
                 }
             ]
         );
@@ -122,19 +133,61 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
         }
     };
 
+    const submitChatReport = async (reason) => {
+        try {
+            const snapshot = ReportsService.buildChatSnapshot(
+                messages,
+                { name: otherUserName, avatarUrl: otherUserAvatar }
+            );
+
+            await ReportsService.submitReport(
+                currentUserId,
+                REPORT_TARGET_TYPE.CHAT,
+                chatId,
+                otherUserId,
+                reason,
+                snapshot
+            );
+
+            Alert.alert("Report Submitted", "Thanks — our team will review this conversation.");
+        } catch (error) {
+            console.error("Error reporting chat:", error);
+            Alert.alert("Something Went Wrong", "We couldn't submit your report. Please try again.");
+        }
+    };
+
+    const handleReportChat = () => {
+        if (!otherUserId) {
+            Alert.alert("Something Went Wrong", "We couldn't identify who to report. Please try again.");
+            return;
+        }
+
+        Alert.alert(
+            "Report Chat",
+            "Why are you reporting this conversation?",
+            [
+                { text: "Cancel", style: "cancel" },
+                ...Object.entries(REPORT_REASON_LABELS).map(([reason, label]) => ({
+                    text: label,
+                    onPress: () => submitChatReport(reason)
+                }))
+            ]
+        );
+    };
+
     const handleOpenOptions = () => {
         Alert.alert(
             "Chat Options",
             "What would you like to do?",
             [
                 { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Delete Chat", 
-                    style: "destructive", 
+                {
+                    text: "Delete Chat",
+                    style: "destructive",
                     onPress: () => {
-                        const hasActiveSwap = messages.some(msg => 
-                            msg.type === 'offer' && 
-                                (msg.offerDetails?.status === 'pending' || msg.offerDetails?.status === 'accepted')
+                        const hasActiveSwap = messages.some(msg =>
+                            msg.type === 'offer' &&
+                            (msg.offerDetails?.status === 'pending' || msg.offerDetails?.status === 'accepted')
                         );
 
                         if (hasActiveSwap) {
@@ -153,6 +206,11 @@ export function useChatActions({ chatId, currentUserId, publicationId, messages,
                             );
                         }
                     }
+                },
+                {
+                    text: "Report Chat",
+                    style: "destructive",
+                    onPress: handleReportChat
                 }
             ]
         );

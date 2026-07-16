@@ -29,6 +29,9 @@ export function AuthProvider({ children }) {
                 setUserLoggedIn(false);
             } else {
                 try {
+                    const tokenResult = await user.getIdTokenResult(true);
+                    const tokenRole = tokenResult.claims.role || 'user';
+
                     const docRef = doc(db, "users", user.uid);
                     const docSnap = await getDoc(docRef);
 
@@ -37,15 +40,19 @@ export function AuthProvider({ children }) {
                         setCurrentUser({ 
                             ...user, 
                             ...firestoreData,
+                            role: tokenRole,
                             photoURL: firestoreData.photoURL || user.photoURL || null 
                         }); 
                     } else {
-                        setCurrentUser({ ...user });
+                        setCurrentUser({ 
+                            ...user, 
+                            role: tokenRole 
+                        });
                     }
                     setUserLoggedIn(true);
                 } catch (error) {
-                    console.error("Erro a buscar dados do Firestore:", error);
-                    setCurrentUser({ ...user });
+                    console.error("Erro a buscar dados do Firestore ou Claims:", error);
+                    setCurrentUser({ ...user, role: 'user' });
                     setUserLoggedIn(true);
                 }
             }
@@ -66,6 +73,9 @@ export function AuthProvider({ children }) {
     const refreshUser = async () => {
         if (auth.currentUser) {
             try {
+                const tokenResult = await auth.currentUser.getIdTokenResult(true);
+                const tokenRole = tokenResult.claims.role || 'user';
+
                 const userDocRef = doc(db, "users", auth.currentUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 const firestoreData = userDocSnap.data();
@@ -74,7 +84,13 @@ export function AuthProvider({ children }) {
                     setCurrentUser({
                         ...auth.currentUser,
                         ...firestoreData,
+                        role: tokenRole,
                         photoURL: firestoreData.photoURL || auth.currentUser.photoURL || null
+                    });
+                } else {
+                    setCurrentUser({
+                        ...auth.currentUser,
+                        role: tokenRole
                     });
                 }
             } catch (error) {

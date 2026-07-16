@@ -35,8 +35,11 @@ Per-user list of bookmarked books. Managed by `favoriteBooksService` in
 
 ### `users/{uid}/myBooks/{bookId}`
 
-Books the user owns / is willing to trade. Managed by `myBooksService` in
-`packages/shared/src/services/books.js`.
+Backs the **Shelf** UI (personal reading list — status/progress/rating).
+Managed by `MyBooksService` in `packages/shared/src/services/books.js`. Not
+to be confused with `publications` below, which backs the **My Books** UI
+(the user's trade listings) — never source offerable/tradeable books from
+`myBooks`.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -122,6 +125,10 @@ condition, photos, description). Doc ID is `{uid}_{timestamp}`.
 | `status` | enum | `PUBLICATION_STATUS`: `'available'` \| `'reserved'` \| `'swapped'` |
 | `stats.likesCount` | number | denormalised favorite count |
 | `createdAt` | string | ISO timestamp |
+
+Also backs the **My Books** UI (`apps/web/src/pages/Profile/MyBooks.jsx`,
+`PublicationService.fetchUserPublications(uid)`) and is the source for the
+offer-creation flow's book-selection step (`NewOffer.jsx`) — never `myBooks`.
 
 ### `chats/{chatId}/messages/{messageId}` (`type: 'offer'`)
 

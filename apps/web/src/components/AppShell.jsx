@@ -12,7 +12,7 @@ import { getContentWidthTier } from '../utils/contentWidth';
 import styles from './AppShell.module.css';
 
 const NAV_ITEMS = [
-    { to: WEB_ROUTES.BOOKS, label: 'My Books', Icon: BookOpen },
+    { to: WEB_ROUTES.BOOKS, label: 'Shelf', Icon: BookOpen },
     { to: WEB_ROUTES.EVENTS, label: 'Events', Icon: CalendarDays },
     { to: WEB_ROUTES.MAP, label: 'Explore', Icon: Map },
     { to: WEB_ROUTES.CHAT, label: 'Chat', Icon: MessageCircle },

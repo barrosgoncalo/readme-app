@@ -103,7 +103,7 @@ function CoverFrame({ book, authors, status, isFavorite, onToggleFavorite, onRem
                     className={`${styles.coverBtn} ${isFavorite ? styles.favoriteActive : ''}`}
                     onClick={onToggleFavorite}
                     disabled={busy}
-                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    title={isFavorite ? 'Remove from liked books' : 'Add to liked books'}
                 >
                     <Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} />
                 </button>
@@ -209,7 +209,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, isSelected
                                 className={`${styles.iconBtn} ${isFavorite ? styles.favoriteActive : ''}`}
                                 onClick={onToggleFavorite}
                                 disabled={busy}
-                                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                title={isFavorite ? 'Remove from liked books' : 'Add to liked books'}
                             >
                                 <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
                             </button>
@@ -264,7 +264,7 @@ export default function BookCard({ book, variant = 'row', isFavorite, isSelected
                     className={`${styles.iconBtn} ${isFavorite ? styles.favoriteActive : ''}`}
                     onClick={onToggleFavorite}
                     disabled={busy}
-                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    title={isFavorite ? 'Remove from liked books' : 'Add to liked books'}
                 >
                     <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
                 </button>

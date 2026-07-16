@@ -163,6 +163,12 @@
     font-size: 0.9rem;
 }
 
+.likeCount {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .actions {
     display: flex;
     gap: var(--space-3);

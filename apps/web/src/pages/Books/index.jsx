@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, LayoutGrid, List, Heart } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import {
-    myBooksService,
-    favoriteBooksService,
+    MyBooksService,
+    FavoriteBooksService,
 } from '@readme/shared/src/services/books';
 import {
     createBookIfMissing,
@@ -30,8 +30,27 @@ const FILTERS = [
     { key: BOOK_STATUS.READING, label: BOOK_STATUS_LABELS[BOOK_STATUS.READING] },
     { key: BOOK_STATUS.WANT, label: BOOK_STATUS_LABELS[BOOK_STATUS.WANT] },
     { key: BOOK_STATUS.DONE, label: BOOK_STATUS_LABELS[BOOK_STATUS.DONE] },
-    { key: FILTER_FAVORITES, label: 'Favorites' },
+    { key: FILTER_FAVORITES, label: 'Liked Books' },
 ];
+
+// MyBooksService.getBooks() returns { ...trackingDoc, bookDetails } (title/
+// authors/coverUrl live in the global `books` cache, joined in by the
+// service). Flatten to the shape BookCard/hydrateMyBooks already expect.
+function flattenShelfDoc(doc) {
+    const details = doc.bookDetails || {};
+    return {
+        id: doc.id,
+        bookId: doc.bookId || doc.id,
+        title: details.title || null,
+        authors: details.authors || [],
+        coverUrl: details.coverUrl || null,
+        status: doc.status || BOOK_STATUS.READING,
+        progress: doc.progressPercentage ?? 0,
+        addedAt: doc.addedAt || null,
+        rating: doc.rating ?? null,
+        notes: doc.notes || null,
+    };
+}
 
 function groupByMonth(books) {
     const groups = {};
@@ -70,21 +89,18 @@ export default function Books({ compact = false, selectedBookId = null }) {
         setLoading(true);
         setLoadError(null);
         try {
-            const [rawMyBooks, favIds] = await Promise.all([
-                myBooksService.getBooksData(uid),
-                favoriteBooksService.getBooks(uid),
+            const [rawMyBooks, favBooks] = await Promise.all([
+                MyBooksService.getBooks(uid),
+                FavoriteBooksService.getBooks(uid),
             ]);
             const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-            const hydrated = await hydrateMyBooks(rawMyBooks, {
+            const hydrated = await hydrateMyBooks(rawMyBooks.map(flattenShelfDoc), {
                 apiKey,
-                onRepair: (bookId, data) => Promise.all([
-                    myBooksService.updateBook(uid, bookId, { title: data.title, authors: data.authors, coverUrl: data.coverUrl }),
-                    createBookIfMissing(bookId, { ...data, isbn: bookId, addedBy: uid }),
-                ]),
+                onRepair: (bookId, data) => createBookIfMissing(bookId, { ...data, isbn: bookId, addedBy: uid }),
             });
 
             setBooks(hydrated);
-            setFavoriteIds(new Set(favIds));
+            setFavoriteIds(new Set(favBooks.map(b => b.id)));
         } catch (err) {
             setLoadError(err.message || 'Could not load your books.');
         } finally {
@@ -100,14 +116,13 @@ export default function Books({ compact = false, selectedBookId = null }) {
         setAddError(null);
         try {
             const bookId = sanitizeIsbn(data.isbn) || crypto.randomUUID();
-            await createBookIfMissing(bookId, { ...data, isbn: sanitizeIsbn(data.isbn), addedBy: uid });
-            await myBooksService.addBook(uid, bookId, {
-                status: BOOK_STATUS.READING,
-                progress: 0,
+            await MyBooksService.saveBookToShelf(uid, {
+                bookId,
                 title: data.title || null,
                 authors: data.authors || [],
                 coverUrl: data.coverUrl || null,
-            });
+                isbn: sanitizeIsbn(data.isbn) || null,
+            }, BOOK_STATUS.READING, { progressPercentage: 0 });
             setShowAddForm(false);
             await load();
         } catch (err) {
@@ -123,7 +138,7 @@ export default function Books({ compact = false, selectedBookId = null }) {
         setBooks(b => b.filter(book => book.id !== bookId));
         setBusyId(bookId);
         try {
-            await myBooksService.removeBook(uid, bookId);
+            await MyBooksService.deleteBook(uid, bookId);
         } catch {
             setBooks(prev);
             setLoadError('Could not remove book. Try again.');
@@ -139,7 +154,7 @@ export default function Books({ compact = false, selectedBookId = null }) {
         setBooks(b => b.map(book => book.id === bookId ? { ...book, rating: newRating } : book));
         setBusyId(bookId);
         try {
-            await myBooksService.updateBook(uid, bookId, { rating: newRating });
+            await MyBooksService.updateBook(uid, bookId, { rating: newRating });
         } catch {
             setBooks(prev);
         } finally {
@@ -155,9 +170,19 @@ export default function Books({ compact = false, selectedBookId = null }) {
         setFavoriteIds(next);
         setBusyId(bookId);
         try {
-            if (wasFav) await favoriteBooksService.removeBook(uid, bookId);
-            else await favoriteBooksService.addBook(uid, bookId);
-        } catch {
+            if (wasFav) {
+                await FavoriteBooksService.deleteBook(uid, bookId);
+            } else {
+                const book = books.find(b => b.id === bookId);
+                await FavoriteBooksService.saveBookToShelf(uid, {
+                    bookId,
+                    title: book?.title || null,
+                    authors: book?.authors || [],
+                    coverUrl: book?.coverUrl || null,
+                });
+            }
+        } catch (err) {
+            console.error('Error toggling favorite:', err);
             setFavoriteIds(favoriteIds);
         } finally {
             setBusyId(null);
@@ -182,7 +207,7 @@ export default function Books({ compact = false, selectedBookId = null }) {
         <div className={`${styles.page} ${compact ? styles.compact : ''}`}>
             {!compact && (
                 <div className={styles.header}>
-                    <h1 className={styles.title}>Your Reading List</h1>
+                    <h1 className={styles.title}>Shelf</h1>
                     <div className={styles.headerActions}>
                         <div className={styles.viewToggle} role="group" aria-label="View mode">
                             <button

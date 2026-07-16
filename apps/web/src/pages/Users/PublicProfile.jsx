@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, UserPlus, UserCheck, Ban } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { ReviewService } from '@readme/shared/src/services/reviews';
-import { myBooksService } from '@readme/shared/src/services/books';
+import { MyBooksService } from '@readme/shared/src/services/books';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/block';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
@@ -15,6 +15,24 @@ import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
 import { useToast } from '../../hooks/useToast';
 import styles from './PublicProfile.module.css';
+
+// MyBooksService.getBooks() returns { ...trackingDoc, bookDetails } — flatten
+// to the flat shape hydrateMyBooks/BookRow already expect.
+function flattenShelfDoc(doc) {
+    const details = doc.bookDetails || {};
+    return {
+        id: doc.id,
+        bookId: doc.bookId || doc.id,
+        title: details.title || null,
+        authors: details.authors || [],
+        coverUrl: details.coverUrl || null,
+        status: doc.status || 'reading',
+        progress: doc.progressPercentage ?? 0,
+        addedAt: doc.addedAt || null,
+        rating: doc.rating ?? null,
+        notes: doc.notes || null,
+    };
+}
 
 function BookRow({ book, ownerUid }) {
     return (
@@ -82,11 +100,11 @@ export default function PublicProfile() {
                 if (cancelled) return;
                 setIsBlocked(blocked);
 
-                const myBookDocs = await myBooksService.getBooksData(uid).catch(() => []);
+                const rawMyBooks = await MyBooksService.getBooks(uid).catch(() => []);
                 if (cancelled) return;
 
                 const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-                const hydrated = await hydrateMyBooks(myBookDocs, { apiKey });
+                const hydrated = await hydrateMyBooks(rawMyBooks.map(flattenShelfDoc), { apiKey });
 
                 if (cancelled) return;
                 setBooks(hydrated);

@@ -26,6 +26,7 @@ import BlockedUsers from '../pages/Profile/BlockedUsers.jsx';
 import Following from '../pages/Profile/Following.jsx';
 import Followers from '../pages/Profile/Followers.jsx';
 import Favorites from '../pages/Profile/Favorites.jsx';
+import MyBooks from '../pages/Profile/MyBooks.jsx';
 import Level from '../pages/Profile/Level.jsx';
 import PublicProfile from '../pages/Users/PublicProfile.jsx';
 import BookDetail from '../pages/Books/BookDetail.jsx';
@@ -96,6 +97,7 @@ export default function AppRouter() {
                     <Route path="following" element={<Following />} />
                     <Route path="followers" element={<Followers />} />
                     <Route path="favorites" element={<Favorites />} />
+                    <Route path="my-books" element={<MyBooks />} />
                     <Route path="level" element={<Level />} />
                     <Route path="blocked-users" element={<BlockedUsers />} />
                 </Route>

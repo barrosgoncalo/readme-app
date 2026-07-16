@@ -62,7 +62,7 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
                             {statusLabel}
                         </span>
                         <span className={styles.likeCount}>
-                            ❤️ {pub.stats?.likesCount || 0}
+                            <Heart size={14} fill="currentColor" /> {pub.stats?.likesCount || 0}
                         </span>
                     </div>
                 </div>

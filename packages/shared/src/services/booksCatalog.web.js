@@ -28,15 +28,20 @@ export async function createBookIfMissing(bookId, data) {
     });
 }
 
+/**
+ * Checks if a book already exists in the global cache by ISBN. Mirrors
+ * GlobalBooksService.getBookByIsbn in services/books.js (mobile's variant),
+ * kept here since books.web.js — the web shim main's rewrite left in
+ * place — doesn't have it.
+ */
 export async function getBookByIsbn(isbn) {
-    if (!isbn) return null;
     const cleanIsbn = String(isbn).replace(/[- ]/g, '');
     const targetField = cleanIsbn.length === 13 ? 'isbn13' : 'isbn10';
+
     const q = query(collection(db, COLLECTION), where(targetField, '==', cleanIsbn));
     const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const d = snap.docs[0];
-    return { id: d.id, ...d.data() };
+
+    return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
 }
 
 export async function getBooksByIds(ids) {

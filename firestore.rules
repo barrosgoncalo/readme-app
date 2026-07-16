@@ -10,8 +10,7 @@ service cloud.firestore {
     function hasProfile() { return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     function getMyProfile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
 
-    function isAdmin() { return isAuthenticated() && hasProfile() && getMyProfile().role == 'admin'; }
-    function isBackOfficer() { return isAuthenticated() && hasProfile() && getMyProfile().role == 'back_officer'; }
+    function isAdmin() { return isAuthenticated() && request.auth.token.role == 'admin'; }
     function isActive() { return isAuthenticated() && hasProfile() && getMyProfile().accountStatus == 'active'; }
 
     // ─── USERS ───
@@ -33,20 +32,20 @@ service cloud.firestore {
       allow delete: if isOwner(userId) || isAdmin();
 
       match /blockedUsers/{blockedUid} {
-        allow read, create, delete: if isOwner(userId) && isActive();
+        allow read, create, delete: if isOwner(userId) && (!hasProfile() || isActive());
       }
 
       match /favoriteBooks/{bookId} {
-        allow read, write: if isOwner(userId) && isActive();
+        allow read, write: if isOwner(userId) && (!hasProfile() || isActive());
       }
 
       match /myBooks/{bookId} {
-        allow read: if isAuthenticated() && isActive();
-        allow write: if isOwner(userId) && isActive();
+        allow read: if (isOwner(userId) && (!hasProfile() || isActive())) || (isAuthenticated() && isActive());
+        allow write: if isOwner(userId) && (!hasProfile() || isActive());
       }
 
       match /notifications/{notificationId} {
-        allow read, write: if isOwner(userId) && isActive();
+        allow read, write: if isOwner(userId) && (!hasProfile() || isActive());
       }
     }
 
@@ -70,6 +69,8 @@ service cloud.firestore {
 
         (isActive() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']))
       );
+
+      allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
     // ─── BOOK CATALOG ───
@@ -78,8 +79,8 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isActive() && request.resource.data.addedBy == request.auth.uid;
       allow update: if (isAuthenticated() && isActive() && resource.data.addedBy == request.auth.uid
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['addedBy', 'createdAt']))
-                    || isAdmin() || isBackOfficer();
-      allow delete: if isAdmin() || isBackOfficer();
+                    || isAdmin();
+      allow delete: if isAdmin();
     }
 
     // ─── EVENTS ───
@@ -88,19 +89,19 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isActive() && request.resource.data.ownerId == request.auth.uid;
       allow update: if (isAuthenticated() && isActive() && resource.data.ownerId == request.auth.uid
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownerId', 'createdAt']))
-                    || isAdmin() || isBackOfficer();
-      allow delete: if isAdmin() || isBackOfficer();
+                    || isAdmin();
+      allow delete: if isAdmin();
 
       match /attendees/{attendeeId} {
         allow read: if isAuthenticated() && isActive();
         allow create: if isOwner(attendeeId) && isActive();
-        allow delete: if isOwner(attendeeId) || isAdmin() || isBackOfficer();
+        allow delete: if isOwner(attendeeId) || isAdmin();
       }
 
       match /messages/{msgId} {
         allow read: if isAuthenticated() && isActive();
         allow create: if isAuthenticated() && isActive() && request.resource.data.senderId == request.auth.uid;
-        allow delete: if (isAuthenticated() && isActive() && resource.data.senderId == request.auth.uid) || isAdmin() || isBackOfficer();
+        allow delete: if (isAuthenticated() && isActive() && resource.data.senderId == request.auth.uid) || isAdmin();
       }
     }
 
@@ -167,6 +168,11 @@ service cloud.firestore {
       }
     }
 
+    // ─── MESSAGES (collection group, admin dashboard aggregation) ───
+    match /{path=**}/messages/{messageId} {
+      allow read: if isAdmin();
+    }
+
     // ─── REVIEWS (ADICIONADO) ───
     match /reviews/{reviewId} {
       // Qualquer utilizador autenticado e ativo pode ler avaliações (ex: ver o perfil de outro swapper)
@@ -178,6 +184,37 @@ service cloud.firestore {
 
       // Proteção para que ninguém consiga editar ou apagar reviews sem autorização administrativa
       allow update, delete: if isAdmin();
+    }
+
+        // ─── REPORTS ───
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        resource == null || resource.data.reporterId == request.auth.uid || isAdmin()
+      );
+
+      allow create: if isAuthenticated() && isActive()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.reportedUserId is string
+        && request.resource.data.targetType in ['chat', 'publication', 'account']
+        && request.resource.data.targetId is string
+        && request.resource.data.reason in ['spam', 'harassment', 'inappropriate_content', 'scam_or_fraud', 'other']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.reportCount == 1
+        && reportId == request.resource.data.reporterId + '_' + request.resource.data.targetType + '_' + request.resource.data.targetId;
+
+      allow update: if isAdmin() || (
+        isAuthenticated() && isActive()
+        && resource.data.reporterId == request.auth.uid
+        && request.resource.data.reporterId == resource.data.reporterId
+        && request.resource.data.targetType == resource.data.targetType
+        && request.resource.data.targetId == resource.data.targetId
+        && request.resource.data.reportedUserId == resource.data.reportedUserId
+        && request.resource.data.reason in ['spam', 'harassment', 'inappropriate_content', 'scam_or_fraud', 'other']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.reportCount == resource.data.reportCount + 1
+      );
+
+      allow delete: if false;
     }
 
   }

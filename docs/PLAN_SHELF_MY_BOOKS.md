@@ -1,6 +1,6 @@
 # Separate "Shelf" from "My Books" on web
 
-> Status: planned, not yet implemented. Pick up next session.
+> Status: implemented.
 
 ## Context
 

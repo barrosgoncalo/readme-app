@@ -18,9 +18,15 @@ export default function VerificationUI({ code, displayerId, scannerId, currentUs
         );
     }
 
+    function handleSubmit(e) {
+        e.preventDefault();
+        if (!inputCode.trim() || busy) return;
+        onComplete(inputCode);
+    }
+
     return (
         <ActionCard prompt="Enter the verification code:">
-            <div className={styles.inputGroup}>
+            <form className={styles.inputGroup} onSubmit={handleSubmit}>
                 <input
                     type="text"
                     placeholder="Enter code"
@@ -31,13 +37,13 @@ export default function VerificationUI({ code, displayerId, scannerId, currentUs
                     autoCapitalize="characters"
                 />
                 <button
-                    onClick={() => onComplete(inputCode)}
+                    type="submit"
                     disabled={!inputCode.trim() || busy}
                     className={styles.confirmBtn}
                 >
                     {busy ? 'Verifying...' : 'Confirm'}
                 </button>
-            </div>
+            </form>
             {error && <p className={styles.error}>{error}</p>}
         </ActionCard>
     );

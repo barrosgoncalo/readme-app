@@ -1,4 +1,5 @@
 // @readme/shared/src/models/book.js
+import { serverTimestamp } from 'firebase/firestore';
 
 /**
  * ADAPTER 1: Maps Google Books JSON into our standard app model

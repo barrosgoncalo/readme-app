@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { PublicationService } from '@readme/shared/src/services/publications';
-import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
-import { myBooksService } from '@readme/shared/src/services/books';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -40,9 +38,9 @@ export default function NewOffer() {
 
         (async () => {
             try {
-                const [pub, myBookDocs] = await Promise.all([
+                const [pub, myPublications] = await Promise.all([
                     PublicationService.fetchPublication(pubId),
-                    myBooksService.getBooksData(uid)
+                    PublicationService.fetchUserPublications(uid)
                 ]);
 
                 if (cancelled) return;
@@ -52,12 +50,10 @@ export default function NewOffer() {
                     return;
                 }
 
-                const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-                const books = await hydrateMyBooks(myBookDocs, { apiKey });
-                if (cancelled) return;
-
                 setPublication(pub);
-                setMyBooks(books);
+                // OfferStep1 renders BookCover with `.coverUrl`, but
+                // fetchUserPublications summaries use `.imageUrl`.
+                setMyBooks(myPublications.map(b => ({ ...b, coverUrl: b.imageUrl })));
             } catch (err) {
                 console.error('Error loading offer data:', err);
                 if (!cancelled) navigate(WEB_ROUTES.MAP);

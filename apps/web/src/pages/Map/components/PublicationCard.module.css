@@ -130,6 +130,9 @@
 }
 
 .likeCount {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     color: var(--subtext);
     font-size: 0.78rem;
 }

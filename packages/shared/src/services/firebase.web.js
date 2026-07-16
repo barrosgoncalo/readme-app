@@ -32,6 +32,8 @@ const auth = getAuth(app);
 
 const storage = getStorage(app);
 
+// europe-west1 matches where the callable functions (e.g. setAdminStatus,
+// verifySwapCode) are deployed — mirrors mobile's firebase.js.
 const functions = getFunctions(app, 'europe-west1');
 
 export { app, db, auth, storage, functions };

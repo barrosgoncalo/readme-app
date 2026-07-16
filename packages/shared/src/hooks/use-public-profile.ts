@@ -6,6 +6,8 @@ import { UsersService } from '@readme/shared/src/services/users';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
+import { ReportsService } from '@readme/shared/src/services/reports';
+import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS } from '@readme/shared/src/constants/status';
 
 export function usePublicProfile(userId, navigation) {
     const [profile, setProfile] = useState(null);
@@ -17,6 +19,7 @@ export function usePublicProfile(userId, navigation) {
     const [isFollowing, setIsFollowing] = useState(false);
     const [isRequestPending, setIsRequestPending] = useState(false);
 
+    const currentUserUid = auth?.currentUser?.uid;
 
     const loadProfileData = useCallback(async (showRefreshIndicator = false) => {
         if (!userId) {
@@ -26,7 +29,7 @@ export function usePublicProfile(userId, navigation) {
         }
 
         if (showRefreshIndicator) setRefreshing(true);
-            else setLoading(true);
+        else setLoading(true);
 
         try {
             const [profileData, publicationsData, reviewsData] = await Promise.all([
@@ -81,8 +84,6 @@ export function usePublicProfile(userId, navigation) {
     }, [userId, isFollowing, profile]);
 
     const handleBlockUser = useCallback(async () => {
-        const currentUserUid = auth?.currentUser?.uid;
-
         if (!currentUserUid) {
             Alert.alert("Error", "You must be logged in to block a user.");
             return;
@@ -107,12 +108,56 @@ export function usePublicProfile(userId, navigation) {
             console.error("Error blocking user:", error);
             Alert.alert("Error", "Could not block the user at this time. Please try again.");
         }
-    }, [userId, profile, navigation]);
+    }, [userId, profile, navigation, currentUserUid]);
+
+    const submitAccountReport = useCallback(async (reason) => {
+        try {
+            const snapshot = ReportsService.buildAccountSnapshot(profile);
+
+            await ReportsService.submitReport(
+                currentUserUid,
+                REPORT_TARGET_TYPE.ACCOUNT,
+                userId,
+                userId,
+                reason,
+                snapshot
+            );
+
+            Alert.alert("Report Submitted", "Thanks — our team will review this profile.");
+        } catch (error) {
+            console.error("Error reporting profile:", error);
+            Alert.alert("Something Went Wrong", "We couldn't submit your report. Please try again.");
+        }
+    }, [profile, userId, currentUserUid]);
+
+    const handleReportProfile = useCallback(() => {
+        if (!currentUserUid) {
+            Alert.alert("Error", "You must be logged in to report a user.");
+            return;
+        }
+
+        if (!userId) {
+            Alert.alert("Something Went Wrong", "We couldn't identify who to report. Please try again.");
+            return;
+        }
+
+        Alert.alert(
+            "Report Profile",
+            "Why are you reporting this profile?",
+            [
+                { text: "Cancel", style: "cancel" },
+                ...Object.entries(REPORT_REASON_LABELS).map(([reason, label]) => ({
+                    text: label,
+                    onPress: () => submitAccountReport(reason)
+                }))
+            ]
+        );
+    }, [userId, currentUserUid, submitAccountReport]);
 
     const handleOpenOptions = useCallback(() => {
         Alert.alert("User Options", `What would you like to do with ${profile?.username || 'this user'}?`, [
             { text: "Cancel", style: "cancel" },
-            { text: "Report User", onPress: () => console.log("Report") },
+            { text: "Report User", onPress: handleReportProfile },
             {
                 text: "Block User",
                 style: "destructive",
@@ -128,7 +173,7 @@ export function usePublicProfile(userId, navigation) {
                 }
             }
         ]);
-    }, [profile, handleBlockUser]);
+    }, [profile, handleBlockUser, handleReportProfile]);
 
     // --- Derived values ---
     const isValidPhoto = profile?.photoURL && profile.photoURL !== 'null' && profile.photoURL.trim() !== '';
