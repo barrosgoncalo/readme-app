@@ -141,6 +141,8 @@ export default function Publications() {
             </div>
 
             {selectedPub && (
+                <>
+                    {console.log('raw publicationData:', selectedPub.publicationData)}
                 <div className={styles.modalOverlay} onClick={() => setSelectedPub(null)}>
                     <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
@@ -207,6 +209,7 @@ export default function Publications() {
                         </div>
                     </div>
                 </div>
+                </>
             )}
         </div>
     );
