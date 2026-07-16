@@ -61,7 +61,7 @@ export default function UsersPage() {
             setDebouncedSearch(search);
             setPage(1);
             lastVisibleDocs.current = {};
-        }, 150);
+        }, 200);
         return () => clearTimeout(handler);
     }, [search]);
 
@@ -117,7 +117,7 @@ export default function UsersPage() {
         setActionLoading(targetUid);
         try {
             const result = await alterUserPrivileges(targetUid, makeAdmin);
-            if (result.data.success) {
+            if (result.success) {
                 setDisplayedUsers(prev =>
                     prev.map(u => u.uid === targetUid ? {...u, role: makeAdmin ? 'admin' : 'user'} : u)
                 );
