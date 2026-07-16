@@ -99,8 +99,8 @@ export const searchBookTitles = async (searchText, resultLimit = DEFAULT_HITS_PE
  * selected book-condition facets (OR'd together within the group, ANDed
  * against status).
  */
-const buildPublicationFilters = (conditions = [], genres = [], excludeUid = null, blockedUids = []) => {
-    let filters = `status:${PUBLICATION_STATUS.AVAILABLE}`;
+const buildPublicationFilters = (conditions = [], genres = [], excludeUid = null, blockedUids = [], includeAllStatuses) => {
+    let filters = includeAllStatuses ? '' : `status:${PUBLICATION_STATUS.AVAILABLE}`;
 
     if (excludeUid) {
         filters += ` AND NOT uid:${excludeUid}`;
@@ -222,21 +222,22 @@ export const searchPublicationsByBook = async (
  * searchPublicationsByBook, just without a text query.
  */
 export const browsePublications = async ({
-                                             page = 0,
-                                             hitsPerPage = DEFAULT_HITS_PER_PAGE,
-                                             sortBy = SORT_OPTIONS.DATE_DESC,
-                                             conditions = [],
-                                             genres = [],
-                                             excludeUid = null,
-                                             blockedUids = [],
-                                         } = {}) => {
+    page = 0,
+    hitsPerPage = DEFAULT_HITS_PER_PAGE,
+    sortBy = SORT_OPTIONS.DATE_DESC,
+    conditions = [],
+    genres = [],
+    excludeUid = null,
+    blockedUids = [],
+    includeAllStatuses
+} = {}) => {
     const indexName = SORT_INDEXES[sortBy] || SORT_INDEXES[SORT_OPTIONS.RELEVANCE];
 
     const { results } = await algoliaClient.search({
         requests: [{
             indexName,
             query: '',
-            filters: buildPublicationFilters(conditions, genres, excludeUid, blockedUids),
+            filters: buildPublicationFilters(conditions, genres, excludeUid, blockedUids, includeAllStatuses),
             page,
             hitsPerPage,
         }],
