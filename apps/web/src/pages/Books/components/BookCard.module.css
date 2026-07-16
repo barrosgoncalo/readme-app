@@ -241,6 +241,18 @@
     cursor: default;
 }
 
+.starReadOnly {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: default;
+    line-height: 1;
+    color: var(--bg-selected);
+}
+
+.stars_md .starReadOnly { font-size: 1.15rem; }
+.stars_sm .starReadOnly { font-size: 0.75rem; }
+
 .starFilled {
     color: var(--secondary);
 }

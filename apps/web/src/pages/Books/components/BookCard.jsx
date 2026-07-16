@@ -27,8 +27,7 @@ function StarRating({ rating, onRate, size = 'md', disabled }) {
                 isReadOnly ? (
                     <span
                         key={n}
-                        className={`${styles.starBtn} ${n <= active ? styles.starFilled : styles.starEmpty}`}
-                        style={{cursor: 'default'}}
+                        className={`${styles.starReadOnly} ${n <= active ? styles.starFilled : styles.starEmpty}`}
                     >
                         ★
                     </span>
