@@ -81,7 +81,6 @@ export default function Chat() {
                     setSearchParams({ c: chatId });
                 }}
                 isSidebarOpen={isSidebarOpen}
-                currentUserId={uid}
             />
 
             {activeChatId && activeChat ? (

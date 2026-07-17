@@ -41,6 +41,27 @@
     background: var(--bg-elem);
 }
 
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.avatarPlaceholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-selected);
+    color: var(--subtext);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
 .bookImage {
     width: 40px;
     height: 60px;

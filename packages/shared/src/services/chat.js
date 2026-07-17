@@ -63,16 +63,17 @@ const _mapChatToInboxPreview = (data, currentUserId) => {
     return {
         id: data.id,
         imageUrl: data.targetBookImage || 'https://via.placeholder.com/150',
-        status: isOutgoing ? 'giving' : 'receiving', 
+        status: isOutgoing ? 'giving' : 'receiving',
         targetSeller: {
             uid: otherParticipantUid,
-            name: isOutgoing 
-                ? (data.receiverName || 'Swapper') 
+            name: isOutgoing
+                ? (data.receiverName || 'Swapper')
                 : (data.proposerName || 'Swapper'),
-            avatarUrl: isOutgoing 
-                ? (data.receiverAvatar || null) 
+            avatarUrl: isOutgoing
+                ? (data.receiverAvatar || null)
                 : (data.proposerAvatar || null)
         },
+        lastMessage: data.lastMessage || '',
         updatedAt: data.updatedAt || data.createdAt
     };
 };
