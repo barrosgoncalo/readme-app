@@ -118,6 +118,16 @@
     opacity: 0.9;
 }
 
+.counter {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.counter:hover:not(:disabled) {
+    background: var(--bg-selected);
+}
+
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
