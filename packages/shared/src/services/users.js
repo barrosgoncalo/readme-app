@@ -1,4 +1,4 @@
-import { auth, storage } from "./firebase";
+import { auth } from "./firebase";
 import { 
     documentId,
     arrayUnion,
@@ -187,6 +187,7 @@ export const UsersService = {
 
         if (!currentUserId) throw new Error("Authentication required to follow users.");
         if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
+        if (currentUserId === targetUserId) throw new Error("Cannot follow yourself.");
 
         const relationshipId = getFollowId(currentUserId, targetUserId);
 
@@ -196,18 +197,29 @@ export const UsersService = {
         }
 
         if (shouldFollow) {
-            await Promise.all([
-                DB.create('follows', createFollow(currentUserId, targetUserId), relationshipId),
-                DB.update(USERS_COLLECTION, currentUserId, {followingCount: increment(1)}),
-                DB.update(USERS_COLLECTION, targetUserId, {followersCount: increment(1)})
+            await DB.batchWrite([
+                { type: 'set', collection: 'follows', id: relationshipId, data: createFollow(currentUserId, targetUserId) },
+                { type: 'update', collection: USERS_COLLECTION, id: currentUserId, data: { followingCount: increment(1) } },
+                { type: 'update', collection: USERS_COLLECTION, id: targetUserId, data: { followersCount: increment(1) } },
             ]);
         } else {
-            await Promise.all([
-                DB.remove('follows', relationshipId),
-                DB.update(USERS_COLLECTION, currentUserId, {followingCount: increment(-1)}),
-                DB.update(USERS_COLLECTION, targetUserId, {followersCount: increment(-1)})
+            await DB.batchWrite([
+                { type: 'delete', collection: 'follows', id: relationshipId },
+                { type: 'update', collection: USERS_COLLECTION, id: currentUserId, data: { followingCount: increment(-1) } },
+                { type: 'update', collection: USERS_COLLECTION, id: targetUserId, data: { followersCount: increment(-1) } },
             ]);
         }
+    },
+
+    acceptFollowRequest: async (targetUserId, requesterUid) => {
+        const relationshipId = getFollowId(requesterUid, targetUserId);
+
+        await DB.batchWrite([
+            { type: 'set', collection: 'follows', id: relationshipId, data: createFollow(requesterUid, targetUserId) },
+            { type: 'update', collection: USERS_COLLECTION, id: requesterUid, data: { followingCount: increment(1) } },
+            { type: 'update', collection: USERS_COLLECTION, id: targetUserId, data: { followersCount: increment(1) } },
+            { type: 'delete', collection: 'followRequests', id: relationshipId },
+        ]);
     },
 
     /**
