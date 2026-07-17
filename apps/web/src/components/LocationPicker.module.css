@@ -70,6 +70,13 @@
     border: 1px solid var(--primary);
 }
 
+.locationInfoHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
 .locationTitle {
     margin: 0 0 var(--space-1) 0;
     font-weight: 600;
@@ -80,6 +87,51 @@
     margin: 0;
     font-size: 0.9rem;
     color: var(--subtext);
+}
+
+.locationTip {
+    margin: var(--space-2) 0 0;
+    font-size: 0.8rem;
+    color: var(--subtext);
+    font-style: italic;
+}
+
+.clearBtn {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--subtext);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.clearBtn:hover {
+    background: var(--bg-elem);
+    color: var(--text);
+}
+
+.toggleBtn {
+    align-self: center;
+    padding: var(--space-1) 0;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.toggleBtn:hover {
+    opacity: 0.8;
 }
 
 @media (max-width: 720px) {

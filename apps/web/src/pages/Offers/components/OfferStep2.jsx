@@ -23,7 +23,7 @@ export default function OfferStep2({ publication, selectedCount, location, onLoc
 
             <section className={styles.locationSection}>
                 <h2 className={styles.sectionTitle}>Meeting location</h2>
-                <LocationPicker location={location} onLocationChange={onLocationChange} />
+                <LocationPicker location={location} onLocationChange={onLocationChange} sellerUid={publication.uid} />
             </section>
         </div>
     );

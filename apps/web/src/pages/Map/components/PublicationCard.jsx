@@ -67,18 +67,20 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
                     </div>
                 </div>
 
-                <button
-                    className={`${styles.heartBtn} ${isFavorite ? styles.liked : ''}`}
-                    onClick={e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onToggleFavorite();
-                    }}
-                    disabled={busy}
-                    title={isFavorite ? 'Unlike' : 'Like'}
-                >
-                    <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} />
-                </button>
+                {onToggleFavorite && (
+                    <button
+                        className={`${styles.heartBtn} ${isFavorite ? styles.liked : ''}`}
+                        onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onToggleFavorite();
+                        }}
+                        disabled={busy}
+                        title={isFavorite ? 'Unlike' : 'Like'}
+                    >
+                        <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} />
+                    </button>
+                )}
             </div>
         </Link>
     );

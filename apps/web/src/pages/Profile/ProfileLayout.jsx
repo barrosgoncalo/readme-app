@@ -4,7 +4,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
 import {
-    BookOpen, Pencil, Ban, Lock, Moon, Users, Award, Heart, LogOut, ChevronRight, Camera,
+    BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera,
 } from 'lucide-react';
 
 // Shared Services & Contexts
@@ -33,7 +33,7 @@ const SUB_ROUTES = new Set([
     WEB_ROUTES.PROFILE_FAVORITES,
     WEB_ROUTES.PROFILE_LEVEL,
     WEB_ROUTES.PROFILE_BLOCKED_USERS,
-    WEB_ROUTES.PROFILE_MY_BOOKS,
+    WEB_ROUTES.PROFILE_FOLLOW_REQUESTS,
 ]);
 
 export default function ProfileLayout() {
@@ -47,6 +47,7 @@ export default function ProfileLayout() {
     const [userData, setUserData] = useState(null);
     const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
     const [shelfCount, setShelfCount] = useState(null);
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [photoURL, setPhotoURL] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -76,7 +77,16 @@ export default function ProfileLayout() {
             setFollowCounts({ followers: 0, following: 0 });
         })
         .finally(() => setLoading(false));
-        
+
+    }, [currentUser]);
+
+    useEffect(() => {
+        if (!currentUser) return;
+        const unsubscribe = UsersService.subscribeToPendingFollowRequestsCount(
+            currentUser.uid,
+            setPendingRequestsCount
+        );
+        return unsubscribe;
     }, [currentUser]);
 
     async function handleAvatarFileChange(e) {
@@ -141,6 +151,12 @@ export default function ProfileLayout() {
             items: [
                 { icon: Users, label: 'Following', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWING) },
                 { icon: Users, label: 'Followers', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWERS) },
+                {
+                    icon: UserPlus,
+                    label: 'Follow Requests',
+                    badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
+                    onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOW_REQUESTS),
+                },
                 { icon: Award, label: 'Level', onClick: () => navigate(WEB_ROUTES.PROFILE_LEVEL) },
                 { icon: Heart, label: 'Favorites', onClick: () => navigate(WEB_ROUTES.PROFILE_FAVORITES) },
             ],
@@ -236,6 +252,7 @@ export default function ProfileLayout() {
                                         <span className={styles.itemLeft}>
                                             <span className={styles.iconBox}><item.icon size={20} /></span>
                                             <span className={styles.itemLabel}>{item.label}</span>
+                                            {!!item.badge && <span className={styles.badge}>{item.badge}</span>}
                                         </span>
                                         {item.toggle ? (
                                             <Toggle checked={theme === 'dark'} onChange={toggle} />

@@ -8,7 +8,7 @@ import Button from '../../../components/Button.jsx';
 import offerStyles from './OfferMessage.module.css';
 import styles from './CounterOfferModal.module.css';
 
-export default function CounterOfferModal({ open, onClose, offeredBooks, loadingBooks, onSubmit, busy }) {
+export default function CounterOfferModal({ open, onClose, offeredBooks, loadingBooks, onSubmit, busy, sellerUid, originalLocation }) {
     const [selectedBookId, setSelectedBookId] = useState(null);
     const [location, setLocation] = useState(null);
 
@@ -90,7 +90,12 @@ export default function CounterOfferModal({ open, onClose, offeredBooks, loading
 
                 <section>
                     <h3 className={styles.sectionTitle}>Meeting location</h3>
-                    <LocationPicker location={location} onLocationChange={setLocation} />
+                    <LocationPicker
+                        location={location}
+                        onLocationChange={setLocation}
+                        sellerUid={sellerUid}
+                        originalLocation={originalLocation}
+                    />
                 </section>
             </div>
         </Modal>

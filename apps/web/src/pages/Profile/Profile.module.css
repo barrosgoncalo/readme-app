@@ -278,6 +278,18 @@
     font-weight: 500;
 }
 
+.badge {
+    background: var(--error);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+}
+
 .chevron {
     color: var(--subtext);
     flex-shrink: 0;
