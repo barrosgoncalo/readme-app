@@ -203,6 +203,36 @@
     font-size: 0.9rem;
 }
 
+.privateLock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-4);
+    background: var(--bg-selected);
+    border-radius: var(--radius-lg);
+}
+
+.privateLockIcon {
+    color: var(--subtext);
+    margin-bottom: var(--space-1);
+}
+
+.privateLockTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.privateLockText {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--subtext);
+    max-width: 320px;
+}
+
 .tradeBadge {
     display: inline-flex;
     align-items: center;

@@ -54,8 +54,16 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     // A cancelled swap can still be reviewed by whichever party didn't cancel.
     const canReview = isCompleted || (isCanceled && offer?.cancelledBy !== currentUserId);
 
+    // The counter-offer book picker uses the snapshot already stored on the
+    // offer (id/title/image, captured when it was sent) rather than
+    // fetchedBooks/getBooksByIds below — that lookup queries the global
+    // books catalog by offer.offeredBookIds, but those ids are actually
+    // publication ids, so it always returns empty and left selectedBookId
+    // (and therefore the Send button) permanently unset.
+    const counterOfferBooks = (offer?.offeredBooks || []).map(b => ({ ...b, coverUrl: b.image }));
+
     useEffect(() => {
-        if ((showBooksModal || showCounterModal) && fetchedBooks.length === 0) {
+        if (showBooksModal && fetchedBooks.length === 0) {
             let cancelled = false;
             setLoadingBooks(true);
 
@@ -73,7 +81,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
 
             return () => cancelled = true;
         }
-    }, [showBooksModal, showCounterModal, fetchedBooks.length, offer.offeredBookIds]);
+    }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
 
     // 1. UPDATED: Using the actual subscription method for real-time review status
     useEffect(() => {
@@ -100,6 +108,16 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 return;
             }
 
+            // The offer already carries a snapshot of the offered book
+            // (title/id) taken when it was sent — offeredBookIds points at
+            // the publication, not the global books catalog, so a catalog
+            // lookup here would never match. Use the snapshot directly.
+            const snapshot = offer.offeredBooks?.[0];
+            if (snapshot?.title) {
+                setSingleBook({ title: snapshot.title, realBookId: snapshot.id });
+                return;
+            }
+
             let cancelled = false;
             const originalId = offer.offeredBookIds[0];
 
@@ -116,7 +134,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
             fetchNormalBook();
             return () => cancelled = true;
         }
-    }, [offer?.offeredBookIds, offer?.savedOfferedTitle, offer?.savedRealOfferedId, singleBook]);
+    }, [offer?.offeredBookIds, offer?.offeredBooks, offer?.savedOfferedTitle, offer?.savedRealOfferedId, singleBook]);
 
     if (!offer) return null;
 
@@ -403,10 +421,12 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
             <CounterOfferModal
                 open={showCounterModal}
                 onClose={() => setShowCounterModal(false)}
-                offeredBooks={fetchedBooks}
-                loadingBooks={loadingBooks}
+                offeredBooks={counterOfferBooks}
+                loadingBooks={false}
                 onSubmit={handleSendCounter}
                 busy={busy}
+                sellerUid={otherUserId}
+                originalLocation={offer.location}
             />
 
             <Modal

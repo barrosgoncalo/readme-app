@@ -27,6 +27,7 @@ import PrivacySecurity from '../pages/Profile/PrivacySecurity.jsx';
 import BlockedUsers from '../pages/Profile/BlockedUsers.jsx';
 import Following from '../pages/Profile/Following.jsx';
 import Followers from '../pages/Profile/Followers.jsx';
+import FollowRequests from '../pages/Profile/FollowRequests.jsx';
 import Favorites from '../pages/Profile/Favorites.jsx';
 import MyBooks from '../pages/Profile/MyBooks.jsx';
 import Level from '../pages/Profile/Level.jsx';
@@ -153,11 +154,12 @@ export default function AppRouter() {
                     <Route path={WEB_ROUTES.PROFILE} element={<ProfileLayout />}>
                         <Route path="following" element={<Following />} />
                         <Route path="followers" element={<Followers />} />
+                        <Route path="follow-requests" element={<FollowRequests />} />
                         <Route path="favorites" element={<Favorites />} />
-                        <Route path="my-books" element={<MyBooks />} />
                         <Route path="level" element={<Level />} />
                         <Route path="blocked-users" element={<BlockedUsers />} />
                     </Route>
+                    <Route path={WEB_ROUTES.PROFILE_MY_BOOKS} element={<MyBooks />} />
                     <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile />} />
                     <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
                     <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
