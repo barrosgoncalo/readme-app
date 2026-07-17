@@ -1,8 +1,10 @@
-// @readme/shared/src/services/googleBooksService.js
 import { mapGoogleBook, mapOpenLibraryBook } from '../models/book';
 
+import { GOOGLE_BOOKS_API_KEY } from '../constants/env';
+
 const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com/books/v1/volumes';
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY; 
+
+const API_KEY = GOOGLE_BOOKS_API_KEY; 
 
 export const GoogleBooksService = {
     

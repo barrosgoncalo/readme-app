@@ -1,0 +1,67 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.fieldLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.textarea {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--bg);
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+}
+
+.textarea::placeholder {
+    color: var(--subtext);
+}
+
+.textarea:focus {
+    border-color: var(--primary);
+}
+
+.select {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--bg);
+    cursor: pointer;
+    outline: none;
+}
+
+.select:focus {
+    border-color: var(--primary);
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.actions > * {
+    flex: 1;
+}

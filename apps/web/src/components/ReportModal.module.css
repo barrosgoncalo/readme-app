@@ -1,0 +1,29 @@
+.prompt {
+    margin: 0 0 var(--space-3);
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+.reasonList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.reasonOption {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.reasonOption:hover {
+    background: var(--bg-selected);
+}

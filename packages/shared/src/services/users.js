@@ -1,16 +1,13 @@
-// @readme/shared/src/services/users.js
-
-import {auth, storage} from "./firebase";
-import {
+import { auth, storage } from "./firebase";
+import { 
     documentId,
     arrayUnion,
     arrayRemove,
     increment,
 } from "firebase/firestore";
-import {getFollowId, createFollow, createFollowRequest} from '../models/follow';
-import {StorageService} from "./storage";
-
-import {DB} from './DB';
+import { getFollowId, createFollow, createFollowRequest } from '../models/follow';
+import { StorageService } from "./storage";
+import { DB } from './DB';
 
 const USERS_COLLECTION = 'users';
 
@@ -92,6 +89,25 @@ export const UsersService = {
         });
 
         return map;
+    },
+
+     /* Fetches the follower and following counts for a given user.
+     * @param {string} userId - The ID of the user
+     * @returns {Promise<{followers: number, following: number}>}
+     */
+    getFollowCounts: async (userId) => {
+        if (!userId) return { followers: 0, following: 0 };
+        
+        try {
+            const userData = await DB.get(USERS_COLLECTION, userId);
+            return {
+                followers: userData?.followersCount || 0,
+                following: userData?.followingCount || 0
+            };
+        } catch (error) {
+            console.error("Error fetching follow counts:", error);
+            return { followers: 0, following: 0 };
+        }
     },
 
     /**
@@ -274,9 +290,8 @@ export const UsersService = {
         if (!uid || !token) return;
 
         try {
-            // Using your DB architecture wrapper to append the token safely to an array
             await DB.update('users', uid, {
-                pushTokens: DB.arrayUnion ? DB.arrayUnion(token) : [token]
+                pushTokens: arrayUnion(token)
             });
             console.log(`[UsersService] Push token successfully registered for user: ${uid}`);
         } catch (error) {

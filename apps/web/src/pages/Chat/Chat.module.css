@@ -1,0 +1,29 @@
+.page {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    flex: 1;
+    min-height: 0;
+    gap: 0;
+    background: var(--bg);
+    overflow: hidden;
+}
+
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: var(--subtext);
+    text-align: center;
+}
+
+@media (max-width: 720px) {
+    .page {
+        grid-template-columns: 1fr;
+    }
+
+    .emptyState {
+        min-height: calc(100vh - 200px);
+    }
+}

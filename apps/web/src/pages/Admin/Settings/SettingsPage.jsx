@@ -24,7 +24,7 @@ function InfoRow({ label, value, mono }) {
     );
 }
 
-export default function SettingsPage() {
+export default function AdminSettingsPage() {
     const auth = getAuth();
     const user = auth.currentUser;
     const app = getApp();

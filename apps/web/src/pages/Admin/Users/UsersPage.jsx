@@ -39,7 +39,7 @@ const exportUsersToCsv = (users) => {
 
 const PAGE_SIZE_DEFAULT = 10;
 
-export default function UsersPage() {
+export default function AdminUsersPage() {
     const [displayedUsers, setDisplayedUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);

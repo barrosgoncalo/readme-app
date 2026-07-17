@@ -1,0 +1,454 @@
+.page {
+    padding: var(--space-5) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.identityCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) !important;
+    text-align: center;
+}
+
+.statsRow {
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-2);
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 0.82rem;
+    text-decoration: none;
+}
+
+.stat strong {
+    font-size: 1.1rem;
+    color: var(--primary);
+}
+
+.quickActions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    width: 100%;
+}
+
+.quickBtn {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--bg-selected);
+    background: var(--bg);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background var(--transition-fast);
+}
+
+.quickBtn:hover {
+    background: var(--bg-selected);
+}
+
+.quickBtn.danger {
+    color: var(--error);
+    border-color: rgba(211, 47, 47, 0.3);
+}
+
+.rightColumn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.settingsGroup {
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.groupTitle {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--subtext);
+    background: var(--bg-selected);
+}
+
+.subPanel {
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--bg-selected);
+    overflow: hidden;
+}
+
+@media (min-width: 1000px) {
+    .dashboard {
+        grid-template-columns: 320px 1fr;
+    }
+}
+
+/* ── Header (legacy mobile) ── */
+.header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--bg-selected);
+}
+
+.avatarBtn {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    background: none;
+    flex-shrink: 0;
+}
+
+.avatarBtn:disabled {
+    cursor: default;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--primary-text);
+    font-size: 2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif);
+}
+
+.avatarImg {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatarOverlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.avatarBtn:hover .avatarOverlay,
+.avatarBtn:focus-visible .avatarOverlay {
+    opacity: 1;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.uploadingRing {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: block;
+}
+
+.uploadError {
+    font-size: 0.8rem;
+    color: var(--error);
+    margin: 0;
+}
+
+.userName {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+}
+
+.userEmail {
+    font-size: 0.9rem;
+    color: var(--subtext);
+    margin: 0;
+}
+
+/* ── Menu groups ── */
+.group {
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px var(--space-3);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    text-decoration: none;
+    color: var(--text);
+    transition: background 0.12s;
+}
+
+.item:not(:last-child) {
+    border-bottom: 1px solid var(--bg-selected);
+}
+
+.item:hover {
+    background: var(--bg-selected);
+}
+
+.item.disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.item.disabled:hover {
+    background: transparent;
+}
+
+.itemLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.iconBox {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: var(--bg-selected);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.itemLabel {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.chevron {
+    color: var(--subtext);
+    flex-shrink: 0;
+}
+
+.danger .itemLabel {
+    color: var(--error);
+}
+
+.danger .iconBox {
+    background: rgba(211, 47, 47, 0.12);
+}
+
+/* ── Inline edit form ── */
+.editForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-top: 1px solid var(--bg-selected);
+}
+
+.visibilityRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.visibilityLabel {
+    font-size: 0.9rem;
+    color: var(--subtext);
+}
+
+.editActions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.editActions > * {
+    flex: 1;
+}
+
+.loadingText {
+    color: var(--subtext);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: var(--space-4) 0;
+}
+
+.errorText {
+    color: var(--error);
+    font-size: 0.85rem;
+}
+
+/* ── Privacy & Security panel ── */
+.chevronOpen {
+    transform: rotate(90deg);
+}
+
+.privacyPanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-top: 1px solid var(--bg-selected);
+}
+
+.panelSection {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--subtext);
+    margin: 0;
+    padding-top: var(--space-2);
+}
+
+.panelSection:first-child {
+    padding-top: 0;
+}
+
+.privacyRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.privacyRow .itemLeft {
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.helperText {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--subtext);
+    margin-top: 2px;
+    max-width: 260px;
+}
+
+/* ── Password change form ── */
+.pwForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.pwFieldWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pwFieldWrap label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.pwInputRow {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    padding: 0 12px;
+}
+
+.pwInputRow input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+}
+
+.pwEyeBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--subtext);
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.pwEyeBtn:hover {
+    color: var(--text);
+}
+
+.pwSuccess {
+    font-size: 0.85rem;
+    color: var(--success);
+    margin: 0;
+}
+
+/* ── Delete account ── */
+.deleteConfirm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: rgba(211, 47, 47, 0.05);
+    border: 1px solid rgba(211, 47, 47, 0.2);
+    border-radius: var(--radius);
+}
+
+.deleteWarning {
+    font-size: 0.88rem;
+    color: var(--error);
+    margin: 0;
+}

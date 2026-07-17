@@ -5,7 +5,7 @@ import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
 import StatusBadge from '../../../components/StatusBadge';
 import styles from './Publications.module.css';
 
-export default function Publications() {
+export default function AdminPublications() {
     const [search, setSearch] = useState('');
     const [selectedPub, setSelectedPub] = useState(null);
     const [deletingId, setDeletingId] = useState(null);

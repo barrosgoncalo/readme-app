@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, Platform, Linking } from 'react-native';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { ChatService } from '@readme/shared/src/services/chat';
-import { TradeService } from '@readme/shared/src/services/trades';
+import { TradeService } from '../services/trades';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { LocationService } from '@readme/shared/src/services/location';
 import { ReportsService } from '@readme/shared/src/services/reports';

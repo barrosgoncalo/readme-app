@@ -5,7 +5,7 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../constants/webRoutes';
 import Spinner from './Spinner.jsx';
 import UserAvatar from './UserAvatar.jsx';
-import { useToast } from '../hooks/useToast';
+import { useToast } from '../contexts/ToastContext';
 import styles from './UserListPage.module.css';
 
 export default function UserListPage({
