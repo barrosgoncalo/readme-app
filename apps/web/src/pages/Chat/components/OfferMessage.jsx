@@ -54,8 +54,16 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     // A cancelled swap can still be reviewed by whichever party didn't cancel.
     const canReview = isCompleted || (isCanceled && offer?.cancelledBy !== currentUserId);
 
+    // The counter-offer book picker uses the snapshot already stored on the
+    // offer (id/title/image, captured when it was sent) rather than
+    // fetchedBooks/getBooksByIds below — that lookup queries the global
+    // books catalog by offer.offeredBookIds, but those ids are actually
+    // publication ids, so it always returns empty and left selectedBookId
+    // (and therefore the Send button) permanently unset.
+    const counterOfferBooks = (offer?.offeredBooks || []).map(b => ({ ...b, coverUrl: b.image }));
+
     useEffect(() => {
-        if ((showBooksModal || showCounterModal) && fetchedBooks.length === 0) {
+        if (showBooksModal && fetchedBooks.length === 0) {
             let cancelled = false;
             setLoadingBooks(true);
 
@@ -73,7 +81,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
 
             return () => cancelled = true;
         }
-    }, [showBooksModal, showCounterModal, fetchedBooks.length, offer.offeredBookIds]);
+    }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
 
     // 1. UPDATED: Using the actual subscription method for real-time review status
     useEffect(() => {
@@ -413,8 +421,8 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
             <CounterOfferModal
                 open={showCounterModal}
                 onClose={() => setShowCounterModal(false)}
-                offeredBooks={fetchedBooks}
-                loadingBooks={loadingBooks}
+                offeredBooks={counterOfferBooks}
+                loadingBooks={false}
                 onSubmit={handleSendCounter}
                 busy={busy}
                 sellerUid={otherUserId}
