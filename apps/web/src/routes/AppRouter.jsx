@@ -6,7 +6,8 @@
 // admins and normal users hit the same /login screen, and once Firebase
 // auth + role resolve, they're routed into either the admin tree or the
 // user tree.
-import { WEB_ROUTES, ADMIN_ROUTES } from '../constants/webRoutes.js';
+import { WEB_ROUTES } from '../constants/webRoutes.js';
+import { ADMIN_ROUTES } from '../constants/adminRoutes.js';
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
