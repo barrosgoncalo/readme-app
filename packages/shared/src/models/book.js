@@ -1,4 +1,6 @@
+// @readme/shared/src/models/book.js
 import { serverTimestamp } from 'firebase/firestore';
+
 /**
  * ADAPTER 1: Maps Google Books JSON into our standard app model
  */
@@ -16,7 +18,11 @@ export const mapGoogleBook = (apiData) => {
 
     const fallbackIsbn = isbn13Obj ? isbn13Obj.identifier : (isbn10Obj ? isbn10Obj.identifier : null);
     if (!coverUrl && fallbackIsbn) {
-        coverUrl = `https://covers.openlibrary.org/b/isbn/${fallbackIsbn}-L.jpg`;
+        // default=false makes Open Library 404 when it has no cover, instead
+        // of returning a blank placeholder image with a 200 status — without
+        // it, every book with no real cover would still get a truthy (but
+        // blank) coverUrl.
+        coverUrl = `https://covers.openlibrary.org/b/isbn/${fallbackIsbn}-L.jpg?default=false`;
     }
 
     return {

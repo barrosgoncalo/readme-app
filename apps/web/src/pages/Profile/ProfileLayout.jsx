@@ -1,18 +1,15 @@
-import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { signOut } from 'firebase/auth';
+import { Link } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
 import {
     BookOpen, Pencil, Ban, Lock, Moon, Users, Award, Heart, LogOut, ChevronRight, Camera,
 } from 'lucide-react';
-
-// Shared Services & Contexts
+import { db } from '@readme/shared/src/services/firebase.web';
+import { doSignOut } from '@readme/shared/src/services/auth';
+import { uploadProfilePicture } from '@readme/shared/src/services/user';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-
-// Local Project Imports
-import { db, auth, storage } from '@readme/shared/src/services/firebase';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -52,65 +49,32 @@ export default function ProfileLayout() {
 
     useEffect(() => {
         if (!currentUser) return;
-
         Promise.all([
             getDoc(doc(db, 'users', currentUser.uid)),
-            UsersService.getFollowCounts(currentUser.uid)
-        ])
-        .then(([snap, counts]) => {
+            UsersService.getFollowCounts(currentUser.uid),
+        ]).then(([snap, counts]) => {
             if (snap.exists()) {
                 const data = snap.data();
                 setUserData(data);
                 setPhotoURL(data.photoURL || null);
             }
             setFollowCounts(counts);
-        })
-        .catch(err => {
-            console.error("Error fetching user profile data:", err);
-            setFollowCounts({ followers: 0, following: 0 });
-        })
-        .finally(() => setLoading(false));
-        
+        }).finally(() => setLoading(false));
     }, [currentUser]);
 
     async function handleAvatarFileChange(e) {
         const file = e.target.files?.[0];
         if (!file) return;
-        
         setUploadError('');
         setUploading(true);
-        
         try {
-            // 1. Create a reference to the storage location
-            const fileRef = ref(storage, `profilePictures/${currentUser.uid}/${file.name}`);
-            
-            // 2. Upload the file
-            await uploadBytes(fileRef, file);
-            
-            // 3. Get the downloadable URL
-            const url = await getDownloadURL(fileRef);
-            
-            // 4. Update the user's document in Firestore with the new URL
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                photoURL: url
-            });
-
+            const url = await uploadProfilePicture(currentUser.uid, file);
             setPhotoURL(url);
-        } catch (error) {
-            console.error('Error uploading profile picture:', error);
+        } catch {
             setUploadError('Upload failed. Please try again.');
         } finally {
             setUploading(false);
             e.target.value = '';
-        }
-    }
-    
-    async function handleSignOut() {
-        try {
-            await signOut(auth);
-            // Optionally navigate to a public route like login here if AuthContext doesn't handle it
-        } catch (error) {
-            console.error('Error signing out:', error);
         }
     }
 
@@ -161,13 +125,7 @@ export default function ProfileLayout() {
                         </div>
                     </button>
 
-                    <input 
-                        ref={fileInputRef} 
-                        type="file" 
-                        accept="image/*" 
-                        style={{ display: 'none' }} 
-                        onChange={handleAvatarFileChange} 
-                    />
+                    <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarFileChange} />
                     {uploadError && <p className={styles.uploadError}>{uploadError}</p>}
 
                     <p className={styles.userName}>{userData?.username || currentUser?.email}</p>
@@ -191,7 +149,7 @@ export default function ProfileLayout() {
                     <div className={styles.quickActions}>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.quickBtn}>Shelf</Link>
                         <Link to={WEB_ROUTES.PROFILE_MY_BOOKS} className={styles.quickBtn}>My Books</Link>
-                        <button type="button" className={`${styles.quickBtn} ${styles.danger}`} onClick={handleSignOut}>
+                        <button type="button" className={`${styles.quickBtn} ${styles.danger}`} onClick={doSignOut}>
                             <LogOut size={16} /> Sign Out
                         </button>
                     </div>

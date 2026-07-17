@@ -3,12 +3,16 @@
     display: grid;
     place-items: center;
     padding: var(--space-4);
-    background-color: var(--bg); /* Cor de fundo de segurança */
+    background-color: var(--bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
 
-    /* AS 3 REGRAS MÁGICAS PARA A IMAGEM: */
-    background-size: cover; /* Faz a imagem cobrir o espaço disponível por inteiro*/
-    background-position: center; /* Mantém a imagem sempre centrada */
-    background-repeat: no-repeat; /* Impede que a imagem se repita como um mosaico */
+@media (min-width: 900px) {
+    .shell {
+        padding: var(--space-6);
+    }
 }
 
 .card {
