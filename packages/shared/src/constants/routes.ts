@@ -36,4 +36,5 @@ export const ROUTES = {
     REVIEW_SWAPPER: 'Review',
     MY_BOOKS: 'MyBooks',
     NOTIFICATIONS: 'Notifications',
+    SET_PASSWORD: 'SetPassword'
 } as const;

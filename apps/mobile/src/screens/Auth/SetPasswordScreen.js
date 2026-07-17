@@ -16,7 +16,7 @@ import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
 import { getAuth, updatePassword } from 'firebase/auth';
 
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
-import { buildPasswordStyles } from '../../../styles/passwordStyles'; 
+import { buildPasswordStyles } from '../../styles/passwordStyles';
 import {
     getPasswordDetails,
     hasMixedCase,
@@ -119,15 +119,21 @@ export default function SetPasswordScreen({ navigation }) {
 
                     {/* --- HEADER TEXTS --- */}
                     <View style={styles.textContainer}>
-                        <Text style={styles.mainHeading}>Add a Password</Text>
+                        {/* Added a slight bottom margin to push the subtitle down */}
+                        <Text style={[styles.mainHeading, { marginBottom: 8 }]}>Add a Password</Text>
+
                         <Text style={styles.subHeading}>
                             Adding a password allows you to log in with{'\n'}
                             {user?.email || 'your email'} instead of Google.
                         </Text>
                     </View>
 
+                    {/* ADD THIS SPACER TO REPLACE THE IMAGE'S HEIGHT */}
+                    <View style={{ height: 32 }} /> 
+
                     {/* --- FORM FIELDS --- */}
-                    <View style={styles.formContainer}>
+                    {/* You can also add marginTop here if the spacer isn't enough */}
+                    <View style={[styles.formContainer, { marginTop: 16 }]}>
 
                         {/* Password */}
                         <View style={styles.inputGroup}>

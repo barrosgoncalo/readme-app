@@ -18,6 +18,11 @@ export default function ProfileScreen({ navigation }) {
     const styles = buildProfileStyles(theme);
 
     const { currentUser, refreshUser } = useAuth(); 
+
+    const needsPasswordSetup = 
+        currentUser?.providerData?.some(p => p.providerId === 'google.com') && 
+        !currentUser?.providerData?.some(p => p.providerId === 'password');
+
     const [focusKey, setFocusKey] = useState(0);
 
     const handleScroll = useScrollTabBarControl();
@@ -238,10 +243,21 @@ export default function ProfileScreen({ navigation }) {
                         <MenuItem styles={styles} theme={theme} icon="solar:medal-star-circle-linear" label="Level" onPress={() => navigation.navigate(ROUTES.LEVELS)} />
                     </MenuGroup>
 
-                    {/* GROUP 2 */}
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem styles={styles} theme={theme} icon="lucide:edit" label="Edit Profile" onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)} />
                         <MenuItem styles={styles} theme={theme} icon="material-symbols:password" label="Privacy & Security" onPress={() => navigation.navigate(ROUTES.PRIVACY_SECURITY)} />
+
+                        {/* --- NEW CONDITIONAL BUTTON --- */}
+                        {needsPasswordSetup && (
+                            <MenuItem 
+                                styles={styles} 
+                                theme={theme} 
+                                icon="lucide:key" 
+                                label="Create Password" 
+                                onPress={() => navigation.navigate(ROUTES.SET_PASSWORD)} // Make sure to add SET_PASSWORD to your routes.js!
+                            />
+                        )}
+
                         <MenuItem styles={styles} theme={theme} icon="fluent:presence-blocked-10-regular" label="View Blocked Users" onPress={() => navigation.navigate(ROUTES.BLOCKED_USERS)} />
                         <MenuSwitchItem styles={styles} theme={theme} icon={hasNotifications ? "fluent:alert-24-regular" : "fluent:alert-off-24-regular"} label={hasNotifications ? "Allow notifications" : "Pause notifications"} value={hasNotifications} onValueChange={handleNotificationsToggle} />
                     </MenuGroup>
