@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search as IconLucideSearch, BookOpen as IconLucideBook, X as IconLucideX, Trash2 as IconLucideTrash } from 'lucide-react';
+import { Search, BookOpen, X, Trash2 } from 'lucide-react';
 import { DB } from '@readme/shared/src/services/DB.js';
 import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
 import StatusBadge from '../../../components/StatusBadge';
@@ -60,7 +60,7 @@ export default function AdminPublications() {
             <div className={styles.card}>
                 <div className={styles.toolbar}>
                     <div className={styles.searchWrapper}>
-                        <IconLucideSearch size={15} className={styles.searchIcon} />
+                        <Search size={15} className={styles.searchIcon} />
                         <input
                             className={styles.searchInput}
                             placeholder="Search by title, author, owner, or genre..."
@@ -102,7 +102,7 @@ export default function AdminPublications() {
                                                         {pub.imageUrl ? (
                                                             <img src={pub.imageUrl} alt="" className={styles.coverImg} />
                                                         ) : (
-                                                            <IconLucideBook size={16} />
+                                                            <BookOpen size={16} />
                                                         )}
                                                     </div>
                                                     <span className={styles.bookTitle}>{pub.title || 'Untitled'}</span>
@@ -150,7 +150,7 @@ export default function AdminPublications() {
                         <div className={styles.modalHeader}>
                             <h2>Publication Details</h2>
                             <button className={styles.closeBtn} onClick={() => setSelectedPub(null)}>
-                                <IconLucideX size={18} />
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -160,7 +160,7 @@ export default function AdminPublications() {
                                     {selectedPub.imageUrl ? (
                                         <img src={selectedPub.imageUrl} alt="" />
                                     ) : (
-                                        <IconLucideBook size={48} />
+                                        <BookOpen size={48} />
                                     )}
                                 </div>
                                 <div className={styles.detailTitleBlock}>
@@ -205,7 +205,7 @@ export default function AdminPublications() {
                                 onClick={() => handleDelete(selectedPub.id)}
                                 disabled={deletingId !== null}
                             >
-                                <IconLucideTrash size={16} />
+                                <Trash2 size={16} />
                                 {deletingId === selectedPub.id ? 'Deleting...' : 'Remove Publication'}
                             </button>
                         </div>
