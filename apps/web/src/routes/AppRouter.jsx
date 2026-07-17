@@ -55,20 +55,21 @@ export default function AppRouter() {
     const [adminPreference, setAdminPreference] = useState(null);
     const location = useLocation();
 
+    // FIX 1: Added missing hook to resolve the "isFirstLaunch" block
+    useEffect(() => {
+        const launched = localStorage.getItem(ALREADY_LAUNCHED_KEY);
+        if (launched) {
+            setIsFirstLaunch(false);
+        } else {
+            setIsFirstLaunch(true);
+        }
+    }, []);
+
+    // FIX 2: Consolidated workspace selection loading cleanly to use sessionStorage exclusively
     useEffect(() => {
         if (userLoggedIn && role === 'admin') {
             const savedPref = sessionStorage.getItem(ADMIN_PREFERENCE_KEY); 
             setAdminPreference(savedPref); 
-        } else {
-            setAdminPreference(null);
-        }
-    }, [userLoggedIn, role]);
-
-    // Load saved workspace selection for admin accounts
-    useEffect(() => {
-        if (userLoggedIn && role === 'admin') {
-            const savedPref = localStorage.getItem(ADMIN_PREFERENCE_KEY);
-            setAdminPreference(savedPref); // will be 'admin', 'user', or null
         } else {
             setAdminPreference(null);
         }
