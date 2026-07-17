@@ -29,9 +29,7 @@ const _formatOfferedBooks = (offeredBooks) => {
     return offeredBooks.map(b => ({
         id: b.id,
         title: b.title || "Unknown Book",
-        // hydrateMyBooks (web) produces .coverUrl; mobile's shelf snapshots use
-        // .imageUrl or nested .book.images/.images — check all of them.
-        image: b.coverUrl || b.imageUrl || b.book?.images?.[0] || b.images?.[0] || null
+        image: b.imageUrl || b.book?.images?.[0] || b.images?.[0] || null
     }));
 };
 
@@ -309,43 +307,6 @@ export const ChatService = {
     },
 
     /**
-     * Subscribes to real-time raw chat docs for a user's inbox. Unlike
-     * subscribeToActiveChats (which maps into the mobile "Inbox Preview"
-     * shape), this returns the chat docs as-is — the web chat UI reads
-     * fields like participants/sellerName/targetBookImage directly.
-     */
-    streamUserChats: (uid, onUpdate, onError) => {
-        return DB.subscribeQuery(
-            'chats',
-            [{ field: 'participants', operator: 'array-contains', value: uid }],
-            (docs) => {
-                const sorted = [...docs].sort((a, b) => {
-                    const getTime = (m) => m.updatedAt?.toMillis?.() ?? new Date(m.updatedAt || m.createdAt || 0).getTime();
-                    return getTime(b) - getTime(a);
-                });
-                onUpdate(sorted);
-            },
-            onError
-        );
-    },
-
-    /**
-     * Subscribes to a chat's raw message docs, newest first.
-     */
-    streamMessages: (chatId, onUpdate, onError) => {
-        return DB.subscribeQuery(
-            `chats/${chatId}/messages`,
-            [],
-            (docs) => {
-                const getTime = (m) => m.createdAt?.toMillis?.() ?? m.clientTimestamp ?? 0;
-                const sorted = [...docs].sort((a, b) => getTime(b) - getTime(a));
-                onUpdate(sorted);
-            },
-            onError
-        );
-    },
-
-    /**
      * Subscribes to a single message document (used for swap verification status).
      */
     subscribeToMessage: (chatId, messageId, onUpdate, onError) => {
@@ -425,84 +386,4 @@ export const ChatService = {
      */
     verifySwapCode: (chatId, messageId, scannedCode) =>
         CloudFunctions.call('verifySwapCode', { chatId, messageId, scannedCode }),
-
-    /**
-     * Marks an offer message as completed once the verification code checks out.
-     */
-    completeSwap: async (chatId, messageId) => {
-        await DB.update(`chats/${chatId}/messages`, messageId, {
-            'offerDetails.status': 'completed',
-            'offerDetails.verifiedAt': new Date().toISOString(),
-        });
-    },
-
-    /**
-     * Triggered when the receiver picks one book from a multi-book offer:
-     * marks the original offer as countered and sends a new offer message
-     * scoped to just the chosen book.
-     */
-    chooseBookFromOffer: async (chatId, originalMessage, chosenBook, currentUserId, otherUserId, realOfferedId, offeredTitle) => {
-        await ChatService.updateOfferStatus(chatId, originalMessage.id, 'countered', originalMessage.senderId, currentUserId);
-
-        const offer = originalMessage.offerDetails;
-
-        const newMessagePayload = {
-            targetBookId: chosenBook.id,
-            targetBookImage: chosenBook.coverUrl || null,
-            offeredBookIds: offer.targetBookId ? [offer.targetBookId] : [],
-            location: offer.location || null,
-            status: 'pending',
-            savedRealOfferedId: realOfferedId || null,
-            savedOfferedTitle: offeredTitle || null,
-            isSelectionFrom: originalMessage.id,
-            originalOfferedIds: offer.offeredBookIds,
-            originalTargetId: offer.targetBookId,
-            originalTargetImage: offer.targetBookImage,
-        };
-
-        const messagePayload = createMessageModel(currentUserId, `Selected "${chosenBook.title || 'a book'}" from your offer`, 'offer', newMessagePayload);
-
-        await Promise.all([
-            DB.create(`chats/${chatId}/messages`, messagePayload),
-            DB.update('chats', chatId, {
-                lastMessage: 'Chose a book from the list',
-                hiddenFor: [],
-            }, true),
-        ]);
-    },
-
-    /**
-     * Triggered when the proposer declines the receiver's chosen book but
-     * other books from the original offer are still available: re-offers
-     * the remaining books as a fresh offer message.
-     */
-    declineOfferAndReofferRemaining: async (chatId, messageToDecline, currentUserId, otherUserId) => {
-        await ChatService.updateOfferStatus(chatId, messageToDecline.id, 'declined', messageToDecline.senderId, currentUserId);
-
-        const offer = messageToDecline.offerDetails;
-
-        if (offer.isSelectionFrom && offer.originalOfferedIds) {
-            const remainingIds = offer.originalOfferedIds.filter(id => id !== offer.targetBookId);
-
-            if (remainingIds.length > 0) {
-                const newOfferPayload = {
-                    targetBookId: offer.originalTargetId,
-                    targetBookImage: offer.originalTargetImage || null,
-                    offeredBookIds: remainingIds,
-                    location: offer.location || null,
-                    status: 'pending',
-                };
-
-                const messagePayload = createMessageModel(currentUserId, 'Declined and offered remaining books', 'offer', newOfferPayload);
-
-                await Promise.all([
-                    DB.create(`chats/${chatId}/messages`, messagePayload),
-                    DB.update('chats', chatId, {
-                        lastMessage: 'Declined and offered remaining books',
-                        hiddenFor: [],
-                    }, true),
-                ]);
-            }
-        }
-    },
 };

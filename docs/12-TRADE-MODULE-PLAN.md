@@ -1,17 +1,8 @@
 # Book exchange (trade) module — implementation plan
 
-> **Status: superseded.** This plan (open-shelves discovery + a standalone
-> `trades/{tradeId}` collection) was never implemented — the team instead built
-> a richer model: users explicitly list books as `publications`, and the whole
-> negotiation (offers, counter-offers, in-person verification, reviews) happens
-> as messages inside a `chats` thread. The `trades` collection, its rules, and
-> `services/trades.web.js` were dead code and have been removed. See
-> [03-FIRESTORE-MODEL.md](03-FIRESTORE-MODEL.md#book-exchanges-publications--chat-embedded-offers)
-> for how it actually works, and `packages/shared/src/services/{chat,trades,publications}.js`
-> for the implementation. This doc is kept for historical context only — don't
-> pick up the plan below.
+> Status: planned, not yet implemented. Decisions locked in this doc; pick up next session.
 
-## Context (historical — describes the superseded plan)
+## Context
 
 The app lets users build a private shelf (`users/{uid}/myBooks`) but there's no way to
 exchange books with other members. The `trades/{tradeId}` collection and its security

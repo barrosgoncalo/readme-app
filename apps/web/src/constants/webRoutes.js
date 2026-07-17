@@ -17,8 +17,6 @@ export const WEB_ROUTES = {
     PROFILE_FOLLOWING: '/profile/following',
     PROFILE_FOLLOWERS: '/profile/followers',
     PROFILE_FAVORITES: '/profile/favorites',
-    PROFILE_LEVEL: '/profile/level',
-    PROFILE_MY_BOOKS: '/profile/my-books',
     PUBLICATION_NEW: '/publications/new',
     OFFERS_NEW: '/offers/new',
     eventDetails: (eventId) => `/events/${eventId}`,

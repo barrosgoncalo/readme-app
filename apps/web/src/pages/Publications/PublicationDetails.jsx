@@ -21,7 +21,7 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
     const pubId = pubIdProp || paramPubId;
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    const [, showToast] = useToast(3000);
+    const [toast, showToast] = useToast(3000);
 
     const [pub, setPub] = useState(null);
     const [loading, setLoading] = useState(true);

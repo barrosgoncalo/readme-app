@@ -54,13 +54,15 @@ export function usePaginatedList({
         cursorRef.current = page.nextCursor;
         setHasMore(page.hasMore);
     }, [getId, maxItems]);
+
+
     const loadInitial = useCallback(async () => {
         const requestId = ++requestIdRef.current;
         resetState();
         setIsLoadingInitial(true);
         try {
             const page = await fetchPage(null, { fresh: true });
-            if (requestId !== requestIdRef.current) return; // superseded by a newer call
+            if (requestId !== requestIdRef.current) return;
             setItems([]);
             appendPage(page);
         } catch (e) {
@@ -69,6 +71,7 @@ export function usePaginatedList({
             if (requestId === requestIdRef.current) setIsLoadingInitial(false);
         }
     }, [fetchPage, resetState, appendPage]);
+
     const loadMore = useCallback(async () => {
         if (isLoadingMore || isLoadingInitial || isRefreshing || !hasMore) return;
         setIsLoadingMore(true);
@@ -81,13 +84,14 @@ export function usePaginatedList({
             setIsLoadingMore(false);
         }
     }, [fetchPage, isLoadingMore, isLoadingInitial, isRefreshing, hasMore, appendPage]);
+
     const refresh = useCallback(async () => {
         const requestId = ++requestIdRef.current;
         resetState();
         setIsRefreshing(true);
         try {
             const page = await fetchPage(null, { fresh: true });
-            if (requestId !== requestIdRef.current) return; // superseded by a newer call
+            if (requestId !== requestIdRef.current) return;
             setItems([]);
             appendPage(page);
         } catch (e) {
@@ -96,6 +100,7 @@ export function usePaginatedList({
             if (requestId === requestIdRef.current) setIsRefreshing(false);
         }
     }, [fetchPage, resetState, appendPage]);
+
     const updateItem = useCallback((id, updater) => {
         setItems((prev) => prev.map((it) => (getId(it) === id ? updater(it) : it)));
     }, [getId]);

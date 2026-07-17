@@ -35,11 +35,8 @@ Per-user list of bookmarked books. Managed by `favoriteBooksService` in
 
 ### `users/{uid}/myBooks/{bookId}`
 
-Backs the **Shelf** UI (personal reading list — status/progress/rating).
-Managed by `MyBooksService` in `packages/shared/src/services/books.js`. Not
-to be confused with `publications` below, which backs the **My Books** UI
-(the user's trade listings) — never source offerable/tradeable books from
-`myBooks`.
+Books the user owns / is willing to trade. Managed by `myBooksService` in
+`packages/shared/src/services/books.js`.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -104,58 +101,18 @@ Per-event chat. Firestore auto-ID. Sort by `createdAt` ascending.
 
 ---
 
-## Book exchanges: `publications` + chat-embedded offers
+## `trades/{tradeId}`
 
-There is no standalone `trades` collection — an earlier plan for one
-([docs/12-TRADE-MODULE-PLAN.md](12-TRADE-MODULE-PLAN.md)) was superseded before
-it shipped, and the schema/rules that plan added were never read or written by
-either client. The real exchange loop is:
-
-### `publications/{publicationId}`
-
-A book a user has listed for trade (richer than a raw `myBooks` entry — title,
-condition, photos, description). Doc ID is `{uid}_{timestamp}`.
+Book-exchange offer between two users. Firestore auto-ID.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `uid` | string | owner's uid |
-| `book` | object | `{ title, author, images[], bookId, condition, subject }` |
-| `detailsText` | string | free-text description |
-| `sellerName` / `sellerAvatar` | string | denormalised owner display info |
-| `status` | enum | `PUBLICATION_STATUS`: `'available'` \| `'reserved'` \| `'swapped'` |
-| `stats.likesCount` | number | denormalised favorite count |
+| `bookId` | string | references `books/{bookId}` |
+| `offeredBy` | string | uid making the offer |
+| `requestedFrom` | string | uid of the book's owner |
+| `status` | enum | `'pending'` \| `'accepted'` \| `'declined'` \| `'completed'` |
 | `createdAt` | string | ISO timestamp |
-
-Also backs the **My Books** UI (`apps/web/src/pages/Profile/MyBooks.jsx`,
-`PublicationService.fetchUserPublications(uid)`) and is the source for the
-offer-creation flow's book-selection step (`NewOffer.jsx`) — never `myBooks`.
-
-### `chats/{chatId}/messages/{messageId}` (`type: 'offer'`)
-
-The offer itself, and the entire negotiation, lives as a message inside the
-chat thread between the two users — there's no separate "offer" or "trade"
-document. `offerDetails` on the message holds:
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `targetBookId` / `targetBookImage` | string | the publication being requested |
-| `offeredBooks` | array | snapshot of the books offered in exchange: `[{ id, title, image }]` |
-| `offeredBookIds` | array of strings | ids only, for querying |
-| `finalSelectedBookId` / `finalSelectedBookImage` | string \| null | which offered book was actually agreed on |
-| `status` | enum | `NEGOTIATION_STATUS`: `'pending'` \| `'accepted'` \| `'declined'` \| `'canceled'` \| `'unavailable'`, plus the ad hoc `'countered'` / `'completed'` used on the message |
-| `isCounter` | boolean | true if this message is a counter-proposal |
-| `location` | object | `{ id, title, address, latitude, longitude }` — meeting spot |
-| `verificationCode` / `verificationDisplayerId` / `verificationScannerId` / `verifiedAt` | — | in-person handshake, set once accepted |
-| `cancelledBy` | string \| null | uid of whoever cancelled an accepted swap |
-
-`packages/shared/src/services/chat.js` (`ChatService`) creates/updates these
-messages (`sendInitialOffer`, `sendCounterOffer`, `updateOfferStatus`,
-`chooseBookFromOffer`, `declineOfferAndReofferRemaining`, `completeSwap`).
-`packages/shared/src/services/trades.js` (`TradeService`) is a thin coordinator
-on top — on accept it reserves both books (`publications.status = 'reserved'`);
-on cancel it releases them back to `'available'`. It never creates its own
-Firestore documents; "resolving a trade" just means updating the offer message
-and the publication status together.
+| `updatedAt` | string | ISO timestamp — set on every status change |
 
 ---
 

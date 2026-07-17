@@ -61,9 +61,6 @@ dist
 dist-ssr
 *.local
 
-# Vite build cache
-.vite/
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -76,6 +73,3 @@ dist-ssr
 
 *.apk
 **/videos/
-
-# local-only credentials (service account keys, etc.) — never commit
-.secrets/

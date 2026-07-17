@@ -80,28 +80,18 @@ Note: message editing is intentionally not permitted — append-only chat.
 
 ---
 
-## `/publications/{publicationId}`
+## `/trades/{tradeId}`
 
 | Op | Allowed when |
 |----|--------------|
-| **read** | `isAuthenticated()` |
-| **create** | `isAuthenticated() && uid == caller uid` |
-| **update** | Owner (any field), OR any authenticated caller changing only `status` (lets either party in a trade flip `available`/`reserved`), OR an active user changing only `stats` |
-| **delete** | Not defined in rules — deletion goes through `PublicationService.deletePublication`, which checks ownership and `status == 'available'` in application code, not rules |
+| **read** | (`isAuthenticated() && isActive()` + caller is `offeredBy` or `requestedFrom`) OR `isAdmin()` |
+| **create** | `isAuthenticated() && isActive() && offeredBy == caller uid` |
+| **update** | Either party (active) + cannot change `bookId`, `offeredBy`, `requestedFrom`, or `createdAt` |
+| **delete** | `isAdmin()` only |
 
-## `/chats/{chatId}` and `/chats/{chatId}/messages/{messageId}`
-
-| Op | Allowed when |
-|----|--------------|
-| **read, update** (chat doc) | `isAuthenticated() && isActive()` + caller is in `participants` |
-| **create** (chat doc) | `isAuthenticated() && isActive()` + caller is in `participants` |
-| **read, write** (messages) | `isAuthenticated() && isActive()` + caller is in the parent chat's `participants` |
-
-There's no `/trades/{tradeId}` collection — a rules block for one exists in an
-earlier commit of this file but was removed as unused. Book exchanges are
-negotiated as offer messages inside a chat and resolved by updating the
-message's `offerDetails.status` plus the publication's `status`; see
-[03-FIRESTORE-MODEL.md](03-FIRESTORE-MODEL.md#book-exchanges-publications--chat-embedded-offers).
+The `status` field is the only mutable field after creation, keeping the
+trade history intact. Cancellation is modelled as setting `status: 'declined'`,
+not a document delete.
 
 ---
 
