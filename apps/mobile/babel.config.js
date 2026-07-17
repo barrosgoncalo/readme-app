@@ -79,6 +79,8 @@ export default function (api) {
                         'lucide:alert-triangle',
                         'lucide:inbox',
                         'lucide:flag',
+                        'lucide:package',
+                        'lucide:tag',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',
