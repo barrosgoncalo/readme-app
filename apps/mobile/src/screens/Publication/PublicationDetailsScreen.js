@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity} from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
@@ -17,6 +17,9 @@ import { PublicationService } from '@readme/shared/src/services/publications';
 
 import { useOffer } from '@readme/shared/src/contexts/OfferContext';
 
+// Import your ReportModal here (adjust the path to match your project)
+import { ReportModal } from '../../components/ui/ReportModal';
+
 const extractBookDetails = (passedItem) => {
     const pubData = passedItem?.publicationData || passedItem || {};
     const details = PublicationService.normalizePublicationDetails(pubData);
@@ -29,13 +32,10 @@ const extractBookDetails = (passedItem) => {
 
 /**
  * @typedef {Object} PublicationDetailsParams
- * @property {Object} publication - Required. A publication summary or raw doc
- *   (either shape is normalized via PublicationService.normalizePublicationDetails).
- * @property {Object} [seller] - Optional. Seller profile data ({ username, photoURL, rating, ... }).
- *   Pass when available to avoid a loading flash; PublicationDetailsScreen will
- *   fetch it independently via usePublicationDetails if omitted.
- * @property {boolean} [hideOfferButton] - Optional. Hides "Make an Offer" (e.g. viewing your own listing via a public route).
- * @property {boolean} [hideSellerCard] - Optional. Hides the seller card (e.g. public-profile context where it's redundant).
+ * @property {Object} publication - Required. A publication summary or raw doc.
+ * @property {Object} [seller] - Optional. Seller profile data.
+ * @property {boolean} [hideOfferButton] - Optional. Hides "Make an Offer".
+ * @property {boolean} [hideSellerCard] - Optional. Hides the seller card.
  */
 export default function PublicationDetailsScreen({ route, navigation }) {
     const theme = useTheme();
@@ -45,11 +45,11 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const book = extractBookDetails(passedData);
     const passedSeller = route?.params?.seller;
 
-    // Flags for specific public context logic (e.g. public profile feed)
     const hideOfferButton = route?.params?.hideOfferButton || false;
     const hideSellerCard = route?.params?.hideSellerCard || false;
 
-    const { seller, isFavorited, handleToggleFavorite, handleReportPublication, canReport } = usePublicationDetails(book, passedSeller);
+    // reportModal and handleReportPublication are already pulled from the hook here
+    const { seller, isFavorited, handleToggleFavorite, handleReportPublication, reportModal, canReport } = usePublicationDetails(book, passedSeller);
 
     const sellerRating = Number(seller?.rating) || 0;
     const sellerReviewCount = Number(seller?.reviewCount ?? seller?.reviews) || 0;
@@ -70,7 +70,7 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         navigation.navigate(ROUTES.STEP_ONE_OFFER);
     };
 
-// --- Compose UI Parts ---
+    // --- Compose UI Parts ---
     const renderTopActions = () => (
         <>
             <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
@@ -78,6 +78,7 @@ export default function PublicationDetailsScreen({ route, navigation }) {
             </TouchableOpacity>
 
             <View style={{ alignItems: 'center' }}>
+                {/* The report button correctly calls handleReportPublication from the hook */}
                 {canReport && (
                     <TouchableOpacity style={styles.iconButton} onPress={handleReportPublication}>
                         <Iconify icon="lucide:flag" size={22} color="#FFFFFF" />
@@ -93,6 +94,7 @@ export default function PublicationDetailsScreen({ route, navigation }) {
             </View>
         </>
     );
+
     const renderSellerCard = () => {
         if (hideSellerCard) return null;
         return (
@@ -101,10 +103,10 @@ export default function PublicationDetailsScreen({ route, navigation }) {
                 onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: book?.ownerId })}
             >
                 <View style={styles.sellerInfoLeft}>
-                    <Image 
-                        source={sellerAvatar ? { uri: sellerAvatar } : null} 
-                        style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]} 
-                        contentFit="cover" 
+                    <Image
+                        source={sellerAvatar ? { uri: sellerAvatar } : null}
+                        style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]}
+                        contentFit="cover"
                     />
                     <View>
                         <Text style={styles.sellerName}>{sellerName}</Text>
@@ -133,12 +135,21 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         );
     };
 
+    // Wrap the view and the modal in a Fragment
     return (
-        <PublicationInfoView 
-            book={book}
-            topRightActions={renderTopActions()}
-            sellerCard={renderSellerCard()}
-            bottomBar={renderBottomBar()}
-        />
+        <>
+            <PublicationInfoView
+                book={book}
+                topRightActions={renderTopActions()}
+                sellerCard={renderSellerCard()}
+                bottomBar={renderBottomBar()}
+            />
+
+            {/* Modal sits at the root level, receiving state directly from the hook */}
+            <ReportModal
+                visible={reportModal?.visible}
+                {...reportModal?.modalProps}
+            />
+        </>
     );
 }

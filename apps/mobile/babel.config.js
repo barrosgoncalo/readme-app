@@ -80,6 +80,8 @@ export default function (api) {
                         'lucide:inbox',
                         'lucide:flag',
                         'lucide:key',
+                        'lucide:package',
+                        'lucide:tag',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',
