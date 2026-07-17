@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {Ban, Check, ChevronDown, ChevronUp, List, MapPin, X} from 'lucide-react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {ChatService} from '@readme/shared/src/services/chat';
-import {TradeService} from '@readme/shared/src/services/trades';
+import { TradeService } from '@readme/shared/src/services/trades';
 import {ReviewService} from '@readme/shared/src/services/reviews';
 import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
 import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
