@@ -1,5 +1,3 @@
-// @readme/shared/src/services/users.js
-
 import { auth, storage } from "./firebase";
 import { 
     documentId,
@@ -9,7 +7,6 @@ import {
 } from "firebase/firestore";
 import { getFollowId, createFollow, createFollowRequest } from '../models/follow';
 import { StorageService } from "./storage";
-
 import { DB } from './DB';
 
 const USERS_COLLECTION = 'users';
@@ -17,25 +14,25 @@ const USERS_COLLECTION = 'users';
 export const UsersService = {
 
     /**
-    * Resolves a display name from either a canonical Firestore user doc
-    * (username/fullName) or a raw Firebase Auth user object (displayName),
-    * in case currentUser is ever the latter.
-    */
+     * Resolves a display name from either a canonical Firestore user doc
+     * (username/fullName) or a raw Firebase Auth user object (displayName),
+     * in case currentUser is ever the latter.
+     */
     getDisplayName: (user) => {
         return user?.username || user?.fullName || user?.displayName || 'Anonymous Swapper';
     },
 
     /**
-    * Resolves an avatar URL from either shape.
-    */
+     * Resolves an avatar URL from either shape.
+     */
     getAvatarUrl: (user) => {
         return user?.photoURL || null;
     },
 
     /**
-    * Fetches a user's profile and checks if the current user is following them.
-    * @param {string} userId - The ID of the profile being viewed
-    */
+     * Fetches a user's profile and checks if the current user is following them.
+     * @param {string} userId - The ID of the profile being viewed
+     */
     fetchSummaryUserProfile: async (userId) => {
         if (!userId) throw new Error("User ID is required to fetch profile.");
 
@@ -71,14 +68,31 @@ export const UsersService = {
         }
     },
 
-
-    // AQUUUUUUUUUUUUUUUUUUUUUUIIIIIIIIIIIIIIIIIIIIII
+    /**
+     * Fetches the follower and following counts for a given user.
+     * @param {string} userId - The ID of the user
+     * @returns {Promise<{followers: number, following: number}>}
+     */
+    getFollowCounts: async (userId) => {
+        if (!userId) return { followers: 0, following: 0 };
+        
+        try {
+            const userData = await DB.get(USERS_COLLECTION, userId);
+            return {
+                followers: userData?.followersCount || 0,
+                following: userData?.followingCount || 0
+            };
+        } catch (error) {
+            console.error("Error fetching follow counts:", error);
+            return { followers: 0, following: 0 };
+        }
+    },
 
     /**
-    * Fetches a user's list of favorite books.
-    * @param {string} userId - The ID of the user
-    * @returns {Promise<Array>} Array of favorite book IDs
-    */
+     * Fetches a user's list of favorite books.
+     * @param {string} userId - The ID of the user
+     * @returns {Promise<Array>} Array of favorite book IDs
+     */
     fetchUserFavorites: async (userId) => {
         if (!userId) return [];
 
@@ -143,9 +157,9 @@ export const UsersService = {
     },
 
     /**
-    * Toggles follow status. If the target is private and the action is "follow",
-    * this sends a pending request instead of following directly.
-    */
+     * Toggles follow status. If the target is private and the action is "follow",
+     * this sends a pending request instead of following directly.
+     */
     toggleFollowUser: async (targetUserId, shouldFollow, isTargetPrivate = false) => {
         const currentUserId = auth?.currentUser?.uid;
 
@@ -175,9 +189,9 @@ export const UsersService = {
     },
 
     /**
-    * Accepts a pending follow request: creates the actual follow relationship,
-    * increments counts, and removes the request doc.
-    */
+     * Accepts a pending follow request: creates the actual follow relationship,
+     * increments counts, and removes the request doc.
+     */
     acceptFollowRequest: async (targetUserId, requesterUid) => {
         const relationshipId = getFollowId(requesterUid, targetUserId);
 
@@ -190,18 +204,18 @@ export const UsersService = {
     },
 
     /**
-    * Declines a pending follow request: just removes the request doc, no counts change.
-    */
+     * Declines a pending follow request: just removes the request doc, no counts change.
+     */
     declineFollowRequest: async (targetUserId, requesterUid) => {
         const relationshipId = getFollowId(requesterUid, targetUserId);
         await DB.remove('followRequests', relationshipId);
     },
 
     /**
-    * Fetches raw pending follow requests for a given user (the target).
-    * Returns request docs only (requesterUid, id) — resolving requester profile
-    * details (name/avatar) for display is left to whichever screen consumes this.
-    */
+     * Fetches raw pending follow requests for a given user (the target).
+     * Returns request docs only (requesterUid, id) — resolving requester profile
+     * details (name/avatar) for display is left to whichever screen consumes this.
+     */
     fetchPendingFollowRequests: async (userId) => {
         if (!userId) return [];
         return await DB.get('followRequests', [
@@ -210,10 +224,10 @@ export const UsersService = {
     },
 
     /**
-    * Subscribes to pending follow requests in real-time.
-    * Automatically fires the callback with the updated integer count whenever requests change.
-    * @returns {function} Unsubscribe function to clean up the listener
-    */
+     * Subscribes to pending follow requests in real-time.
+     * Automatically fires the callback with the updated integer count whenever requests change.
+     * @returns {function} Unsubscribe function to clean up the listener
+     */
     subscribeToPendingFollowRequestsCount: (userId, onCountChange) => {
         if (!userId) return () => {};
         
@@ -228,10 +242,10 @@ export const UsersService = {
     },
 
     /**
-    * Subscribes to all unread notifications (requests, acceptances, swaps, etc.) in real-time.
-    * Automatically fires the callback with the updated integer count.
-    * @returns {function} Unsubscribe function to clean up the listener
-    */
+     * Subscribes to all unread notifications (requests, acceptances, swaps, etc.) in real-time.
+     * Automatically fires the callback with the updated integer count.
+     * @returns {function} Unsubscribe function to clean up the listener
+     */
     subscribeToUnreadNotificationsCount: (userId, onCountChange) => {
         if (!userId) return () => {};
         
@@ -254,9 +268,8 @@ export const UsersService = {
         if (!uid || !token) return;
         
         try {
-            // Using your DB architecture wrapper to append the token safely to an array
             await DB.update('users', uid, {
-                pushTokens: DB.arrayUnion ? DB.arrayUnion(token) : [token]
+                pushTokens: arrayUnion(token)
             });
             console.log(`[UsersService] Push token successfully registered for user: ${uid}`);
         } catch (error) {

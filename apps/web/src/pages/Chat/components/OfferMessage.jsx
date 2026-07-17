@@ -1,13 +1,13 @@
-import {useEffect, useState} from 'react';
-import {Ban, Check, ChevronDown, ChevronUp, List, MapPin, X} from 'lucide-react';
-import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {ChatService} from '@readme/shared/src/services/chat';
+import { useEffect, useState } from 'react';
+import { Ban, Check, ChevronDown, ChevronUp, List, MapPin, X } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ChatService } from '@readme/shared/src/services/chat';
 import { TradeService } from '@readme/shared/src/services/trades';
-import {ReviewService} from '@readme/shared/src/services/reviews';
-import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
-import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
-import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
-import {WEB_ROUTES} from '../../../constants/webRoutes';
+import { ReviewService } from '@readme/shared/src/services/reviews';
+import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
+import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
+import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
+import { WEB_ROUTES } from '../../../constants/webRoutes';
 import VerificationUI from './VerificationUI.jsx';
 import ReviewUI from './ReviewUI.jsx';
 import LocationMapPreview from './LocationMapPreview.jsx';
@@ -28,7 +28,7 @@ const STATUS_COLORS = {
     countered: 'var(--bg-elem)',
 };
 
-export default function OfferMessage({message, isOwn, currentUserId, chatId, otherUserId}) {
+export default function OfferMessage({ message, isOwn, currentUserId, chatId, otherUserId }) {
     const navigate = useNavigate();
 
     const [busy, setBusy] = useState(false);
@@ -74,18 +74,19 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         }
     }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
 
+    // 1. UPDATED: Using the actual subscription method for real-time review status
     useEffect(() => {
         if (!canReview) return;
 
-        let cancelled = false;
-        ReviewService.hasUserReviewed(message.id, currentUserId)
-            .then(reviewed => {
-                if (!cancelled)
-                    setHasReviewed(reviewed);
-            })
-            .catch(err => console.error('Error checking review status:', err));
+        const unsubscribe = ReviewService.subscribeToReviewStatus(
+            message.id,
+            currentUserId,
+            (reviewed) => {
+                setHasReviewed(reviewed);
+            }
+        );
 
-        return () => cancelled = true;
+        return () => unsubscribe();
     }, [canReview, message.id, currentUserId]);
 
     useEffect(() => {
@@ -105,7 +106,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                 try {
                     const globalBooks = await getBooksByIds([originalId]);
                     if (globalBooks && globalBooks.length > 0 && !cancelled)
-                        setSingleBook({title: globalBooks[0].title, realBookId: globalBooks[0].id});
+                        setSingleBook({ title: globalBooks[0].title, realBookId: globalBooks[0].id });
                 } catch (err) {
                     console.error(err);
                 }
@@ -126,9 +127,6 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             else {
                 const receiverId = isOwn ? message.senderId : currentUserId;
                 const senderId = isOwn ? currentUserId : message.senderId;
-                // TradeService.resolveOffer also reserves the target/offered
-                // books when accepted, so they stop showing up as available
-                // to other users while this swap is in progress.
                 await TradeService.resolveOffer(chatId, message.id, newStatus, {
                     proposerId: senderId,
                     receiverId,
@@ -184,6 +182,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         setBusy(true);
         setReviewError('');
         try {
+            // Note: Make sure submitReview is exported from your ReviewService!
             await ReviewService.submitReview(message.id, chatId, currentUserId, otherUserId, rating, comment);
             setHasReviewed(true);
         } catch (err) {
@@ -257,7 +256,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     return (
         <div className={`${styles.card} ${isOwn ? styles.own : styles.other}`}>
             {offer.targetBookImage && (
-                <img src={offer.targetBookImage} alt="" className={styles.image}/>
+                <img src={offer.targetBookImage} alt="" className={styles.image} />
             )}
 
             <div className={styles.content}>
@@ -290,16 +289,16 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                         className={styles.locationBtn}
                         onClick={() => setShowMap(s => !s)}
                     >
-                        <MapPin size={14}/>
+                        <MapPin size={14} />
                         <span className={styles.locationText}>{offer.location.title || 'Location TBD'}</span>
-                        {showMap ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                        {showMap ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
                 )}
 
                 <div className={styles.footer}>
                     <span
                         className={styles.status}
-                        style={{borderColor: STATUS_COLORS[offer.status] || 'var(--bg-elem)'}}
+                        style={{ borderColor: STATUS_COLORS[offer.status] || 'var(--bg-elem)' }}
                     >
                         {statusLabel}
                     </span>
@@ -312,7 +311,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                     onClick={handleOpenBooks}
                                     disabled={busy}
                                 >
-                                    <List size={14}/>
+                                    <List size={14} />
                                     Choose Book
                                 </button>
                             ) : (
@@ -321,7 +320,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                     onClick={() => handleStatus(NEGOTIATION_STATUS.ACCEPTED)}
                                     disabled={busy}
                                 >
-                                    <Check size={14}/>
+                                    <Check size={14} />
                                     Accept
                                 </button>
                             )}
@@ -331,7 +330,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                 onClick={() => handleStatus(NEGOTIATION_STATUS.DECLINED)}
                                 disabled={busy}
                             >
-                                <X size={14}/>
+                                <X size={14} />
                                 Decline
                             </button>
                         </div>
@@ -340,7 +339,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             </div>
 
             {showMap && offer.location && (
-                <LocationMapPreview location={offer.location}/>
+                <LocationMapPreview location={offer.location} />
             )}
 
             {isAccepted && offer.verificationCode && (
@@ -360,7 +359,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                         onClick={() => setShowCancelConfirm(true)}
                         disabled={busy}
                     >
-                        <Ban size={14}/>
+                        <Ban size={14} />
                         Cancel Swap Agreement
                     </button>
                 </>
@@ -379,7 +378,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             )}
 
             {canReview && !hasReviewed && (
-                <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError}/>
+                <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError} />
             )}
 
             <ConfirmDialog
@@ -407,7 +406,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             >
                 <div className={`${styles.modalBody} ${fetchedBooks.length > 5 ? styles.grid : styles.list}`}>
                     {loadingBooks ? (
-                        <Spinner center label="Loading books..."/>
+                        <Spinner center label="Loading books..." />
                     ) : (
                         fetchedBooks.map(book => {
                             const isSelected = selectedBookId === book.id;
@@ -440,7 +439,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                     </div>
                                     {isSelected && (
                                         <div className={styles.checkIcon}>
-                                            <Check size={20}/>
+                                            <Check size={20} />
                                         </div>
                                     )}
                                 </div>
