@@ -14,6 +14,7 @@ import { useUserRole } from '@readme/shared/src/hooks/use-user-role'; // <-- Add
 
 // Local Project Imports
 import { db, auth, storage } from '@readme/shared/src/services/firebase';
+import { DB } from '@readme/shared/src/services/DB';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -45,6 +46,7 @@ export default function ProfileLayout() {
 
     const [userData, setUserData] = useState(null);
     const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
+    const [shelfCount, setShelfCount] = useState(null);
     const [loading, setLoading] = useState(true);
     const [photoURL, setPhotoURL] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -57,15 +59,17 @@ export default function ProfileLayout() {
 
         Promise.all([
             getDoc(doc(db, 'users', currentUser.uid)),
-            UsersService.getFollowCounts(currentUser.uid)
+            UsersService.getFollowCounts(currentUser.uid),
+            DB.count(`users/${currentUser.uid}/myBooks`).catch(() => null),
         ])
-        .then(([snap, counts]) => {
+        .then(([snap, counts, count]) => {
             if (snap.exists()) {
                 const data = snap.data();
                 setUserData(data);
                 setPhotoURL(data.photoURL || null);
             }
             setFollowCounts(counts);
+            setShelfCount(count);
         })
         .catch(err => {
             console.error("Error fetching user profile data:", err);
@@ -185,7 +189,7 @@ export default function ProfileLayout() {
                             <span>Following</span>
                         </button>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.stat}>
-                            <strong>—</strong>
+                            <strong>{shelfCount ?? '—'}</strong>
                             <span>Shelf</span>
                         </Link>
                     </div>
