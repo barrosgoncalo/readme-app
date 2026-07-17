@@ -18,7 +18,6 @@ import AdminModeSelector from '../pages/Admin/AdminModeSelector/AdminModeSelecto
 // --- user-app pages ---
 import BooksLayout from '../pages/Books/BooksLayout.jsx';
 import BooksScan from '../pages/Books/Scan.jsx';
-import Events from '../pages/Events/index.jsx';
 import MapPage from '../pages/Map/index.jsx';
 import Chat from '../pages/Chat/index.jsx';
 import ProfileLayout from '../pages/Profile/ProfileLayout.jsx';
@@ -32,7 +31,7 @@ import Favorites from '../pages/Profile/Favorites.jsx';
 import MyBooks from '../pages/Profile/MyBooks.jsx';
 import Level from '../pages/Profile/Level.jsx';
 import PublicProfile from '../pages/Users/PublicProfile.jsx';
-import { PublicationDetailRoute, EventDetailRoute } from '../pages/DetailRoutes.jsx';
+import { PublicationDetailRoute } from '../pages/DetailRoutes.jsx';
 import CreatePublication from '../pages/Publications/CreatePublication.jsx';
 import NewOffer from '../pages/Offers/NewOffer.jsx';
 import AppShell from '../components/AppShell.jsx';
@@ -149,9 +148,7 @@ export default function AppRouter() {
                     <Route path={WEB_ROUTES.BOOKS} element={<BooksLayout />} />
                     <Route path="/books/:bookId" element={<BooksLayout />} />
                     <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan />} />
-                    <Route path={WEB_ROUTES.EVENTS} element={<Events />} />
                     <Route path={WEB_ROUTES.MAP} element={<MapPage />} />
-                    <Route path="/events/:eventId" element={<EventDetailRoute />} />
                     <Route path={WEB_ROUTES.CHAT} element={<Chat />} />
                     <Route path={WEB_ROUTES.PROFILE} element={<ProfileLayout />}>
                         <Route path="following" element={<Following />} />

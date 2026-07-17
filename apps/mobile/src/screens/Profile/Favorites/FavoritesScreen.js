@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -35,14 +35,18 @@ export default function FavoritesScreen({ navigation }) {
         removeItem,
     } = useFavoritesFeed(currentUser?.uid);
 
-    // Refresh on focus so unfavoriting from another screen (e.g.
-    // Publication Details) is reflected here, without disturbing scroll
-    // position the way a full remount would.
+    const isFirstMount = useRef(true);
+
     useFocusEffect(
         useCallback(() => {
+            // Let feed.loadInitial() handle the first mount. 
+            // Only refresh on subsequent returns to this screen.
+            if (isFirstMount.current) {
+                isFirstMount.current = false;
+                return;
+            }
             refresh();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [])
+        }, [refresh]) 
     );
 
     const handleRemoveFavorite = useCallback(async (bookId) => {

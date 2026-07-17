@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Ban, Check, ChevronDown, ChevronUp, List, MapPin, X } from 'lucide-react';
+import { Ban, Check, ChevronDown, ChevronUp, List, MapPin, Repeat, X } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ChatService } from '@readme/shared/src/services/chat';
 import { TradeService } from '@readme/shared/src/services/trades';
@@ -8,9 +8,10 @@ import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
 import { WEB_ROUTES } from '../../../constants/webRoutes';
-import VerificationUI from './VerificationUI.jsx';
+import ActionCard from './ActionCard.jsx';
 import ReviewUI from './ReviewUI.jsx';
 import LocationMapPreview from './LocationMapPreview.jsx';
+import CounterOfferModal from './CounterOfferModal.jsx';
 import BookCover from '../../../components/BookCover.jsx';
 import Spinner from '../../../components/Spinner.jsx';
 import Modal from '../../../components/Modal.jsx';
@@ -32,11 +33,11 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     const navigate = useNavigate();
 
     const [busy, setBusy] = useState(false);
-    const [verificationError, setVerificationError] = useState('');
     const [hasReviewed, setHasReviewed] = useState(false);
     const [reviewError, setReviewError] = useState('');
     const [showMap, setShowMap] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [showCounterModal, setShowCounterModal] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const showBooksModal = searchParams.get('offer') === message.id;
@@ -54,7 +55,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     const canReview = isCompleted || (isCanceled && offer?.cancelledBy !== currentUserId);
 
     useEffect(() => {
-        if (showBooksModal && fetchedBooks.length === 0) {
+        if ((showBooksModal || showCounterModal) && fetchedBooks.length === 0) {
             let cancelled = false;
             setLoadingBooks(true);
 
@@ -72,7 +73,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
 
             return () => cancelled = true;
         }
-    }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
+    }, [showBooksModal, showCounterModal, fetchedBooks.length, offer.offeredBookIds]);
 
     // 1. UPDATED: Using the actual subscription method for real-time review status
     useEffect(() => {
@@ -160,19 +161,21 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
         }
     }
 
-    async function handleCompleteSwap(code) {
+    async function handleSendCounter(selectedBookId, selectedBookImage, location) {
         setBusy(true);
-        setVerificationError('');
         try {
-            if (code.toUpperCase() !== offer.verificationCode?.toUpperCase()) {
-                setVerificationError('Incorrect code. Try again.');
-                setBusy(false);
-                return;
-            }
-            await ChatService.completeSwap(chatId, message.id);
+            await ChatService.sendCounterOffer(
+                chatId,
+                message.id,
+                currentUserId,
+                offer,
+                location,
+                selectedBookId,
+                selectedBookImage,
+            );
+            setShowCounterModal(false);
         } catch (err) {
-            console.error('Error completing swap:', err);
-            setVerificationError('Failed to complete swap.');
+            console.error('Error sending counter offer:', err);
         } finally {
             setBusy(false);
         }
@@ -326,6 +329,15 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                             )}
 
                             <button
+                                className={`${styles.btn} ${styles.counter}`}
+                                onClick={() => setShowCounterModal(true)}
+                                disabled={busy}
+                            >
+                                <Repeat size={14} />
+                                Counter
+                            </button>
+
+                            <button
                                 className={`${styles.btn} ${styles.decline}`}
                                 onClick={() => handleStatus(NEGOTIATION_STATUS.DECLINED)}
                                 disabled={busy}
@@ -342,17 +354,13 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 <LocationMapPreview location={offer.location} />
             )}
 
-            {isAccepted && offer.verificationCode && (
+            {isAccepted && (
                 <>
-                    <VerificationUI
-                        code={offer.verificationCode}
-                        displayerId={offer.verificationDisplayerId}
-                        scannerId={offer.verificationScannerId}
-                        currentUserId={currentUserId}
-                        onComplete={handleCompleteSwap}
-                        error={verificationError}
-                        busy={busy}
-                    />
+                    <ActionCard prompt="Swap accepted!">
+                        <p className={styles.mobileNotice}>
+                            To complete this trade, open the ReadMe mobile app and use the verification code there.
+                        </p>
+                    </ActionCard>
                     <button
                         type="button"
                         className={styles.cancelSwapBtn}
@@ -389,6 +397,15 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 message="The other user will be notified and both books will become available again."
                 confirmLabel="Yes, cancel"
                 danger
+                busy={busy}
+            />
+
+            <CounterOfferModal
+                open={showCounterModal}
+                onClose={() => setShowCounterModal(false)}
+                offeredBooks={fetchedBooks}
+                loadingBooks={loadingBooks}
+                onSubmit={handleSendCounter}
                 busy={busy}
             />
 

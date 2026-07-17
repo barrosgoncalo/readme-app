@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { usePaginatedList } from './use-paginated-list';
 import { UsersService } from '../services/users';
 import { PublicationService } from '../services/publications';
@@ -26,7 +26,8 @@ export function useFavoritesFeed(currentUserId) {
             let allIds = idsRef.current;
 
             if (cursor === null) {
-                allIds = await UsersService.fetchUserFavorites(currentUserId);
+                const fetchedIds = await UsersService.fetchUserFavorites(currentUserId);
+                allIds = fetchedIds || []; 
                 idsRef.current = allIds;
             }
 
@@ -55,14 +56,15 @@ export function useFavoritesFeed(currentUserId) {
         };
     }, [currentUserId]);
 
+    const getId = useCallback((item: { id: string }) => item.id, []);
+
     const feed = usePaginatedList({
         fetchPage,
-        getId: (item) => item.id,
+        getId,
     });
 
     useEffect(() => {
         if (currentUserId) feed.loadInitial();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUserId]);
 
     return feed;

@@ -3,7 +3,6 @@ import {createPortal} from 'react-dom';
 import {useNavigate} from 'react-router-dom';
 import {Send, Smile, Flag} from 'lucide-react';
 import {ChatService} from '@readme/shared/src/services/chat';
-import {UsersService} from '@readme/shared/src/services/users';
 import {ReportsService} from '@readme/shared/src/services/reports';
 import {REPORT_TARGET_TYPE} from '@readme/shared/src/constants/status';
 import {toMillis} from '@readme/shared/src/utils/timestamp';
@@ -44,7 +43,6 @@ export default function ChatConversation({chat, messages, loading, currentUserId
     const emojiBtnRef = useRef(null);
     const emojiPickerRef = useRef(null);
     const inputRef = useRef(null);
-    const [otherUser, setOtherUser] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [, showToast] = useToast(3000);
 
@@ -83,18 +81,9 @@ export default function ChatConversation({chat, messages, loading, currentUserId
         };
     }, [showEmojiPicker]);
 
-    const otherUserId = chat.participants?.find(p => p !== currentUserId);
-
-    useEffect(() => {
-        const otherId = chat.participants?.find(p => p !== currentUserId);
-        if (otherId) {
-            UsersService.fetchUserProfile(otherId)
-                .then(profile => setOtherUser(profile))
-                .catch(err => console.error(err));
-        }
-    }, [chat.participants, currentUserId]);
-
-    const displayName = otherUser?.username || otherUser?.fullName || chat.sellerName || 'Chat';
+    const otherUserId = chat.targetSeller?.uid;
+    const displayName = chat.targetSeller?.name || 'Chat';
+    const avatarUrl = chat.targetSeller?.avatarUrl;
 
     async function handleSend() {
         if (!text.trim() || !chat.id) return;
@@ -120,7 +109,7 @@ export default function ChatConversation({chat, messages, loading, currentUserId
         try {
             const snapshot = ReportsService.buildChatSnapshot(messages, {
                 name: displayName,
-                avatarUrl: otherUser?.photoURL,
+                avatarUrl,
             });
             await ReportsService.submitReport(currentUserId, REPORT_TARGET_TYPE.CHAT, chat.id, otherUserId, reason, snapshot);
             showToast('Thanks — our team will review this conversation.');
@@ -142,8 +131,15 @@ export default function ChatConversation({chat, messages, loading, currentUserId
             {/* Header */}
             <div className={styles.header}>
                 <div className={styles.headerContent}>
-                    {chat.targetBookImage && (
-                        <img src={chat.targetBookImage} alt="" className={styles.bookImage}/>
+                    {avatarUrl ? (
+                        <img src={avatarUrl} alt="" className={styles.avatar}/>
+                    ) : (
+                        <span className={styles.avatarPlaceholder} aria-hidden>
+                            {displayName.charAt(0).toUpperCase()}
+                        </span>
+                    )}
+                    {chat.imageUrl && (
+                        <img src={chat.imageUrl} alt="" className={styles.bookImage}/>
                     )}
                     <div>
                         <h2
@@ -184,7 +180,7 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                                         isOwn={msg.senderId === currentUserId}
                                         currentUserId={currentUserId}
                                         chatId={chat.id}
-                                        otherUserId={chat.participants?.find(p => p !== currentUserId)}
+                                        otherUserId={otherUserId}
                                     />
                                 ) : (
                                     <div
