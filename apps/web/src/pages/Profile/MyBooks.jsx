@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import { PublicationService } from '@readme/shared/src/services/publications';
-import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import PublicationCard from '../Map/components/PublicationCard.jsx';
@@ -17,9 +16,7 @@ export default function MyBooks() {
     const uid = currentUser?.uid;
 
     const [publications, setPublications] = useState([]);
-    const [favoriteIds, setFavoriteIds] = useState(new Set());
     const [loading, setLoading] = useState(true);
-    const [favoriteBusy, setFavoriteBusy] = useState(null);
 
     useEffect(() => {
         if (!uid) return;
@@ -28,14 +25,9 @@ export default function MyBooks() {
 
         (async () => {
             try {
-                const [summaries, profile] = await Promise.all([
-                    PublicationService.fetchUserPublications(uid),
-                    UsersService.fetchUserProfile(uid).catch(() => null),
-                ]);
-
+                const summaries = await PublicationService.fetchUserPublications(uid);
                 if (cancelled) return;
                 setPublications(summaries.map(s => s.publicationData));
-                setFavoriteIds(new Set(profile?.favoriteBooks || []));
             } catch (err) {
                 console.error('Error loading your publications:', err);
                 if (!cancelled) setPublications([]);
@@ -46,25 +38,6 @@ export default function MyBooks() {
 
         return () => { cancelled = true; };
     }, [uid]);
-
-    async function handleToggleFavorite(pubId) {
-        if (!uid) return;
-        setFavoriteBusy(pubId);
-        try {
-            const isFav = favoriteIds.has(pubId);
-            await UsersService.toggleFavoriteStatus(uid, pubId, isFav);
-            setFavoriteIds(prev => {
-                const next = new Set(prev);
-                if (isFav) next.delete(pubId);
-                else next.add(pubId);
-                return next;
-            });
-        } catch (err) {
-            console.error('Failed to toggle favorite:', err);
-        } finally {
-            setFavoriteBusy(null);
-        }
-    }
 
     return (
         <div className={styles.page}>
@@ -86,9 +59,6 @@ export default function MyBooks() {
                         <PublicationCard
                             key={pub.id}
                             pub={pub}
-                            isFavorite={favoriteIds.has(pub.id)}
-                            onToggleFavorite={() => handleToggleFavorite(pub.id)}
-                            busy={favoriteBusy === pub.id}
                         />
                     ))}
                 </div>
