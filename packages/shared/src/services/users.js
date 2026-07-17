@@ -69,6 +69,61 @@ export const UsersService = {
     },
 
     /**
+     * Alias kept for callers written against the pre-rename name (several
+     * web pages call fetchUserProfile directly) — same implementation as
+     * fetchSummaryUserProfile above.
+     */
+    fetchUserProfile: async (userId) => UsersService.fetchSummaryUserProfile(userId),
+
+    /**
+     * Fetch list of users the given user is following.
+     */
+    getFollowing: async (uid) => {
+        const followDocs = await DB.get('follows', [
+            { field: 'followerUid', operator: '==', value: uid }
+        ]);
+
+        return Promise.all(
+            followDocs.map(async (followDoc) => {
+                const followingUid = followDoc.followingUid;
+                const userData = await DB.get(USERS_COLLECTION, followingUid).catch(() => null);
+
+                return {
+                    id: followingUid,
+                    username: userData?.username ?? null,
+                    fullName: userData?.fullName ?? null,
+                    avatarUrl: userData?.photoURL ?? null,
+                    createdAt: followDoc.createdAt || null,
+                };
+            })
+        );
+    },
+
+    /**
+     * Fetch list of users following the given user.
+     */
+    getFollowers: async (uid) => {
+        const followDocs = await DB.get('follows', [
+            { field: 'followingUid', operator: '==', value: uid }
+        ]);
+
+        return Promise.all(
+            followDocs.map(async (followDoc) => {
+                const followerUid = followDoc.followerUid;
+                const userData = await DB.get(USERS_COLLECTION, followerUid).catch(() => null);
+
+                return {
+                    id: followerUid,
+                    username: userData?.username ?? null,
+                    fullName: userData?.fullName ?? null,
+                    avatarUrl: userData?.photoURL ?? null,
+                    createdAt: followDoc.createdAt || null,
+                };
+            })
+        );
+    },
+
+    /**
      * Fetches the follower and following counts for a given user.
      * @param {string} userId - The ID of the user
      * @returns {Promise<{followers: number, following: number}>}

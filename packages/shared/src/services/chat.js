@@ -386,4 +386,84 @@ export const ChatService = {
      */
     verifySwapCode: (chatId, messageId, scannedCode) =>
         CloudFunctions.call('verifySwapCode', { chatId, messageId, scannedCode }),
+
+    /**
+     * Marks an offer message as completed once the verification code checks out.
+     */
+    completeSwap: async (chatId, messageId) => {
+        await DB.update(`chats/${chatId}/messages`, messageId, {
+            'offerDetails.status': 'completed',
+            'offerDetails.verifiedAt': new Date().toISOString(),
+        });
+    },
+
+    /**
+     * Triggered when the receiver picks one book from a multi-book offer:
+     * marks the original offer as countered and sends a new offer message
+     * scoped to just the chosen book.
+     */
+    chooseBookFromOffer: async (chatId, originalMessage, chosenBook, currentUserId, otherUserId, realOfferedId, offeredTitle) => {
+        await ChatService.updateOfferStatus(chatId, originalMessage.id, 'countered', originalMessage.senderId, currentUserId);
+
+        const offer = originalMessage.offerDetails;
+
+        const newMessagePayload = {
+            targetBookId: chosenBook.id,
+            targetBookImage: chosenBook.coverUrl || null,
+            offeredBookIds: offer.targetBookId ? [offer.targetBookId] : [],
+            location: offer.location || null,
+            status: 'pending',
+            savedRealOfferedId: realOfferedId || null,
+            savedOfferedTitle: offeredTitle || null,
+            isSelectionFrom: originalMessage.id,
+            originalOfferedIds: offer.offeredBookIds,
+            originalTargetId: offer.targetBookId,
+            originalTargetImage: offer.targetBookImage,
+        };
+
+        const messagePayload = createMessageModel(currentUserId, `Selected "${chosenBook.title || 'a book'}" from your offer`, 'offer', newMessagePayload);
+
+        await Promise.all([
+            DB.create(`chats/${chatId}/messages`, messagePayload),
+            DB.update('chats', chatId, {
+                lastMessage: 'Chose a book from the list',
+                hiddenFor: [],
+            }, true),
+        ]);
+    },
+
+    /**
+     * Triggered when the proposer declines the receiver's chosen book but
+     * other books from the original offer are still available: re-offers
+     * the remaining books as a fresh offer message.
+     */
+    declineOfferAndReofferRemaining: async (chatId, messageToDecline, currentUserId, otherUserId) => {
+        await ChatService.updateOfferStatus(chatId, messageToDecline.id, 'declined', messageToDecline.senderId, currentUserId);
+
+        const offer = messageToDecline.offerDetails;
+
+        if (offer.isSelectionFrom && offer.originalOfferedIds) {
+            const remainingIds = offer.originalOfferedIds.filter(id => id !== offer.targetBookId);
+
+            if (remainingIds.length > 0) {
+                const newOfferPayload = {
+                    targetBookId: offer.originalTargetId,
+                    targetBookImage: offer.originalTargetImage || null,
+                    offeredBookIds: remainingIds,
+                    location: offer.location || null,
+                    status: 'pending',
+                };
+
+                const messagePayload = createMessageModel(currentUserId, 'Declined and offered remaining books', 'offer', newOfferPayload);
+
+                await Promise.all([
+                    DB.create(`chats/${chatId}/messages`, messagePayload),
+                    DB.update('chats', chatId, {
+                        lastMessage: 'Declined and offered remaining books',
+                        hiddenFor: [],
+                    }, true),
+                ]);
+            }
+        }
+    },
 };
