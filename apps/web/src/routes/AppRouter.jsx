@@ -13,7 +13,7 @@ import ForgotPassword from '../pages/ForgotPassword.jsx';
 import Register from '../pages/Register/index.jsx';
 
 // --- admin selector screen ---
-import AdminModeSelector from '../pages/Admin/AdminModeSelecter.jsx';
+import AdminModeSelector from '../pages/Admin/AdminModeSelector/AdminModeSelector.jsx';
 
 // --- user-app pages ---
 import BooksLayout from '../pages/Books/BooksLayout.jsx';
@@ -55,7 +55,6 @@ export default function AppRouter() {
     const [adminPreference, setAdminPreference] = useState(null);
     const location = useLocation();
 
-    // FIX 1: Added missing hook to resolve the "isFirstLaunch" block
     useEffect(() => {
         const launched = localStorage.getItem(ALREADY_LAUNCHED_KEY);
         if (launched) {
@@ -65,12 +64,12 @@ export default function AppRouter() {
         }
     }, []);
 
-    // FIX 2: Consolidated workspace selection loading cleanly to use sessionStorage exclusively
     useEffect(() => {
         if (userLoggedIn && role === 'admin') {
             const savedPref = sessionStorage.getItem(ADMIN_PREFERENCE_KEY); 
             setAdminPreference(savedPref); 
         } else {
+            sessionStorage.removeItem(ADMIN_PREFERENCE_KEY);
             setAdminPreference(null);
         }
     }, [userLoggedIn, role]);
