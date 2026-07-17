@@ -17,18 +17,24 @@ export function useLocationProposal() {
 
     const handleReverseGeocode = async (coords) => {
         setGeocodingCustom(true);
+        let address = 'Unknown location';
         try {
             const result = await reverseGeocode(coords.latitude, coords.longitude);
+            if (result?.address) address = result.address;
+        } catch (err) {
+            // Network/geocoding failure — still place the pin using the raw
+            // coordinates so the user is never stuck with a disabled Send
+            // button and no way to recover (no address lookup succeeding
+            // shouldn't block picking a location at all).
+            console.warn('[Reverse Geocoding Layer Exception]', err);
+        } finally {
             setCustomLocation({
                 id: 'proposed_custom',
                 title: 'Proposed Custom Location',
-                address: result?.address || 'Unknown location',
+                address,
                 latitude: coords.latitude,
                 longitude: coords.longitude,
             });
-        } catch (err) {
-            console.warn('[Reverse Geocoding Layer Exception]', err);
-        } finally {
             setGeocodingCustom(false);
         }
     };

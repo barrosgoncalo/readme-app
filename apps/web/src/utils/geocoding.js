@@ -8,8 +8,10 @@ export async function reverseGeocode(lat, lon) {
     const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
     );
-    const data = await res.json();
-    if (!data.address) return null;
+    if (!res.ok) return null;
+
+    const data = await res.json().catch(() => null);
+    if (!data?.address) return null;
 
     return {
         title: data.address.city || data.address.village || data.address.town || 'Location',
@@ -23,8 +25,10 @@ export async function forwardGeocode(query) {
     const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
     );
-    const results = await res.json();
-    if (!results.length) return null;
+    if (!res.ok) return null;
+
+    const results = await res.json().catch(() => null);
+    if (!results?.length) return null;
 
     return {
         latitude: parseFloat(results[0].lat),
