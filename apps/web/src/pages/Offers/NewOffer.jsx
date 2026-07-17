@@ -9,7 +9,7 @@ import Spinner from '../../components/Spinner.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
 import OfferStep1 from './components/OfferStep1.jsx';
 import OfferStep2 from './components/OfferStep2.jsx';
-import { useToast } from '../../hooks/useToast';
+import { useToast } from '../../contexts/ToastContext';
 import styles from './NewOffer.module.css';
 
 export default function NewOffer() {

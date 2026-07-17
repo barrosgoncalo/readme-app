@@ -11,7 +11,7 @@ import PageHeader from '../../components/PageHeader.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import Modal from '../../components/Modal.jsx';
 import Button from '../../components/Button.jsx';
-import { useToast } from '../../hooks/useToast';
+import { useToast } from '../../contexts/ToastContext';
 import styles from './Level.module.css';
 
 export default function Level() {

@@ -18,7 +18,7 @@ import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
 import PublicationCard from '../Map/components/PublicationCard.jsx';
 import ReportModal from '../../components/ReportModal.jsx';
-import { useToast } from '../../hooks/useToast';
+import { useToast } from '../../contexts/ToastContext';
 import styles from './PublicProfile.module.css';
 
 // MyBooksService.getBooks() returns { ...trackingDoc, bookDetails } — flatten

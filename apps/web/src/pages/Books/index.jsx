@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, LayoutGrid, List, Heart } from 'lucide-react';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import {
-    MyBooksService,
-    FavoriteBooksService,
-} from '@readme/shared/src/services/books';
+import { MyBooksService, FavoriteBooksService } from '@readme/shared/src/services/books.js';
 import {
     createBookIfMissing,
 } from '@readme/shared/src/services/booksCatalog';

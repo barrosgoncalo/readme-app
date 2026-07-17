@@ -13,7 +13,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import ReportModal from '../../components/ReportModal.jsx';
 import { SkeletonList } from '../../components/Skeleton.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
-import { useToast } from '../../hooks/useToast';
+import { useToast } from '../../contexts/ToastContext';
 import styles from './PublicationDetails.module.css';
 
 export default function PublicationDetails({ embedded = false, pubId: pubIdProp, onClose }) {

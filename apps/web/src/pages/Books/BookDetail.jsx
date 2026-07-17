@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {ArrowLeft} from 'lucide-react';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
-import {MyBooksService} from '@readme/shared/src/services/books';
+import { MyBooksService } from '@readme/shared/src/services/books.js';
 import {getBook} from '@readme/shared/src/services/booksCatalog';
 import {UsersService} from '@readme/shared/src/services/users';
 import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';

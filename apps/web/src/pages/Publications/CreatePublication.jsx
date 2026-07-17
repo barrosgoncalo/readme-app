@@ -8,7 +8,7 @@ import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
-import { useToast } from '../../hooks/useToast';
+import { useToast } from '../../contexts/ToastContext';
 import styles from './CreatePublication.module.css';
 
 export default function CreatePublication() {

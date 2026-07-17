@@ -10,7 +10,7 @@ import {toMillis} from '@readme/shared/src/utils/timestamp';
 import Spinner from '../../../components/Spinner.jsx';
 import ReportModal from '../../../components/ReportModal.jsx';
 import {WEB_ROUTES} from '../../../constants/webRoutes';
-import {useToast} from '../../../hooks/useToast';
+import { useToast } from '../../../contexts/ToastContext.jsx';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
