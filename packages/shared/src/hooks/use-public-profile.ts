@@ -7,7 +7,8 @@ import { PublicationService } from '@readme/shared/src/services/publications';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
 import { ReportsService } from '@readme/shared/src/services/reports';
-import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS } from '@readme/shared/src/constants/status';
+import { REPORT_TARGET_TYPE } from '@readme/shared/src/constants/status';
+import { useReportModal } from './use-report-modal';
 
 export function usePublicProfile(userId, navigation) {
     const [profile, setProfile] = useState(null);
@@ -20,6 +21,8 @@ export function usePublicProfile(userId, navigation) {
     const [isRequestPending, setIsRequestPending] = useState(false);
 
     const currentUserUid = auth?.currentUser?.uid;
+
+    const report = useReportModal();
 
     const loadProfileData = useCallback(async (showRefreshIndicator = false) => {
         if (!userId) {
@@ -110,26 +113,7 @@ export function usePublicProfile(userId, navigation) {
         }
     }, [userId, profile, navigation, currentUserUid]);
 
-    const submitAccountReport = useCallback(async (reason) => {
-        try {
-            const snapshot = ReportsService.buildAccountSnapshot(profile);
-
-            await ReportsService.submitReport(
-                currentUserUid,
-                REPORT_TARGET_TYPE.ACCOUNT,
-                userId,
-                userId,
-                reason,
-                snapshot
-            );
-
-            Alert.alert("Report Submitted", "Thanks — our team will review this profile.");
-        } catch (error) {
-            console.error("Error reporting profile:", error);
-            Alert.alert("Something Went Wrong", "We couldn't submit your report. Please try again.");
-        }
-    }, [profile, userId, currentUserUid]);
-
+    // Opens the ReportModal instead of an Alert reason picker.
     const handleReportProfile = useCallback(() => {
         if (!currentUserUid) {
             Alert.alert("Error", "You must be logged in to report a user.");
@@ -141,18 +125,16 @@ export function usePublicProfile(userId, navigation) {
             return;
         }
 
-        Alert.alert(
-            "Report Profile",
-            "Why are you reporting this profile?",
-            [
-                { text: "Cancel", style: "cancel" },
-                ...Object.entries(REPORT_REASON_LABELS).map(([reason, label]) => ({
-                    text: label,
-                    onPress: () => submitAccountReport(reason)
-                }))
-            ]
-        );
-    }, [userId, currentUserUid, submitAccountReport]);
+        const contextSnapshot = ReportsService.buildAccountSnapshot(profile);
+
+        report.open({
+            reporterId: currentUserUid,
+            targetType: REPORT_TARGET_TYPE.ACCOUNT,
+            targetId: userId,
+            reportedUserId: userId,
+            contextSnapshot,
+        });
+    }, [userId, currentUserUid, profile, report]);
 
     const handleOpenOptions = useCallback(() => {
         Alert.alert("User Options", `What would you like to do with ${profile?.username || 'this user'}?`, [
@@ -204,5 +186,7 @@ export function usePublicProfile(userId, navigation) {
         loadProfileData,
         handleFollowToggle,
         handleOpenOptions,
+        reportModalVisible: report.visible,
+        reportModalProps: report.modalProps,
     };
 }

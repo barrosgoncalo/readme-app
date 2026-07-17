@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Alert, Platform, Linking } from 'react-native';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { ChatService } from '@readme/shared/src/services/chat';
@@ -6,7 +6,8 @@ import { TradeService } from '../services/trades';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { LocationService } from '@readme/shared/src/services/location';
 import { ReportsService } from '@readme/shared/src/services/reports';
-import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS } from '@readme/shared/src/constants/status';
+import { REPORT_TARGET_TYPE } from '@readme/shared/src/constants/status';
+import { useReportModal } from './use-report-modal';
 
 export function useChatActions({
                                    chatId,
@@ -19,6 +20,10 @@ export function useChatActions({
                                    otherUserAvatar
                                }) {
     const [isFetchingBook, setIsFetchingBook] = useState(false);
+
+    // Replaces the old Alert-based reason picker (Android caps Alert at 3
+    // buttons, which broke with 5 report reasons + Cancel).
+    const report = useReportModal();
 
     const handleSendMessage = async (textToSend, restoreInputText) => {
         if (!textToSend.trim() || !currentUserId) return;
@@ -133,47 +138,31 @@ export function useChatActions({
         }
     };
 
-    const submitChatReport = async (reason) => {
-        try {
-            const snapshot = ReportsService.buildChatSnapshot(
-                messages,
-                { name: otherUserName, avatarUrl: otherUserAvatar }
-            );
-
-            await ReportsService.submitReport(
-                currentUserId,
-                REPORT_TARGET_TYPE.CHAT,
-                chatId,
-                otherUserId,
-                reason,
-                snapshot
-            );
-
-            Alert.alert("Report Submitted", "Thanks — our team will review this conversation.");
-        } catch (error) {
-            console.error("Error reporting chat:", error);
-            Alert.alert("Something Went Wrong", "We couldn't submit your report. Please try again.");
-        }
-    };
-
-    const handleReportChat = () => {
-        if (!otherUserId) {
-            Alert.alert("Something Went Wrong", "We couldn't identify who to report. Please try again.");
+    // Opens the ReportModal instead of an Alert reason picker.
+    const handleReportChat = useCallback(() => {
+        if (!currentUserId) {
+            Alert.alert("Error", "You must be logged in to report a chat.");
             return;
         }
 
-        Alert.alert(
-            "Report Chat",
-            "Why are you reporting this conversation?",
-            [
-                { text: "Cancel", style: "cancel" },
-                ...Object.entries(REPORT_REASON_LABELS).map(([reason, label]) => ({
-                    text: label,
-                    onPress: () => submitChatReport(reason)
-                }))
-            ]
+        if (!otherUserId || !chatId) {
+            Alert.alert("Something Went Wrong", "We couldn't identify this conversation. Please try again.");
+            return;
+        }
+
+        const contextSnapshot = ReportsService.buildChatSnapshot(
+            messages,
+            { name: otherUserName, avatarUrl: otherUserAvatar }
         );
-    };
+
+        report.open({
+            reporterId: currentUserId,
+            targetType: REPORT_TARGET_TYPE.CHAT,
+            targetId: chatId,
+            reportedUserId: otherUserId,
+            contextSnapshot,
+        });
+    }, [currentUserId, otherUserId, chatId, messages, otherUserName, otherUserAvatar, report]);
 
     const handleOpenOptions = () => {
         Alert.alert(
@@ -248,6 +237,10 @@ export function useChatActions({
         handleCancelSwap,
         handleOpenNavigation,
         handleOpenOptions,
-        handleBookPress
+        handleBookPress,
+        // Spread these into <ReportModal {...reportModalProps} /> in the screen,
+        // and use reportModalVisible to control it.
+        reportModalVisible: report.visible,
+        reportModalProps: report.modalProps,
     };
 }

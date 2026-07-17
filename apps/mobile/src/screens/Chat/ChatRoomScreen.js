@@ -9,6 +9,7 @@ import ChatHeader from './Components/ChatHeader';
 import ChatInputBar from './Components/ChatInputBar';
 import MessageListItem from './Components/MessageListItem';
 import SystemDivider from './Components/SystemDivider';
+import { ReportModal } from '../../components/ui/ReportModal';
 
 export default function ChatRoomScreen({ route, navigation }) {
     const colorScheme = useColorScheme();
@@ -27,13 +28,14 @@ export default function ChatRoomScreen({ route, navigation }) {
     const {
         messages, loading, otherUserName, otherUserAvatar,
         otherUserId, bookImage, publicationId, chatLocation, reviewedSwapIds,
-        isChatDisabled, disabledReason 
+        isChatDisabled, disabledReason
     } = useChatRoomData(chatId, currentUserId, targetSeller);
 
     const {
         isFetchingBook, handleSendMessage, handleShowQRCode,
         handleOpenScanner, handleResolveOffer, handleCancelSwap,
-        handleOpenNavigation, handleOpenOptions, handleBookPress
+        handleOpenNavigation, handleOpenOptions, handleBookPress,
+        reportModalVisible, reportModalProps
     } = useChatActions({
         chatId,
         currentUserId,
@@ -82,17 +84,17 @@ export default function ChatRoomScreen({ route, navigation }) {
             />
         );
     }, [
-            currentUserId, messages, theme, colorScheme, chatId, targetSeller,
-            bookImage, chatLocation, isFetchingBook, reviewedSwapIds, navigation,
-            handleBookPress, handleOpenNavigation, handleResolveOffer,
-            handleShowQRCode, handleOpenScanner, handleCancelSwap, disabledReason
-        ]);
+        currentUserId, messages, theme, colorScheme, chatId, targetSeller,
+        bookImage, chatLocation, isFetchingBook, reviewedSwapIds, navigation,
+        handleBookPress, handleOpenNavigation, handleResolveOffer,
+        handleShowQRCode, handleOpenScanner, handleCancelSwap, disabledReason
+    ]);
 
     return (
         <View style={styles.container}>
             <ChatHeader
-                theme={theme} 
-                navigation={navigation} 
+                theme={theme}
+                navigation={navigation}
                 otherUserId={otherUserId}
                 otherUserAvatar={otherUserAvatar}
                 otherUserName={isChatDisabled ? 'Deleted User' : otherUserName}
@@ -105,20 +107,20 @@ export default function ChatRoomScreen({ route, navigation }) {
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
-                    <FlatList
-                        ref={flatListRef}
-                        data={messages}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderMessageItem}
-                        inverted={true}
-                        contentContainerStyle={[
-                            styles.listContainer,
-                            { flexGrow: 1, justifyContent: 'flex-end' }
-                        ]}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                    />
-                )}
+                <FlatList
+                    ref={flatListRef}
+                    data={messages}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderMessageItem}
+                    inverted={true}
+                    contentContainerStyle={[
+                        styles.listContainer,
+                        { flexGrow: 1, justifyContent: 'flex-end' }
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                />
+            )}
 
             {/* Hide the input bar completely if the chat is disabled */}
             {!isChatDisabled && (
@@ -141,6 +143,13 @@ export default function ChatRoomScreen({ route, navigation }) {
                     </View>
                 </KeyboardAvoidingView>
             )}
+
+            {/* Report reason picker — replaces the old Alert-based picker
+                that broke past 3 buttons on Android */}
+            <ReportModal
+                visible={reportModalVisible}
+                {...reportModalProps}
+            />
         </View>
     );
 }

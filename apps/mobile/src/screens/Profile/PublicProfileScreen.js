@@ -1,5 +1,5 @@
 import React from 'react';
-import { 
+import {
     View, Text, TouchableOpacity, ScrollView,
     StatusBar, ActivityIndicator, RefreshControl,
 } from 'react-native';
@@ -11,6 +11,7 @@ import { buildPublicProfileStyles } from '../../styles/publicProfileStyles';
 
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { usePublicProfile } from '@readme/shared/src/hooks/use-public-profile';
+import { ReportModal } from '../../components/ui/ReportModal';
 
 export default function PublicProfileScreen({ navigation, route }) {
     const userId = route.params?.ownerId;
@@ -20,7 +21,10 @@ export default function PublicProfileScreen({ navigation, route }) {
     const {
         profile, publications, reviews, loading, refreshing, activeTab, setActiveTab,
         isFollowing, isRequestPending, isValidPhoto, currentBadge, displayedFollowers,
-        loadProfileData, handleFollowToggle, handleOpenOptions,
+        loadProfileData, handleFollowToggle,
+        handleOpenOptions,
+        reportModalVisible,
+        reportModalProps,
     } = usePublicProfile(userId, navigation);
 
     const isLockedPrivateView = profile?.profileVisibility === 'private' && !isFollowing;
@@ -38,30 +42,30 @@ export default function PublicProfileScreen({ navigation, route }) {
         return (
             <View style={styles.gridContainer}>
                 {publications.map((item) => (
-                    <TouchableOpacity 
-                        key={item.id} 
+                    <TouchableOpacity
+                        key={item.id}
                         style={styles.publicationCard}
                         onPress={() => navigation.navigate({
                             name: ROUTES.PUBLICATION_DETAILS,
                             key: `PublicationDetails-${item.id}`,
-                            params: { 
+                            params: {
                                 publicationId: item.id,
-                                publication: item, 
+                                publication: item,
                             }
                         })}
                         activeOpacity={0.8}
                     >
                         <View style={styles.bookCoverPlaceholder}>
                             {item.imageUrl ? (
-                                <Image 
-                                    source={{ uri: item.imageUrl }} 
+                                <Image
+                                    source={{ uri: item.imageUrl }}
                                     style={styles.bookCoverImage}
                                     contentFit="cover"
                                     transition={200}
                                 />
                             ) : (
-                                    <Iconify icon="lucide:book" size={28} color={theme.textMuted || "#A0A0A0"} />
-                                )}
+                                <Iconify icon="lucide:book" size={28} color={theme.textMuted || "#A0A0A0"} />
+                            )}
                         </View>
                         <View style={styles.bookInfo}>
                             <Text style={styles.bookTitle} numberOfLines={1}>
@@ -95,11 +99,11 @@ export default function PublicProfileScreen({ navigation, route }) {
                                 {[1, 2, 3, 4, 5].map((star) => {
                                     const isFilled = star <= review.rating;
                                     return (
-                                        <Iconify 
-                                            key={star} 
-                                            icon={isFilled ? "ph:star-fill" : "ph:star"} 
-                                            size={16} 
-                                            color={isFilled ? theme.secondary : (theme.textMuted || '#A0A0A0')} 
+                                        <Iconify
+                                            key={star}
+                                            icon={isFilled ? "ph:star-fill" : "ph:star"}
+                                            size={16}
+                                            color={isFilled ? theme.secondary : (theme.textMuted || '#A0A0A0')}
                                         />
                                     );
                                 })}
@@ -141,8 +145,8 @@ export default function PublicProfileScreen({ navigation, route }) {
                 </TouchableOpacity>
             </SafeAreaView>
 
-            <ScrollView 
-                showsVerticalScrollIndicator={false} 
+            <ScrollView
+                showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={() => loadProfileData(true)} tintColor={theme.primary} />
@@ -150,17 +154,17 @@ export default function PublicProfileScreen({ navigation, route }) {
             >
                 <View style={styles.imageContainer}>
                     {isValidPhoto ? (
-                        <Image 
-                            source={{ uri: profile.photoURL }} 
+                        <Image
+                            source={{ uri: profile.photoURL }}
                             style={styles.profileImage}
                             contentFit="cover"
                             transition={300}
                         />
                     ) : (
-                            <View style={styles.placeholderBackground}>
-                                <Iconify icon="lucide:user" size={64} color="rgba(255,255,255,0.8)" />
-                            </View>
-                        )}
+                        <View style={styles.placeholderBackground}>
+                            <Iconify icon="lucide:user" size={64} color="rgba(255,255,255,0.8)" />
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.infoContainer}>
@@ -169,12 +173,12 @@ export default function PublicProfileScreen({ navigation, route }) {
                             <Text style={styles.name} numberOfLines={1}>{profile?.username || 'Unknown User'}</Text>
                         </View>
 
-                        <TouchableOpacity 
-                            style={[styles.followButton, (isFollowing || isRequestPending) && styles.followingButton]} 
-                            onPress={handleFollowToggle} 
+                        <TouchableOpacity
+                            style={[styles.followButton, (isFollowing || isRequestPending) && styles.followingButton]}
+                            onPress={handleFollowToggle}
                             activeOpacity={0.8}
                             disabled={isRequestPending}
-                        > 
+                        >
                             <Text style={[styles.followButtonText, (isFollowing || isRequestPending) && styles.followingButtonText]}>
                                 {isFollowing ? "Following" : isRequestPending ? "Requested" : "Follow"}
                             </Text>
@@ -232,27 +236,35 @@ export default function PublicProfileScreen({ navigation, route }) {
                         </Text>
                     </View>
                 ) : (
-                        // What shows normally (Your existing tabs and lists)
-                        <>
-                            <View style={styles.tabContainer}>
-                                <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('publications')}>
-                                    <Text style={[styles.tabText, activeTab === 'publications' && styles.activeTabText]}>Publications</Text>
-                                    {activeTab === 'publications' && <View style={styles.activeIndicator} />}
-                                </TouchableOpacity>
+                    // What shows normally (Your existing tabs and lists)
+                    <>
+                        <View style={styles.tabContainer}>
+                            <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('publications')}>
+                                <Text style={[styles.tabText, activeTab === 'publications' && styles.activeTabText]}>Publications</Text>
+                                {activeTab === 'publications' && <View style={styles.activeIndicator} />}
+                            </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('reviews')}>
-                                    <Text style={[styles.tabText, activeTab === 'reviews' && styles.activeTabText]}>Reviews</Text>
-                                    {activeTab === 'reviews' && <View style={styles.activeIndicator} />}
-                                </TouchableOpacity>
-                            </View>
+                            <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('reviews')}>
+                                <Text style={[styles.tabText, activeTab === 'reviews' && styles.activeTabText]}>Reviews</Text>
+                                {activeTab === 'reviews' && <View style={styles.activeIndicator} />}
+                            </TouchableOpacity>
+                        </View>
 
-                            <View style={styles.tabContentContainer}>
-                                {activeTab === 'publications' ? renderPublications() : renderReviews()}
-                            </View>
-                        </>
-                    )}
+                        <View style={styles.tabContentContainer}>
+                            {activeTab === 'publications' ? renderPublications() : renderReviews()}
+                        </View>
+                    </>
+                )}
                 {/* --- CONDITIONAL RENDERING ENDS HERE --- */}
             </ScrollView>
+
+            {/* Report reason picker — was missing before, which is why
+                handleReportProfile appeared to do nothing */}
+            <ReportModal
+                visible={reportModalVisible}
+                {...reportModalProps}
+            />
         </View>
+
     );
 }
