@@ -131,8 +131,8 @@ export default function PrivacySecurityScreen({ navigation }) {
                         <MenuSwitchItem
                             styles={styles}
                             theme={theme}
-                            icon={isPrivate ? "lucide:lock" : "lucide:globe"}
-                            label={isPrivate ? "Private Account" : "Public Account"}
+                            icon= "lucide:lock"
+                            label= "Private Account"
                             value={isPrivate}
                             onValueChange={handlePrivacyToggle}
                             disabled={isDeleting}
@@ -140,8 +140,8 @@ export default function PrivacySecurityScreen({ navigation }) {
                     </MenuGroup>
                     <Text style={styles.helperText}>
                         {isPrivate 
-                            ? "Only approved users can see your library and request book swaps." 
-                            : "Anyone can see your library and request book swaps with you."}
+                            ? "Only approved users can see your publications and request book swaps." 
+                            : "Anyone can see your publications and request book swaps with you."}
                     </Text>
 
                     {/* SECTION 2: SECURITY */}
