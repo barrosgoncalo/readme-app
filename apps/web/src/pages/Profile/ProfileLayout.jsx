@@ -10,6 +10,7 @@ import {
 // Shared Services & Contexts
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import { useUserRole } from '@readme/shared/src/hooks/use-user-role'; // <-- Added hook
 
 // Local Project Imports
 import { db, auth, storage } from '@readme/shared/src/services/firebase';
@@ -36,6 +37,7 @@ const SUB_ROUTES = new Set([
 
 export default function ProfileLayout() {
     const { currentUser } = useAuth();
+    const { role } = useUserRole(); // <-- Fetch user role
     const { theme, toggle } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
@@ -191,6 +193,19 @@ export default function ProfileLayout() {
                     <div className={styles.quickActions}>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.quickBtn}>Shelf</Link>
                         <Link to={WEB_ROUTES.PROFILE_MY_BOOKS} className={styles.quickBtn}>My Books</Link>
+                        
+                        {/* Switch Mode Button (Admin Only) */}
+                        {role === 'admin' && (
+                            <button 
+                                type="button" 
+                                className={styles.quickBtn} 
+                                onClick={() => navigate('/admin-choice')}
+                                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                            >
+                                Switch Mode
+                            </button>
+                        )}
+
                         <button type="button" className={`${styles.quickBtn} ${styles.danger}`} onClick={handleSignOut}>
                             <LogOut size={16} /> Sign Out
                         </button>
