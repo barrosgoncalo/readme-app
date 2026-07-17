@@ -15,6 +15,7 @@ export const WEB_ROUTES = {
     PROFILE_BLOCKED_USERS: '/profile/blocked-users',
     PROFILE_FOLLOWING: '/profile/following',
     PROFILE_FOLLOWERS: '/profile/followers',
+    PROFILE_FOLLOW_REQUESTS: '/profile/follow-requests',
     PROFILE_FAVORITES: '/profile/favorites',
     PROFILE_MY_BOOKS: '/profile/my-books',
     PROFILE_LEVEL: '/profile/level',
