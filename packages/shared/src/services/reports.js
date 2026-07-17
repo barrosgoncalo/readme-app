@@ -1,9 +1,9 @@
 // @readme/shared/src/services/reports.js
 
-import { increment } from 'firebase/firestore';
-import { createReportModel, getReportId } from '../models/report';
-import { REPORT_STATUS } from '../constants/status';
-import { DB } from './DB';
+import {increment} from 'firebase/firestore';
+import {createReportModel, getReportId} from '../models/report';
+import {REPORT_STATUS} from '../constants/status';
+import {DB} from './DB';
 
 const REPORTS_COLLECTION = 'reports';
 const MAX_SNAPSHOT_MESSAGES = 25;
@@ -113,8 +113,8 @@ export const ReportsService = {
      */
     fetchReports: async (filters = {}) => {
         const conditions = [];
-        if (filters.status) conditions.push({ field: 'status', operator: '==', value: filters.status });
-        if (filters.targetType) conditions.push({ field: 'targetType', operator: '==', value: filters.targetType });
+        if (filters.status) conditions.push({field: 'status', operator: '==', value: filters.status});
+        if (filters.targetType) conditions.push({field: 'targetType', operator: '==', value: filters.targetType});
 
         return await DB.get(REPORTS_COLLECTION, conditions);
     },
@@ -125,8 +125,8 @@ export const ReportsService = {
      */
     subscribeToReports: (onUpdate, onError, filters = {}) => {
         const conditions = [];
-        if (filters.status) conditions.push({ field: 'status', operator: '==', value: filters.status });
-        if (filters.targetType) conditions.push({ field: 'targetType', operator: '==', value: filters.targetType });
+        if (filters.status) conditions.push({field: 'status', operator: '==', value: filters.status});
+        if (filters.targetType) conditions.push({field: 'targetType', operator: '==', value: filters.targetType});
 
         return DB.subscribeQuery(REPORTS_COLLECTION, conditions, onUpdate, onError);
     },
@@ -136,6 +136,45 @@ export const ReportsService = {
      * For the admin page.
      */
     updateReportStatus: async (reportId, newStatus) => {
-        await DB.update(REPORTS_COLLECTION, reportId, { status: newStatus }, true);
+        await DB.update(REPORTS_COLLECTION, reportId, {status: newStatus}, true);
+    },
+
+    /**
+     * Passa a "actioned" todos os reports pendentes de um alvo específico (ex: uma publicação apagada)
+     */
+    actionReportsByTarget: async (targetType, targetId) => {
+        const pendingReports = await DB.get('reports', [
+            {field: 'targetType', operator: '==', value: targetType},
+            {field: 'targetId', operator: '==', value: targetId},
+            {field: 'status', operator: '==', value: REPORT_STATUS.PENDING}
+        ]);
+
+        if (pendingReports.length === 0) return 0;
+
+        const updatePromises = pendingReports.map(report =>
+            DB.update('reports', report.id, {status: REPORT_STATUS.ACTIONED}, true)
+        );
+
+        await Promise.all(updatePromises);
+        return pendingReports.length;
+    },
+
+    /**
+     * Passa a "actioned" todos os reports pendentes de um utilizador banido
+     */
+    actionAllReportsForUser: async (reportedUserId) => {
+        const pendingReports = await DB.get('reports', [
+            {field: 'reportedUserId', operator: '==', value: reportedUserId},
+            {field: 'status', operator: '==', value: REPORT_STATUS.PENDING}
+        ]);
+
+        if (pendingReports.length === 0) return 0;
+
+        const updatePromises = pendingReports.map(report =>
+            DB.update('reports', report.id, {status: REPORT_STATUS.ACTIONED}, true)
+        );
+
+        await Promise.all(updatePromises);
+        return pendingReports.length;
     },
 };

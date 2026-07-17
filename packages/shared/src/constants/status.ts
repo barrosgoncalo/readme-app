@@ -21,7 +21,6 @@ export const REPORT_TARGET_TYPE = {
 
 export const REPORT_STATUS = {
     PENDING: 'pending',
-    REVIEWED: 'reviewed',
     ACTIONED: 'actioned',
     DISMISSED: 'dismissed',
 };
