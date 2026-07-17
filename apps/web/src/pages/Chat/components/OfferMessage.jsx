@@ -8,7 +8,7 @@ import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
 import { WEB_ROUTES } from '../../../constants/webRoutes';
-import VerificationUI from './VerificationUI.jsx';
+import ActionCard from './ActionCard.jsx';
 import ReviewUI from './ReviewUI.jsx';
 import LocationMapPreview from './LocationMapPreview.jsx';
 import BookCover from '../../../components/BookCover.jsx';
@@ -32,7 +32,6 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     const navigate = useNavigate();
 
     const [busy, setBusy] = useState(false);
-    const [verificationError, setVerificationError] = useState('');
     const [hasReviewed, setHasReviewed] = useState(false);
     const [reviewError, setReviewError] = useState('');
     const [showMap, setShowMap] = useState(false);
@@ -157,24 +156,6 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
         } finally {
             setBusy(false);
             setShowCancelConfirm(false);
-        }
-    }
-
-    async function handleCompleteSwap(code) {
-        setBusy(true);
-        setVerificationError('');
-        try {
-            if (code.toUpperCase() !== offer.verificationCode?.toUpperCase()) {
-                setVerificationError('Incorrect code. Try again.');
-                setBusy(false);
-                return;
-            }
-            await ChatService.completeSwap(chatId, message.id);
-        } catch (err) {
-            console.error('Error completing swap:', err);
-            setVerificationError('Failed to complete swap.');
-        } finally {
-            setBusy(false);
         }
     }
 
@@ -342,17 +323,13 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 <LocationMapPreview location={offer.location} />
             )}
 
-            {isAccepted && offer.verificationCode && (
+            {isAccepted && (
                 <>
-                    <VerificationUI
-                        code={offer.verificationCode}
-                        displayerId={offer.verificationDisplayerId}
-                        scannerId={offer.verificationScannerId}
-                        currentUserId={currentUserId}
-                        onComplete={handleCompleteSwap}
-                        error={verificationError}
-                        busy={busy}
-                    />
+                    <ActionCard prompt="Swap accepted!">
+                        <p className={styles.mobileNotice}>
+                            To complete this trade, open the ReadMe mobile app and use the verification code there.
+                        </p>
+                    </ActionCard>
                     <button
                         type="button"
                         className={styles.cancelSwapBtn}

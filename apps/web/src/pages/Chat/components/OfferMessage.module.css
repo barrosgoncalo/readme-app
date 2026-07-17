@@ -150,6 +150,13 @@
     cursor: not-allowed;
 }
 
+.mobileNotice {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--subtext);
+    text-align: center;
+}
+
 .canceledNotice {
     margin: var(--space-2) 0 0;
     padding: var(--space-2) var(--space-3);
