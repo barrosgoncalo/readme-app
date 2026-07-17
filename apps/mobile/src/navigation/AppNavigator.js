@@ -175,7 +175,7 @@ export default function AppNavigator() {
                             options={{ headerShown: false }}
                         />
                         <Stack.Screen
-                            name={ROUTES.PUBLIC_PROFILE_SCREEN}
+                            name={ROUTES.PUBLIC_PROFILE}
                             component={PublicProfileScreen}
                             options={{ headerShown: false }}
                         />

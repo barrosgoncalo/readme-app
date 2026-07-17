@@ -263,7 +263,7 @@ export default function ProfileScreen({ navigation }) {
             >
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
                     <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '65%', paddingBottom: 24 }}>
-                        
+
                         {/* Modal Drag Bar / Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: theme.groupShadow }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>{modalTitle}</Text>
@@ -278,39 +278,39 @@ export default function ProfileScreen({ navigation }) {
                                 <ActivityIndicator size="large" color={theme.text} />
                             </View>
                         ) : modalUsers.length === 0 ? (
-                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                                <Iconify icon="lucide:users" size={40} color="gray" style={{ marginBottom: 8 }} />
-                                <Text style={{ color: 'gray', fontSize: 14 }}>No users found here yet.</Text>
-                            </View>
-                        ) : (
-                            <FlatList
-                                data={modalUsers}
-                                keyExtractor={(item) => item.uid}
-                                contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12 }}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity 
-                                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: 'rgba(128,128,128,0.2)' }}
-                                        onPress={() => {
-                                            setModalVisible(false); // Hide overlay
-                                            navigation.navigate(ROUTES.PUBLIC_PROFILE, { userId: item.uid }); // Routes to dynamic profile screen
-                                        }}
-                                    >
-                                        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(128,128,128,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 14, overflow: 'hidden' }}>
-                                            {item.avatarUrl ? (
-                                                <Image source={{ uri: item.avatarUrl }} style={{ width: '100%', height: '100%' }} />
-                                            ) : (
-                                                <Iconify icon="lucide:user" size={20} color={theme.text} />
-                                            )}
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={{ fontSize: 15, fontWeight: '600', color: theme.text }}>{item.fullName || 'Unnamed User'}</Text>
-                                            {item.username && <Text style={{ fontSize: 13, color: 'gray', marginTop: 2 }}>@{item.username}</Text>}
-                                        </View>
-                                        <Iconify icon="lucide:chevron-right" size={18} color="gray" />
-                                    </TouchableOpacity>
+                                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                                    <Iconify icon="lucide:users" size={40} color="gray" style={{ marginBottom: 8 }} />
+                                    <Text style={{ color: 'gray', fontSize: 14 }}>No users found here yet.</Text>
+                                </View>
+                            ) : (
+                                    <FlatList
+                                        data={modalUsers}
+                                        keyExtractor={(item) => item.uid}
+                                        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12 }}
+                                        renderItem={({ item }) => (
+                                            <TouchableOpacity 
+                                                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: 'rgba(128,128,128,0.2)' }}
+                                                onPress={() => {
+                                                    setModalVisible(false); 
+                                                    navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: item.uid });
+                                                }}
+                                            >
+                                                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(128,128,128,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 14, overflow: 'hidden' }}>
+                                                    {item.avatarUrl ? (
+                                                        <Image source={{ uri: item.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+                                                    ) : (
+                                                            <Iconify icon="lucide:user" size={20} color={theme.text} />
+                                                        )}
+                                                </View>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={{ fontSize: 15, fontWeight: '600', color: theme.text }}>{item.fullName || 'Unnamed User'}</Text>
+                                                    {item.username && <Text style={{ fontSize: 13, color: 'gray', marginTop: 2 }}>@{item.username}</Text>}
+                                                </View>
+                                                <Iconify icon="lucide:chevron-right" size={18} color="gray" />
+                                            </TouchableOpacity>
+                                        )}
+                                    />
                                 )}
-                            />
-                        )}
                     </View>
                 </View>
             </Modal>

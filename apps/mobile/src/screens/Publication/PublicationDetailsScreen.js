@@ -98,7 +98,7 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         return (
             <TouchableOpacity
                 style={styles.sellerCard}
-                onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: book?.ownerId })}
+                onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: book?.ownerId })}
             >
                 <View style={styles.sellerInfoLeft}>
                     <Image 
