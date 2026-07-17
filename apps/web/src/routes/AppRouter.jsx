@@ -155,10 +155,10 @@ export default function AppRouter() {
                         <Route path="following" element={<Following />} />
                         <Route path="followers" element={<Followers />} />
                         <Route path="favorites" element={<Favorites />} />
-                        <Route path="my-books" element={<MyBooks />} />
                         <Route path="level" element={<Level />} />
                         <Route path="blocked-users" element={<BlockedUsers />} />
                     </Route>
+                    <Route path={WEB_ROUTES.PROFILE_MY_BOOKS} element={<MyBooks />} />
                     <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile />} />
                     <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
                     <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />

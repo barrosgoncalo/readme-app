@@ -417,6 +417,8 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 loadingBooks={loadingBooks}
                 onSubmit={handleSendCounter}
                 busy={busy}
+                sellerUid={otherUserId}
+                originalLocation={offer.location}
             />
 
             <Modal

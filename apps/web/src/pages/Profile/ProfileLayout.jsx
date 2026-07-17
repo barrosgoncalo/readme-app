@@ -33,7 +33,6 @@ const SUB_ROUTES = new Set([
     WEB_ROUTES.PROFILE_FAVORITES,
     WEB_ROUTES.PROFILE_LEVEL,
     WEB_ROUTES.PROFILE_BLOCKED_USERS,
-    WEB_ROUTES.PROFILE_MY_BOOKS,
 ]);
 
 export default function ProfileLayout() {
