@@ -100,6 +100,16 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 return;
             }
 
+            // The offer already carries a snapshot of the offered book
+            // (title/id) taken when it was sent — offeredBookIds points at
+            // the publication, not the global books catalog, so a catalog
+            // lookup here would never match. Use the snapshot directly.
+            const snapshot = offer.offeredBooks?.[0];
+            if (snapshot?.title) {
+                setSingleBook({ title: snapshot.title, realBookId: snapshot.id });
+                return;
+            }
+
             let cancelled = false;
             const originalId = offer.offeredBookIds[0];
 
@@ -116,7 +126,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
             fetchNormalBook();
             return () => cancelled = true;
         }
-    }, [offer?.offeredBookIds, offer?.savedOfferedTitle, offer?.savedRealOfferedId, singleBook]);
+    }, [offer?.offeredBookIds, offer?.offeredBooks, offer?.savedOfferedTitle, offer?.savedRealOfferedId, singleBook]);
 
     if (!offer) return null;
 

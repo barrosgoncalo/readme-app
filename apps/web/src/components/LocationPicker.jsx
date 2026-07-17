@@ -17,6 +17,19 @@ function RecenterMap({ center }) {
     return null;
 }
 
+// Leaflet measures its container on mount. Inside a modal, the container can
+// report a stale/zero size for that first measurement, which silently breaks
+// click-to-coordinate translation (clicks land in the wrong spot or do
+// nothing). Forcing a recompute right after mount fixes it.
+function InvalidateSizeOnMount() {
+    const map = useMap();
+    useEffect(() => {
+        const id = requestAnimationFrame(() => map.invalidateSize());
+        return () => cancelAnimationFrame(id);
+    }, [map]);
+    return null;
+}
+
 function MapClickHandler({ onMapClick }) {
     useMapEvents({ click: onMapClick });
     return null;
@@ -125,6 +138,7 @@ export default function LocationPicker({ location, onLocationChange }) {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
                     <RecenterMap center={center} />
+                    <InvalidateSizeOnMount />
                     <MapClickHandler onMapClick={handleMapClick} />
                     {location && (
                         <Marker position={[location.latitude, location.longitude]}>
