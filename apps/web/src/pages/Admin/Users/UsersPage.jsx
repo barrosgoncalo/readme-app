@@ -200,32 +200,32 @@ export default function AdminUsersPage() {
                                     </td>
                                     <td className={styles.emailCell}>{user.userId || user.email || '-'}</td>
                                     <td><StatusBadge status={user.role || 'user'}/></td>
-                                    <td>
-                                        <div className={styles.actionsCell}>
-                                            <button
-                                                type="button"
-                                                className={styles.iconBtn}
-                                                onClick={() => setViewUser(user)}
-                                                aria-label="View user details"
-                                            >
-                                                <IconLucideEye size={16} />
-                                            </button>
-                                            {user.uid === auth.currentUser?.uid ? (
-                                                <span className={styles.youLabel}>You</span>
-                                            ) : (
-                                                <button
-                                                    className={user.role === 'admin' ? `${styles.actionBtn} ${styles.demote}` : `${styles.actionBtn} ${styles.promote}`}
-                                                    disabled={actionLoading !== null}
-                                                    onClick={() => handleRoleChange(user.uid, user.role)}
-                                                >
-                                                    {actionLoading === user.uid
-                                                        ? 'Saving…'
-                                                        : user.role === 'admin' ? 'Demote' : 'Promote'
-                                                    }
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
+                                                <td>
+                                                    <div className={styles.actionsCell}>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.iconBtn}
+                                                            onClick={() => setViewUser(user)}
+                                                            aria-label="View user details"
+                                                        >
+                                                            <IconLucideEye size={16} />
+                                                        </button>
+                                                        {(user.uid || user.id) === auth.currentUser?.uid ? (
+                                                            <span className={styles.youLabel}>You</span>
+                                                        ) : (
+                                                                <button
+                                                                    className={user.role === 'admin' ? `${styles.actionBtn} ${styles.demote}` : `${styles.actionBtn} ${styles.promote}`}
+                                                                    disabled={actionLoading === (user.uid || user.id)}
+                                                                    onClick={() => handleRoleChange((user.uid || user.id), user.role)}
+                                                                >
+                                                                    {actionLoading === (user.uid || user.id)
+                                                                        ? 'Saving…'
+                                                                        : user.role === 'admin' ? 'Demote' : 'Promote'
+                                                                    }
+                                                                </button>
+                                                            )}
+                                                    </div>
+                                                </td>
                                 </tr>
                             ))}
                         </tbody>
