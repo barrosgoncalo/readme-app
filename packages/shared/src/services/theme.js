@@ -11,13 +11,12 @@ export const ThemeContext = createContext({
 export const ThemeProvider = ({ children }) => {
   const systemTheme = useRNColorScheme();
   const [isDarkMode, setIsDarkMode] = useState(systemTheme === 'dark');
-
   const toggleTheme = () => setIsDarkMode(prev => !prev);
 
-  return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
+  return React.createElement(
+    ThemeContext.Provider,
+    { value: { isDarkMode, toggleTheme } },
+    children
   );
 };
 
@@ -25,16 +24,13 @@ export const useThemeContext = () => useContext(ThemeContext);
 
 export function useColorScheme() {
   const [hasHydrated, setHasHydrated] = useState(false);
-  
-  const { isDarkMode } = useThemeContext(); 
 
+  const { isDarkMode } = useThemeContext();
   useEffect(() => {
     setHasHydrated(true);
   }, []);
-
   if (hasHydrated) {
     return isDarkMode ? 'dark' : 'light';
   }
-
   return 'light';
 }

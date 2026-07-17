@@ -5,7 +5,7 @@ import {BookOpen, CalendarDays, Handshake, MessageCircle, Moon, Sun, User} from 
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {doSignOut} from '@readme/shared/src/services/auth';
 import {db} from '@readme/shared/src/services/firebase';
-import {useTheme} from '../contexts/ThemeContext';
+import {useThemeContext} from '@readme/shared/src/services/theme';
 import {WEB_ROUTES} from '../constants/webRoutes';
 import styles from './AppShell.module.css';
 
@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 
 export default function AppShell() {
     const {currentUser} = useAuth();
-    const {theme, toggle} = useTheme();
+    const {isDarkMode, toggleTheme} = useThemeContext();
     const navigate = useNavigate();
     const location = useLocation();
     const [username, setUsername] = useState('');
@@ -116,8 +116,8 @@ export default function AppShell() {
                                 {username || currentUser?.email || 'Reader'}
                             </span>
                             <div className={styles.footerActions}>
-                                <button type="button" className={styles.iconBtn} onClick={toggle} title="Toggle theme">
-                                    {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
+                                <button type="button" className={styles.iconBtn} onClick={toggleTheme} title="Toggle theme">
+                                    {isDarkMode ? <Sun size={18}/> : <Moon size={18}/>}
                                 </button>
                                 <button type="button" className={styles.signOutBtn} onClick={onSignOut}>
                                     Sign out
