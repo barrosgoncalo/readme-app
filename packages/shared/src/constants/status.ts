@@ -26,3 +26,19 @@ export const REPORT_STATUS = {
     DISMISSED: 'dismissed',
 };
 
+const REPORT_REASON = {
+    SPAM: 'spam',
+    HARASSMENT: 'harassment',
+    INAPPROPRIATE_CONTENT: 'inappropriate_content',
+    SCAM_OR_FRAUD: 'scam_or_fraud',
+    OTHER: 'other',
+};
+
+export const REPORT_REASON_LABELS = {
+    [REPORT_REASON.SPAM]: 'Spam',
+    [REPORT_REASON.HARASSMENT]: 'Harassment',
+    [REPORT_REASON.INAPPROPRIATE_CONTENT]: 'Inappropriate Content',
+    [REPORT_REASON.SCAM_OR_FRAUD]: 'Scam or Fraud',
+    [REPORT_REASON.OTHER]: 'Other',
+};
+
