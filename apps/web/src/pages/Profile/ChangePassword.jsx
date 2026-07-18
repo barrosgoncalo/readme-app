@@ -6,6 +6,7 @@ import { WEB_ROUTES } from '../../constants/webRoutes';
 import Button from '../../components/Button.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 import styles from './ChangePassword.module.css';
+import ShieldWorm from '../../assets/ShieldWorm.png';
 
 export default function ChangePassword() {
     const navigate = useNavigate();
@@ -54,7 +55,7 @@ export default function ChangePassword() {
             <h1 className={styles.title}>Change Password</h1>
             <p className={styles.subtitle}>Choose New Password</p>
 
-            <img src="/ShieldWorm.png" alt="" className={styles.illustration} />
+            <img src={ShieldWorm} alt="" className={styles.illustration} />
 
             <form className={styles.form} onSubmit={handleSubmit}>
                 <PasswordField

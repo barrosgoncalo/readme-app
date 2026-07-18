@@ -1,8 +1,7 @@
 import {useState, useEffect} from 'react';
 import {useNavigate, useLocation} from 'react-router-dom';
-import {doc, getDoc, updateDoc} from 'firebase/firestore';
 import {ArrowLeft, ChevronRight, KeyRound} from 'lucide-react';
-import {db} from '@readme/shared/src/services/firebase.web';
+import {DB} from '@readme/shared/src/services/DB';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {WEB_ROUTES} from '../../constants/webRoutes';
 import {DEFAULT_COUNTRY, parseStoredPhone} from '../../components/PhoneField/countryCodes.js';
@@ -42,9 +41,8 @@ export default function EditProfile() {
 
         if (location.state?.draftForm) return;
 
-        getDoc(doc(db, 'users', currentUser.uid)).then(snap => {
-            if (!snap.exists()) return;
-            const d = snap.data();
+        DB.get('users', currentUser.uid).then(d => {
+            if (!d) return;
             const addr = d.institutionalAddress || {};
             const {country, number} = parseStoredPhone(d.phoneNumber);
             setPhoneCountry(country);
@@ -77,7 +75,7 @@ export default function EditProfile() {
             const fullPhone = form.phoneNumber.trim()
                 ? `${phoneCountry.dial} ${form.phoneNumber.trim()}`
                 : '';
-            await updateDoc(doc(db, 'users', currentUser.uid), {
+            await DB.update('users', currentUser.uid, {
                 fullName: form.fullName.trim(),
                 dob: form.dob,
                 username: form.username.trim(),
@@ -90,8 +88,7 @@ export default function EditProfile() {
                     addressLine2: form.addressLine2.trim() || null,
                     postalCode: form.postalCode.trim(),
                 },
-                updatedAt: new Date().toISOString(),
-            });
+            }, true);
             setSuccess(true);
             setTimeout(() => navigate(WEB_ROUTES.PROFILE), 800);
         } catch {
