@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ArrowLeft, Shield, MapPin, Bell, KeyRound, UserX, ChevronRight, Eye, EyeOff } from 'lucide-react';
-import { db } from '@readme/shared/src/services/firebase.web';
-import { doDeleteAccount } from '@readme/shared/src/services/auth';
+import { 
+    doDeleteUserProfile, 
+    doReauthenticateWithPassword, 
+    doReauthenticateWithGoogle
+} from '@readme/shared/src/services/auth';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Button from '../../components/Button.jsx';
@@ -11,6 +13,7 @@ import ErrorAlert from '../../components/ErrorAlert.jsx';
 import Spinner from '../../components/Spinner.jsx';
 import Toggle from '../../components/Toggle.jsx';
 import styles from './PrivacySecurity.module.css';
+import { DB } from '@readme/shared/src/services/DB';
 
 export default function PrivacySecurity() {
     const { currentUser } = useAuth();
@@ -29,11 +32,16 @@ export default function PrivacySecurity() {
     const [deleteError, setDeleteError] = useState('');
     const [deleting, setDeleting] = useState(false);
 
+    // Determine if the current user signed in via Google
+    const isGoogleAuth = currentUser?.providerData?.some(
+        (provider) => provider.providerId === 'google.com'
+    );
+
     useEffect(() => {
         if (!currentUser) return;
-        getDoc(doc(db, 'users', currentUser.uid)).then(snap => {
-            if (!snap.exists()) return;
-            const d = snap.data();
+        
+        DB.get('users', currentUser.uid).then(d => {
+            if (!d) return;
             setIsPublic(d.profileVisibility === 'public');
             setLocationServices(d.locationServices ?? false);
             setShareActivity(d.shareActivityData ?? false);
@@ -43,7 +51,7 @@ export default function PrivacySecurity() {
     async function saveField(field, value) {
         setSaving(field);
         try {
-            await updateDoc(doc(db, 'users', currentUser.uid), { [field]: value });
+            await DB.update('users', currentUser.uid, { [field]: value });
         } catch {
             if (field === 'profileVisibility') setIsPublic(v => !v);
             if (field === 'locationServices') setLocationServices(v => !v);
@@ -53,15 +61,57 @@ export default function PrivacySecurity() {
         }
     }
 
-    async function handleDeleteAccount() {
+    async function handleInitialDelete() {
+        setDeleteError('');
+        setDeleting(true);
+
+        if (isGoogleAuth) {
+            try {
+                await doReauthenticateWithGoogle();
+                await doDeleteUserProfile(currentUser.uid);
+                navigate(WEB_ROUTES.LOGIN, { replace: true });
+            } catch (error) {
+                console.error("Google Re-auth Error:", error);
+                if (error.code === 'auth/popup-blocked') {
+                    setDeleteError("Your browser blocked the sign-in popup. Please allow popups for this site and try again.");
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    setDeleteError("Google authentication was cancelled.");
+                } else {
+                    setDeleteError(error.message || "Google authentication failed.");
+                }
+                setDeleting(false);
+            }
+            return;
+        }
+
+        try {
+            await doDeleteUserProfile(currentUser.uid);
+            navigate(WEB_ROUTES.LOGIN, { replace: true });
+        } catch (error) {
+            if (error.code === 'auth/requires-recent-login') {
+                setDeleteStep(2);
+            } else {
+                setDeleteError(error.message || 'Could not delete account.');
+            }
+            setDeleting(false);
+        }
+    }
+
+    async function handleReauthAndDelete() {
+        if (!deletePassword) {
+            setDeleteError("Please enter your password.");
+            return;
+        }
+
         setDeleteError('');
         setDeleting(true);
         try {
-            await doDeleteAccount(deletePassword);
+            await doReauthenticateWithPassword(deletePassword);
+            await doDeleteUserProfile(currentUser.uid);
             navigate(WEB_ROUTES.LOGIN, { replace: true });
-        } catch (err) {
-            setDeleteError(err.message || 'Could not delete account.');
-        } finally {
+        } catch (error) {
+            console.error("Reauth error:", error);
+            setDeleteError("Authentication Failed: The password you entered is incorrect. Please try again.");
             setDeleting(false);
         }
     }
@@ -71,7 +121,7 @@ export default function PrivacySecurity() {
     return (
         <div className={styles.page}>
             <div className={styles.header}>
-                <button className={styles.backBtn} onClick={() => navigate(WEB_ROUTES.PROFILE)}>
+                <button className={styles.backBtn} onClick={() => navigate(WEB_ROUTES.PROFILE)} disabled={deleting}>
                     <ArrowLeft size={20} />
                 </button>
                 <h1 className={styles.title}>Privacy And Security</h1>
@@ -85,7 +135,7 @@ export default function PrivacySecurity() {
                         icon={<Shield size={18} />}
                         label={isPublic ? 'Public' : 'Private'}
                         checked={isPublic}
-                        disabled={saving === 'profileVisibility'}
+                        disabled={saving === 'profileVisibility' || deleting}
                         onChange={v => {
                             setIsPublic(v);
                             saveField('profileVisibility', v ? 'public' : 'private');
@@ -96,7 +146,7 @@ export default function PrivacySecurity() {
                         icon={<MapPin size={18} />}
                         label="Location Services"
                         checked={locationServices}
-                        disabled={saving === 'locationServices'}
+                        disabled={saving === 'locationServices' || deleting}
                         onChange={v => {
                             setLocationServices(v);
                             saveField('locationServices', v);
@@ -107,7 +157,7 @@ export default function PrivacySecurity() {
                         icon={<Bell size={18} />}
                         label="Share Activity Data"
                         checked={shareActivity}
-                        disabled={saving === 'shareActivityData'}
+                        disabled={saving === 'shareActivityData' || deleting}
                         onChange={v => {
                             setShareActivity(v);
                             saveField('shareActivityData', v);
@@ -120,18 +170,26 @@ export default function PrivacySecurity() {
             <section className={styles.section}>
                 <p className={styles.sectionLabel}>Security</p>
                 <div className={styles.card}>
-                    <button className={styles.navRow} onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, { state: { from: WEB_ROUTES.PROFILE_PRIVACY_SECURITY } })}>
-                        <span className={styles.rowLeft}>
-                            <span className={styles.iconBox}><KeyRound size={18} /></span>
-                            <span className={styles.rowLabel}>Change Password</span>
-                        </span>
-                        <ChevronRight size={18} className={styles.chevron} />
-                    </button>
-
-                    <div className={styles.divider} />
+                    {/* Hide Change Password if user is purely Google Auth (they change that via Google) */}
+                    {!isGoogleAuth && (
+                        <>
+                            <button 
+                                className={styles.navRow} 
+                                disabled={deleting}
+                                onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, { state: { from: WEB_ROUTES.PROFILE_PRIVACY_SECURITY } })}
+                            >
+                                <span className={styles.rowLeft}>
+                                    <span className={styles.iconBox}><KeyRound size={18} /></span>
+                                    <span className={styles.rowLabel}>Change Password</span>
+                                </span>
+                                <ChevronRight size={18} className={styles.chevron} />
+                            </button>
+                            <div className={styles.divider} />
+                        </>
+                    )}
 
                     {deleteStep === 0 && (
-                        <button className={`${styles.navRow} ${styles.dangerRow}`} onClick={() => { setDeleteStep(1); setDeleteError(''); }}>
+                        <button disabled={deleting} className={`${styles.navRow} ${styles.dangerRow}`} onClick={() => { setDeleteStep(1); setDeleteError(''); }}>
                             <span className={styles.rowLeft}>
                                 <span className={`${styles.iconBox} ${styles.dangerIcon}`}><UserX size={18} /></span>
                                 <span className={`${styles.rowLabel} ${styles.dangerLabel}`}>Delete Account</span>
@@ -142,35 +200,41 @@ export default function PrivacySecurity() {
 
                     {deleteStep === 1 && (
                         <div className={styles.deleteBox}>
-                            <p className={styles.deleteWarning}>This permanently deletes your account and all your data. This cannot be undone.</p>
+                            <p className={styles.deleteWarning}>Are you absolutely sure you want to delete your account? This action cannot be undone and you will lose all your data.</p>
+                            
+                            {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}
+                            
                             <div className={styles.deleteActions}>
-                                <Button variant="ghost" onClick={() => setDeleteStep(0)}>Cancel</Button>
-                                <Button onClick={() => setDeleteStep(2)} style={{ background: 'var(--error)', color: '#fff' }}>Continue</Button>
+                                <Button variant="ghost" disabled={deleting} onClick={() => setDeleteStep(0)}>Cancel</Button>
+                                <Button onClick={handleInitialDelete} disabled={deleting} style={{ background: 'var(--error)', color: '#fff' }}>
+                                    {deleting ? 'Deleting…' : 'Delete'}
+                                </Button>
                             </div>
                         </div>
                     )}
 
                     {deleteStep === 2 && (
                         <div className={styles.deleteBox}>
-                            <p className={styles.deleteWarning}>Enter your password to confirm deletion.</p>
+                            <p className={styles.deleteWarning}>Please enter your password to confirm you want to delete your account.</p>
                             <div className={styles.pwRow}>
                                 <input
                                     type={showPw ? 'text' : 'password'}
                                     className={styles.pwInput}
-                                    placeholder="Password"
+                                    placeholder="Enter your password"
                                     value={deletePassword}
                                     onChange={e => setDeletePassword(e.target.value)}
                                     autoComplete="current-password"
+                                    disabled={deleting}
                                 />
-                                <button type="button" className={styles.pwEye} onClick={() => setShowPw(s => !s)}>
+                                <button type="button" className={styles.pwEye} onClick={() => setShowPw(s => !s)} disabled={deleting}>
                                     {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
-                            <ErrorAlert>{deleteError}</ErrorAlert>
+                            {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}
                             <div className={styles.deleteActions}>
-                                <Button variant="ghost" onClick={() => { setDeleteStep(0); setDeletePassword(''); setDeleteError(''); }}>Cancel</Button>
-                                <Button onClick={handleDeleteAccount} disabled={!deletePassword || deleting} style={{ background: 'var(--error)', color: '#fff' }}>
-                                    {deleting ? 'Deleting…' : 'Delete my account'}
+                                <Button variant="ghost" disabled={deleting} onClick={() => { setDeleteStep(0); setDeletePassword(''); setDeleteError(''); }}>Cancel</Button>
+                                <Button onClick={handleReauthAndDelete} disabled={deleting || !deletePassword} style={{ background: 'var(--error)', color: '#fff' }}>
+                                    {deleting ? 'Deleting…' : 'Confirm Delete'}
                                 </Button>
                             </div>
                         </div>

@@ -1,26 +1,24 @@
-import { auth, storage } from "./firebase";
+// Web auth — mirrors the export surface of ./auth.js (mobile).
+import { auth } from './firebase.web';
 import {
     createUserWithEmailAndPassword,
-    deleteUser,
-    signInWithEmailAndPassword, 
-    sendPasswordResetEmail, 
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
     updatePassword,
-    reauthenticateWithCredential,
-    signInWithCredential,
+    signInWithPopup,
     sendEmailVerification,
     GoogleAuthProvider,
     EmailAuthProvider,
-} from "firebase/auth";
-import { ref, deleteObject } from "firebase/storage";
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { ACCOUNT_STATUS } from "../constants/authConstants";
-import { createUserModel } from '@readme/shared/src/models/user';
+    reauthenticateWithCredential,
+    deleteUser,
+} from 'firebase/auth';
 
+import { ACCOUNT_STATUS } from '../constants/authConstants';
+import { createUserModel } from '@readme/shared/src/models/user';
 import { DB } from '@readme/shared/src/services/DB';
 
 export const saveUserData = async (uid, profileData, provider) => {
     const userData = createUserModel(uid, profileData, provider);
-    
     await DB.create("users", userData, uid);
 };
 
@@ -32,31 +30,8 @@ export const doDeleteUserProfile = async (uid) => {
             throw new Error("No authenticated user found or UID mismatch.");
         }
 
-        let photoToDelete = currentUser.photoURL;
-
-        if (!photoToDelete) {
-            const userData = await DB.get("users", uid);
-            if (userData?.photoURL) {
-                photoToDelete = userData.photoURL;
-            }
-        }
-
-        if (photoToDelete) {
-            const isFirebaseStorage = photoToDelete.includes('firebasestorage.googleapis.com') || photoToDelete.startsWith('gs://');
-            
-            if (isFirebaseStorage) {
-                try {
-                    const imageRef = ref(storage, photoToDelete);
-                    await deleteObject(imageRef);
-                    console.log("Successfully deleted user's profile picture from Storage.");
-                } catch (storageError) {
-                    console.warn("Storage deletion failed (the file might not exist anymore):", storageError);
-                }
-            }
-        }
-
+        // Web doesn't handle the native storage deletion here, but we do clean up Firestore & Auth
         await DB.remove('users', uid);
-
         await deleteUser(currentUser);
         
     } catch (error) {
@@ -65,11 +40,6 @@ export const doDeleteUserProfile = async (uid) => {
     }
 };
 
-/**
- * Updates general user data in Firestore.
- * @param {string} uid - The user's ID
- * @param {object} dataToUpdate - An object containing only the fields you want to change
- */
 export const doUpdateUserProfile = async (uid, dataToUpdate) => {
     try {
         await DB.update("users", uid, dataToUpdate);
@@ -85,7 +55,6 @@ export const doCreateUserWithEmailAndPassword = async (email, password, profileD
     const user = userCredential.user;
 
     await saveUserData(user.uid, { ...profileData, email }, 'email');
-
     await doSendEmailVerification();
 
     return userCredential;
@@ -103,7 +72,6 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
                 await auth.signOut();
                 throw new Error("Your account has been suspended. Please contact support.");
             }
-
             return { user, userData };
         } else {
             throw new Error("User profile not found.");
@@ -114,43 +82,42 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
     }
 };
 
-GoogleSignin.configure({
-    webClientId: '849676892747-srr6urr1bpdgrplivvemic7skur6pv2q.apps.googleusercontent.com',
-    iosClientId: '849676892747-npd5vr8tm11jem3prh2lmsvlcinn79tp.apps.googleusercontent.com',
-    offlineAccess: true
-});
+// Web-specific: Single step popup login (Used by your current web UI)
+export const doSignInWithGoogle = async (profileData) => {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
 
-export const doGetGoogleTokenAndProfile = async () => {
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-    const userInfo = await GoogleSignin.signIn();
-
-    const idToken = userInfo.data?.idToken || userInfo.idToken;
-    if (!idToken) throw new Error("Não foi possível obter o ID Token da Google");
-
-    const googleUser = userInfo.data?.user || userInfo.user;
-
-    return {
-        idToken,
-        profile: {
-            email: googleUser?.email || '',
-            fullName: googleUser?.name || googleUser?.displayName || '',
-            username: googleUser?.email ? googleUser.email.split('@')[0] : '',
-            photoURL: googleUser?.photo || '',
-        }
-    };
-};
-
-export const doSignInWithGoogleCredential = async (idToken, profileData) => {
-    const credential = GoogleAuthProvider.credential(idToken);
-    const userCredential = await signInWithCredential(auth, credential);
-
-    const userData = await DB.get("users", userCredential.user.uid);
+    const userData = await DB.get("users", user.uid);
 
     if (!userData) {
-        await saveUserData(userCredential.user.uid, profileData, 'google');
+        const fallback = {
+            email: user.email || '',
+            fullName: user.displayName || '',
+            username: user.email ? user.email.split('@')[0] : '',
+            phoneNumber: '',
+            dob: '',
+            isPublic: true,
+            addressLine1: '',
+            addressLine2: '',
+            city: '',
+            district: '',
+            zipCode: '',
+            country: '',
+        };
+        await saveUserData(user.uid, { ...fallback, ...(profileData || {}) }, 'google');
     }
 
     return userCredential;
+};
+
+// Dummy functions to mirror mobile's 2-step Google Auth surface (prevents import errors)
+export const doGetGoogleTokenAndProfile = async () => {
+    throw new Error("doGetGoogleTokenAndProfile is a mobile-only function. Use doSignInWithGoogle on web.");
+};
+
+export const doSignInWithGoogleCredential = async (idToken, profileData) => {
+    throw new Error("doSignInWithGoogleCredential is a mobile-only function. Use doSignInWithGoogle on web.");
 };
 
 export const doSignOut = () => {
@@ -178,13 +145,10 @@ export const doUpdateUserPassword = async (currentPassword, newPassword) => {
 
     try {
         const credential = EmailAuthProvider.credential(user.email, currentPassword);
-
         await reauthenticateWithCredential(user, credential);
-
         await updatePassword(user, newPassword);
 
         return { success: true, message: "Password updated successfully!" };
-
     } catch (error) {
         console.log("Firebase password update failed:", error.code);
         
