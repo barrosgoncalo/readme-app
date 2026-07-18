@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigationType } from 'react-router-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Search, Users, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
@@ -34,10 +35,12 @@ const EXPLORE_TAB = {
 
 const BOOK_SEARCH_DEBOUNCE_MS = 250;
 
+
 export default function Explore() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigationType = useNavigationType();
 
     const [activeTab, setActiveTab] = useState(
         searchParams.get('tab') === EXPLORE_TAB.USERS ? EXPLORE_TAB.USERS : EXPLORE_TAB.BOOKS
@@ -122,17 +125,21 @@ export default function Explore() {
 
     // 2. When the initial books finish loading, jump back to the saved position
     useEffect(() => {
-        // Wait until we have actual items to give the page height
         if (!loadingPubs && publications.length > 0) {
-            const savedScroll = sessionStorage.getItem('exploreScrollPos');
-            if (savedScroll) {
-                // requestAnimationFrame ensures the DOM has painted
-                requestAnimationFrame(() => {
-                    window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'instant' });
-                });
+            if (navigationType === 'POP') {
+                const savedScroll = sessionStorage.getItem('exploreScrollPos');
+                if (savedScroll) {
+                    requestAnimationFrame(() => {
+                        window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'instant' });
+                    });
+                }
+            } else {
+                // Fresh navigation into Explore (nav bar, tab click, etc.) — start clean
+                sessionStorage.removeItem('exploreScrollPos');
+                window.scrollTo(0, 0);
             }
         }
-    }, [loadingPubs, publications.length]);
+    }, [loadingPubs, publications.length, navigationType]);
     // ==========================================
 
     const [bookSearchResults, setBookSearchResults] = useState(null);
