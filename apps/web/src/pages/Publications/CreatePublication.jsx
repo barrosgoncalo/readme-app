@@ -4,6 +4,7 @@ import { Upload, X } from 'lucide-react';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
 import Button from '../../components/Button.jsx';
@@ -107,25 +108,31 @@ export default function CreatePublication() {
                 <div className={styles.twoColumn}>
                     <div className={styles.section}>
                         <label className={styles.label}>Condition</label>
-                        <input
-                            type="text"
+                        <select
                             className={styles.input}
-                            placeholder="e.g., Like new, Good"
                             value={condition}
                             onChange={e => setCondition(e.target.value)}
                             disabled={loading}
-                        />
+                        >
+                            <option value="">Select condition</option>
+                            {BOOK_CONDITIONS.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
                     </div>
                     <div className={styles.section}>
                         <label className={styles.label}>Subject</label>
-                        <input
-                            type="text"
+                        <select
                             className={styles.input}
-                            placeholder="e.g., Fiction, Science"
                             value={subject}
                             onChange={e => setSubject(e.target.value)}
                             disabled={loading}
-                        />
+                        >
+                            <option value="">Select subject</option>
+                            {BOOK_GENRES.map(g => (
+                                <option key={g} value={g}>{g}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
