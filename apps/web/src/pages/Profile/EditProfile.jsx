@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react';
 import {useNavigate, useLocation} from 'react-router-dom';
 import {doc, getDoc, updateDoc} from 'firebase/firestore';
-import {ArrowLeft, ChevronRight, KeyRound} from 'lucide-react';
+import {ArrowLeft} from 'lucide-react';
 import {db} from '@readme/shared/src/services/firebase.web';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {WEB_ROUTES} from '../../constants/webRoutes';
@@ -149,27 +149,7 @@ export default function EditProfile() {
                     </div>
                 </section>
 
-                <section className={styles.section}>
-                    <p className={styles.sectionLabel}>Security</p>
-                    <div
-                        className={styles.navCard}
-                        onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, {
-                            state: {
-                                from: WEB_ROUTES.PROFILE_EDIT,
-                                draftForm: form,
-                                draftPhoneCountry: phoneCountry
-                            }
-                        })}
-                    >
-                        <span className={styles.navLeft}>
-                            <span className={styles.navIcon}><KeyRound size={18}/></span>
-                            <span className={styles.navLabel}>Change password</span>
-                        </span>
-                        <ChevronRight size={18} className={styles.navChevron}/>
-                    </div>
-                </section>
-
-                <ErrorAlert>{error}</ErrorAlert>
+<ErrorAlert>{error}</ErrorAlert>
                 {success && <p className={styles.successMsg}>Saved!</p>}
 
                 <div className={styles.actions}>
