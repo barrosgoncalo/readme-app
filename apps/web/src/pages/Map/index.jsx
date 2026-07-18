@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Search, Users, Plus } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
+import { searchPublicationsByBook } from '@readme/shared/src/services/searchBook'; // adjust path
 import { doGetBlockedUids, doGetBlockedUsers } from '@readme/shared/src/services/block';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { UsersService } from '@readme/shared/src/services/users';
@@ -20,6 +21,8 @@ const EXPLORE_TAB = {
     USERS: 'users',
 };
 
+const BOOK_SEARCH_DEBOUNCE_MS = 250;
+
 export default function Explore() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
@@ -35,11 +38,19 @@ export default function Explore() {
     const [touchedUsers, setTouchedUsers] = useState(false);
     const [searchUserError, setSearchUserError] = useState(false);
 
+    // Default "browse everything" state (shown when the search box is empty)
     const [publications, setPublications] = useState([]);
     const [favoriteIds, setFavoriteIds] = useState(new Set());
     const [loadingPubs, setLoadingPubs] = useState(true);
     const [pubsError, setPubsError] = useState(null);
     const [favoriteBusy, setFavoriteBusy] = useState(null);
+    const [blockedUids, setBlockedUids] = useState([]);
+
+    // Algolia-backed search state (shown once the user types a query)
+    const [bookSearchResults, setBookSearchResults] = useState(null); // null = no active search
+    const [searchingBooks, setSearchingBooks] = useState(false);
+    const [bookSearchError, setBookSearchError] = useState(null);
+
     const searchRef = useRef(null);
 
     const loadPublications = useCallback(async () => {
@@ -49,14 +60,14 @@ export default function Explore() {
         setPubsError(null);
 
         try {
-            const [blockedUids, profile] = await Promise.all([
+            const [blocked, profile] = await Promise.all([
                 doGetBlockedUids(uid).catch(() => []),
                 UsersService.fetchUserProfile(uid).catch(() => null)
             ]);
 
-            // fetchExplorePublications already excludes the caller's own posts,
-            // blocked users, and non-available publications server-side.
-            const summaries = await PublicationService.fetchExplorePublications(uid, blockedUids);
+            setBlockedUids(blocked);
+
+            const summaries = await PublicationService.fetchExplorePublications(uid, blocked);
 
             setPublications(summaries.map(s => s.publicationData));
             setFavoriteIds(new Set(profile?.favoriteBooks || []));
@@ -90,6 +101,7 @@ export default function Explore() {
         }
     }
 
+    // Users tab search (unchanged)
     useEffect(() => {
         if (activeTab !== EXPLORE_TAB.USERS) return;
 
@@ -112,11 +124,11 @@ export default function Explore() {
                 const blockedProfiles = currentUser
                     ? await doGetBlockedUsers(currentUser.uid).catch(() => [])
                     : [];
-                const blockedUids = blockedProfiles.map(p => p.id);
+                const blockedUidsForUsers = blockedProfiles.map(p => p.id);
 
                 const { users } = await searchUsers(q, {
                     excludeUid: currentUser?.uid,
-                    blockedUids,
+                    blockedUids: blockedUidsForUsers,
                 });
 
                 if (!cancelled) setUserResults(users);
@@ -125,13 +137,51 @@ export default function Explore() {
             } finally {
                 if (!cancelled) setLoadingUsers(false);
             }
-        }, 250);
+        }, BOOK_SEARCH_DEBOUNCE_MS);
 
         return () => {
             cancelled = true;
             clearTimeout(timer);
         };
     }, [search, currentUser?.uid, activeTab]);
+
+    // Books tab search — now backed by Algolia instead of client-side filtering
+    useEffect(() => {
+        if (activeTab !== EXPLORE_TAB.BOOKS) return;
+
+        const q = search.trim();
+        if (!q) {
+            setBookSearchResults(null);
+            setSearchingBooks(false);
+            setBookSearchError(null);
+            return;
+        }
+
+        setSearchingBooks(true);
+        setBookSearchError(null);
+
+        let cancelled = false;
+
+        const timer = setTimeout(async () => {
+            try {
+                const { publications: pubs } = await searchPublicationsByBook(
+                    { title: q },
+                    { excludeUid: uid, blockedUids, hitsPerPage: 24 }
+                );
+                if (!cancelled) setBookSearchResults(pubs.map(p => p.publicationData));
+            } catch (err) {
+                console.error('Book search failed:', err);
+                if (!cancelled) setBookSearchError('Search failed. Please try again.');
+            } finally {
+                if (!cancelled) setSearchingBooks(false);
+            }
+        }, BOOK_SEARCH_DEBOUNCE_MS);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [search, activeTab, uid, blockedUids]);
 
     useEffect(() => {
         function onKeyDown(e) {
@@ -144,13 +194,8 @@ export default function Explore() {
         return () => window.removeEventListener('keydown', onKeyDown);
     }, []);
 
-    const filteredPubs = publications.filter((pub) => {
-        const title = (pub.book?.title || '').toLowerCase();
-        const author = (pub.book?.author || '').toLowerCase();
-        const q = search.toLowerCase();
-
-        return title.includes(q) || author.includes(q);
-    });
+    const isSearchingBooks = search.trim().length > 0;
+    const booksToShow = isSearchingBooks ? (bookSearchResults || []) : publications;
 
     return (
         <div className={styles.page}>
@@ -164,32 +209,32 @@ export default function Explore() {
                         ref={searchRef}
                         className={styles.searchInput}
                         type="text"
-                        placeholder={activeTab === EXPLORE_TAB.BOOKS ? "Search books or authors... (press /)" : "Search users by name or username... (press /)"}
+                        placeholder={activeTab === EXPLORE_TAB.BOOKS ? "Search books or authors..." : "Search users by name or username..."}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
                 </div>
 
                 <div className={styles.tabs} role="tablist">
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === EXPLORE_TAB.BOOKS}
-                    className={`${styles.tab} ${activeTab === EXPLORE_TAB.BOOKS ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab(EXPLORE_TAB.BOOKS)}
-                >
-                    <BookOpen size={16} /> Books
-                </button>
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === EXPLORE_TAB.USERS}
-                    className={`${styles.tab} ${activeTab === EXPLORE_TAB.USERS ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab(EXPLORE_TAB.USERS)}
-                >
-                    <Users size={16} /> Users
-                </button>
-            </div>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === EXPLORE_TAB.BOOKS}
+                        className={`${styles.tab} ${activeTab === EXPLORE_TAB.BOOKS ? styles.tabActive : ''}`}
+                        onClick={() => setActiveTab(EXPLORE_TAB.BOOKS)}
+                    >
+                        <BookOpen size={16} /> Books
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === EXPLORE_TAB.USERS}
+                        className={`${styles.tab} ${activeTab === EXPLORE_TAB.USERS ? styles.tabActive : ''}`}
+                        onClick={() => setActiveTab(EXPLORE_TAB.USERS)}
+                    >
+                        <Users size={16} /> Users
+                    </button>
+                </div>
             </div>
 
             {/* TAB: USERS */}
@@ -231,18 +276,20 @@ export default function Explore() {
                         </Button>
                     </Link>
 
-                    {loadingPubs ? (
+                    {(isSearchingBooks ? searchingBooks : loadingPubs) ? (
                         <SkeletonGrid count={6} />
-                    ) : pubsError ? (
+                    ) : isSearchingBooks && bookSearchError ? (
+                        <p className={styles.status}>{bookSearchError}</p>
+                    ) : !isSearchingBooks && pubsError ? (
                         <p className={styles.status}>{pubsError}</p>
-                    ) : filteredPubs.length === 0 ? (
+                    ) : booksToShow.length === 0 ? (
                         <EmptyState
                             title={search.trim() ? 'No matches' : 'No publications yet'}
                             message={search.trim() ? 'No publications match your search.' : 'No publications available right now.'}
                         />
                     ) : (
                         <div className={styles.pubGrid}>
-                            {filteredPubs.map((pub) => (
+                            {booksToShow.map((pub) => (
                                 <PublicationCard
                                     key={pub.id}
                                     pub={pub}
