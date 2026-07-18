@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { usePaginatedList } from './use-paginated-list';
 import { algoliaPageAdapter } from './pagination-adapters';
 import { browsePublications, SORT_OPTIONS } from '../services/searchBook';
 import { doGetBlockedUids } from '../services/block';
+import { DEFAULT_HITS_PER_PAGE } from "../constants/feedConstants";
 
 // Define the shape of our items (assuming they have at least an 'id')
 export interface FeedItem {
@@ -43,7 +45,8 @@ export function useExploreFeed({
     sortBy = SORT_OPTIONS.DATE_DESC,
     conditions = [],
     genres = [],
-    includeAllStatuses = false
+    includeAllStatuses = false,
+    hitsPerPage = DEFAULT_HITS_PER_PAGE,
 }: UseExploreFeedProps = {}) {
     // Generate a unique string for the current active filters
     const currentFilterKey = JSON.stringify({ excludeUid, sortBy, conditions, genres, includeAllStatuses });
@@ -86,9 +89,9 @@ export function useExploreFeed({
     // 2. Setup the Algolia fetcher
     const fetchPage = useMemo(
         () => algoliaPageAdapter((params: any) =>
-            browsePublications({ ...params, sortBy, conditions, genres, excludeUid, blockedUids, includeAllStatuses })
+            browsePublications({ ...params, hitsPerPage, sortBy, conditions, genres, excludeUid, blockedUids, includeAllStatuses })
         ),
-        [sortBy, conditions, genres, excludeUid, blockedUids, includeAllStatuses]
+        [sortBy, conditions, genres, excludeUid, blockedUids, hitsPerPage, includeAllStatuses]
     );
 
     // Helper to safely extract items
@@ -105,10 +108,10 @@ export function useExploreFeed({
         setIsLoadingInitial(true);
         try {
             // Pass undefined to fetch the first page
-            const response: any = await fetchPage(undefined); 
-            
+            const response: any = await fetchPage(undefined);
+
             const fetchedItems = extractItems(response);
-            
+
             feedCache.items = fetchedItems;
             feedCache.nextCursor = response?.nextCursor || null;
             feedCache.page = 1;
@@ -130,9 +133,9 @@ export function useExploreFeed({
         try {
             const params = feedCache.nextCursor || { page: feedCache.page };
             const response: any = await fetchPage(params);
-            
+
             const newItems = extractItems(response);
-            
+
             const existingIds = new Set(feedCache.items.map((i: FeedItem) => i.id));
             const uniqueNewItems = newItems.filter((i: FeedItem) => !existingIds.has(i.id));
 
@@ -163,6 +166,6 @@ export function useExploreFeed({
         hasMore,
         loadMore,
         loadInitial,
-        refetch: () => loadInitial(true) 
+        refetch: () => loadInitial(true)
     };
 }

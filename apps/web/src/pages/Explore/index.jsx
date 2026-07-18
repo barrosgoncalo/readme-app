@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Search, Users, Plus, SlidersHorizontal } from 'lucide-react';
+import { BookOpen, Search, Users, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
 import { searchPublicationsByBook } from '@readme/shared/src/services/searchBook';
 import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
@@ -16,6 +16,7 @@ import Button from '../../components/Button';
 import { SkeletonGrid } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 import styles from './Explore.module.css';
+import {WEB_HITS_PER_PAGE} from "@readme/shared/src/constants/feedConstants.ts";
 
 const SORT_CHOICES = [
     { key: SORT_OPTIONS.DATE_DESC, label: 'Newest first' },
@@ -52,15 +53,15 @@ export default function Explore() {
     const [favoriteBusy, setFavoriteBusy] = useState(null);
 
     const [filtersVisible, setFiltersVisible] = useState(false);
-    
+
     // 1. Initialize state directly from sessionStorage (with fallbacks)
-    const [sortBy, setSortBy] = useState(() => 
+    const [sortBy, setSortBy] = useState(() =>
         sessionStorage.getItem('exp_sort') || SORT_OPTIONS.DATE_DESC
     );
-    const [conditionFilters, setConditionFilters] = useState(() => 
+    const [conditionFilters, setConditionFilters] = useState(() =>
         JSON.parse(sessionStorage.getItem('exp_cond')) || []
     );
-    const [genreFilters, setGenreFilters] = useState(() => 
+    const [genreFilters, setGenreFilters] = useState(() =>
         JSON.parse(sessionStorage.getItem('exp_gen')) || []
     );
 
@@ -85,6 +86,8 @@ export default function Explore() {
         sortBy,
         conditions: conditionFilters,
         genres: genreFilters,
+        includeAllStatuses: false,
+        hitsPerPage: WEB_HITS_PER_PAGE,
     });
 
     useEffect(() => {
@@ -108,7 +111,7 @@ export default function Explore() {
                 throttleTimer = null;
             }, 150); // Write to storage max once every 150ms
         };
-        
+
         window.addEventListener('scroll', handleScroll, { passive: true });
 
         return () => {

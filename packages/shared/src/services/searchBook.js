@@ -1,13 +1,13 @@
 import { algoliasearch } from "algoliasearch";
 import { documentId } from "firebase/firestore";
 import { PUBLICATION_STATUS } from "../constants/status";
+import { DEFAULT_HITS_PER_PAGE } from "../constants/feedConstants";
 import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY } from '../constants/env';
 import { DB } from './DB';
 
 const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
 
 const PUBLICATIONS_INDEX = "publications";
-const DEFAULT_HITS_PER_PAGE = 15;
 
 // Algolia can only re-sort results using replica indices with a custom
 // ranking configured (set up in the Algolia dashboard, or via setSettings
