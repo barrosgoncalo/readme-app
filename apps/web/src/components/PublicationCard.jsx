@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import BookCover from '../../../components/BookCover.jsx';
+import BookCover from './BookCover';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
-import { WEB_ROUTES } from '../../../constants/webRoutes';
+import { WEB_ROUTES } from '../constants/webRoutes';
 import styles from './PublicationCard.module.css';
 
 export default function PublicationCard({ pub, isFavorite, onToggleFavorite, busy }) {

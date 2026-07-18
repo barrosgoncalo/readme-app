@@ -18,7 +18,7 @@ import AdminModeSelector from '../pages/Admin/AdminModeSelector/AdminModeSelecto
 // --- user-app pages ---
 import BooksLayout from '../pages/Books/BooksLayout.jsx';
 import BooksScan from '../pages/Books/Scan.jsx';
-import MapPage from '../pages/Map/index.jsx';
+import Explore from '../pages/Explore/index.jsx';
 import Chat from '../pages/Chat/index.jsx';
 import ProfileLayout from '../pages/Profile/ProfileLayout.jsx';
 import EditProfile from '../pages/Profile/EditProfile.jsx';
@@ -149,7 +149,7 @@ export default function AppRouter() {
                     <Route path={WEB_ROUTES.BOOKS} element={<BooksLayout />} />
                     <Route path="/books/:bookId" element={<BooksLayout />} />
                     <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan />} />
-                    <Route path={WEB_ROUTES.MAP} element={<MapPage />} />
+                    <Route path={WEB_ROUTES.EXPLORE} element={<Explore />} />
                     <Route path={WEB_ROUTES.CHAT} element={<Chat />} />
                     <Route path={WEB_ROUTES.PROFILE} element={<ProfileLayout />}>
                         <Route path="following" element={<Following />} />

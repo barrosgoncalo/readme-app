@@ -4,7 +4,7 @@ import { BookOpen } from 'lucide-react';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import PublicationCard from '../Map/components/PublicationCard.jsx';
+import PublicationCard from '../../components/PublicationCard';
 import PageHeader from '../../components/PageHeader.jsx';
 import EmptyState from '../../components/EmptyState.jsx';
 import { SkeletonGrid } from '../../components/Skeleton.jsx';

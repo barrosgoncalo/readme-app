@@ -4,7 +4,7 @@ import { PublicationService } from '@readme/shared/src/services/publications';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import PublicationCard from '../Map/components/PublicationCard.jsx';
+import PublicationCard from '../../components/PublicationCard';
 import Spinner from '../../components/Spinner.jsx';
 import PageHeader from '../../components/PageHeader.jsx';
 import styles from './Favorites.module.css';

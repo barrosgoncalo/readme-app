@@ -7,14 +7,13 @@ import { doGetBlockedUids, doGetBlockedUsers } from '@readme/shared/src/services
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import PublicationCard from './components/PublicationCard.jsx';
+import PublicationCard from '../../components/PublicationCard';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import UserAvatar from '../../components/UserAvatar.jsx';
-import Spinner from '../../components/Spinner.jsx';
-import Button from '../../components/Button.jsx';
-import { SkeletonGrid } from '../../components/Skeleton.jsx';
-import EmptyState from '../../components/EmptyState.jsx';
-import styles from './Map.module.css';
+import UserAvatar from '../../components/UserAvatar';
+import Button from '../../components/Button';
+import { SkeletonGrid } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
+import styles from './Explore.module.css';
 
 const EXPLORE_TAB = {
     BOOKS: 'books',
@@ -24,6 +23,7 @@ const EXPLORE_TAB = {
 const BOOK_SEARCH_DEBOUNCE_MS = 250;
 
 export default function Explore() {
+
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
     const [searchParams] = useSearchParams();
