@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { ArrowLeft, Shield, MapPin, Bell, KeyRound, UserX, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Shield, KeyRound, UserX, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { db } from '@readme/shared/src/services/firebase.web';
 import { doDeleteAccount } from '@readme/shared/src/services/auth';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
@@ -20,8 +20,6 @@ export default function PrivacySecurity() {
     const [saving, setSaving] = useState(null);
 
     const [isPublic, setIsPublic] = useState(false);
-    const [locationServices, setLocationServices] = useState(false);
-    const [shareActivity, setShareActivity] = useState(false);
 
     const [deleteStep, setDeleteStep] = useState(0);
     const [deletePassword, setDeletePassword] = useState('');
@@ -35,8 +33,6 @@ export default function PrivacySecurity() {
             if (!snap.exists()) return;
             const d = snap.data();
             setIsPublic(d.profileVisibility === 'private');
-            setLocationServices(d.locationServices ?? false);
-            setShareActivity(d.shareActivityData ?? false);
         }).finally(() => setLoading(false));
     }, [currentUser]);
 
@@ -46,8 +42,6 @@ export default function PrivacySecurity() {
             await updateDoc(doc(db, 'users', currentUser.uid), { [field]: value });
         } catch {
             if (field === 'profileVisibility') setIsPublic(v => !v);
-            if (field === 'locationServices') setLocationServices(v => !v);
-            if (field === 'shareActivityData') setShareActivity(v => !v);
         } finally {
             setSaving(null);
         }
@@ -89,28 +83,6 @@ export default function PrivacySecurity() {
                         onChange={v => {
                             setIsPublic(v);
                             saveField('profileVisibility', v ? 'private' : 'public');
-                        }}
-                    />
-                    <div className={styles.divider} />
-                    <ToggleRow
-                        icon={<MapPin size={18} />}
-                        label="Location Services"
-                        checked={locationServices}
-                        disabled={saving === 'locationServices'}
-                        onChange={v => {
-                            setLocationServices(v);
-                            saveField('locationServices', v);
-                        }}
-                    />
-                    <div className={styles.divider} />
-                    <ToggleRow
-                        icon={<Bell size={18} />}
-                        label="Share Activity Data"
-                        checked={shareActivity}
-                        disabled={saving === 'shareActivityData'}
-                        onChange={v => {
-                            setShareActivity(v);
-                            saveField('shareActivityData', v);
                         }}
                     />
                 </div>
