@@ -6,7 +6,7 @@ export const WEB_ROUTES = {
     BOOKS: '/shelf',
     PUBLICATIONS: '/profile/publications',
     BOOKS_SCAN: '/shelf/scan',
-    MAP: '/explore',
+    EXPLORE: '/explore',
     CHAT: '/chat',
     PROFILE: '/profile',
     PROFILE_EDIT: '/profile/edit',

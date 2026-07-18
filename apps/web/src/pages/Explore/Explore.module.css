@@ -1,0 +1,383 @@
+.page {
+    padding: var(--space-5) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.stickyHeader {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding-bottom: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+    font-family: var(--font-serif);
+}
+
+.subtitle {
+    color: var(--subtext);
+    margin: 0;
+}
+
+.searchRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    padding: 10px 14px;
+    border: 1px solid var(--bg-selected);
+}
+
+.searchIcon {
+    color: var(--subtext);
+    flex-shrink: 0;
+}
+
+.searchInput {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+}
+
+.searchInput::placeholder {
+    color: var(--subtext);
+}
+
+.status {
+    color: var(--subtext);
+    font-size: 0.92rem;
+    margin: 0;
+    padding: var(--space-2) 0;
+}
+
+.list {
+    background: var(--bg-selected);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.userGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-3);
+}
+
+.userCard {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--bg-selected);
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.userCard:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.divider {
+    height: 1px;
+    background: var(--bg);
+    margin: 0 var(--space-3);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 14px var(--space-3);
+    text-decoration: none;
+    color: var(--text);
+    transition: background var(--transition-fast);
+}
+
+.row:hover {
+    background: var(--bg-elem);
+}
+
+.info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.username {
+    font-size: 0.82rem;
+    color: var(--subtext);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-elem);
+    padding: 6px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--bg-selected);
+    width: fit-content;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: var(--subtext);
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tab:hover:not(.tabActive) {
+    color: var(--text);
+    background: var(--bg-selected);
+}
+
+.tabActive {
+    background: var(--bg);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--bg-selected);
+}
+
+.pubGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-3);
+    width: 100%;
+}
+
+/* --- PREMIUM FILTER PANEL UI --- */
+
+.filterButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--subtext);
+    padding: 8px;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.filterButton:hover {
+    background: var(--bg-selected);
+    color: var(--text);
+}
+
+.filterButtonActive {
+    color: var(--primary);
+    background: var(--bg-selected);
+}
+
+.filterBadgeDot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--bg-elem);
+}
+
+.filterPanel {
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    border-radius: var(--radius-xl, 16px);
+    padding: var(--space-4) var(--space-4) 24px var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    margin-top: 4px;
+    animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top center;
+}
+
+.filterPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--bg-selected);
+}
+
+.filterPanelTitle {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.filterReset {
+    background: transparent;
+    border: none;
+    color: var(--subtext);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    transition: all var(--transition-fast);
+}
+
+.filterReset:hover {
+    color: var(--text);
+    background: var(--bg-selected);
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filterLabel {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: var(--subtext);
+}
+
+.filterSelect {
+    appearance: none;
+    background-color: var(--bg);
+    border: 1px solid var(--bg-selected);
+    border-radius: var(--radius-lg, 10px);
+    padding: 10px 36px 10px 14px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    width: 100%;
+    max-width: 250px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    /* Custom SVG chevron for the dropdown */
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%24%2024%22%20fill%3D%22none%22%20stroke%3D%22%23999%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+.filterSelect:focus, .filterSelect:hover {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.filterSelect:focus {
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 0, 100, 255), 0.1);
+}
+
+.pillContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filterPill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--subtext);
+    background: var(--bg);
+    border: 1px solid var(--bg-selected);
+    border-radius: 9999px; /* Fully rounded pill */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.filterPill:hover {
+    border-color: var(--text);
+    color: var(--text);
+}
+
+.filterPillActive {
+    background: var(--primary);
+    color: #ffffff; /* Typically primary pops best with white */
+    border-color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.filterPillActive:hover {
+    border-color: var(--primary);
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.hiddenInput {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0; 
+        transform: scaleY(0.95) translateY(-10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scaleY(1) translateY(0); 
+    }
+}
+
+@media (max-width: 720px) {
+    .pubGrid,
+    .userGrid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .userCard:hover {
+        transform: none;
+    }
+}

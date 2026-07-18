@@ -63,7 +63,7 @@ export default function CreatePublication() {
             );
 
             showToast('Publication created!');
-            navigate(`${WEB_ROUTES.MAP}?tab=books`);
+            navigate(`${WEB_ROUTES.EXPLORE}?tab=books`);
         } catch (error) {
             showToast('Failed to create publication. Please try again.');
             console.error(error);

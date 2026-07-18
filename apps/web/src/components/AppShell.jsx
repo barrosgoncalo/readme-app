@@ -12,7 +12,7 @@ import { getContentWidthTier } from '../utils/contentWidth';
 import styles from './AppShell.module.css';
 
 const NAV_ITEMS = [
-    { to: WEB_ROUTES.MAP, label: 'Explore', Icon: Search },
+    { to: WEB_ROUTES.EXPLORE, label: 'Explore', Icon: Search },
     { to: WEB_ROUTES.BOOKS, label: 'Shelf', Icon: BookOpen },
     { to: WEB_ROUTES.CHAT, label: 'Chat', Icon: MessageCircle },
     { to: WEB_ROUTES.PROFILE, label: 'Profile', Icon: User },
@@ -38,7 +38,7 @@ export default function AppShell() {
     const location = useLocation();
     const [username, setUsername] = useState('');
 
-    const isExplorePage = location.pathname.startsWith(WEB_ROUTES.MAP);
+    const isExplorePage = location.pathname.startsWith(WEB_ROUTES.EXPLORE);
     const isChatPage = location.pathname.startsWith(WEB_ROUTES.CHAT);
     const prefersRail = isExplorePage || isChatPage;
 
@@ -108,12 +108,12 @@ export default function AppShell() {
         if (to === WEB_ROUTES.BOOKS)
             return location.pathname.startsWith(WEB_ROUTES.BOOKS) && !isVisitingOtherUser;
 
-        if (to === WEB_ROUTES.MAP) {
-            const isMap = location.pathname.startsWith(WEB_ROUTES.MAP);
+        if (to === WEB_ROUTES.EXPLORE) {
+            const isExplore = location.pathname.startsWith(WEB_ROUTES.EXPLORE);
             const isUsersProfile = location.pathname.startsWith('/users');
             const isOtherUserBook = location.pathname.startsWith(WEB_ROUTES.BOOKS) && isVisitingOtherUser;
 
-            return isMap || isUsersProfile || isOtherUserBook;
+            return isExplore || isUsersProfile || isOtherUserBook;
         }
 
         return location.pathname.startsWith(to);
@@ -127,7 +127,7 @@ export default function AppShell() {
                 <aside className={`${styles.sidebar} ${isCollapsed ? styles.sidebarCollapsed : ''}`}>
                     <div className={styles.sidebarTop}>
                         <h1 className={styles.wordmark}>
-                            <Link to={WEB_ROUTES.MAP} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            <Link to={WEB_ROUTES.EXPLORE} style={{ color: 'inherit', textDecoration: 'none' }}>
                                 {isCollapsed ? 'R' : 'README'}
                             </Link>
                         </h1>

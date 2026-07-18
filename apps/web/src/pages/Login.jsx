@@ -39,7 +39,7 @@ export default function Login() {
     const location = useLocation();
 
     // Quando o login tiver sucesso, manda-nos para o Explore (ou a página de onde o user vinha)
-    const from = location.state?.from?.pathname || WEB_ROUTES.MAP;
+    const from = location.state?.from?.pathname || WEB_ROUTES.EXPLORE;
 
     async function onSubmit(e) {
         e.preventDefault();

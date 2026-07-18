@@ -1,13 +1,13 @@
 import { algoliasearch } from "algoliasearch";
 import { documentId } from "firebase/firestore";
 import { PUBLICATION_STATUS } from "../constants/status";
+import { DEFAULT_HITS_PER_PAGE } from "../constants/feedConstants";
 import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY } from '../constants/env';
 import { DB } from './DB';
 
 const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
 
 const PUBLICATIONS_INDEX = "publications";
-const DEFAULT_HITS_PER_PAGE = 15;
 
 // Algolia can only re-sort results using replica indices with a custom
 // ranking configured (set up in the Algolia dashboard, or via setSettings
@@ -32,6 +32,16 @@ const SORT_INDEXES = {
     [SORT_OPTIONS.DATE_DESC]: `${PUBLICATIONS_INDEX}_date_desc`,
     [SORT_OPTIONS.DATE_ASC]: `${PUBLICATIONS_INDEX}_date_asc`,
 };
+
+/**
+ * Clears the Algolia client's response cache. Callers that need to
+ * guarantee fresh results for a repeated query (e.g. pull-to-refresh on
+ * the Explore feed) should call this before re-fetching page 1 — without
+ * it, an identical `{indexName, query, filters, page, hitsPerPage}`
+ * request will just return the previously cached response instead of
+ * hitting the server again.
+ */
+export const clearSearchCache = () => algoliaClient.clearCache();
 
 /**
  * Autocomplete-style search returning unique book suggestions (text only)
@@ -161,7 +171,7 @@ export const searchPublicationsByBook = async (
 ) => {
 
     if (bypassCache) {
-        await algoliaClient.clearCache();
+        await clearSearchCache();
     }
 
     const queryText = [title, author].filter(Boolean).join(" ").trim();
@@ -236,16 +246,16 @@ export const searchPublicationsByBook = async (
  * searchPublicationsByBook, just without a text query.
  */
 export const browsePublications = async ({
-    page = 0,
-    hitsPerPage = DEFAULT_HITS_PER_PAGE,
-    sortBy = SORT_OPTIONS.DATE_DESC,
-    conditions = [],
-    genres = [],
-    excludeUid = null,
-    blockedUids = [],
-    includeAllStatuses,
-    bypassCache = false,
-} = {}) => {
+                                             page = 0,
+                                             hitsPerPage = DEFAULT_HITS_PER_PAGE,
+                                             sortBy = SORT_OPTIONS.DATE_DESC,
+                                             conditions = [],
+                                             genres = [],
+                                             excludeUid = null,
+                                             blockedUids = [],
+                                             includeAllStatuses,
+                                             bypassCache = false,
+                                         } = {}) => {
 
     if (bypassCache) {
         await algoliaClient.clearCache();

@@ -16,7 +16,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import { SkeletonGrid } from '../../components/Skeleton.jsx';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
-import PublicationCard from '../Map/components/PublicationCard.jsx';
+import PublicationCard from '../../components/PublicationCard';
 import ReportModal from '../../components/ReportModal.jsx';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './PublicProfile.module.css';
