@@ -148,7 +148,16 @@ const buildPublicationFilters = (conditions = [], genres = [], excludeUid = null
  */
 export const searchPublicationsByBook = async (
     { bookId, title, author },
-    { page = 0, hitsPerPage = DEFAULT_HITS_PER_PAGE, sortBy = SORT_OPTIONS.RELEVANCE, conditions = [], genres = [], excludeUid = null, bypassCache = false } = {}
+    {
+        page = 0,
+        hitsPerPage = DEFAULT_HITS_PER_PAGE,
+        sortBy = SORT_OPTIONS.RELEVANCE,
+        conditions = [],
+        genres = [],
+        excludeUid = null,
+        blockedUids = [],
+        bypassCache = false,
+    } = {}
 ) => {
 
     if (bypassCache) {
@@ -162,7 +171,7 @@ export const searchPublicationsByBook = async (
         indexName,
         query: queryText,
         restrictSearchableAttributes: ["book.title", "book.author"],
-        filters: buildPublicationFilters(conditions, genres, excludeUid),
+        filters: buildPublicationFilters(conditions, genres, excludeUid, blockedUids),
         page,
         hitsPerPage,
         typoTolerance: true,

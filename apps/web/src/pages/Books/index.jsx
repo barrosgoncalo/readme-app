@@ -27,7 +27,7 @@ const FILTERS = [
     { key: BOOK_STATUS.READING, label: BOOK_STATUS_LABELS[BOOK_STATUS.READING] },
     { key: BOOK_STATUS.WANT, label: BOOK_STATUS_LABELS[BOOK_STATUS.WANT] },
     { key: BOOK_STATUS.DONE, label: BOOK_STATUS_LABELS[BOOK_STATUS.DONE] },
-    { key: FILTER_FAVORITES, label: 'Liked Books' },
+    // { key: FILTER_FAVORITES, label: 'Liked Books' },
 ];
 
 // MyBooksService.getBooks() returns { ...trackingDoc, bookDetails } (title/
