@@ -34,7 +34,7 @@ export default function PrivacySecurity() {
         getDoc(doc(db, 'users', currentUser.uid)).then(snap => {
             if (!snap.exists()) return;
             const d = snap.data();
-            setIsPublic(d.profileVisibility === 'public');
+            setIsPublic(d.profileVisibility === 'private');
             setLocationServices(d.locationServices ?? false);
             setShareActivity(d.shareActivityData ?? false);
         }).finally(() => setLoading(false));
@@ -83,12 +83,12 @@ export default function PrivacySecurity() {
                 <div className={styles.card}>
                     <ToggleRow
                         icon={<Shield size={18} />}
-                        label={isPublic ? 'Public' : 'Private'}
+                        label={isPublic ? 'Private' : 'Public'}
                         checked={isPublic}
                         disabled={saving === 'profileVisibility'}
                         onChange={v => {
                             setIsPublic(v);
-                            saveField('profileVisibility', v ? 'public' : 'private');
+                            saveField('profileVisibility', v ? 'private' : 'public');
                         }}
                     />
                     <div className={styles.divider} />
