@@ -17,6 +17,7 @@ import { useFavoriteStatus } from '@readme/shared/src/hooks/use-favorite-status'
 import { ActiveSwapsSection } from '../../components/ui/ActiveSwapsSection';
 import { BookGridItem } from '../../components/ui/BookGridItem';
 import PublicationFilterModal from '../../components/ui/PublicationFilterModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ExploreScreen({ navigation }) {
     const colorScheme = useColorScheme();
@@ -24,6 +25,7 @@ export default function ExploreScreen({ navigation }) {
     const styles = buildExploreStyles(theme);
     const handleScroll = useScrollTabBarControl();
     const { currentUser } = useAuth();
+    const insets = useSafeAreaInsets();
 
     const listRef = useRef(null);
 
@@ -149,13 +151,13 @@ export default function ExploreScreen({ navigation }) {
                     ListHeaderComponent={
                         <>
                             {renderHeader()}
-                                <ActiveSwapsSection
-                                    currentUserId={currentUser?.uid}
-                                    navigation={navigation}
-                                    styles={styles}
-                                    colorScheme={colorScheme}
-                                    theme={theme}
-                                />
+                            <ActiveSwapsSection
+                                currentUserId={currentUser?.uid}
+                                navigation={navigation}
+                                styles={styles}
+                                colorScheme={colorScheme}
+                                theme={theme}
+                            />
                         </>
                     }
                     renderItem={({ item }) => (
@@ -186,7 +188,12 @@ export default function ExploreScreen({ navigation }) {
                     onEndReached={loadMore}
                     onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={theme.primary} />
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={refresh}
+                            tintColor={theme.primary}
+                            progressViewOffset={insets.top}
+                        />
                     }
                     maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
                     removeClippedSubviews
