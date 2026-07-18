@@ -833,71 +833,70 @@ const functionsV1 = require('firebase-functions/v1');
 exports.onAuthAccountDeleted = functionsV1
     .region('europe-west1')
     .auth.user().onDelete(async (user) => {
-    const userId = user.uid; 
-    const batch = db.batch();
-    const bucket = getStorage().bucket();
-    
-    let hasWrites = false; 
+        const userId = user.uid; 
+        const batch = db.batch();
+        const bucket = getStorage().bucket();
 
-    try {
-        const publicationsSnapshot = await db.collection('publications')
-            .where('uid', '==', userId)
-            .get();
-
-        if (!publicationsSnapshot.empty) {
-            publicationsSnapshot.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            hasWrites = true;
-            console.log(`Queued ${publicationsSnapshot.size} publications for deletion for user ${userId}`);
-        }
-
-        const chatsSnapshot = await db.collection('chats')
-            .where('participants', 'array-contains', userId)
-            .get();
-
-        if (!chatsSnapshot.empty) {
-            chatsSnapshot.forEach(doc => {
-                batch.update(doc.ref, {
-                    status: 'disabled',
-                    disabledReason: 'deleted' 
-                });
-
-                const messageRef = doc.ref.collection('messages').doc();
-                batch.set(messageRef, {
-                    id: messageRef.id,
-                    type: 'system',
-                    action: 'deleted', 
-                    createdAt: FieldValue.serverTimestamp(),
-                    senderId: 'system'
-                });
-            });
-            hasWrites = true;
-            console.log(`Queued status updates for ${chatsSnapshot.size} chats.`);
-        }
-
+        let hasWrites = false; 
         try {
-            await bucket.deleteFiles({ 
-                prefix: `profile_pictures/${userId}/` 
-            });
-            console.log(`Successfully deleted profile picture storage files for user ${userId}`);
-        } catch (storageError) {
-            console.warn(`Failed to delete storage files for user ${userId} (they might not have had a custom photo):`, storageError);
-        }
+            const publicationsSnapshot = await db.collection('publications')
+                .where('uid', '==', userId)
+                .get();
+            if (!publicationsSnapshot.empty) {
+                publicationsSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                hasWrites = true;
+                console.log(`Queued ${publicationsSnapshot.size} publications for deletion for user ${userId}`);
+            }
 
-        if (hasWrites) {
-            await batch.commit();
-            console.log(`Successfully completed Firestore cleanup batch for user ${userId}`);
-        } else {
-            console.log(`No Firestore documents to clean up for user ${userId}`);
-        }
+            const chatsSnapshot = await db.collection('chats')
+                .where('participants', 'array-contains', userId)
+                .get();
+            if (!chatsSnapshot.empty) {
+                chatsSnapshot.forEach(doc => {
+                    batch.update(doc.ref, {
+                        status: 'disabled',
+                        disabledReason: 'deleted' 
+                    });
+                    const messageRef = doc.ref.collection('messages').doc();
+                    batch.set(messageRef, {
+                        id: messageRef.id,
+                        type: 'system',
+                        action: 'deleted', 
+                        createdAt: FieldValue.serverTimestamp(),
+                        senderId: 'system'
+                    });
+                });
+                hasWrites = true;
+                console.log(`Queued status updates for ${chatsSnapshot.size} chats.`);
+            }
 
-        return null;
-    } catch (error) {
-        console.error(`Error processing account deletion cleanup for user ${userId}:`, error);
-        throw error; 
-    }
-});
+            // Delete the user's own profile doc
+            batch.delete(db.collection('users').doc(userId));
+            hasWrites = true;
+
+            try {
+                await bucket.deleteFiles({ 
+                    prefix: `profile_pictures/${userId}/` 
+                });
+                console.log(`Successfully deleted profile picture storage files for user ${userId}`);
+            } catch (storageError) {
+                console.warn(`Failed to delete storage files for user ${userId} (they might not have had a custom photo):`, storageError);
+            }
+
+            if (hasWrites) {
+                await batch.commit();
+                console.log(`Successfully completed Firestore cleanup batch for user ${userId}`);
+            } else {
+                console.log(`No Firestore documents to clean up for user ${userId}`);
+            }
+            return null;
+        } catch (error) {
+            console.error(`Error processing account deletion cleanup for user ${userId}:`, error);
+            throw error; 
+        }
+    });
 
 // ==========================================
 // ADMIN: SET USER ADMIN STATUS

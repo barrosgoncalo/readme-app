@@ -126,8 +126,6 @@ export const doDeleteUserProfile = async (uid) => {
     const user = auth.currentUser;
     if (!user || user.uid !== uid) throw new Error('No user is currently logged in or UID mismatch.');
 
-    // Delete Firestore profile first via DB abstraction, then the Auth account.
-    await DB.remove('users', user.uid);
     await deleteUser(user);
 };
 
