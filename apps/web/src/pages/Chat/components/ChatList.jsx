@@ -43,7 +43,7 @@ function ChatRow({chat, activeChatId, onSelectChat}) {
     );
 }
 
-export default function ChatList({chats, activeChatId, onSelectChat, isSidebarOpen}) {
+export default function ChatList({chats, activeChatId, onSelectChat}) {
     const sortedChats = [...chats].sort((a, b) => {
         const getTime = (dateVal) => {
             if (!dateVal)
@@ -60,7 +60,7 @@ export default function ChatList({chats, activeChatId, onSelectChat, isSidebarOp
 
     return (
         <div className={styles.list}>
-            <h2 className={`${styles.title} ${!isSidebarOpen ? styles.titleShifted : ''}`}>
+            <h2 className={styles.title}>
                 Messages
             </h2>
             {sortedChats.length === 0 ? (
