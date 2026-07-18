@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Heart, User } from 'lucide-react';
 import BookCover from './BookCover';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { WEB_ROUTES } from '../constants/webRoutes';
 import styles from './PublicationCard.module.css';
 
 export default function PublicationCard({ pub, isFavorite, onToggleFavorite, busy }) {
+    const [avatarFailed, setAvatarFailed] = useState(false);
+
     if (!pub) return null;
 
     const authors = formatAuthors(pub.book?.author);
@@ -32,12 +35,18 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, bus
                     <p className={styles.authors}>{authors || 'Unknown author'}</p>
 
                     <div className={styles.seller}>
-                        <img
-                            src={pub.sellerAvatar || '/bookworm.png'}
-                            alt=""
-                            className={styles.avatar}
-                            onError={e => { e.currentTarget.src = '/bookworm.png'; }}
-                        />
+                        {pub.sellerAvatar && !avatarFailed ? (
+                            <img
+                                src={pub.sellerAvatar}
+                                alt=""
+                                className={styles.avatar}
+                                onError={() => setAvatarFailed(true)}
+                            />
+                        ) : (
+                            <span className={styles.avatarFallback} aria-hidden>
+                                <User className={styles.avatarIcon} />
+                            </span>
+                        )}
                         <span className={styles.sellerName}>{pub.sellerName || 'Anonymous'}</span>
                     </div>
 

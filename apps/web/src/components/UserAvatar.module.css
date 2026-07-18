@@ -24,3 +24,10 @@
     color: var(--primary-text);
     font-family: var(--font-serif);
 }
+
+.avatarIcon {
+    width: 24px;
+    height: 24px;
+    color: var(--primary-text);
+    fill: currentColor;
+}
