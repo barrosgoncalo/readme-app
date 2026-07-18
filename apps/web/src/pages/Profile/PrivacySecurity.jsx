@@ -23,8 +23,6 @@ export default function PrivacySecurity() {
     const [saving, setSaving] = useState(null);
 
     const [isPublic, setIsPublic] = useState(false);
-    const [locationServices, setLocationServices] = useState(false);
-    const [shareActivity, setShareActivity] = useState(false);
 
     const [deleteStep, setDeleteStep] = useState(0);
     const [deletePassword, setDeletePassword] = useState('');
@@ -32,19 +30,20 @@ export default function PrivacySecurity() {
     const [deleteError, setDeleteError] = useState('');
     const [deleting, setDeleting] = useState(false);
 
-    // Determine if the current user signed in via Google
     const isGoogleAuth = currentUser?.providerData?.some(
         (provider) => provider.providerId === 'google.com'
     );
 
+    const hasPasswordAuth = currentUser?.providerData?.some(
+        (provider) => provider.providerId === 'password'
+    );
+
     useEffect(() => {
         if (!currentUser) return;
-        
+
         DB.get('users', currentUser.uid).then(d => {
             if (!d) return;
             setIsPublic(d.profileVisibility === 'public');
-            setLocationServices(d.locationServices ?? false);
-            setShareActivity(d.shareActivityData ?? false);
         }).finally(() => setLoading(false));
     }, [currentUser]);
 
@@ -54,8 +53,6 @@ export default function PrivacySecurity() {
             await DB.update('users', currentUser.uid, { [field]: value });
         } catch {
             if (field === 'profileVisibility') setIsPublic(v => !v);
-            if (field === 'locationServices') setLocationServices(v => !v);
-            if (field === 'shareActivityData') setShareActivity(v => !v);
         } finally {
             setSaving(null);
         }
@@ -133,34 +130,12 @@ export default function PrivacySecurity() {
                 <div className={styles.card}>
                     <ToggleRow
                         icon={<Shield size={18} />}
-                        label={isPublic ? 'Public' : 'Private'}
+                        label={isPublic ? 'Private' : 'Public'}
                         checked={isPublic}
                         disabled={saving === 'profileVisibility' || deleting}
                         onChange={v => {
                             setIsPublic(v);
-                            saveField('profileVisibility', v ? 'public' : 'private');
-                        }}
-                    />
-                    <div className={styles.divider} />
-                    <ToggleRow
-                        icon={<MapPin size={18} />}
-                        label="Location Services"
-                        checked={locationServices}
-                        disabled={saving === 'locationServices' || deleting}
-                        onChange={v => {
-                            setLocationServices(v);
-                            saveField('locationServices', v);
-                        }}
-                    />
-                    <div className={styles.divider} />
-                    <ToggleRow
-                        icon={<Bell size={18} />}
-                        label="Share Activity Data"
-                        checked={shareActivity}
-                        disabled={saving === 'shareActivityData' || deleting}
-                        onChange={v => {
-                            setShareActivity(v);
-                            saveField('shareActivityData', v);
+                            saveField('profileVisibility', v ? 'private' : 'public');
                         }}
                     />
                 </div>
@@ -170,8 +145,7 @@ export default function PrivacySecurity() {
             <section className={styles.section}>
                 <p className={styles.sectionLabel}>Security</p>
                 <div className={styles.card}>
-                    {/* Hide Change Password if user is purely Google Auth (they change that via Google) */}
-                    {!isGoogleAuth && (
+                    {hasPasswordAuth && (
                         <>
                             <button 
                                 className={styles.navRow} 

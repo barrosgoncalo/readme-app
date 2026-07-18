@@ -390,7 +390,7 @@ export default function PublicProfile() {
                                         <p className={styles.reviewComment}>{review.comment}</p>
                                     )}
                                     <p className={styles.reviewDate}>
-                                        {new Date(review.createdAt).toLocaleDateString()}
+                                        {(review.createdAt?.toDate?.() ?? new Date(review.createdAt)).toLocaleDateString()}
                                     </p>
                                 </div>
                             ))}

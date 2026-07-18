@@ -135,7 +135,11 @@ export default function ProfileLayout() {
     const settingsGroups = [
         {
             title: 'Content',
-            items: [{ icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.PROFILE_MY_BOOKS) }],
+            items: [
+                { icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.PROFILE_MY_BOOKS) },
+                { icon: Award, label: 'Level', onClick: () => navigate(WEB_ROUTES.PROFILE_LEVEL) },
+                { icon: Heart, label: 'Favorites', onClick: () => navigate(WEB_ROUTES.PROFILE_FAVORITES) },
+            ],
         },
         {
             title: 'Account',
@@ -157,8 +161,6 @@ export default function ProfileLayout() {
                     badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
                     onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOW_REQUESTS),
                 },
-                { icon: Award, label: 'Level', onClick: () => navigate(WEB_ROUTES.PROFILE_LEVEL) },
-                { icon: Heart, label: 'Favorites', onClick: () => navigate(WEB_ROUTES.PROFILE_FAVORITES) },
             ],
         },
     ];
