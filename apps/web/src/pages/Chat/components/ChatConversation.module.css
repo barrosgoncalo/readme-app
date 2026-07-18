@@ -239,6 +239,22 @@
     background: var(--bg-selected);
 }
 
+.systemMessage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px auto 8px auto;
+    padding: 10px 16px;
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    border-radius: var(--radius);
+    color: var(--subtext);
+    font-size: 0.85rem;
+    text-align: center;
+    max-width: 80%;
+}
+
 @media (max-width: 720px) {
     .message {
         max-width: 85%;

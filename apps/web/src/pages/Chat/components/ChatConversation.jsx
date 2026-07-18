@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useNavigate} from 'react-router-dom';
-import {Send, Smile, Flag} from 'lucide-react';
+import {Send, Smile, Flag, Info} from 'lucide-react';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {ReportsService} from '@readme/shared/src/services/reports';
 import {REPORT_TARGET_TYPE} from '@readme/shared/src/constants/status';
@@ -9,7 +9,7 @@ import {toMillis} from '@readme/shared/src/utils/timestamp';
 import Spinner from '../../../components/Spinner.jsx';
 import ReportModal from '../../../components/ReportModal.jsx';
 import {WEB_ROUTES} from '../../../constants/webRoutes';
-import { useToast } from '../../../contexts/ToastContext.jsx';
+import {useToast} from '../../../contexts/ToastContext.jsx';
 import OfferMessage from './OfferMessage.jsx';
 import styles from './ChatConversation.module.css';
 
@@ -73,6 +73,7 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                 setShowEmojiPicker(false);
             }
         }
+
         document.addEventListener('mousedown', handleClickOutside);
 
         return () => {
@@ -171,13 +172,26 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                         .map(msg => (
                             <div key={msg.id} className={styles.messageRow}>
                                 {msg.type === 'offer' ? (
-                                    <OfferMessage
-                                        message={msg}
-                                        isOwn={msg.senderId === currentUserId}
-                                        currentUserId={currentUserId}
-                                        chatId={chat.id}
-                                        otherUserId={otherUserId}
-                                    />
+                                    <>
+                                        <OfferMessage
+                                            message={msg}
+                                            isOwn={msg.senderId === currentUserId}
+                                            currentUserId={currentUserId}
+                                            chatId={chat.id}
+                                            otherUserId={otherUserId}
+                                        />
+
+                                        {/* Nova mensagem de sistema injetada logo após a oferta cancelada */}
+                                        {msg.offerDetails?.status === 'unavailable' && (
+                                            <div className={styles.systemMessage}>
+                                                <Info size={16}/>
+                                                <span>
+                                                    The book associated with this trade has been removed.
+                                                    This trade was automatically cancelled.
+                                                </span>
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <div
                                         className={`${styles.message} ${msg.senderId === currentUserId ? styles.own : styles.other}`}
