@@ -33,8 +33,6 @@ const EXPLORE_TAB = {
 
 const BOOK_SEARCH_DEBOUNCE_MS = 250;
 
-let filterCache = { sortBy: SORT_OPTIONS.DATE_DESC, conditions: [], genres: [] };
-
 export default function Explore() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
