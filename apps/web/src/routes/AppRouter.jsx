@@ -147,7 +147,7 @@ export default function AppRouter() {
             {userLoggedIn && showUserApp && (
                 <Route element={<AppShell />}>
                     <Route path={WEB_ROUTES.BOOKS} element={<BooksLayout />} />
-                    <Route path="/books/:bookId" element={<BooksLayout />} />
+                    <Route path="/shelf/:bookId" element={<BooksLayout />} />
                     <Route path={WEB_ROUTES.BOOKS_SCAN} element={<BooksScan />} />
                     <Route path={WEB_ROUTES.MAP} element={<MapPage />} />
                     <Route path={WEB_ROUTES.CHAT} element={<Chat />} />

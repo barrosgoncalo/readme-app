@@ -88,6 +88,25 @@
     height: 22px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
+}
+
+.avatarFallback {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatarIcon {
+    width: 14px;
+    height: 14px;
+    color: var(--primary-text);
+    fill: currentColor;
 }
 
 
