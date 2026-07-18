@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import {Eye, Search, User, Download} from "lucide-react";
 import { getAuth } from 'firebase/auth';
 import { alterUserPrivileges } from '@readme/shared/src/services/admin';
 import {DB} from '@readme/shared/src/services/DB.js';
@@ -148,7 +149,7 @@ export default function AdminUsersPage() {
                     <p className={styles.subtitle}>Manage user accounts and roles.</p>
                 </div>
                 <button type="button" className={styles.exportBtn} onClick={() => exportUsersToCsv(totalUsers)}>
-                    <IconLucideDownload size={16} />
+                    <Download size={16} />
                     Export Users
                 </button>
             </div>
@@ -156,7 +157,7 @@ export default function AdminUsersPage() {
             <div className={styles.card}>
                 <div className={styles.toolbar}>
                     <div className={styles.searchWrapper}>
-                        <IconLucideSearch size={15} className={styles.searchIcon}/>
+                        <Search size={15} className={styles.searchIcon}/>
                         <input
                             className={styles.searchInput}
                             placeholder="Search users..."
@@ -189,7 +190,7 @@ export default function AdminUsersPage() {
                                             <div className={styles.avatar}>
                                                 {user.photoURL
                                                     ? <img src={user.photoURL} alt="" className={styles.avatarImg}/>
-                                                    : <IconLucideUser size={16}/>
+                                                    : <User size={16}/>
                                                 }
                                             </div>
                                             <div>
@@ -208,7 +209,7 @@ export default function AdminUsersPage() {
                                                 onClick={() => setViewUser(user)}
                                                 aria-label="View user details"
                                             >
-                                                <IconLucideEye size={16} />
+                                                <Eye size={16} />
                                             </button>
                                             {user.uid === auth.currentUser?.uid ? (
                                                 <span className={styles.youLabel}>You</span>
