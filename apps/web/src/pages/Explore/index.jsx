@@ -33,6 +33,8 @@ const EXPLORE_TAB = {
 
 const BOOK_SEARCH_DEBOUNCE_MS = 250;
 
+let filterCache = { sortBy: SORT_OPTIONS.DATE_DESC, conditions: [], genres: [] };
+
 export default function Explore() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
@@ -52,9 +54,24 @@ export default function Explore() {
     const [favoriteBusy, setFavoriteBusy] = useState(null);
 
     const [filtersVisible, setFiltersVisible] = useState(false);
-    const [sortBy, setSortBy] = useState(SORT_OPTIONS.DATE_DESC);
-    const [conditionFilters, setConditionFilters] = useState([]);
-    const [genreFilters, setGenreFilters] = useState([]);
+    
+    // 1. Initialize state directly from sessionStorage (with fallbacks)
+    const [sortBy, setSortBy] = useState(() => 
+        sessionStorage.getItem('exp_sort') || SORT_OPTIONS.DATE_DESC
+    );
+    const [conditionFilters, setConditionFilters] = useState(() => 
+        JSON.parse(sessionStorage.getItem('exp_cond')) || []
+    );
+    const [genreFilters, setGenreFilters] = useState(() => 
+        JSON.parse(sessionStorage.getItem('exp_gen')) || []
+    );
+
+    // 2. Save filters to sessionStorage whenever they change
+    useEffect(() => {
+        sessionStorage.setItem('exp_sort', sortBy);
+        sessionStorage.setItem('exp_cond', JSON.stringify(conditionFilters));
+        sessionStorage.setItem('exp_gen', JSON.stringify(genreFilters));
+    }, [sortBy, conditionFilters, genreFilters]);
 
     const hasActiveFilters = sortBy !== SORT_OPTIONS.DATE_DESC
         || conditionFilters.length > 0
