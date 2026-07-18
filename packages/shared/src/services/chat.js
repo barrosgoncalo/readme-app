@@ -330,7 +330,7 @@ export const ChatService = {
         const chatData = await DB.get('chats', chatId);
         if (!chatData) return null;
 
-        const { otherUid, otherUserName, otherUserAvatar, isChatDisabled, disabledReason } = await _resolveOtherUser(
+        const { otherUid, otherUserName, otherUserAvatar, isChatDisabled: userDisabled, disabledReason: userDisabledReason } = await _resolveOtherUser(
             chatData, currentUserId, targetSeller
         );
 
@@ -341,8 +341,8 @@ export const ChatService = {
             otherUid,
             otherUserName,
             otherUserAvatar,
-            isChatDisabled,
-            disabledReason,
+            isChatDisabled: userDisabled || chatData.status === 'disabled',
+            disabledReason: chatData.disabledReason || userDisabledReason,
         };
     },
 

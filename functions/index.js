@@ -22,9 +22,9 @@ initializeApp({
 });
 const db = getFirestore();
 
-setGlobalOptions({ 
-    region: "europe-west1", 
-    maxInstances: 10 
+setGlobalOptions({
+    region: "europe-west1",
+    maxInstances: 10
 });
 
 // ==========================================
@@ -39,7 +39,7 @@ let algoliaClient = null;
 const getAlgoliaClient = () => {
     if (!algoliaClient) {
         const APP_ID = process.env.ALGOLIA_APP_ID;
-        const ADMIN_KEY = process.env.ALGOLIA_ADMIN_KEY; 
+        const ADMIN_KEY = process.env.ALGOLIA_ADMIN_KEY;
 
         if (!APP_ID || !ADMIN_KEY) {
             console.error("CRITICAL: Algolia Environment Variables are missing inside the environment context!");
@@ -76,7 +76,7 @@ exports.syncUserToAlgolia = onDocumentWritten("users/{userId}", async (event) =>
         await client.saveObject({
             indexName: ALGOLIA_INDEX_NAME,
             body: {
-                objectID, 
+                objectID,
                 ...data
             }
         });
@@ -192,15 +192,15 @@ async function updateUserGamification(userId) {
 async function markOffersUnavailableForBook(bookId) {
     // Query 1: offers where this book is the target
     const targetQuery = db.collectionGroup('messages')
-    .where('type', '==', 'offer')
-    .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
-    .where('offerDetails.targetBookId', '==', bookId);
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', 'in', [NEGOTIATION_STATUS.PENDING, NEGOTIATION_STATUS.ACCEPTED])
+        .where('offerDetails.targetBookId', '==', bookId);
 
     // Query 2: offers where this book was one of the offered books
     const offeredQuery = db.collectionGroup('messages')
-    .where('type', '==', 'offer')
-    .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
-    .where('offerDetails.offeredBookIds', 'array-contains', bookId);
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', 'in', [NEGOTIATION_STATUS.PENDING, NEGOTIATION_STATUS.ACCEPTED])
+        .where('offerDetails.offeredBookIds', 'array-contains', bookId);
 
     const [targetSnap, offeredSnap] = await Promise.all([
         targetQuery.get(),
@@ -214,20 +214,41 @@ async function markOffersUnavailableForBook(bookId) {
     });
 
     if (docsById.size === 0) {
-        console.log(`No pending offers reference book ${bookId}.`);
+        console.log(`No pending or accepted offers reference book ${bookId}.`);
         return;
     }
 
     const batch = db.batch();
     docsById.forEach((ref) => {
         batch.update(ref, {
-            'offerDetails.status': NEGOTIATION_STATUS.UNAVAILABLE,
+            'offerDetails.status': 'cancelled',
             'offerDetails.unavailableAt': Timestamp.now(),
+        });
+
+        // O 'ref' aponta para o documento da mensagem (chats/{chatId}/messages/{messageId})
+        const messagesCollectionRef = ref.parent;
+        const chatRef = messagesCollectionRef.parent;
+
+        // Desativar o Chat para impedir novas mensagens
+        batch.update(chatRef, {
+            status: 'disabled',
+            disabledReason: 'publication_deleted'
+        });
+
+        // Inserir a mensagem do sistema a explicar o sucedido
+        const systemMsgRef = messagesCollectionRef.doc();
+        batch.set(systemMsgRef, {
+            id: systemMsgRef.id,
+            type: 'system',
+            action: 'publication_deleted',
+            text: 'A publicação associada a esta troca foi removida da plataforma. A troca foi cancelada automaticamente.',
+            createdAt: FieldValue.serverTimestamp(),
+            senderId: 'system'
         });
     });
 
     await batch.commit();
-    console.log(`Marked ${docsById.size} offer(s) as unavailable for book ${bookId}.`);
+    console.log(`Marked ${docsById.size} offer(s) as cancelled and disabled chats for book ${bookId}.`);
 }
 
 
@@ -401,8 +422,8 @@ exports.purgeInactiveChats = onSchedule("0 0 * * *", async (event) => {
 
                     if (targetQuery.empty && offeredQuery.empty) {
                         console.log(`[LOG] Book ${bookId} is completely orphaned. Wiping from Storage...`);
-                        await bucket.deleteFiles({ 
-                            prefix: `books/${bookId}/` 
+                        await bucket.deleteFiles({
+                            prefix: `books/${bookId}/`
                         });
                         console.log(`✅ Safely purged completely orphaned images for book: ${bookId}`);
                     } else {
@@ -833,11 +854,11 @@ const functionsV1 = require('firebase-functions/v1');
 exports.onAuthAccountDeleted = functionsV1
     .region('europe-west1')
     .auth.user().onDelete(async (user) => {
-        const userId = user.uid; 
+        const userId = user.uid;
         const batch = db.batch();
         const bucket = getStorage().bucket();
 
-        let hasWrites = false; 
+        let hasWrites = false;
         try {
             const publicationsSnapshot = await db.collection('publications')
                 .where('uid', '==', userId)
@@ -857,13 +878,13 @@ exports.onAuthAccountDeleted = functionsV1
                 chatsSnapshot.forEach(doc => {
                     batch.update(doc.ref, {
                         status: 'disabled',
-                        disabledReason: 'deleted' 
+                        disabledReason: 'deleted'
                     });
                     const messageRef = doc.ref.collection('messages').doc();
                     batch.set(messageRef, {
                         id: messageRef.id,
                         type: 'system',
-                        action: 'deleted', 
+                        action: 'deleted',
                         createdAt: FieldValue.serverTimestamp(),
                         senderId: 'system'
                     });
@@ -877,8 +898,8 @@ exports.onAuthAccountDeleted = functionsV1
             hasWrites = true;
 
             try {
-                await bucket.deleteFiles({ 
-                    prefix: `profile_pictures/${userId}/` 
+                await bucket.deleteFiles({
+                    prefix: `profile_pictures/${userId}/`
                 });
                 console.log(`Successfully deleted profile picture storage files for user ${userId}`);
             } catch (storageError) {
@@ -894,7 +915,7 @@ exports.onAuthAccountDeleted = functionsV1
             return null;
         } catch (error) {
             console.error(`Error processing account deletion cleanup for user ${userId}:`, error);
-            throw error; 
+            throw error;
         }
     });
 
@@ -930,10 +951,10 @@ exports.setAdminStatus = onCall(async (request) => {
         });
 
         console.log(`[ADMIN] User ${targetUid} role successfully set to '${newRole}' by Admin ${request.auth.uid}.`);
-        
-        return { 
-            success: true, 
-            message: `User role successfully changed to ${newRole}.` 
+
+        return {
+            success: true,
+            message: `User role successfully changed to ${newRole}.`
         };
     } catch (error) {
         console.error("Error setting admin claims:", error);
