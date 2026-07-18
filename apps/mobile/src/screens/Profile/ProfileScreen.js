@@ -11,7 +11,7 @@ import { useScrollTabBarControl } from '../../hooks/use-scroll-tab-bar-control';
 import { useProfileActions } from '@readme/shared/src/hooks/use-profile-actions';
 import { getHighestUnlockedBadge } from '@readme/shared/src/utils/gamificationUtils';
 import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings';
-import { DB } from '@readme/shared/src/services/DB';
+import { useFollowModal } from '@readme/shared/src/hooks/use-follow-modal';
 
 export default function ProfileScreen({ navigation }) {
     const theme = useTheme();
@@ -35,11 +35,11 @@ export default function ProfileScreen({ navigation }) {
 
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
-    // States for your new interactive Follower/Following Modal
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalTitle, setModalTitle] = useState('');
-    const [modalUsers, setModalUsers] = useState([]);
-    const [modalLoading, setModalLoading] = useState(false);
+    
+    const {
+        modalVisible, modalTitle, modalUsers, modalLoading,
+        openFollowModal, closeFollowModal,
+    } = useFollowModal(currentUser?.uid);
 
     const {
         uploading, hasNotifications,
@@ -69,67 +69,6 @@ export default function ProfileScreen({ navigation }) {
             unsubscribeRealTime();
         };
     }, [navigation, refreshUser, currentUser?.uid]);
-
-    // Handles querying active followers or following records and building profiles
-    const handleOpenFollowModal = async (type) => {
-        if (!currentUser?.uid) return;
-
-        const isFollowers = type === 'followers';
-        setModalTitle(isFollowers ? 'Followers' : 'Following');
-        setModalVisible(true);
-        setModalLoading(true);
-        setModalUsers([]);
-
-        try {
-            const { UsersService } = require('@readme/shared/src/services/users');
-            const { DB } = require('@readme/shared/src/services/DB');
-            let records = [];
-
-            // 1. Query the database using the exact schema fields from your follow model
-            if (isFollowers) {
-                // People following you (You are the 'followingUid')
-                records = await DB.get('follows', [
-                    { field: 'followingUid', operator: '==', value: currentUser.uid }
-                ]);
-            } else {
-                // People you follow (You are the 'followerUid')
-                records = await DB.get('follows', [
-                    { field: 'followerUid', operator: '==', value: currentUser.uid }
-                ]);
-            }
-
-            // 2. Extract the opposing user's UID and STRICTLY filter out your own UID
-            const uids = records
-            .map(rec => isFollowers ? rec.followerUid : rec.followingUid)
-            .filter(uid => uid && uid !== currentUser.uid); // <-- THIS PREVENTS YOU FROM SEEING YOURSELF
-
-            const uniqueUids = [...new Set(uids)];
-
-            if (uniqueUids.length > 0) {
-                let mappedUsers = [];
-
-                // 3. Batch requests into chunks of 10 to satisfy Firestore's 'in' constraint
-                for (let i = 0; i < uniqueUids.length; i += 10) {
-                    const chunk = uniqueUids.slice(i, i + 10);
-                    const profilesMap = await UsersService.fetchAllUsersProfile(chunk);
-
-                    if (profilesMap) {
-                        const chunkUsers = Object.keys(profilesMap).map(uid => ({
-                            uid,
-                            ...profilesMap[uid]
-                        }));
-                        mappedUsers = [...mappedUsers, ...chunkUsers];
-                    }
-                }
-
-                setModalUsers(mappedUsers);
-            }
-        } catch (error) {
-            console.error("Error opening profile connection modal:", error);
-        } finally {
-            setModalLoading(false);
-        }
-    };
 
     return (
         <View style={styles.container}>
@@ -212,12 +151,12 @@ export default function ProfileScreen({ navigation }) {
                             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 }}>Publications</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={{ alignItems: 'center', width: 90 }} onPress={() => handleOpenFollowModal('followers')}>
+                        <TouchableOpacity style={{ alignItems: 'center', width: 90 }} onPress={() => openFollowModal('followers')}>
                             <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' }}>{currentUser?.followersCount ?? 0}</Text>
                             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 }}>Followers</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={{ alignItems: 'center', width: 90 }} onPress={() => handleOpenFollowModal('following')}>
+                        <TouchableOpacity style={{ alignItems: 'center', width: 90 }} onPress={() => openFollowModal('following')}>
                             <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' }}>{currentUser?.followingCount ?? 0}</Text>
                             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 }}>Following</Text>
                         </TouchableOpacity>
@@ -275,7 +214,7 @@ export default function ProfileScreen({ navigation }) {
                 animationType="slide"
                 transparent={true}
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                onRequestClose={closeFollowModal}
             >
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
                     <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '65%', paddingBottom: 24 }}>
@@ -283,7 +222,7 @@ export default function ProfileScreen({ navigation }) {
                         {/* Modal Drag Bar / Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: theme.groupShadow }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>{modalTitle}</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
+                            <TouchableOpacity onPress={closeFollowModal} style={{ padding: 4 }}>
                                 <Iconify icon="lucide:x" size={24} color={theme.text} />
                             </TouchableOpacity>
                         </View>
@@ -307,7 +246,7 @@ export default function ProfileScreen({ navigation }) {
                                             <TouchableOpacity 
                                                 style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: 'rgba(128,128,128,0.2)' }}
                                                 onPress={() => {
-                                                    setModalVisible(false); 
+                                                    closeFollowModal(); 
                                                     navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: item.uid });
                                                 }}
                                             >

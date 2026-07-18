@@ -98,19 +98,15 @@ export const UsersService = {
      */
     fetchUserProfile: async (userId) => UsersService.fetchSummaryUserProfile(userId),
 
-    /**
-     * Fetch list of users the given user is following.
-     */
     getFollowing: async (uid) => {
         const followDocs = await DB.get('follows', [
             { field: 'followerUid', operator: '==', value: uid }
         ]);
-
-        return Promise.all(
+        const results = await Promise.all(
             followDocs.map(async (followDoc) => {
                 const followingUid = followDoc.followingUid;
+                if (!followingUid || followingUid === uid) return null;
                 const userData = await DB.get(USERS_COLLECTION, followingUid).catch(() => null);
-
                 return {
                     id: followingUid,
                     username: userData?.username ?? null,
@@ -120,21 +116,23 @@ export const UsersService = {
                 };
             })
         );
+        const seen = new Set();
+        return results.filter(u => {
+            if (!u || seen.has(u.id)) return false;
+            seen.add(u.id);
+            return true;
+        });
     },
 
-    /**
-     * Fetch list of users following the given user.
-     */
     getFollowers: async (uid) => {
         const followDocs = await DB.get('follows', [
             { field: 'followingUid', operator: '==', value: uid }
         ]);
-
-        return Promise.all(
+        const results = await Promise.all(
             followDocs.map(async (followDoc) => {
                 const followerUid = followDoc.followerUid;
+                if (!followerUid || followerUid === uid) return null;
                 const userData = await DB.get(USERS_COLLECTION, followerUid).catch(() => null);
-
                 return {
                     id: followerUid,
                     username: userData?.username ?? null,
@@ -144,11 +142,16 @@ export const UsersService = {
                 };
             })
         );
+        const seen = new Set();
+        return results.filter(u => {
+            if (!u || seen.has(u.id)) return false;
+            seen.add(u.id);
+            return true;
+        });
     },
 
     /**
      * Fetches the follower and following counts for a given user.
->>>>>>> origin/integration/web-services-review
      * @param {string} userId - The ID of the user
      * @returns {Promise<{followers: number, following: number}>}
      */

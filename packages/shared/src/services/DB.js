@@ -3,7 +3,7 @@ import {
     collection, doc, getDoc, addDoc, setDoc, 
     updateDoc, deleteDoc, serverTimestamp, arrayUnion,
     query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit, startAfter, getCountFromServer,
-    collectionGroup
+    collectionGroup, writeBatch
 } from 'firebase/firestore';
 
 export const DB = {
