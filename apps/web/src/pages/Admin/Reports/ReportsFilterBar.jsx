@@ -1,10 +1,10 @@
+import {Search} from "lucide-react";
 import { REPORT_TARGET_TYPE, REPORT_STATUS, REPORT_REASON_LABELS } from '@readme/shared/src/constants/status';
 import Dropdown from '../../../components/Dropdown';
 import styles from './ReportsFilterBar.module.css';
 
 const STATUS_OPTIONS = [
     { value: REPORT_STATUS.PENDING, label: 'Pending' },
-    { value: REPORT_STATUS.REVIEWED, label: 'Reviewed' },
     { value: REPORT_STATUS.ACTIONED, label: 'Actioned' },
     { value: REPORT_STATUS.DISMISSED, label: 'Dismissed' },
 ];
@@ -26,7 +26,7 @@ export default function ReportsFilterBar({
     return (
         <div className={styles.bar}>
             <div className={styles.searchWrap}>
-                <IconLucideSearch size={16} className={styles.searchIcon} />
+                <Search size={16} className={styles.searchIcon} />
                 <input
                     className={styles.searchInput}
                     placeholder="Search reports..."
