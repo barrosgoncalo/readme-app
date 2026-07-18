@@ -1,9 +1,10 @@
+// @readme/shared/src/services/DB.js
 import { db } from './firebase';
 import { 
     collection, doc, getDoc, addDoc, setDoc, 
     updateDoc, deleteDoc, serverTimestamp, arrayUnion,
     query, where, orderBy, getDocs, getDocsFromServer, onSnapshot, limit, startAfter, getCountFromServer,
-    collectionGroup
+    collectionGroup, writeBatch
 } from 'firebase/firestore';
 
 export const DB = {
@@ -125,6 +126,33 @@ export const DB = {
         }
 
         return await updateDoc(docRef, payload);
+    },
+
+    /**
+     * Runs multiple set/update/delete operations as a single atomic batch.
+     * ops: Array of { type: 'set'|'update'|'delete', collection, id, data? }
+     * 'set' merges by default unless merge:false is passed.
+     */
+    batchWrite: async (ops) => {
+        try {
+            const batch = writeBatch(db);
+
+            ops.forEach(op => {
+                const ref = doc(db, op.collection, op.id);
+                if (op.type === 'set') {
+                    batch.set(ref, op.data, { merge: op.merge !== false });
+                } else if (op.type === 'update') {
+                    batch.update(ref, op.data);
+                } else if (op.type === 'delete') {
+                    batch.delete(ref);
+                }
+            });
+
+            await batch.commit();
+        } catch (error) {
+            console.error('DB.batchWrite Error:', error);
+            throw error;
+        }
     },
 
     /**

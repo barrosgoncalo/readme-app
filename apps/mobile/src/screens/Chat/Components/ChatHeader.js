@@ -34,7 +34,7 @@ const ChatHeader = memo(({
                     disabled={!otherUserId}
                     onPress={() => {
                         if (otherUserId) {
-                            navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: otherUserId });
+                            navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: otherUserId });
                         }
                     }}
                 >

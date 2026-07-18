@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus, UserCheck, Ban, Flag } from 'lucide-react';
+import { ArrowLeft, UserPlus, UserCheck, Clock, Ban, Flag, Lock } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { MyBooksService } from '@readme/shared/src/services/books';
@@ -76,6 +76,7 @@ export default function PublicProfile() {
     const [activeTab, setActiveTab] = useState('myBooks');
     const [reviews, setReviews] = useState([]);
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isRequestPending, setIsRequestPending] = useState(false);
     const [followers, setFollowers] = useState(0);
     const [following, setFollowing] = useState(0);
     const [isBlocked, setIsBlocked] = useState(false);
@@ -101,6 +102,7 @@ export default function PublicProfile() {
                 if (!u) { setNotFound(true); return; }
                 setUser(u);
                 setIsFollowing(u.isCurrentUserFollowing);
+                setIsRequestPending(u.isRequestPending);
                 setFollowers(u.followers);
                 setFollowing(u.following);
 
@@ -139,14 +141,21 @@ export default function PublicProfile() {
     }, [uid, currentUser, navigate]);
 
     async function handleFollowToggle() {
-        if (!currentUser || followBusy) return;
+        if (!currentUser || followBusy || isRequestPending) return;
         setFollowBusy(true);
         try {
-            await UsersService.toggleFollowUser(uid, !isFollowing);
-            const newFollowing = !isFollowing;
-            setIsFollowing(newFollowing);
-            setFollowers(followers + (newFollowing ? 1 : -1));
-            showToast(newFollowing ? `Followed @${user.username || 'user'}.` : `Unfollowed @${user.username || 'user'}.`);
+            const isTargetPrivate = user.profileVisibility === 'private';
+            const shouldFollow = !isFollowing;
+            await UsersService.toggleFollowUser(uid, shouldFollow, isTargetPrivate);
+
+            if (shouldFollow && isTargetPrivate) {
+                setIsRequestPending(true);
+                showToast(`Follow request sent to @${user.username || 'user'}.`);
+            } else {
+                setIsFollowing(shouldFollow);
+                setFollowers(followers + (shouldFollow ? 1 : -1));
+                showToast(shouldFollow ? `Followed @${user.username || 'user'}.` : `Unfollowed @${user.username || 'user'}.`);
+            }
         } catch (e) {
             showToast('Action failed. Please try again.');
             console.error(e);
@@ -211,6 +220,8 @@ export default function PublicProfile() {
 
     if (loading) return <div className={styles.page}><SkeletonGrid count={3} /></div>;
 
+    const isLockedPrivateView = user?.profileVisibility === 'private' && !isFollowing;
+
     if (notFound) {
         return (
             <div className={styles.page}>
@@ -273,12 +284,12 @@ export default function PublicProfile() {
             {!isBlocked && (
                 <div className={styles.actions}>
                     <button
-                        className={`${styles.actionBtn} ${isFollowing ? styles.actionBtnSecondary : styles.actionBtnPrimary}`}
+                        className={`${styles.actionBtn} ${isFollowing || isRequestPending ? styles.actionBtnSecondary : styles.actionBtnPrimary}`}
                         onClick={handleFollowToggle}
-                        disabled={followBusy}
+                        disabled={followBusy || isRequestPending}
                     >
-                        {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                        {isFollowing ? 'Following' : 'Follow'}
+                        {isFollowing ? <UserCheck size={16} /> : isRequestPending ? <Clock size={16} /> : <UserPlus size={16} />}
+                        {isFollowing ? 'Following' : isRequestPending ? 'Requested' : 'Follow'}
                     </button>
                     <button
                         className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
@@ -302,6 +313,15 @@ export default function PublicProfile() {
                 <p className={styles.blockedNotice}>You have blocked this user.</p>
             )}
 
+            {isLockedPrivateView ? (
+                <div className={styles.privateLock}>
+                    <Lock size={32} className={styles.privateLockIcon} />
+                    <p className={styles.privateLockTitle}>This account is private</p>
+                    <p className={styles.privateLockText}>
+                        Follow this user to see their publications and reviews.
+                    </p>
+                </div>
+            ) : (
             <div className={styles.dashboard}>
                 <div className={styles.booksColumn}>
                     <div className={styles.tabBar}>
@@ -370,7 +390,7 @@ export default function PublicProfile() {
                                         <p className={styles.reviewComment}>{review.comment}</p>
                                     )}
                                     <p className={styles.reviewDate}>
-                                        {new Date(review.createdAt).toLocaleDateString()}
+                                        {(review.createdAt?.toDate?.() ?? new Date(review.createdAt)).toLocaleDateString()}
                                     </p>
                                 </div>
                             ))}
@@ -378,6 +398,7 @@ export default function PublicProfile() {
                     )}
                 </div>
             </div>
+            )}
         </div>
     );
 }

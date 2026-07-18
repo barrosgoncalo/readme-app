@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Search as IconLucideSearch, BookOpen as IconLucideBook, X as IconLucideX, Trash2 as IconLucideTrash } from 'lucide-react';
+import { Search, BookOpen, X, Trash2 } from 'lucide-react';
 import { DB } from '@readme/shared/src/services/DB.js';
 import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
+import { useReportActions } from '@readme/shared/src/hooks/use-report-actions';
 import StatusBadge from '../../../components/StatusBadge';
 import styles from './Publications.module.css';
 
@@ -9,13 +10,14 @@ export default function AdminPublications() {
     const [search, setSearch] = useState('');
     const [selectedPub, setSelectedPub] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+    const { autoActionPublicationReports } = useReportActions();
 
     const {
         items: allPublications,
         isLoadingInitial,
         isLoadingMore,
         loadMore,
-        refresh
+        removeItem
     } = useExploreFeed({
         sortBy: 'DATE_DESC',
         includeAllStatuses: true
@@ -26,8 +28,10 @@ export default function AdminPublications() {
 
         setDeletingId(pubId);
         try {
-            await DB.delete('publications', pubId);
-            refresh();
+            await DB.remove('publications', pubId);
+            await autoActionPublicationReports(pubId);
+
+            removeItem(pubId);
             setSelectedPub(null);
         } catch (err) {
             console.error('Failed to delete publication:', err);
@@ -60,7 +64,7 @@ export default function AdminPublications() {
             <div className={styles.card}>
                 <div className={styles.toolbar}>
                     <div className={styles.searchWrapper}>
-                        <IconLucideSearch size={15} className={styles.searchIcon} />
+                        <Search size={15} className={styles.searchIcon} />
                         <input
                             className={styles.searchInput}
                             placeholder="Search by title, author, owner, or genre..."
@@ -82,8 +86,8 @@ export default function AdminPublications() {
                             </div>
                         ) : (
                             <div className={styles.scroll}>
-                            <table className={styles.table}>
-                                <thead>
+                                <table className={styles.table}>
+                                    <thead>
                                     <tr>
                                         <th>Book Title</th>
                                         <th>Author</th>
@@ -92,8 +96,8 @@ export default function AdminPublications() {
                                         <th>Status</th>
                                         <th>Action</th>
                                     </tr>
-                                </thead>
-                                <tbody>
+                                    </thead>
+                                    <tbody>
                                     {filtered.map(pub => (
                                         <tr key={pub.id}>
                                             <td>
@@ -102,7 +106,7 @@ export default function AdminPublications() {
                                                         {pub.imageUrl ? (
                                                             <img src={pub.imageUrl} alt="" className={styles.coverImg} />
                                                         ) : (
-                                                            <IconLucideBook size={16} />
+                                                            <BookOpen size={16} />
                                                         )}
                                                     </div>
                                                     <span className={styles.bookTitle}>{pub.title || 'Untitled'}</span>
@@ -124,8 +128,8 @@ export default function AdminPublications() {
                                             </td>
                                         </tr>
                                     ))}
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
                             </div>
                         )}
 
@@ -145,72 +149,72 @@ export default function AdminPublications() {
             {selectedPub && (
                 <>
                     {console.log('raw publicationData:', selectedPub.publicationData)}
-                <div className={styles.modalOverlay} onClick={() => setSelectedPub(null)}>
-                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h2>Publication Details</h2>
-                            <button className={styles.closeBtn} onClick={() => setSelectedPub(null)}>
-                                <IconLucideX size={18} />
-                            </button>
-                        </div>
+                    <div className={styles.modalOverlay} onClick={() => setSelectedPub(null)}>
+                        <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h2>Publication Details</h2>
+                                <button className={styles.closeBtn} onClick={() => setSelectedPub(null)}>
+                                    <X size={18} />
+                                </button>
+                            </div>
 
-                        <div className={styles.modalBody}>
-                            <div className={styles.detailCoverSection}>
-                                <div className={styles.largeCover}>
-                                    {selectedPub.imageUrl ? (
-                                        <img src={selectedPub.imageUrl} alt="" />
-                                    ) : (
-                                        <IconLucideBook size={48} />
-                                    )}
+                            <div className={styles.modalBody}>
+                                <div className={styles.detailCoverSection}>
+                                    <div className={styles.largeCover}>
+                                        {selectedPub.imageUrl ? (
+                                            <img src={selectedPub.imageUrl} alt="" />
+                                        ) : (
+                                            <BookOpen size={48} />
+                                        )}
+                                    </div>
+                                    <div className={styles.detailTitleBlock}>
+                                        <h3>{selectedPub.title}</h3>
+                                        <p className={styles.detailAuthor}>by {selectedPub.author || 'Unknown'}</p>
+                                        <StatusBadge status={selectedPub.publicationData?.status || 'available'} />
+                                    </div>
                                 </div>
-                                <div className={styles.detailTitleBlock}>
-                                    <h3>{selectedPub.title}</h3>
-                                    <p className={styles.detailAuthor}>by {selectedPub.author || 'Unknown'}</p>
-                                    <StatusBadge status={selectedPub.publicationData?.status || 'available'} />
+
+                                <hr className={styles.divider} />
+
+                                <div className={styles.metaGrid}>
+                                    <div>
+                                        <span className={styles.metaLabel}>Genre</span>
+                                        <p className={styles.metaValue}>{selectedPub.subject || '—'}</p>
+                                    </div>
+                                    <div>
+                                        <span className={styles.metaLabel}>Condition</span>
+                                        <p className={styles.metaValue}>{selectedPub.condition || 'Good'}</p>
+                                    </div>
+                                    <div>
+                                        <span className={styles.metaLabel}>Owner</span>
+                                        <p className={styles.metaValue}>{selectedPub.seller?.name || '—'}</p>
+                                    </div>
+                                    <div>
+                                        <span className={styles.metaLabel}>Owner Email</span>
+                                        <p className={styles.metaValue}>{selectedPub.publicationData?.ownerEmail || '—'}</p>
+                                    </div>
+                                </div>
+
+                                <div className={styles.descriptionBlock}>
+                                    <span className={styles.metaLabel}>Description / Notes</span>
+                                    <p className={styles.descriptionText}>
+                                        {selectedPub.publicationData?.description || 'No description provided by the user.'}
+                                    </p>
                                 </div>
                             </div>
 
-                            <hr className={styles.divider} />
-
-                            <div className={styles.metaGrid}>
-                                <div>
-                                    <span className={styles.metaLabel}>Genre</span>
-                                    <p className={styles.metaValue}>{selectedPub.subject || '—'}</p>
-                                </div>
-                                <div>
-                                    <span className={styles.metaLabel}>Condition</span>
-                                    <p className={styles.metaValue}>{selectedPub.condition || 'Good'}</p>
-                                </div>
-                                <div>
-                                    <span className={styles.metaLabel}>Owner</span>
-                                    <p className={styles.metaValue}>{selectedPub.seller?.name || '—'}</p>
-                                </div>
-                                <div>
-                                    <span className={styles.metaLabel}>Owner Email</span>
-                                    <p className={styles.metaValue}>{selectedPub.publicationData?.ownerEmail || '—'}</p>
-                                </div>
+                            <div className={styles.modalFooter}>
+                                <button
+                                    className={styles.deleteActionBtn}
+                                    onClick={() => handleDelete(selectedPub.id)}
+                                    disabled={deletingId !== null}
+                                >
+                                    <Trash2 size={16} />
+                                    {deletingId === selectedPub.id ? 'Deleting...' : 'Remove Publication'}
+                                </button>
                             </div>
-
-                            <div className={styles.descriptionBlock}>
-                                <span className={styles.metaLabel}>Description / Notes</span>
-                                <p className={styles.descriptionText}>
-                                    {selectedPub.publicationData?.description || 'No description provided by the user.'}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className={styles.modalFooter}>
-                            <button
-                                className={styles.deleteActionBtn}
-                                onClick={() => handleDelete(selectedPub.id)}
-                                disabled={deletingId !== null}
-                            >
-                                <IconLucideTrash size={16} />
-                                {deletingId === selectedPub.id ? 'Deleting...' : 'Remove Publication'}
-                            </button>
                         </div>
                     </div>
-                </div>
                 </>
             )}
         </div>

@@ -1,14 +1,21 @@
+import {useState, useEffect} from 'react';
 import ReportRow from './ReportRow.jsx';
 import styles from './ReportsTable.module.css';
 
-export default function ReportsTable({ reports, userMap, loading, onStatusChange, onView }) {
-    if (loading) {
-        return <div className={styles.empty}>Loading reports…</div>;
-    }
+export default function ReportsTable({reports, userMap, loading, onStatusChange, onView}) {
+    const [openMenuId, setOpenMenuId] = useState(null);
 
-    if (reports.length === 0) {
+    useEffect(() => {
+        const closeMenu = () => setOpenMenuId(null);
+        document.addEventListener('click', closeMenu);
+        return () => document.removeEventListener('click', closeMenu);
+    }, []);
+
+    if (loading)
+        return <div className={styles.empty}>Loading reports...</div>;
+
+    if (reports.length === 0)
         return <div className={styles.empty}>No reports match these filters.</div>;
-    }
 
     return (
         <div className={styles.scroll}>
@@ -34,6 +41,11 @@ export default function ReportsTable({ reports, userMap, loading, onStatusChange
                         reportedUser={userMap[report.reportedUserId]}
                         onStatusChange={onStatusChange}
                         onView={onView}
+                        isOpen={openMenuId === report.id}
+                        onToggleMenu={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === report.id ? null : report.id);
+                        }}
                     />
                 ))}
                 </tbody>

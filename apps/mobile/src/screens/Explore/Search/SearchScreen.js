@@ -77,7 +77,7 @@ export default function SearchScreen({ navigation }) {
     const handleUserPress = (user) => {
         setSearchText(user.username);
         saveRecentSearch(user.username);
-        navigation.navigate(ROUTES.PUBLIC_PROFILE_SCREEN, { ownerId: user.uid });
+        navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: user.uid });
     };
 
     const handleRecentPress = (query) => {

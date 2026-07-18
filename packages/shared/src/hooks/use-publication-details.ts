@@ -3,13 +3,15 @@ import { Alert } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { UsersService } from '../services/users';
 import { ReportsService } from '../services/reports';
-import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS } from '../constants/status';
+import { REPORT_TARGET_TYPE } from '../constants/status';
+import { useReportModal } from './use-report-modal';
 
 export function usePublicationDetails(book: any, initialSellerData: any) {
     const auth = getAuth();
     const currentUser = auth.currentUser;
 
     const [isFavorited, setIsFavorited] = useState(false);
+    const report = useReportModal();
 
     // Mapeamento defensivo: passamos ambos os formatos para o ecrã não quebrar
     const [seller, setSeller] = useState({
@@ -53,9 +55,9 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
                     setSeller({
                         name: displayName,
                         username: displayName, // <-- Garante o nome no ecrã
-                        rating: Number(sellerData.rating) || 0, 
+                        rating: Number(sellerData.rating) || 0,
                         reviewCount: Number(sellerData.reviewCount || sellerData.reviews) || 0,
-                        reviews: Number(sellerData.reviewCount || sellerData.reviews) || 0, 
+                        reviews: Number(sellerData.reviewCount || sellerData.reviews) || 0,
                         avatarUrl: fetchedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=EACCA5&color=333`,
                         photoURL: fetchedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=EACCA5&color=333`,
                     });
@@ -86,49 +88,36 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
     const sellerId = book?.ownerId || book?.uid;
     const canReport = !!currentUser && !!book?.id && !!sellerId && sellerId !== currentUser.uid;
 
-    const submitPublicationReport = async (reason: string) => {
-        try {
-            const snapshot = ReportsService.buildPublicationSnapshot(book);
-
-            await ReportsService.submitReport(
-                currentUser?.uid,
-                REPORT_TARGET_TYPE.PUBLICATION,
-                book?.id,
-                sellerId,
-                reason,
-                snapshot
-            );
-
-            Alert.alert("Report Submitted", "Thanks — our team will review this listing.");
-        } catch (error) {
-            console.error('[usePublicationDetails] Failed to submit report:', error);
-            Alert.alert("Something Went Wrong", "We couldn't submit your report. Please try again.");
-        }
-    };
-
+    // Opens the bottom sheet (see ReportModal) instead of the old 5-button
+    // Alert.alert, which silently truncated to 3 buttons on Android.
     const handleReportPublication = () => {
         if (!currentUser) {
-            Alert.alert("Error", "You must be logged in to report a listing.");
+            Alert.alert('Error', 'You must be logged in to report a listing.');
             return;
         }
 
         if (!canReport) {
-            Alert.alert("Something Went Wrong", "We couldn't identify this listing. Please try again.");
+            Alert.alert('Something Went Wrong', "We couldn't identify this listing. Please try again.");
             return;
         }
 
-        Alert.alert(
-            "Report Listing",
-            "Why are you reporting this listing?",
-            [
-                { text: "Cancel", style: "cancel" },
-                ...Object.entries(REPORT_REASON_LABELS).map(([reason, label]) => ({
-                    text: label,
-                    onPress: () => submitPublicationReport(reason)
-                }))
-            ]
-        );
+        const snapshot = ReportsService.buildPublicationSnapshot(book);
+
+        report.open({
+            reporterId: currentUser.uid,
+            targetType: REPORT_TARGET_TYPE.PUBLICATION,
+            targetId: book.id,
+            reportedUserId: sellerId,
+            contextSnapshot: snapshot,
+        });
     };
 
-    return { seller, isFavorited, handleToggleFavorite, handleReportPublication, canReport };
+    return {
+        seller,
+        isFavorited,
+        handleToggleFavorite,
+        handleReportPublication,
+        canReport,
+        reportModal: report,
+    };
 }

@@ -1,138 +1,146 @@
-// Web auth — mirrors the export surface of ./auth.js (mobile).
-// Email/password and Firestore writes are identical; Google sign-in uses
-// signInWithPopup instead of @react-native-google-signin.
-import { auth, db } from './firebase.web';
-import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    sendPasswordResetEmail,
-    updatePassword,
-    signInWithPopup,
-    sendEmailVerification,
-    GoogleAuthProvider,
-    EmailAuthProvider,
-    reauthenticateWithCredential,
-    deleteUser,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from '../constants/authConstants';
+import { auth } from './firebase.web'; 
+import { DB } from './DB';
+import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    sendPasswordResetEmail, 
+    updatePassword, 
+    signInWithPopup, 
+    sendEmailVerification, 
+    GoogleAuthProvider, 
+    EmailAuthProvider, 
+    reauthenticateWithPopup,
+    reauthenticateWithCredential, 
+    deleteUser, 
+} from 'firebase/auth'; 
+import { USER_ROLES, ACCOUNT_STATUS, ACCOUNT_VISIBILITY } from '../constants/authConstants'; 
 
-// Same Firestore write as mobile's saveUserData — kept in sync deliberately.
-export const saveUserData = async (uid, profileData, provider) => {
-    await setDoc(doc(db, 'users', uid), {
-        uid: uid,
-        userId: profileData.email.trim().toLowerCase(),
-        username: profileData.username,
-        fullName: profileData.fullName,
-        phoneNumber: profileData.phoneNumber,
-        dob: profileData.dob,
-        profileVisibility: profileData.isPublic
-            ? ACCOUNT_VISIBILITY.PUBLIC
-            : ACCOUNT_VISIBILITY.PRIVATE,
-        role: USER_ROLES.USER,
-        accountStatus: ACCOUNT_STATUS.ACTIVE,
-        institutionalAddress: {
-            addressLine1: profileData.addressLine1,
-            addressLine2: profileData.addressLine2 || null,
-            city: profileData.city,
-            district: profileData.district,
-            postalCode: profileData.zipCode,
-            country: profileData.country,
-        },
-        createdAt: new Date().toISOString(),
-        favoriteBooks: [],
-        authProvider: provider,
-    });
-};
+export const saveUserData = async (uid, profileData, provider) => { 
+    const payload = {
+        uid: uid, 
+        userId: profileData.email.trim().toLowerCase(), 
+        username: profileData.username, 
+        fullName: profileData.fullName, 
+        phoneNumber: profileData.phoneNumber, 
+        dob: profileData.dob, 
+        profileVisibility: profileData.isPublic 
+            ? ACCOUNT_VISIBILITY.PUBLIC 
+            : ACCOUNT_VISIBILITY.PRIVATE, 
+        role: USER_ROLES.USER, 
+        accountStatus: ACCOUNT_STATUS.ACTIVE, 
+        institutionalAddress: { 
+            addressLine1: profileData.addressLine1, 
+            addressLine2: profileData.addressLine2 || null, 
+            city: profileData.city, 
+            district: profileData.district, 
+            postalCode: profileData.zipCode, 
+            country: profileData.country, 
+        }, 
+        favoriteBooks: [], 
+        authProvider: provider, 
+    };
 
-export const doCreateUserWithEmailAndPassword = async (email, password, profileData) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    // DB.create applies { createdAt: serverTimestamp() } automatically under the hood
+    await DB.create('users', payload, uid); 
+}; 
 
-    await saveUserData(user.uid, { ...profileData, email }, 'email');
+export const doCreateUserWithEmailAndPassword = async (email, password, profileData) => { 
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password); 
+    const user = userCredential.user; 
 
-    await doSendEmailVerification();
+    await saveUserData(user.uid, { ...profileData, email }, 'email'); 
 
-    return userCredential;
-};
+    await doSendEmailVerification(); 
 
-export const doSignInWithEmailAndPassword = async (email, password) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-    const user = userCredential.user;
+    return userCredential; 
+}; 
 
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+export const doSignInWithEmailAndPassword = async (email, password) => { 
+    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password); 
+    const user = userCredential.user; 
 
-    if (!userDoc.exists()) {
-        throw new Error('User profile not found.');
-    }
+    // DB.get returns the data object if it exists, or null
+    const userData = await DB.get('users', user.uid); 
 
-    const userData = userDoc.data();
-    if (userData.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
-        await auth.signOut();
-        throw new Error('Your account has been suspended. Please contact support.');
-    }
+    if (!userData) { 
+        throw new Error('User profile not found.'); 
+    } 
 
-    return { user, userData };
-};
+    if (userData.accountStatus === ACCOUNT_STATUS.SUSPENDED) { 
+        await auth.signOut(); 
+        throw new Error('Your account has been suspended. Please contact support.'); 
+    } 
 
-// Web Google sign-in: popup-based. Caller may pass profileData for the first-time
-// case (when the users/{uid} doc doesn't exist yet). If not supplied, we derive a
-// minimal profile from the Google account.
-export const doSignInWithGoogle = async (profileData) => {
-    const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    const user = userCredential.user;
+    return { user, userData }; 
+}; 
 
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+// Web Google sign-in: popup-based. Caller may pass profileData for the first-time 
+// case (when the users/{uid} doc doesn't exist yet). If not supplied, we derive a 
+// minimal profile from the Google account. 
+export const doSignInWithGoogle = async (profileData) => { 
+    const provider = new GoogleAuthProvider(); 
+    const userCredential = await signInWithPopup(auth, provider); 
+    const user = userCredential.user; 
 
-    if (!userDoc.exists()) {
-        const fallback = {
-            email: user.email || '',
-            fullName: user.displayName || '',
-            username: user.email ? user.email.split('@')[0] : '',
-            phoneNumber: '',
-            dob: '',
-            isPublic: true,
-            addressLine1: '',
-            addressLine2: '',
-            city: '',
-            district: '',
-            zipCode: '',
-            country: '',
-        };
-        await saveUserData(user.uid, { ...fallback, ...(profileData || {}) }, 'google');
-    }
+    const userData = await DB.get('users', user.uid); 
 
-    return userCredential;
-};
+    if (!userData) { 
+        const fallback = { 
+            email: user.email || '', 
+            fullName: user.displayName || '', 
+            username: user.email ? user.email.split('@')[0] : '', 
+            phoneNumber: '', 
+            dob: '', 
+            isPublic: true, 
+            addressLine1: '', 
+            addressLine2: '', 
+            city: '', 
+            district: '', 
+            zipCode: '', 
+            country: '', 
+        }; 
+        await saveUserData(user.uid, { ...fallback, ...(profileData || {}) }, 'google'); 
+    } 
 
-export const doSignOut = () => auth.signOut();
+    return userCredential; 
+}; 
 
-export const doPasswordReset = (email) => sendPasswordResetEmail(auth, email);
+export const doSignOut = () => auth.signOut(); 
 
-export const doPasswordChange = (password) => updatePassword(auth.currentUser, password);
+export const doPasswordReset = (email) => sendPasswordResetEmail(auth, email); 
 
-export const doSendEmailVerification = () => sendEmailVerification(auth.currentUser);
+export const doPasswordChange = (password) => updatePassword(auth.currentUser, password); 
 
-export const doUpdateUserPassword = async (currentPassword, newPassword) => {
+export const doSendEmailVerification = () => sendEmailVerification(auth.currentUser); 
+
+export const doUpdateUserPassword = async (currentPassword, newPassword) => { 
+    const user = auth.currentUser; 
+    if (!user) throw new Error('No user is currently logged in.'); 
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword); 
+    await reauthenticateWithCredential(user, credential); 
+    await updatePassword(user, newPassword); 
+}; 
+
+export const doDeleteUserProfile = async (uid) => {
     const user = auth.currentUser;
-    if (!user) throw new Error('No user is currently logged in.');
+    if (!user || user.uid !== uid) throw new Error('No user is currently logged in or UID mismatch.');
 
-    const credential = EmailAuthProvider.credential(user.email, currentPassword);
-    await reauthenticateWithCredential(user, credential);
-    await updatePassword(user, newPassword);
-};
-
-export const doDeleteAccount = async (currentPassword) => {
-    const user = auth.currentUser;
-    if (!user) throw new Error('No user is currently logged in.');
-
-    const credential = EmailAuthProvider.credential(user.email, currentPassword);
-    await reauthenticateWithCredential(user, credential);
-
-    // Delete Firestore profile first, then the Auth account.
-    await deleteDoc(doc(db, 'users', user.uid));
     await deleteUser(user);
+};
+
+export const doReauthenticateWithPassword = async (password) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('No user is currently logged in.');
+
+    const credential = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, credential);
+};
+
+export const doReauthenticateWithGoogle = async () => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('No user is currently logged in.');
+
+    const provider = new GoogleAuthProvider();
+    await reauthenticateWithPopup(user, provider);
 };

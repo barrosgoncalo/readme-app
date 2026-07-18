@@ -4,15 +4,17 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
 import {
-    BookOpen, Pencil, Ban, Lock, Moon, Users, Award, Heart, LogOut, ChevronRight, Camera,
+    BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera,
 } from 'lucide-react';
 
 // Shared Services & Contexts
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import { useUserRole } from '@readme/shared/src/hooks/use-user-role'; // <-- Added hook
 
 // Local Project Imports
 import { db, auth, storage } from '@readme/shared/src/services/firebase';
+import { DB } from '@readme/shared/src/services/DB';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -31,11 +33,12 @@ const SUB_ROUTES = new Set([
     WEB_ROUTES.PROFILE_FAVORITES,
     WEB_ROUTES.PROFILE_LEVEL,
     WEB_ROUTES.PROFILE_BLOCKED_USERS,
-    WEB_ROUTES.PROFILE_MY_BOOKS,
+    WEB_ROUTES.PROFILE_FOLLOW_REQUESTS,
 ]);
 
 export default function ProfileLayout() {
     const { currentUser } = useAuth();
+    const { role } = useUserRole(); // <-- Fetch user role
     const { theme, toggle } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
@@ -43,6 +46,8 @@ export default function ProfileLayout() {
 
     const [userData, setUserData] = useState(null);
     const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
+    const [shelfCount, setShelfCount] = useState(null);
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [photoURL, setPhotoURL] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -55,22 +60,33 @@ export default function ProfileLayout() {
 
         Promise.all([
             getDoc(doc(db, 'users', currentUser.uid)),
-            UsersService.getFollowCounts(currentUser.uid)
+            UsersService.getFollowCounts(currentUser.uid),
+            DB.count(`users/${currentUser.uid}/myBooks`).catch(() => null),
         ])
-        .then(([snap, counts]) => {
+        .then(([snap, counts, count]) => {
             if (snap.exists()) {
                 const data = snap.data();
                 setUserData(data);
                 setPhotoURL(data.photoURL || null);
             }
             setFollowCounts(counts);
+            setShelfCount(count);
         })
         .catch(err => {
             console.error("Error fetching user profile data:", err);
             setFollowCounts({ followers: 0, following: 0 });
         })
         .finally(() => setLoading(false));
-        
+
+    }, [currentUser]);
+
+    useEffect(() => {
+        if (!currentUser) return;
+        const unsubscribe = UsersService.subscribeToPendingFollowRequestsCount(
+            currentUser.uid,
+            setPendingRequestsCount
+        );
+        return unsubscribe;
     }, [currentUser]);
 
     async function handleAvatarFileChange(e) {
@@ -119,7 +135,11 @@ export default function ProfileLayout() {
     const settingsGroups = [
         {
             title: 'Content',
-            items: [{ icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.PROFILE_MY_BOOKS) }],
+            items: [
+                { icon: BookOpen, label: 'My Books', onClick: () => navigate(WEB_ROUTES.PROFILE_MY_BOOKS) },
+                { icon: Award, label: 'Level', onClick: () => navigate(WEB_ROUTES.PROFILE_LEVEL) },
+                { icon: Heart, label: 'Favorites', onClick: () => navigate(WEB_ROUTES.PROFILE_FAVORITES) },
+            ],
         },
         {
             title: 'Account',
@@ -135,8 +155,12 @@ export default function ProfileLayout() {
             items: [
                 { icon: Users, label: 'Following', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWING) },
                 { icon: Users, label: 'Followers', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWERS) },
-                { icon: Award, label: 'Level', onClick: () => navigate(WEB_ROUTES.PROFILE_LEVEL) },
-                { icon: Heart, label: 'Favorites', onClick: () => navigate(WEB_ROUTES.PROFILE_FAVORITES) },
+                {
+                    icon: UserPlus,
+                    label: 'Follow Requests',
+                    badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
+                    onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOW_REQUESTS),
+                },
             ],
         },
     ];
@@ -183,7 +207,7 @@ export default function ProfileLayout() {
                             <span>Following</span>
                         </button>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.stat}>
-                            <strong>—</strong>
+                            <strong>{shelfCount ?? '—'}</strong>
                             <span>Shelf</span>
                         </Link>
                     </div>
@@ -191,6 +215,19 @@ export default function ProfileLayout() {
                     <div className={styles.quickActions}>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.quickBtn}>Shelf</Link>
                         <Link to={WEB_ROUTES.PROFILE_MY_BOOKS} className={styles.quickBtn}>My Books</Link>
+                        
+                        {/* Switch Mode Button (Admin Only) */}
+                        {role === 'admin' && (
+                            <button 
+                                type="button" 
+                                className={styles.quickBtn} 
+                                onClick={() => navigate('/admin-choice')}
+                                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                            >
+                                Switch Mode
+                            </button>
+                        )}
+
                         <button type="button" className={`${styles.quickBtn} ${styles.danger}`} onClick={handleSignOut}>
                             <LogOut size={16} /> Sign Out
                         </button>
@@ -217,6 +254,7 @@ export default function ProfileLayout() {
                                         <span className={styles.itemLeft}>
                                             <span className={styles.iconBox}><item.icon size={20} /></span>
                                             <span className={styles.itemLabel}>{item.label}</span>
+                                            {!!item.badge && <span className={styles.badge}>{item.badge}</span>}
                                         </span>
                                         {item.toggle ? (
                                             <Toggle checked={theme === 'dark'} onChange={toggle} />

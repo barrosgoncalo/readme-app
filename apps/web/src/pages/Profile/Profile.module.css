@@ -46,13 +46,15 @@
 
 .quickActions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: var(--space-3);
     width: 100%;
 }
 
 .quickBtn {
-    flex: 1;
+    flex: 1 1 calc(50% - var(--space-2) / 2);
+    min-width: 0;
     padding: 10px 14px;
     border-radius: var(--radius);
     border: 1px solid var(--bg-selected);
@@ -274,6 +276,18 @@
 .itemLabel {
     font-size: 0.95rem;
     font-weight: 500;
+}
+
+.badge {
+    background: var(--error);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
 }
 
 .chevron {

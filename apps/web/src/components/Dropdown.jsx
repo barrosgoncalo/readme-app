@@ -1,3 +1,4 @@
+import {ChevronDown} from "lucide-react";
 import styles from './Dropdown.module.css';
 
 export default function Dropdown({ value, onChange, options, allLabel = 'All' }) {
@@ -11,7 +12,7 @@ export default function Dropdown({ value, onChange, options, allLabel = 'All' })
                     </option>
                 ))}
             </select>
-            <IconLucideChevronDown size={14} className={styles.chevron} />
+            <ChevronDown size={14} className={styles.chevron} />
         </div>
     );
 }

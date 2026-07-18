@@ -108,15 +108,15 @@ function CoverFrame({ book, authors, status, isFavorite, onToggleFavorite, onRem
             />
 
             <div className={styles.hoverActions} onClick={stop}>
-                <button
-                    type="button"
-                    className={`${styles.coverBtn} ${isFavorite ? styles.favoriteActive : ''}`}
-                    onClick={onToggleFavorite}
-                    disabled={busy}
-                    title={isFavorite ? 'Remove from liked books' : 'Add to liked books'}
-                >
-                    <Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} />
-                </button>
+                {/*<button*/}
+                {/*    type="button"*/}
+                {/*    className={`${styles.coverBtn} ${isFavorite ? styles.favoriteActive : ''}`}*/}
+                {/*    onClick={onToggleFavorite}*/}
+                {/*    disabled={busy}*/}
+                {/*    title={isFavorite ? 'Remove from liked books' : 'Add to liked books'}*/}
+                {/*>*/}
+                {/*    <Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} />*/}
+                {/*</button>*/}
                 <button
                     type="button"
                     className={styles.coverBtn}
@@ -214,15 +214,15 @@ export default function BookCard({ book, variant = 'row', isFavorite, isSelected
                             >
                                 <SquarePen size={16} />
                             </button>
-                            <button
-                                type="button"
-                                className={`${styles.iconBtn} ${isFavorite ? styles.favoriteActive : ''}`}
-                                onClick={onToggleFavorite}
-                                disabled={busy}
-                                title={isFavorite ? 'Remove from liked books' : 'Add to liked books'}
-                            >
-                                <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
-                            </button>
+                            {/*<button*/}
+                            {/*    type="button"*/}
+                            {/*    className={`${styles.iconBtn} ${isFavorite ? styles.favoriteActive : ''}`}*/}
+                            {/*    onClick={onToggleFavorite}*/}
+                            {/*    disabled={busy}*/}
+                            {/*    title={isFavorite ? 'Remove from liked books' : 'Add to liked books'}*/}
+                            {/*>*/}
+                            {/*    <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />*/}
+                            {/*</button>*/}
                             <button
                                 type="button"
                                 className={styles.iconBtn}

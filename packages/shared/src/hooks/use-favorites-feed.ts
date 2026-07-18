@@ -36,9 +36,6 @@ export function useFavoritesFeed(currentUserId) {
             let items = [];
             if (pageIds.length) {
                 const fetched = await PublicationService.fetchPublicationsByIds(pageIds);
-                // fetchPublicationsByIds may not preserve input order
-                // (e.g. Firestore `in` queries don't), so reorder to
-                // match pageIds and keep pagination order stable.
                 const byId = new Map(fetched.map((book) => [book.id, book]));
                 items = pageIds
                     .map((id) => byId.get(id))
@@ -62,7 +59,6 @@ export function useFavoritesFeed(currentUserId) {
 
     useEffect(() => {
         if (currentUserId) feed.loadInitial();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUserId]);
 
     return feed;

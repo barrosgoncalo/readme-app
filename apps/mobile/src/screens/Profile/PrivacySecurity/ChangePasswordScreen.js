@@ -4,7 +4,6 @@ import {
     Text, 
     TextInput, 
     TouchableOpacity, 
-    Image, 
     KeyboardAvoidingView, 
     Platform,
     ScrollView,
@@ -14,9 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
+import { getAuth, updatePassword } from 'firebase/auth';
+
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
-import { ROUTES } from '@readme/shared/src/constants/routes';
-import { doUpdateUserPassword } from '@readme/shared/src/services/auth'
 import { buildPasswordStyles } from '../../../styles/passwordStyles'; 
 import {
     getPasswordDetails,
@@ -25,22 +24,22 @@ import {
     hasValidLength,
 } from '@readme/shared/src/utils/registerUtils';
 
-export default function ChangePasswordScreen({ navigation }) {
-    const [oldPassword, setOldPassword] = useState('');
+export default function SetPasswordScreen({ navigation }) {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
 
     const theme = useTheme();
-
     const styles = buildPasswordStyles(theme);
 
-    const isAnyEmpty = !oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim();
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    const isAnyEmpty = !newPassword.trim() || !confirmPassword.trim();
     const passwordInfo = getPasswordDetails(newPassword);
 
     const isValidPassword = (password) => {
@@ -63,14 +62,8 @@ export default function ChangePasswordScreen({ navigation }) {
     };
 
     const handleSave = async () => {
-
         if (newPassword !== confirmPassword) {
-            Alert.alert("Error", "New passwords do not match!");
-            return;
-        }
-
-        if (oldPassword === newPassword) {
-            Alert.alert("Error", "Your new password cannot be the same as your old password.");
+            Alert.alert("Error", "Passwords do not match!");
             return;
         }
 
@@ -81,11 +74,24 @@ export default function ChangePasswordScreen({ navigation }) {
         setIsSaving(true);
 
         try {
-            await doUpdateUserPassword(oldPassword, newPassword);
-            navigation.navigate(ROUTES.PASSWORD_SUCCESS); 
+            // Natively link the password provider to the existing Google account
+            await updatePassword(user, newPassword);
+            
+            Alert.alert("Success", "Password created successfully! You can now log in with your email and password.", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ]);
         } catch (error) {
-            console.log("Handled password update screen error:", error.message);
-            Alert.alert("Error", error.message);
+            console.log("Handled password setup error:", error.message);
+            
+            if (error.code === 'auth/requires-recent-login') {
+                Alert.alert(
+                    "Session Expired", 
+                    "For security reasons, you need to log out and log back in with Google before setting a password.",
+                    [{ text: "OK" }]
+                );
+            } else {
+                Alert.alert("Error", error.message);
+            }
         } finally {
             setIsSaving(false);
         }
@@ -107,58 +113,25 @@ export default function ChangePasswordScreen({ navigation }) {
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                             <Iconify icon="lucide:arrow-left" size={24} color={theme.text} />
                         </TouchableOpacity>
-                        <Text style={styles.headerTitle}>Change Password</Text>
+                        <Text style={styles.headerTitle}>Create Password</Text>
                         <View style={{ width: 24 }} />
                     </View>
 
                     {/* --- HEADER TEXTS --- */}
                     <View style={styles.textContainer}>
-                        <Text style={styles.mainHeading}>Choose New Password</Text>
+                        <Text style={styles.mainHeading}>Add a Password</Text>
                         <Text style={styles.subHeading}>
-                            Enter and confirm your new password{'\n'}
-                            to regain access
+                            Adding a password allows you to log in with{'\n'}
+                            {user?.email || 'your email'} instead of Google.
                         </Text>
-                    </View>
-
-                    {/* --- ILLUSTRATION --- */}
-                    <View style={styles.imageContainer}>
-                        <Image 
-                            source={require('../../../../assets/images/ShieldWorm.png')} 
-                            style={styles.illustration}
-                            contentFit="contain"
-                        />
                     </View>
 
                     {/* --- FORM FIELDS --- */}
                     <View style={styles.formContainer}>
 
-                        {/* Old Password */}
+                        {/* Password */}
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Old Password</Text>
-                            <View style={styles.passwordContainer}>
-                                <TextInput
-                                    style={styles.passwordInput}
-                                    value={oldPassword}
-                                    onChangeText={setOldPassword}
-                                    secureTextEntry={!showOldPassword}
-                                    autoCapitalize="none"
-                                    placeholderTextColor="#aaa"
-                                />
-                                <TouchableOpacity
-                                    style={styles.eyeButton}
-                                    onPress={() => setShowOldPassword(!showOldPassword)}
-                                >
-                                    {showOldPassword
-                                        ? <EyeClosedIcon size={22} color={theme.primary || '#000'} />
-                                        : <EyeIcon size={22} color={theme.primary || '#000'} />
-                                    }
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {/* New Password */}
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>New Password</Text>
+                            <Text style={styles.label}>Password</Text>
                             <View style={[
                                 styles.passwordContainer,
                                 { 
@@ -185,7 +158,6 @@ export default function ChangePasswordScreen({ navigation }) {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Cleaned up Text component */}
                             {passwordInfo.label ? (
                                 <Text style={[styles.strengthText, { color: passwordInfo.color }]}>
                                     {passwordInfo.label}
@@ -216,7 +188,7 @@ export default function ChangePasswordScreen({ navigation }) {
                             </View>
                         </View>
 
-                        {/* Submit Changed */}
+                        {/* Submit Button */}
                         <TouchableOpacity
                             style={[
                                 styles.submitBtn,
@@ -230,10 +202,10 @@ export default function ChangePasswordScreen({ navigation }) {
                             {isSaving ? (
                                 <ActivityIndicator color={theme.buttonText} />
                             ) : (
-                                    <Text style={[styles.submitText, isAnyEmpty && styles.submitTextDisabled]}>
-                                        SAVE CHANGES
-                                    </Text>
-                                )}
+                                <Text style={[styles.submitText, isAnyEmpty && styles.submitTextDisabled]}>
+                                    SAVE PASSWORD
+                                </Text>
+                            )}
                         </TouchableOpacity>
 
                     </View>

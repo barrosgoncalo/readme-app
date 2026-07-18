@@ -6,6 +6,7 @@ export const ROUTES = {
     WELCOME: 'Welcome',
     MAIN: 'Main',
     PROFILE: 'Profile',
+    PUBLIC_PROFILE: 'PublicProfileScreen',
     EDIT_PROFILE: 'EditProfile',
     PRIVACY_SECURITY: 'PrivacySecurity',
     CHANGE_PASSWORD: 'ChangePassword',
@@ -24,7 +25,6 @@ export const ROUTES = {
     EDIT_PUBLICATION: 'UpdatePublication',
     STEP_ONE_OFFER: 'StepOneOffer',
     STEP_TWO_OFFER: 'StepTwoOffer',
-    PUBLIC_PROFILE_SCREEN: 'PublicProfileScreen',
     FAVORITES: 'Favorites',
     REVIEWS: 'Reviews',
     LEVELS: 'Levels',
@@ -36,4 +36,5 @@ export const ROUTES = {
     REVIEW_SWAPPER: 'Review',
     MY_BOOKS: 'MyBooks',
     NOTIFICATIONS: 'Notifications',
+    SET_PASSWORD: 'SetPassword'
 } as const;

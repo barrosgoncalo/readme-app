@@ -5,7 +5,6 @@ import ReportStatCards from './ReportsStatCards.jsx';
 import ReportsFilterBar from './ReportsFilterBar.jsx';
 import ReportsTable from './ReportsTable.jsx';
 import ReportDetailModal from './ReportDetailModal.jsx';
-import InfoCards from './InfoCards.jsx';
 import styles from './Reports.module.css';
 
 export default function AdminReports() {
@@ -70,8 +69,6 @@ export default function AdminReports() {
                     onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
                 />
             </div>
-
-            <InfoCards />
 
             {viewReport && (
                 <ReportDetailModal

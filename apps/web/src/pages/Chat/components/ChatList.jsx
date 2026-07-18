@@ -1,20 +1,9 @@
-import {useEffect, useState} from 'react';
 import {timeAgo} from '@readme/shared/src/utils/timeAgo';
-import {UsersService} from '@readme/shared/src/services/users';
 import styles from './ChatList.module.css';
 
-function ChatRow({chat, activeChatId, onSelectChat, currentUserId}) {
-    const [otherUser, setOtherUser] = useState(null);
-
-    useEffect(() => {
-        const otherId = chat.participants?.find(p => p !== currentUserId);
-        if (otherId)
-            UsersService.fetchUserProfile(otherId)
-                .then(profile => setOtherUser(profile))
-                .catch(err => console.error(err));
-    }, [chat.participants, currentUserId]);
-
-    const displayName = otherUser?.username || otherUser?.fullName || chat.sellerName || 'User';
+function ChatRow({chat, activeChatId, onSelectChat}) {
+    const displayName = chat.targetSeller?.name || 'User';
+    const avatarUrl = chat.targetSeller?.avatarUrl;
 
     let safeDate = chat.updatedAt;
     if (safeDate && typeof safeDate.toDate === 'function')
@@ -31,9 +20,18 @@ function ChatRow({chat, activeChatId, onSelectChat, currentUserId}) {
             className={`${styles.row} ${activeChatId === chat.id ? styles.active : ''}`}
             onClick={() => onSelectChat(chat.id)}
         >
-            {chat.targetBookImage && (
-                <img src={chat.targetBookImage} alt="" className={styles.thumbnail}/>
-            )}
+            <div className={styles.thumbWrap}>
+                {chat.imageUrl && (
+                    <img src={chat.imageUrl} alt="" className={styles.thumbnail}/>
+                )}
+                {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className={styles.avatar}/>
+                ) : (
+                    <span className={styles.avatarPlaceholder} aria-hidden>
+                        {displayName.charAt(0).toUpperCase()}
+                    </span>
+                )}
+            </div>
             <div className={styles.info}>
                 <p className={styles.name}>{displayName}</p>
                 <p className={styles.preview}>{chat.lastMessage || 'No messages'}</p>
@@ -45,7 +43,7 @@ function ChatRow({chat, activeChatId, onSelectChat, currentUserId}) {
     );
 }
 
-export default function ChatList({chats, activeChatId, onSelectChat, isSidebarOpen, currentUserId}) {
+export default function ChatList({chats, activeChatId, onSelectChat}) {
     const sortedChats = [...chats].sort((a, b) => {
         const getTime = (dateVal) => {
             if (!dateVal)
@@ -62,7 +60,7 @@ export default function ChatList({chats, activeChatId, onSelectChat, isSidebarOp
 
     return (
         <div className={styles.list}>
-            <h2 className={`${styles.title} ${!isSidebarOpen ? styles.titleShifted : ''}`}>
+            <h2 className={styles.title}>
                 Messages
             </h2>
             {sortedChats.length === 0 ? (
@@ -74,7 +72,6 @@ export default function ChatList({chats, activeChatId, onSelectChat, isSidebarOp
                         chat={chat}
                         activeChatId={activeChatId}
                         onSelectChat={onSelectChat}
-                        currentUserId={currentUserId}
                     />
                 ))
             )}

@@ -11,7 +11,7 @@ export default function Chat() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
     const [searchParams, setSearchParams] = useSearchParams();
-    const { isSidebarOpen } = useOutletContext() || { isSidebarOpen: false };
+    useOutletContext();
 
     const [chats, setChats] = useState([]);
     const [activeChatId, setActiveChatId] = useState(searchParams.get('c') || null);
@@ -80,8 +80,6 @@ export default function Chat() {
                     setActiveChatId(chatId);
                     setSearchParams({ c: chatId });
                 }}
-                isSidebarOpen={isSidebarOpen}
-                currentUserId={uid}
             />
 
             {activeChatId && activeChat ? (

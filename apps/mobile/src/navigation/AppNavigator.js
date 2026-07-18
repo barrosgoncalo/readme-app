@@ -15,6 +15,7 @@ import WelcomeScreen from '../screens/Welcome/WelcomeScreen';
 import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
 import LoginScreen from '../screens/Auth/Login/LoginScreen';
 import ForgotPasswordScreen from '../screens/Auth/Login/ForgotPasswordScreen';
+import SetPasswordScreen from '../screens/Auth/SetPasswordScreen';
 import EditProfileScreen from '../screens/Profile/EditProfile/EditProfileScreen';
 import PrivacySecurityScreen from '../screens/Profile/PrivacySecurity/PrivacySecurityScreen'
 import ChangePasswordScreen from '../screens/Profile/PrivacySecurity/ChangePasswordScreen'
@@ -120,6 +121,11 @@ export default function AppNavigator() {
                             options={{ headerShown: false }}
                         />
                         <Stack.Screen
+                            name={ROUTES.SET_PASSWORD}
+                            component={SetPasswordScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
                             name={ROUTES.CHANGE_PASSWORD}
                             component={ChangePasswordScreen}
                             options={{ headerShown: false }}
@@ -175,7 +181,7 @@ export default function AppNavigator() {
                             options={{ headerShown: false }}
                         />
                         <Stack.Screen
-                            name={ROUTES.PUBLIC_PROFILE_SCREEN}
+                            name={ROUTES.PUBLIC_PROFILE}
                             component={PublicProfileScreen}
                             options={{ headerShown: false }}
                         />

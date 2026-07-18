@@ -1,18 +1,25 @@
-import { useState } from 'react';
-import { REPORT_TARGET_TYPE, REPORT_REASON_LABELS, REPORT_STATUS } from '@readme/shared/src/constants/status';
+import {useState} from 'react';
+import {MessageCircle, Bookmark, UserCircle2, Eye, MoreVertical} from 'lucide-react';
+import {REPORT_TARGET_TYPE, REPORT_REASON_LABELS, REPORT_STATUS} from '@readme/shared/src/constants/status';
 import StatusBadge from '../../../components/StatusBadge';
 import styles from './ReportRow.module.css';
 
 const TARGET_ICON = {
-    [REPORT_TARGET_TYPE.CHAT]: <IconLucideMessageCircle size={18} />,
-    [REPORT_TARGET_TYPE.PUBLICATION]: <IconLucideBookmark size={18} />,
-    [REPORT_TARGET_TYPE.ACCOUNT]: <IconLucideUserCircle2 size={18} />,
+    [REPORT_TARGET_TYPE.CHAT]: <MessageCircle size={18}/>,
+    [REPORT_TARGET_TYPE.PUBLICATION]: <Bookmark size={18}/>,
+    [REPORT_TARGET_TYPE.ACCOUNT]: <UserCircle2 size={18}/>,
 };
 
 const formatDate = (timestamp) => {
     if (!timestamp) return '—';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 };
 
 const truncateId = (id) => {
@@ -23,20 +30,20 @@ const truncateId = (id) => {
 const targetLabel = (report, reportedUser) => {
     switch (report.targetType) {
         case REPORT_TARGET_TYPE.CHAT:
-            return { title: 'Chat', sub: `with @${reportedUser?.username || '—'}` };
+            return {title: 'Chat', sub: `with @${reportedUser?.username || '—'}`};
         case REPORT_TARGET_TYPE.PUBLICATION:
-            return { 
-                title: 'Publication', 
+            return {
+                title: 'Publication',
                 sub: `ID: ${truncateId(report.targetId)}`,
-                fullId: report.targetId // NEW: Pass the full ID
+                fullId: report.targetId
             };
         case REPORT_TARGET_TYPE.ACCOUNT:
-            return { title: 'Account', sub: `@${reportedUser?.username || '—'}` };
+            return {title: 'Account', sub: `@${reportedUser?.username || '—'}`};
         default:
-            return { 
-                title: report.targetType, 
+            return {
+                title: report.targetType,
                 sub: truncateId(report.targetId),
-                fullId: report.targetId // NEW: Pass the full ID
+                fullId: report.targetId
             };
     }
 };
@@ -54,10 +61,8 @@ const reportSubtitle = (report) => {
     }
 };
 
-export default function ReportRow({ report, reporter, reportedUser, onStatusChange, onView }) {
-    const [menuOpen, setMenuOpen] = useState(false);
+export default function ReportRow({report, reporter, reportedUser, onStatusChange, onView, isOpen, onToggleMenu}) {
     const [copied, setCopied] = useState(false);
-
     const target = targetLabel(report, reportedUser);
 
     const handleCopy = async (text) => {
@@ -84,7 +89,12 @@ export default function ReportRow({ report, reporter, reportedUser, onStatusChan
             </td>
             <td>
                 <div className={styles.personCell}>
-                    <div className={styles.avatar}>{reporter?.username?.[0]?.toUpperCase() || '?'}</div>
+                    <div className={styles.avatar}>
+                        {reporter?.avatarUrl
+                            ? <img src={reporter.avatarUrl} alt="" className={styles.avatarImg}/>
+                            : (reporter?.username?.[0]?.toUpperCase() || '?')
+                        }
+                    </div>
                     <div>
                         <div className={styles.personName}>{reporter?.fullName || reporter?.username || 'Unknown'}</div>
                         <div className={styles.personHandle}>@{reporter?.username || '—'}</div>
@@ -93,7 +103,12 @@ export default function ReportRow({ report, reporter, reportedUser, onStatusChan
             </td>
             <td>
                 <div className={styles.personCell}>
-                    <div className={styles.avatar}>{reportedUser?.username?.[0]?.toUpperCase() || '?'}</div>
+                    <div className={styles.avatar}>
+                        {reportedUser?.avatarUrl
+                            ? <img src={reportedUser.avatarUrl} alt="" className={styles.avatarImg}/>
+                            : (reportedUser?.username?.[0]?.toUpperCase() || '?')
+                        }
+                    </div>
                     <div>
                         <div className={styles.personName}>{reportedUser?.fullName || reportedUser?.username || 'Unknown'}</div>
                         <div className={styles.personHandle}>@{reportedUser?.username || '—'}</div>
@@ -103,14 +118,14 @@ export default function ReportRow({ report, reporter, reportedUser, onStatusChan
             <td>
                 <div className={styles.targetCell}>
                     <div className={styles.personName}>{target.title}</div>
-                    <div 
+                    <div
                         className={styles.personHandle}
                         title={target.fullId && !copied ? `Copy full ID: ${target.fullId}` : undefined}
                         onClick={target.fullId && !copied ? () => handleCopy(target.fullId) : undefined}
-                        style={target.fullId ? { cursor: copied ? 'default' : 'pointer' } : {}}
+                        style={target.fullId ? {cursor: copied ? 'default' : 'pointer'} : {}}
                     >
                         {copied ? (
-                            <span style={{ color: '#10b981', fontWeight: 500 }}>✅ Copied!</span>
+                            <span style={{color: '#10b981', fontWeight: 500}}>✅ Copied!</span>
                         ) : (
                             target.sub
                         )}
@@ -118,26 +133,26 @@ export default function ReportRow({ report, reporter, reportedUser, onStatusChan
                 </div>
             </td>
             <td className={styles.reasonCell}>{REPORT_REASON_LABELS[report.reason] || report.reason}</td>
-            <td><StatusBadge status={report.status} /></td>
+            <td><StatusBadge status={report.status}/></td>
             <td className={styles.dateCell}>{formatDate(report.createdAt)}</td>
             <td>
                 <div className={styles.actionsCell}>
-                    <button type="button" className={styles.iconBtn} onClick={() => onView(report)} aria-label="View report details">
-                        <IconLucideEye size={16} />
+                    <button type="button" className={styles.iconBtn} onClick={() => onView(report)}
+                            aria-label="View report details">
+                        <Eye size={16}/>
                     </button>
                     <div className={styles.menuWrap}>
-                        <button type="button" className={styles.iconBtn} onClick={() => setMenuOpen((o) => !o)}>
-                            <IconLucideMoreVertical size={16} />
+                        <button type="button" className={styles.iconBtn} onClick={onToggleMenu}>
+                            <MoreVertical size={16}/>
                         </button>
-                        {menuOpen && (
+
+                        {isOpen && (
                             <div className={styles.menu}>
-                                <button type="button" onClick={() => { onStatusChange(report.id, REPORT_STATUS.REVIEWED); setMenuOpen(false); }}>
-                                    Mark reviewed
-                                </button>
-                                <button type="button" onClick={() => { onStatusChange(report.id, REPORT_STATUS.ACTIONED); setMenuOpen(false); }}>
+                                <button type="button" onClick={() => onStatusChange(report.id, REPORT_STATUS.ACTIONED)}>
                                     Mark actioned
                                 </button>
-                                <button type="button" onClick={() => { onStatusChange(report.id, REPORT_STATUS.DISMISSED); setMenuOpen(false); }}>
+                                <button type="button"
+                                        onClick={() => onStatusChange(report.id, REPORT_STATUS.DISMISSED)}>
                                     Dismiss
                                 </button>
                             </div>

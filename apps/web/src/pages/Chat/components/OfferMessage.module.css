@@ -84,20 +84,25 @@
 
 .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-1);
+    width: 100%;
 }
 
 .btn {
-    padding: 4px 8px;
+    padding: 4px 6px;
     border: none;
     border-radius: var(--radius);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     white-space: nowrap;
     transition: all 0.2s;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .accept {
@@ -116,6 +121,16 @@
 
 .decline:hover:not(:disabled) {
     opacity: 0.9;
+}
+
+.counter {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.counter:hover:not(:disabled) {
+    background: var(--bg-selected);
 }
 
 .btn:disabled {
@@ -148,6 +163,13 @@
 .cancelSwapBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.mobileNotice {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--subtext);
+    text-align: center;
 }
 
 .canceledNotice {

@@ -1,4 +1,4 @@
-import { auth, storage } from "./firebase";
+import { auth } from "./firebase";
 import { 
     documentId,
     arrayUnion,
@@ -69,6 +69,88 @@ export const UsersService = {
     },
 
     /**
+     * Fetches multiple users by an array of UIDs and includes their resolved avatar URL.
+     * Returns a dictionary mapped by UID.
+     */
+    fetchAllUsersProfile: async (uids) => {
+        if (!uids || uids.length === 0) return;
+
+        const users = await DB.get(USERS_COLLECTION, [
+            {field: documentId(), operator: 'in', value: uids}
+        ]);
+
+        const map = {};
+        users.forEach((u) => {
+            map[u.id] = {
+                username: u.username,
+                fullName: u.fullName,
+                avatarUrl: UsersService.getAvatarUrl(u),
+            };
+        });
+
+        return map;
+    },
+
+     /* Fetches the follower and following counts for a given user.
+     * Alias kept for callers written against the pre-rename name (several
+     * web pages call fetchUserProfile directly) — same implementation as
+     * fetchSummaryUserProfile above.
+     */
+    fetchUserProfile: async (userId) => UsersService.fetchSummaryUserProfile(userId),
+
+    getFollowing: async (uid) => {
+        const followDocs = await DB.get('follows', [
+            { field: 'followerUid', operator: '==', value: uid }
+        ]);
+        const results = await Promise.all(
+            followDocs.map(async (followDoc) => {
+                const followingUid = followDoc.followingUid;
+                if (!followingUid || followingUid === uid) return null;
+                const userData = await DB.get(USERS_COLLECTION, followingUid).catch(() => null);
+                return {
+                    id: followingUid,
+                    username: userData?.username ?? null,
+                    fullName: userData?.fullName ?? null,
+                    avatarUrl: userData?.photoURL ?? null,
+                    createdAt: followDoc.createdAt || null,
+                };
+            })
+        );
+        const seen = new Set();
+        return results.filter(u => {
+            if (!u || seen.has(u.id)) return false;
+            seen.add(u.id);
+            return true;
+        });
+    },
+
+    getFollowers: async (uid) => {
+        const followDocs = await DB.get('follows', [
+            { field: 'followingUid', operator: '==', value: uid }
+        ]);
+        const results = await Promise.all(
+            followDocs.map(async (followDoc) => {
+                const followerUid = followDoc.followerUid;
+                if (!followerUid || followerUid === uid) return null;
+                const userData = await DB.get(USERS_COLLECTION, followerUid).catch(() => null);
+                return {
+                    id: followerUid,
+                    username: userData?.username ?? null,
+                    fullName: userData?.fullName ?? null,
+                    avatarUrl: userData?.photoURL ?? null,
+                    createdAt: followDoc.createdAt || null,
+                };
+            })
+        );
+        const seen = new Set();
+        return results.filter(u => {
+            if (!u || seen.has(u.id)) return false;
+            seen.add(u.id);
+            return true;
+        });
+    },
+
+    /**
      * Fetches the follower and following counts for a given user.
      * @param {string} userId - The ID of the user
      * @returns {Promise<{followers: number, following: number}>}
@@ -113,7 +195,7 @@ export const UsersService = {
         if (!uids || uids.length === 0) return {};
 
         const users = await DB.get(USERS_COLLECTION, [
-            { field: documentId(), operator: 'in', value: uids }
+            {field: documentId(), operator: 'in', value: uids}
         ]);
 
         // Map into the expected dictionary format
@@ -133,12 +215,12 @@ export const UsersService = {
      */
     toggleFavoriteStatus: async (userId, bookId, isCurrentlyFavorited) => {
         await Promise.all([
-            DB.update(USERS_COLLECTION, userId, { 
-                favoriteBooks: !isCurrentlyFavorited ? arrayUnion(bookId) : arrayRemove(bookId) 
+            DB.update(USERS_COLLECTION, userId, {
+                favoriteBooks: !isCurrentlyFavorited ? arrayUnion(bookId) : arrayRemove(bookId)
             }),
-            
-            DB.update('publications', bookId, { 
-                "stats.likesCount": increment(!isCurrentlyFavorited ? 1 : -1) 
+
+            DB.update('publications', bookId, {
+                "stats.likesCount": increment(!isCurrentlyFavorited ? 1 : -1)
             })
         ]);
     },
@@ -165,6 +247,7 @@ export const UsersService = {
 
         if (!currentUserId) throw new Error("Authentication required to follow users.");
         if (!targetUserId || typeof targetUserId !== 'string') throw new Error("Valid Target User ID string required.");
+        if (currentUserId === targetUserId) throw new Error("Cannot follow yourself.");
 
         const relationshipId = getFollowId(currentUserId, targetUserId);
 
@@ -174,18 +257,29 @@ export const UsersService = {
         }
 
         if (shouldFollow) {
-            await Promise.all([
-                DB.create('follows', createFollow(currentUserId, targetUserId), relationshipId),
-                DB.update(USERS_COLLECTION, currentUserId, { followingCount: increment(1) }),
-                DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(1) })
+            await DB.batchWrite([
+                { type: 'set', collection: 'follows', id: relationshipId, data: createFollow(currentUserId, targetUserId) },
+                { type: 'update', collection: USERS_COLLECTION, id: currentUserId, data: { followingCount: increment(1) } },
+                { type: 'update', collection: USERS_COLLECTION, id: targetUserId, data: { followersCount: increment(1) } },
             ]);
         } else {
-            await Promise.all([
-                DB.remove('follows', relationshipId),
-                DB.update(USERS_COLLECTION, currentUserId, { followingCount: increment(-1) }),
-                DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(-1) })
+            await DB.batchWrite([
+                { type: 'delete', collection: 'follows', id: relationshipId },
+                { type: 'update', collection: USERS_COLLECTION, id: currentUserId, data: { followingCount: increment(-1) } },
+                { type: 'update', collection: USERS_COLLECTION, id: targetUserId, data: { followersCount: increment(-1) } },
             ]);
         }
+    },
+
+    acceptFollowRequest: async (targetUserId, requesterUid) => {
+        const relationshipId = getFollowId(requesterUid, targetUserId);
+
+        await DB.batchWrite([
+            { type: 'set', collection: 'follows', id: relationshipId, data: createFollow(requesterUid, targetUserId) },
+            { type: 'update', collection: USERS_COLLECTION, id: requesterUid, data: { followingCount: increment(1) } },
+            { type: 'update', collection: USERS_COLLECTION, id: targetUserId, data: { followersCount: increment(1) } },
+            { type: 'delete', collection: 'followRequests', id: relationshipId },
+        ]);
     },
 
     /**
@@ -197,8 +291,8 @@ export const UsersService = {
 
         await Promise.all([
             DB.create('follows', createFollow(requesterUid, targetUserId), relationshipId),
-            DB.update(USERS_COLLECTION, requesterUid, { followingCount: increment(1) }),
-            DB.update(USERS_COLLECTION, targetUserId, { followersCount: increment(1) }),
+            DB.update(USERS_COLLECTION, requesterUid, {followingCount: increment(1)}),
+            DB.update(USERS_COLLECTION, targetUserId, {followersCount: increment(1)}),
             DB.remove('followRequests', relationshipId),
         ]);
     },
@@ -219,7 +313,7 @@ export const UsersService = {
     fetchPendingFollowRequests: async (userId) => {
         if (!userId) return [];
         return await DB.get('followRequests', [
-            { field: 'targetUid', operator: '==', value: userId }
+            {field: 'targetUid', operator: '==', value: userId}
         ]);
     },
 
@@ -233,7 +327,7 @@ export const UsersService = {
         
         return DB.subscribeQuery(
             'followRequests',
-            [{ field: 'targetUid', operator: '==', value: userId }],
+            [{field: 'targetUid', operator: '==', value: userId}],
             (requests) => {
                 // Pass the length of the matching array straight to your state setter
                 onCountChange(requests.length);
@@ -248,10 +342,10 @@ export const UsersService = {
      */
     subscribeToUnreadNotificationsCount: (userId, onCountChange) => {
         if (!userId) return () => {};
-        
+
         return DB.subscribeQuery(
             `users/${userId}/notifications`,
-            [{ field: 'isRead', operator: '==', value: false }],
+            [{field: 'isRead', operator: '==', value: false}],
             (notifications) => {
                 // This captures ANY unread notification document 
                 onCountChange(notifications.length);
@@ -266,7 +360,7 @@ export const UsersService = {
      */
     async savePushToken(uid, token) {
         if (!uid || !token) return;
-        
+
         try {
             await DB.update('users', uid, {
                 pushTokens: arrayUnion(token)

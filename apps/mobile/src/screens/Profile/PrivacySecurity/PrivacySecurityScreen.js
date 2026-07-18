@@ -17,7 +17,7 @@ import { Colors } from '@readme/shared/src/constants/theme';
 import { ROUTES } from '@readme/shared/src/constants/routes';
 
 import { useAuth } from '@readme/shared/src/contexts/AuthContext'; 
-import { doUpdateUserProfile, doDeleteUserProfile, doReauthenticateWithPassword } from '@readme/shared/src/services/auth';
+import { doUpdateUserProfile, doDeleteUserProfile, doReauthenticateWithPassword, doReauthenticateWithGoogle, getUserProviderId } from '@readme/shared/src/services/auth';
 
 import { MenuGroup, MenuItem, MenuSwitchItem } from '../../../components/ui/MenuComponents';
 
@@ -28,7 +28,7 @@ export default function PrivacySecurityScreen({ navigation }) {
     const { currentUser, refreshUser } = useAuth();
 
     const [isPrivate, setIsPrivate] = useState(currentUser?.profileVisibility === 'private');
-    
+
     const [isDeleting, setIsDeleting] = useState(false);
 
     const [isReauthModalVisible, setIsReauthModalVisible] = useState(false);
@@ -62,24 +62,49 @@ export default function PrivacySecurityScreen({ navigation }) {
                     style: "destructive",
                     onPress: async () => {
                         setIsDeleting(true);
+                        let handedOffToGoogleReauth = false;
+
                         try {
                             if (!currentUser?.uid) throw new Error('Not authenticated.');
-                            
+
                             await doDeleteUserProfile(currentUser.uid);
-                            
+
                         } catch (error) {
                             if (error.code === 'auth/requires-recent-login') {
-                                setIsReauthModalVisible(true);
+                                const providerId = getUserProviderId();
+
+                                if (providerId === 'google.com') {
+                                    handedOffToGoogleReauth = true;
+                                    // isDeleting stays true straight through into this call
+                                    await handleGoogleReauthAndDelete();
+                                } else {
+                                    setIsReauthModalVisible(true);
+                                }
                             } else {
                                 Alert.alert('Error', error.message);
                             }
                         } finally {
-                            setIsDeleting(false);
+                            if (!handedOffToGoogleReauth) {
+                                setIsDeleting(false);
+                            }
                         }
                     }
                 }
             ]
         );
+    };
+
+    const handleGoogleReauthAndDelete = async () => {
+        // no setIsDeleting(true) here — it's already true from handleDeleteAccount
+        try {
+            await doReauthenticateWithGoogle();
+            await doDeleteUserProfile(currentUser.uid);
+        } catch (error) {
+            console.error("Google reauth error:", error);
+            Alert.alert("Authentication Failed", "We couldn't verify your Google account. Please try again.");
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleReauthenticateAndDelete = async () => {
@@ -131,8 +156,8 @@ export default function PrivacySecurityScreen({ navigation }) {
                         <MenuSwitchItem
                             styles={styles}
                             theme={theme}
-                            icon={isPrivate ? "lucide:lock" : "lucide:globe"}
-                            label={isPrivate ? "Private Account" : "Public Account"}
+                            icon= "lucide:lock"
+                            label= "Private Account"
                             value={isPrivate}
                             onValueChange={handlePrivacyToggle}
                             disabled={isDeleting}
@@ -140,8 +165,8 @@ export default function PrivacySecurityScreen({ navigation }) {
                     </MenuGroup>
                     <Text style={styles.helperText}>
                         {isPrivate 
-                            ? "Only approved users can see your library and request book swaps." 
-                            : "Anyone can see your library and request book swaps with you."}
+                            ? "Only approved users can see your publications and request book swaps." 
+                            : "Anyone can see your publications and request book swaps with you."}
                     </Text>
 
                     {/* SECTION 2: SECURITY */}

@@ -25,6 +25,30 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useImagePicker } from '@readme/shared/src/hooks/use-image-picker';
 import { UsersService } from '@readme/shared/src/services/users';
 
+// Canonical storage format is ISO (YYYY-MM-DD), matching the web app's
+// <input type="date">. These two helpers are the only place that format
+// is parsed/produced, so both platforms stay in sync.
+const isoToDate = (isoStr) => {
+    if (!isoStr) return new Date(2000, 0, 1);
+    const [y, m, d] = isoStr.split('-');
+    return new Date(Number(y), Number(m) - 1, Number(d));
+};
+
+const dateToIso = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
+// Display-only formatting (DD/MM/YYYY), never sent to Firestore.
+const formatDisplayDob = (isoStr) => {
+    if (!isoStr) return '';
+    const [y, m, d] = isoStr.split('-');
+    if (!y || !m || !d) return '';
+    return `${d}/${m}/${y}`;
+};
+
 export default function EditProfileScreen({ navigation, route }) {
     const existing = route?.params?.userData ?? {};
     const theme = useTheme();
@@ -52,7 +76,7 @@ export default function EditProfileScreen({ navigation, route }) {
         addressLine1: existing.institutionalAddress?.addressLine1 ?? currentUser.institutionalAddress?.addressLine1,
         addressLine2: existing.institutionalAddress?.addressLine2 ?? currentUser.institutionalAddress?.addressLine2,
         postalCode:   existing.institutionalAddress?.postalCode ?? currentUser.institutionalAddress?.postalCode,
-        dob:          existing.dob ?? currentUser.dob,
+        dob:          existing.dob ?? currentUser.dob, // stored as ISO "YYYY-MM-DD"
     }), [existing, currentUser]);
 
     // ─── Form state ───────────────────────────────────────────────────────────
@@ -67,12 +91,10 @@ export default function EditProfileScreen({ navigation, route }) {
     const [addressLine2, setAddressLine2] = useState(original.addressLine2);
     const [postalCode, setPostalCode]     = useState(original.postalCode);
 
-    const parseDob = (dobStr) => {
-        if (!dobStr) return new Date(2000, 0, 1);
-        const [d, m, y] = dobStr.split('/');
-        return new Date(Number(y), Number(m) - 1, Number(d));
-    };
-    const [date, setDate]                           = useState(parseDob(original.dob));
+    // `dob` stays canonical ISO ("YYYY-MM-DD") end-to-end, same as web.
+    // The date picker widget works off `date`; the on-screen text is
+    // derived from `dob` via formatDisplayDob for DD/MM/YYYY display only.
+    const [date, setDate]                           = useState(isoToDate(original.dob));
     const [dob, setDob]                             = useState(original.dob);
     const [showDatePicker, setShowDatePicker]       = useState(false);
     const [showCountryPicker, setShowCountryPicker] = useState(false);
@@ -117,10 +139,7 @@ export default function EditProfileScreen({ navigation, route }) {
         if (Platform.OS === 'android') setShowDatePicker(false);
         if (selectedDate) {
             setDate(selectedDate);
-            const d = String(selectedDate.getDate()).padStart(2, '0');
-            const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
-            const y = selectedDate.getFullYear();
-            setDob(`${d}/${m}/${y}`);
+            setDob(dateToIso(selectedDate));
         }
     };
 
@@ -148,7 +167,7 @@ export default function EditProfileScreen({ navigation, route }) {
                 fullName,
                 username,
                 phoneNumber,
-                dob,
+                dob, // ISO "YYYY-MM-DD", same format the web app writes
                 institutionalAddress: {
                     addressLine1,
                     addressLine2: addressLine2 || null,
@@ -190,36 +209,36 @@ export default function EditProfileScreen({ navigation, route }) {
                         setFocusedField(null);
                     }
                 }}
-                >
+            >
                 {/* ── Avatar Edit Section ── */}
                 <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 20 }}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => {
                             setModalVisible(true);
                             setFocusedField('picture');
                             Keyboard.dismiss();
                             setShowDatePicker(false)
                         }}
-                        disabled={uploading} 
+                        disabled={uploading}
                         activeOpacity={0.8}
                         style={{ position: 'relative' }}
                     >
                         <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: theme.iconBg || '#EAEAEA', justifyContent: 'center', alignItems: 'center' }}>
                             { newImageUri || currentUser?.photoURL ? (
-                                <Image 
-                                    source={{ 
-                                        uri: newImageUri 
-                                            ? newImageUri 
-                                            : `${currentUser.photoURL}?t=${new Date().getTime()}` 
-                                    }} 
+                                <Image
+                                    source={{
+                                        uri: newImageUri
+                                            ? newImageUri
+                                            : `${currentUser.photoURL}?t=${new Date().getTime()}`
+                                    }}
                                     style={[
                                         { width: 100, height: 100, borderRadius: 50 },
-                                        newImageUri && { borderWidth: 3, borderColor: '#F58B2E' } 
-                                    ]} 
+                                        newImageUri && { borderWidth: 3, borderColor: '#F58B2E' }
+                                    ]}
                                 />
                             ) : (
-                                    <Iconify icon="lucide:user" size={45} color={theme.text} />
-                                )}
+                                <Iconify icon="lucide:user" size={45} color={theme.text} />
+                            )}
                         </View>
                         <View style={styles.pencilButtonContainer}>
                             <View style={styles.pencilMiddleLayer}>
@@ -261,7 +280,7 @@ export default function EditProfileScreen({ navigation, route }) {
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.input, { color: dob ? theme.text : theme.subtext, flex: 1 }]}>
-                            {dob || 'DD/MM/YYYY'}
+                            {formatDisplayDob(dob) || 'DD/MM/YYYY'}
                         </Text>
                         <Iconify icon="lucide:calendar" size={20} color={theme.subtext} />
                     </TouchableOpacity>
@@ -328,12 +347,12 @@ export default function EditProfileScreen({ navigation, route }) {
                         onRequestClose={() => {
                             setShowCountryPicker(false);
                             setFocusedField(null);
-                        }} 
+                        }}
                     >
-                        <View style={{ 
-                            flex: 1, 
+                        <View style={{
+                            flex: 1,
                             paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-                            backgroundColor: theme.background || '#FFFFFF' 
+                            backgroundColor: theme.background || '#FFFFFF'
                         }}>
                             <CountryPicker
                                 countryCode={countryCode}
@@ -347,7 +366,7 @@ export default function EditProfileScreen({ navigation, route }) {
                                     setFocusedField(null);
                                 }}
                                 renderFlagButton={() => null}
-                                withModal={false} 
+                                withModal={false}
                             />
                         </View>
                     </Modal>

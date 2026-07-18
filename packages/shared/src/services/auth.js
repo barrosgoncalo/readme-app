@@ -1,4 +1,4 @@
-import { auth, storage } from "./firebase";
+import { auth } from "./firebase";
 import {
     createUserWithEmailAndPassword,
     deleteUser,
@@ -11,7 +11,6 @@ import {
     GoogleAuthProvider,
     EmailAuthProvider,
 } from "firebase/auth";
-import { ref, deleteObject } from "firebase/storage";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ACCOUNT_STATUS } from "../constants/authConstants";
 import { createUserModel } from '@readme/shared/src/models/user';
@@ -32,33 +31,8 @@ export const doDeleteUserProfile = async (uid) => {
             throw new Error("No authenticated user found or UID mismatch.");
         }
 
-        let photoToDelete = currentUser.photoURL;
-
-        if (!photoToDelete) {
-            const userData = await DB.get("users", uid);
-            if (userData?.photoURL) {
-                photoToDelete = userData.photoURL;
-            }
-        }
-
-        if (photoToDelete) {
-            const isFirebaseStorage = photoToDelete.includes('firebasestorage.googleapis.com') || photoToDelete.startsWith('gs://');
-            
-            if (isFirebaseStorage) {
-                try {
-                    const imageRef = ref(storage, photoToDelete);
-                    await deleteObject(imageRef);
-                    console.log("Successfully deleted user's profile picture from Storage.");
-                } catch (storageError) {
-                    console.warn("Storage deletion failed (the file might not exist anymore):", storageError);
-                }
-            }
-        }
-
-        await DB.remove('users', uid);
-
         await deleteUser(currentUser);
-        
+
     } catch (error) {
         console.error("Error deleting account:", error);
         throw error;
@@ -214,4 +188,40 @@ export const doReauthenticateWithPassword = async (password) => {
         console.error("Reauthentication failed:", error);
         throw error;
     }
+};
+
+export const doReauthenticateWithGoogle = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        throw new Error("No user is currently logged in.");
+    }
+
+    try {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+        const userInfo = await GoogleSignin.signIn();
+
+        const idToken = userInfo.data?.idToken || userInfo.idToken;
+        if (!idToken) throw new Error("Could not get Google ID Token");
+
+        const credential = GoogleAuthProvider.credential(idToken);
+        await reauthenticateWithCredential(user, credential);
+        return true;
+    } catch (error) {
+        console.error("Google reauthentication failed:", error);
+        throw error;
+    }
+};
+
+export const getUserProviderId = () => {
+    const user = auth.currentUser;
+    if (!user || !user.providerData?.length) return null;
+
+    const hasGoogle = user.providerData.some(p => p.providerId === 'google.com');
+    if (hasGoogle) return 'google.com';
+
+    const hasPassword = user.providerData.some(p => p.providerId === 'password');
+    if (hasPassword) return 'password';
+
+    return user.providerData[0].providerId;
 };
