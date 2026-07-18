@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Search, Users, Plus } from 'lucide-react';
+import { BookOpen, Search, Users, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
-import { searchPublicationsByBook } from '@readme/shared/src/services/searchBook'; // adjust path
-import { doGetBlockedUids, doGetBlockedUsers } from '@readme/shared/src/services/block';
-import { PublicationService } from '@readme/shared/src/services/publications';
+import { searchPublicationsByBook } from '@readme/shared/src/services/searchBook';
+import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
+import { SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
+import { doGetBlockedUsers } from '@readme/shared/src/services/block';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
+import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
 import PublicationCard from '../../components/PublicationCard';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar';
@@ -14,6 +16,15 @@ import Button from '../../components/Button';
 import { SkeletonGrid } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 import styles from './Explore.module.css';
+
+const SORT_CHOICES = [
+    { key: SORT_OPTIONS.DATE_DESC, label: 'Newest first' },
+    { key: SORT_OPTIONS.DATE_ASC, label: 'Oldest first' },
+    { key: SORT_OPTIONS.TITLE_ASC, label: 'Title A → Z' },
+    { key: SORT_OPTIONS.TITLE_DESC, label: 'Title Z → A' },
+    { key: SORT_OPTIONS.FAVORITES_DESC, label: 'Most favorited' },
+    { key: SORT_OPTIONS.FAVORITES_ASC, label: 'Least favorited' },
+];
 
 const EXPLORE_TAB = {
     BOOKS: 'books',
@@ -23,7 +34,6 @@ const EXPLORE_TAB = {
 const BOOK_SEARCH_DEBOUNCE_MS = 250;
 
 export default function Explore() {
-
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
     const [searchParams] = useSearchParams();
@@ -38,49 +48,43 @@ export default function Explore() {
     const [touchedUsers, setTouchedUsers] = useState(false);
     const [searchUserError, setSearchUserError] = useState(false);
 
-    // Default "browse everything" state (shown when the search box is empty)
-    const [publications, setPublications] = useState([]);
     const [favoriteIds, setFavoriteIds] = useState(new Set());
-    const [loadingPubs, setLoadingPubs] = useState(true);
-    const [pubsError, setPubsError] = useState(null);
     const [favoriteBusy, setFavoriteBusy] = useState(null);
-    const [blockedUids, setBlockedUids] = useState([]);
 
-    // Algolia-backed search state (shown once the user types a query)
-    const [bookSearchResults, setBookSearchResults] = useState(null); // null = no active search
+    const [filtersVisible, setFiltersVisible] = useState(false);
+    const [sortBy, setSortBy] = useState(SORT_OPTIONS.DATE_DESC);
+    const [conditionFilters, setConditionFilters] = useState([]);
+    const [genreFilters, setGenreFilters] = useState([]);
+
+    const hasActiveFilters = sortBy !== SORT_OPTIONS.DATE_DESC
+        || conditionFilters.length > 0
+        || genreFilters.length > 0;
+
+    const {
+        items: publications,
+        isLoadingInitial: loadingPubs,
+        isLoadingMore,
+        loadMore,
+    } = useExploreFeed({
+        excludeUid: uid,
+        sortBy,
+        conditions: conditionFilters,
+        genres: genreFilters,
+        limit: 24,
+    });
+
+    useEffect(() => {
+        if (!uid) return;
+        UsersService.fetchUserProfile(uid)
+            .then(profile => setFavoriteIds(new Set(profile?.favoriteBooks || [])))
+            .catch(() => {});
+    }, [uid]);
+
+    const [bookSearchResults, setBookSearchResults] = useState(null);
     const [searchingBooks, setSearchingBooks] = useState(false);
     const [bookSearchError, setBookSearchError] = useState(null);
 
     const searchRef = useRef(null);
-
-    const loadPublications = useCallback(async () => {
-        if (!uid) return;
-
-        setLoadingPubs(true);
-        setPubsError(null);
-
-        try {
-            const [blocked, profile] = await Promise.all([
-                doGetBlockedUids(uid).catch(() => []),
-                UsersService.fetchUserProfile(uid).catch(() => null)
-            ]);
-
-            setBlockedUids(blocked);
-
-            const summaries = await PublicationService.fetchExplorePublications(uid, blocked);
-
-            setPublications(summaries.map(s => s.publicationData));
-            setFavoriteIds(new Set(profile?.favoriteBooks || []));
-        } catch (err) {
-            setPubsError(err.message || 'Could not load publications.');
-        } finally {
-            setLoadingPubs(false);
-        }
-    }, [uid]);
-
-    useEffect(() => {
-        loadPublications();
-    }, [loadPublications]);
 
     async function handleToggleFavorite(pubId) {
         if (!uid) return;
@@ -101,7 +105,6 @@ export default function Explore() {
         }
     }
 
-    // Users tab search (unchanged)
     useEffect(() => {
         if (activeTab !== EXPLORE_TAB.USERS) return;
 
@@ -145,7 +148,6 @@ export default function Explore() {
         };
     }, [search, currentUser?.uid, activeTab]);
 
-    // Books tab search — now backed by Algolia instead of client-side filtering
     useEffect(() => {
         if (activeTab !== EXPLORE_TAB.BOOKS) return;
 
@@ -166,7 +168,7 @@ export default function Explore() {
             try {
                 const { publications: pubs } = await searchPublicationsByBook(
                     { title: q },
-                    { excludeUid: uid, blockedUids, hitsPerPage: 24 }
+                    { excludeUid: uid, hitsPerPage: 24 }
                 );
                 if (!cancelled) setBookSearchResults(pubs.map(p => p.publicationData));
             } catch (err) {
@@ -181,7 +183,7 @@ export default function Explore() {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [search, activeTab, uid, blockedUids]);
+    }, [search, activeTab, uid]);
 
     useEffect(() => {
         function onKeyDown(e) {
@@ -195,7 +197,9 @@ export default function Explore() {
     }, []);
 
     const isSearchingBooks = search.trim().length > 0;
-    const booksToShow = isSearchingBooks ? (bookSearchResults || []) : publications;
+    const booksToShow = isSearchingBooks
+        ? (bookSearchResults || []).map(p => ({ ...p.publicationData, id: p.id }))
+        : publications.map(p => ({ ...p.publicationData, id: p.id }));
 
     return (
         <div className={styles.page}>
@@ -213,7 +217,99 @@ export default function Explore() {
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
+                    {activeTab === EXPLORE_TAB.BOOKS && !isSearchingBooks && (
+                        <button
+                            type="button"
+                            className={`${styles.filterButton} ${hasActiveFilters ? styles.filterButtonActive : ''}`}
+                            onClick={() => setFiltersVisible(v => !v)}
+                        >
+                            <SlidersHorizontal size={18} />
+                            {hasActiveFilters && <span className={styles.filterBadgeDot} />}
+                        </button>
+                    )}
                 </div>
+
+                {filtersVisible && activeTab === EXPLORE_TAB.BOOKS && !isSearchingBooks && (
+                    <div className={styles.filterPanel}>
+                        <div className={styles.filterPanelHeader}>
+                            <h3 className={styles.filterPanelTitle}>Filter & Sort</h3>
+                            {hasActiveFilters && (
+                                <button
+                                    type="button"
+                                    className={styles.filterReset}
+                                    onClick={() => {
+                                        setSortBy(SORT_OPTIONS.DATE_DESC);
+                                        setConditionFilters([]);
+                                        setGenreFilters([]);
+                                    }}
+                                >
+                                    Reset filters
+                                </button>
+                            )}
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <span className={styles.filterLabel}>Sort by</span>
+                            <select 
+                                className={styles.filterSelect} 
+                                value={sortBy} 
+                                onChange={e => setSortBy(e.target.value)}
+                            >
+                                {SORT_CHOICES.map((choice) => (
+                                    <option key={choice.key} value={choice.key}>
+                                        {choice.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <span className={styles.filterLabel}>Condition</span>
+                            <div className={styles.pillContainer}>
+                                {BOOK_CONDITIONS.map(c => {
+                                    const isActive = conditionFilters.includes(c);
+                                    return (
+                                        <label key={c} className={`${styles.filterPill} ${isActive ? styles.filterPillActive : ''}`}>
+                                            <input
+                                                type="checkbox"
+                                                className={styles.hiddenInput}
+                                                checked={isActive}
+                                                onChange={() => setConditionFilters(prev =>
+                                                    prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
+                                                )}
+                                            />
+                                            {c}
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {BOOK_GENRES.length > 0 && (
+                            <div className={styles.filterGroup}>
+                                <span className={styles.filterLabel}>Genre</span>
+                                <div className={styles.pillContainer}>
+                                    {BOOK_GENRES.map(g => {
+                                        const isActive = genreFilters.includes(g);
+                                        return (
+                                            <label key={g} className={`${styles.filterPill} ${isActive ? styles.filterPillActive : ''}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    className={styles.hiddenInput}
+                                                    checked={isActive}
+                                                    onChange={() => setGenreFilters(prev =>
+                                                        prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
+                                                    )}
+                                                />
+                                                {g}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <div className={styles.tabs} role="tablist">
                     <button
@@ -280,25 +376,32 @@ export default function Explore() {
                         <SkeletonGrid count={6} />
                     ) : isSearchingBooks && bookSearchError ? (
                         <p className={styles.status}>{bookSearchError}</p>
-                    ) : !isSearchingBooks && pubsError ? (
-                        <p className={styles.status}>{pubsError}</p>
                     ) : booksToShow.length === 0 ? (
                         <EmptyState
-                            title={search.trim() ? 'No matches' : 'No publications yet'}
-                            message={search.trim() ? 'No publications match your search.' : 'No publications available right now.'}
+                            title={search.trim() || hasActiveFilters ? 'No matches' : 'No publications yet'}
+                            message={search.trim() ? 'No publications match your search.' : 'No publications match these filters.'}
                         />
                     ) : (
-                        <div className={styles.pubGrid}>
-                            {booksToShow.map((pub) => (
-                                <PublicationCard
-                                    key={pub.id}
-                                    pub={pub}
-                                    isFavorite={favoriteIds.has(pub.id)}
-                                    onToggleFavorite={() => handleToggleFavorite(pub.id)}
-                                    busy={favoriteBusy === pub.id}
-                                />
-                            ))}
-                        </div>
+                        <>
+                            <div className={styles.pubGrid}>
+                                {booksToShow.map((pub) => (
+                                    <PublicationCard
+                                        key={pub.id}
+                                        pub={pub}
+                                        isFavorite={favoriteIds.has(pub.id)}
+                                        onToggleFavorite={() => handleToggleFavorite(pub.id)}
+                                        busy={favoriteBusy === pub.id}
+                                    />
+                                ))}
+                            </div>
+                            {!isSearchingBooks && (
+                                <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
+                                    <Button variant="ghost" onClick={loadMore} disabled={isLoadingMore}>
+                                        {isLoadingMore ? 'Loading…' : 'Load more'}
+                                    </Button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}
