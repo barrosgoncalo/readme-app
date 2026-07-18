@@ -3,7 +3,7 @@ import { WEB_ROUTES } from '../constants/webRoutes';
 const WIDE_PREFIXES = [
     WEB_ROUTES.BOOKS,
     WEB_ROUTES.EVENTS,
-    WEB_ROUTES.MAP,
+    WEB_ROUTES.EXPLORE,
     '/users/',
     '/publications/',
 ];
@@ -23,7 +23,7 @@ const NARROW_PREFIXES = [
 /** @returns {'wide' | 'reading' | 'narrow' | 'full'} */
 export function getContentWidthTier(pathname) {
     if (pathname.startsWith(WEB_ROUTES.CHAT)) return 'full';
-    if (pathname === WEB_ROUTES.BOOKS || pathname === WEB_ROUTES.EVENTS || pathname === WEB_ROUTES.MAP) {
+    if (pathname === WEB_ROUTES.BOOKS || pathname === WEB_ROUTES.EVENTS || pathname === WEB_ROUTES.EXPLORE) {
         return 'wide';
     }
     if (READING_PATTERNS.some(pattern => pattern.test(pathname))) return 'reading';

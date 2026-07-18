@@ -30,7 +30,7 @@ export default function NewOffer() {
 
     useEffect(() => {
         if (!uid || !pubId) {
-            navigate(WEB_ROUTES.MAP);
+            navigate(WEB_ROUTES.EXPLORE);
             return;
         }
 
@@ -46,7 +46,7 @@ export default function NewOffer() {
                 if (cancelled) return;
 
                 if (!pub || pub.uid === uid) {
-                    navigate(WEB_ROUTES.MAP);
+                    navigate(WEB_ROUTES.EXPLORE);
                     return;
                 }
 
@@ -56,7 +56,7 @@ export default function NewOffer() {
                 setMyBooks(myPublications.map(b => ({ ...b, coverUrl: b.imageUrl })));
             } catch (err) {
                 console.error('Error loading offer data:', err);
-                if (!cancelled) navigate(WEB_ROUTES.MAP);
+                if (!cancelled) navigate(WEB_ROUTES.EXPLORE);
             } finally {
                 if (!cancelled) setLoading(false);
             }

@@ -96,7 +96,7 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
             await PublicationService.deletePublication(currentUser, pub.id);
             showToast('Publication deleted');
             if (embedded && onClose) onClose();
-            else navigate(WEB_ROUTES.MAP);
+            else navigate(WEB_ROUTES.EXPLORE);
         } catch (err) {
             showToast('Failed to delete publication');
             console.error(err);
