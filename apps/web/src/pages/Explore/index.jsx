@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Search, Users, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { BookOpen, Search, Users, Plus, SlidersHorizontal } from 'lucide-react';
 import { searchUsers } from '@readme/shared/src/services/searchUser';
 import { searchPublicationsByBook } from '@readme/shared/src/services/searchBook';
 import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
@@ -36,7 +36,7 @@ const BOOK_SEARCH_DEBOUNCE_MS = 250;
 export default function Explore() {
     const { currentUser } = useAuth();
     const uid = currentUser?.uid;
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [activeTab, setActiveTab] = useState(
         searchParams.get('tab') === EXPLORE_TAB.USERS ? EXPLORE_TAB.USERS : EXPLORE_TAB.BOOKS
@@ -70,7 +70,6 @@ export default function Explore() {
         sortBy,
         conditions: conditionFilters,
         genres: genreFilters,
-        limit: 24,
     });
 
     useEffect(() => {
@@ -80,11 +79,54 @@ export default function Explore() {
             .catch(() => {});
     }, [uid]);
 
+    // ==========================================
+    // SCROLL RESTORATION LOGIC
+    // ==========================================
+
+    // 1. Quietly save the scroll position as the user scrolls (throttled for performance)
+    useEffect(() => {
+        let throttleTimer;
+        const handleScroll = () => {
+            if (throttleTimer) return;
+            throttleTimer = setTimeout(() => {
+                sessionStorage.setItem('exploreScrollPos', window.scrollY);
+                throttleTimer = null;
+            }, 150); // Write to storage max once every 150ms
+        };
+        
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (throttleTimer) clearTimeout(throttleTimer);
+        };
+    }, []);
+
+    // 2. When the initial books finish loading, jump back to the saved position
+    useEffect(() => {
+        // Wait until we have actual items to give the page height
+        if (!loadingPubs && publications.length > 0) {
+            const savedScroll = sessionStorage.getItem('exploreScrollPos');
+            if (savedScroll) {
+                // requestAnimationFrame ensures the DOM has painted
+                requestAnimationFrame(() => {
+                    window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'instant' });
+                });
+            }
+        }
+    }, [loadingPubs, publications.length]);
+    // ==========================================
+
     const [bookSearchResults, setBookSearchResults] = useState(null);
     const [searchingBooks, setSearchingBooks] = useState(false);
     const [bookSearchError, setBookSearchError] = useState(null);
 
     const searchRef = useRef(null);
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setSearchParams({ tab });
+    };
 
     async function handleToggleFavorite(pubId) {
         if (!uid) return;
@@ -317,7 +359,7 @@ export default function Explore() {
                         role="tab"
                         aria-selected={activeTab === EXPLORE_TAB.BOOKS}
                         className={`${styles.tab} ${activeTab === EXPLORE_TAB.BOOKS ? styles.tabActive : ''}`}
-                        onClick={() => setActiveTab(EXPLORE_TAB.BOOKS)}
+                        onClick={() => handleTabChange(EXPLORE_TAB.BOOKS)}
                     >
                         <BookOpen size={16} /> Books
                     </button>
@@ -326,7 +368,7 @@ export default function Explore() {
                         role="tab"
                         aria-selected={activeTab === EXPLORE_TAB.USERS}
                         className={`${styles.tab} ${activeTab === EXPLORE_TAB.USERS ? styles.tabActive : ''}`}
-                        onClick={() => setActiveTab(EXPLORE_TAB.USERS)}
+                        onClick={() => handleTabChange(EXPLORE_TAB.USERS)}
                     >
                         <Users size={16} /> Users
                     </button>
