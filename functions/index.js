@@ -17,6 +17,8 @@ const { PUBLICATION_STATUS_AVAILABLE, NEGOTIATION_STATUS } = require("./constant
 const { GAMIFICATION_RANKS } = require("./constants/gamification");
 const { sendPushNotification } = require("./utils/pushNotification");
 
+const functions = require("firebase-functions");
+
 initializeApp({
     storageBucket: "readme---bookworms.firebasestorage.app"
 });
@@ -1138,5 +1140,80 @@ exports.setAdminStatus = onCall(async (request) => {
     } catch (error) {
         console.error("Error setting admin claims:", error);
         throw new HttpsError("internal", "An error occurred while updating user privileges.");
+    }
+});
+
+exports.banUser = functions.https.onCall(async (data, context) => {
+    // Confirma se o utilizador que está a fazer o pedido está autenticado e é Admin
+    if (!context.auth || context.auth.token.role !== 'admin') {
+        throw new functions.https.HttpsError(
+            'permission-denied',
+            'Apenas administradores podem banir utilizadores.'
+        );
+    }
+
+    const targetUid = data.uid;
+    const banReason = data.reason || 'Without specified motive';
+
+    if (!targetUid)
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'The UID of the user to ban is mandatory.'
+        );
+
+    const db = admin.firestore();
+
+    try {
+        // Obter os dados atuais do utilizador na coleção 'users'
+        const userRef = db.collection('users').doc(targetUid);
+        const userSnap = await userRef.get();
+
+        if (!userSnap.exists)
+            throw new functions.https.HttpsError(
+                'not-found',
+                'User not found in users collection.'
+            );
+
+        const userData = userSnap.data();
+
+        // Preparar o documento com a metadata do banimento
+        const bannedData = {
+            ...userData,
+            bannedAt: admin.firestore.FieldValue.serverTimestamp(),
+            bannedBy: context.auth.uid, // Regista qual foi o admin que deu o ban
+            banReason: banReason
+        };
+
+        // Utilizar um Batch para garantir a integridade dos dados
+        const batch = db.batch();
+        const bannedRef = db.collection('banned').doc(targetUid);
+
+        // Adiciona à coleção 'banned' com o mesmo UID
+        batch.set(bannedRef, bannedData);
+        // Remove da coleção 'users'
+        batch.delete(userRef);
+
+        // Executa as duas operações no Firestore em simultâneo
+        await batch.commit();
+
+        // Desativar a conta na Firebase Auth (bloqueia o login real)
+        await admin.auth().updateUser(targetUid, {
+            disabled: true
+        });
+
+        // Opcional: Aqui podes também chamar a lógica para limpar as publicações/ofertas dele
+        // ou mudar o estado dos reports associados a este utilizador para ACTIONED.
+
+        return {
+            success: true,
+            message: `Utilizador ${targetUid} foi movido para a coleção banned e desativado.`
+        };
+
+    } catch (error) {
+        console.error("Erro ao executar banUser:", error);
+        throw new functions.https.HttpsError(
+            'internal',
+            'Ocorreu um erro interno ao banir o utilizador.'
+        );
     }
 });

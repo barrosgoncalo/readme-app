@@ -1,21 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
-import {Eye, Search, User, Download} from "lucide-react";
-import { getAuth } from 'firebase/auth';
-import { alterUserPrivileges } from '@readme/shared/src/services/admin';
+import {useState, useEffect, useRef} from 'react';
+import {Eye, Search, User, Download, UserX} from "lucide-react";
+import {getAuth} from 'firebase/auth';
+import {alterUserPrivileges, banUserAccount} from '@readme/shared/src/services/admin';
 import {DB} from '@readme/shared/src/services/DB.js';
 import {searchUsers} from '@readme/shared/src/services/searchUser.js';
 import StatusBadge from '../../../components/StatusBadge.jsx';
 import Pagination from '../../../components/Pagination.jsx';
 import UserDetailModal from '../../../components/UserDetailModal.jsx';
+import BanUserModal from './BanUserModal.jsx';
 import styles from './UsersPage.module.css';
 
 const CSV_COLUMNS = [
-    { header: 'Full Name', get: (u) => u.fullName || '' },
-    { header: 'Username', get: (u) => u.username || '' },
-    { header: 'Email', get: (u) => u.userId || u.email || '' },
-    { header: 'Role', get: (u) => u.role || 'user' },
-    { header: 'Account Status', get: (u) => u.accountStatus || '' },
-    { header: 'UID', get: (u) => u.uid },
+    {header: 'Full Name', get: (u) => u.fullName || ''},
+    {header: 'Username', get: (u) => u.username || ''},
+    {header: 'Email', get: (u) => u.userId || u.email || ''},
+    {header: 'Role', get: (u) => u.role || 'user'},
+    {header: 'Account Status', get: (u) => u.accountStatus || ''},
+    {header: 'UID', get: (u) => u.uid},
 ];
 
 const escapeCsvCell = (value) => {
@@ -29,7 +30,7 @@ const exportUsersToCsv = (users) => {
         ...users.map((u) => CSV_COLUMNS.map((c) => escapeCsvCell(c.get(u)))),
     ];
     const csv = rows.map((row) => row.join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -50,11 +51,24 @@ export default function AdminUsersPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(PAGE_SIZE_DEFAULT);
     const [viewUser, setViewUser] = useState(null);
+    const [userToBan, setUserToBan] = useState(null);
     const [totalUsers, setTotalUsers] = useState(0);
 
     const lastVisibleDocs = useRef({});
 
     const auth = getAuth();
+
+    const handleBanUserSubmit = async (uid, reason) => {
+        try {
+            await banUserAccount(uid, reason);
+            setDisplayedUsers(prev => prev.filter(u => u.uid !== uid));
+            setTotalUsers(prev => prev - 1);
+            setUserToBan(null);
+        } catch (err) {
+            console.error('Error banning user:', err);
+            alert('An error occurred while banning the user. Verify console.');
+        }
+    };
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -149,7 +163,7 @@ export default function AdminUsersPage() {
                     <p className={styles.subtitle}>Manage user accounts and roles.</p>
                 </div>
                 <button type="button" className={styles.exportBtn} onClick={() => exportUsersToCsv(totalUsers)}>
-                    <Download size={16} />
+                    <Download size={16}/>
                     Export Users
                 </button>
             </div>
@@ -173,16 +187,16 @@ export default function AdminUsersPage() {
                     <div className={styles.empty}>No users found.</div>
                 ) : (
                     <div className={styles.scroll}>
-                    <table className={styles.table}>
-                        <thead>
+                        <table className={styles.table}>
+                            <thead>
                             <tr>
                                 <th>User</th>
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Action</th>
                             </tr>
-                        </thead>
-                        <tbody>
+                            </thead>
+                            <tbody>
                             {displayedUsers.map(user => (
                                 <tr key={user.uid}>
                                     <td>
@@ -194,8 +208,10 @@ export default function AdminUsersPage() {
                                                 }
                                             </div>
                                             <div>
-                                                <div className={styles.userName}>{user.fullName || user.username || 'Unnamed User'}</div>
-                                                {user.username && <div className={styles.userHandle}>@{user.username}</div>}
+                                                <div
+                                                    className={styles.userName}>{user.fullName || user.username || 'Unnamed User'}</div>
+                                                {user.username &&
+                                                    <div className={styles.userHandle}>@{user.username}</div>}
                                             </div>
                                         </div>
                                     </td>
@@ -209,8 +225,20 @@ export default function AdminUsersPage() {
                                                 onClick={() => setViewUser(user)}
                                                 aria-label="View user details"
                                             >
-                                                <Eye size={16} />
+                                                <Eye size={16}/>
                                             </button>
+
+                                            {user.uid !== auth.currentUser?.uid && (
+                                                <button
+                                                    type="button"
+                                                    className={styles.iconBtn}
+                                                    onClick={() => setUserToBan(user)}
+                                                    aria-label="Ban user"
+                                                >
+                                                    <UserX size={16} color="#dc2626"/>
+                                                </button>
+                                            )}
+
                                             {user.uid === auth.currentUser?.uid ? (
                                                 <span className={styles.youLabel}>You</span>
                                             ) : (
@@ -229,8 +257,8 @@ export default function AdminUsersPage() {
                                     </td>
                                 </tr>
                             ))}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
                     </div>
                 )}
 
@@ -244,7 +272,15 @@ export default function AdminUsersPage() {
                 />
             </div>
 
-            {viewUser && <UserDetailModal user={viewUser} onClose={() => setViewUser(null)} />}
+            {viewUser && <UserDetailModal user={viewUser} onClose={() => setViewUser(null)}/>}
+
+            {userToBan && (
+                <BanUserModal
+                    user={userToBan}
+                    onClose={() => setUserToBan(null)}
+                    onConfirm={handleBanUserSubmit}
+                />
+            )}
         </div>
     );
 }
