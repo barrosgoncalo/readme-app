@@ -3,7 +3,7 @@ import { usePaginatedList } from './use-paginated-list';
 import { algoliaPageAdapter } from './pagination-adapters';
 import { browsePublications, SORT_OPTIONS } from '../services/searchBook';
 import { doGetBlockedUids } from '../services/block';
-import { DEFAULT_HITS_PER_PAGE } from "../constants/feedConstants";
+import { DEFAULT_HITS_PER_PAGE } from '../constants/feedConstants';
 
 // Define the shape of our items (assuming they have at least an 'id')
 export interface FeedItem {
@@ -26,6 +26,7 @@ interface UseExploreFeedProps {
     conditions?: string[];
     genres?: string[];
     includeAllStatuses?: boolean;
+    hitsPerPage?: number;
 }
 
 // ==========================================
