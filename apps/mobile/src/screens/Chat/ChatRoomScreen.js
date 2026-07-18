@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme, Text, StyleSheet } from 'react-native';
+import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildChatRoomStyles } from '../../styles/chatRoomStyles';
