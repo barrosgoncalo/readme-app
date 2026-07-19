@@ -193,7 +193,7 @@ export default function ProfileScreen({ navigation }) {
                                 theme={theme} 
                                 icon="lucide:key" 
                                 label="Create Password" 
-                                onPress={() => navigation.navigate(ROUTES.SET_PASSWORD)} // Make sure to add SET_PASSWORD to your routes.js!
+                                onPress={() => navigation.navigate(ROUTES.SET_PASSWORD)}
                             />
                         )}
 

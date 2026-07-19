@@ -932,7 +932,7 @@ const functionsV1 = require('firebase-functions/v1');
 /**
  * Triggered automatically whenever a user's Firebase Authentication account is deleted.
  * Handles disabling chats, injecting system messages, deleting profile picture files,
- * and deleting all publications created by this user.
+ * deleting all publications, and clearing follow/block relationships.
  */
 exports.onAuthAccountDeleted = functionsV1
     .region('europe-west1')
@@ -946,6 +946,7 @@ exports.onAuthAccountDeleted = functionsV1
             const userDocSnap = await db.collection('users').doc(userId).get();
             const userData = userDocSnap.exists ? userDocSnap.data() : null;
 
+            // 1. Delete Publications
             const publicationsSnapshot = await db.collection('publications')
                 .where('uid', '==', userId)
                 .get();
@@ -965,6 +966,7 @@ exports.onAuthAccountDeleted = functionsV1
                 }
             }
 
+            // 2. Disable Chats
             const chatsSnapshot = await db.collection('chats')
                 .where('participants', 'array-contains', userId)
                 .get();
@@ -987,12 +989,15 @@ exports.onAuthAccountDeleted = functionsV1
                 console.log(`Queued status updates for ${chatsSnapshot.size} chats.`);
             }
 
+            // 3. Clean up Follows, Requests, AND Blocks
             try {
                 const [
                     followingDeleted,
                     followersDeleted,
                     sentRequestsDeleted,
                     receivedRequestsDeleted,
+                    outgoingBlocksDeleted,
+                    incomingBlocksDeleted
                 ] = await Promise.all([
                         deleteFollowsAndDecrementCounters(
                             db.collection('follows').where('followerUid', '==', userId),
@@ -1006,12 +1011,16 @@ exports.onAuthAccountDeleted = functionsV1
                         ),
                         deleteQueryResultsInBatches(db.collection('followRequests').where('requesterUid', '==', userId)),
                         deleteQueryResultsInBatches(db.collection('followRequests').where('targetUid', '==', userId)),
+
+                        deleteQueryResultsInBatches(db.collection('blocks').where('blockerUid', '==', userId)),
+                        deleteQueryResultsInBatches(db.collection('blocks').where('blockedUid', '==', userId)),
                     ]);
-                console.log(`Cleaned up follow data for user ${userId}: ${followingDeleted} following, ${followersDeleted} followers, ${sentRequestsDeleted} sent requests, ${receivedRequestsDeleted} received requests.`);
-            } catch (followCleanupError) {
-                console.warn(`Failed to clean up follow relationships for user ${userId}:`, followCleanupError);
+                console.log(`Cleaned up relationships for user ${userId}: ${followingDeleted} following, ${followersDeleted} followers, ${sentRequestsDeleted} sent reqs, ${receivedRequestsDeleted} received reqs, ${outgoingBlocksDeleted} outgoing blocks, ${incomingBlocksDeleted} incoming blocks.`);
+            } catch (relationshipCleanupError) {
+                console.warn(`Failed to clean up relationships (follows/blocks) for user ${userId}:`, relationshipCleanupError);
             }
 
+            // 4. Clean up Favorited Publications Count
             try {
                 const favoriteBookIds = userData?.favoriteBooks || [];
                 if (favoriteBookIds.length > 0) {
@@ -1035,10 +1044,11 @@ exports.onAuthAccountDeleted = functionsV1
                 console.warn(`Failed to decrement favorite counts for user ${userId}:`, favoritesCleanupError);
             }
 
-            // Delete the user's own profile doc
+            // 5. Delete User Document
             batch.delete(db.collection('users').doc(userId));
             hasWrites = true;
 
+            // 6. Delete Profile Pictures from Storage
             try {
                 await bucket.deleteFiles({ 
                     prefix: `profile_pictures/${userId}/` 
@@ -1048,6 +1058,7 @@ exports.onAuthAccountDeleted = functionsV1
                 console.warn(`Failed to delete storage files for user ${userId} (they might not have had a custom photo):`, storageError);
             }
 
+            // 7. Commit the batch
             if (hasWrites) {
                 await batch.commit();
                 console.log(`Successfully completed Firestore cleanup batch for user ${userId}`);

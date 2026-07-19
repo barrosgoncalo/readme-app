@@ -1,5 +1,3 @@
-// @readme/shared/src/models/block.js
-
 /**
  * Builds the deterministic document ID for a block relationship.
  * Using a composite ID (instead of an auto-generated one) lets you

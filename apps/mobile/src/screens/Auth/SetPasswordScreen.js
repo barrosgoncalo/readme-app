@@ -74,27 +74,42 @@ export default function SetPasswordScreen({ navigation }) {
         setIsSaving(true);
 
         try {
-            // Natively link the password provider to the existing Google account
             await updatePassword(user, newPassword);
-            
-            Alert.alert("Success", "Password created successfully! You can now log in with your email and password.", [
-                { text: "OK", onPress: () => navigation.goBack() }
-            ]);
+            showSuccessAlert();
         } catch (error) {
             console.log("Handled password setup error:", error.message);
             
             if (error.code === 'auth/requires-recent-login') {
-                Alert.alert(
-                    "Session Expired", 
-                    "For security reasons, you need to log out and log back in with Google before setting a password.",
-                    [{ text: "OK" }]
-                );
+                try {
+                    const idToken = "YOUR_FRESH_GOOGLE_ID_TOKEN"; 
+
+                    const credential = GoogleAuthProvider.credential(idToken);
+
+                    await reauthenticateWithCredential(user, credential);
+
+                    await updatePassword(user, newPassword);
+                    showSuccessAlert();
+                } catch (reauthError) {
+                    console.log("Re-authentication failed:", reauthError);
+                    Alert.alert(
+                        "Authentication Failed", 
+                        "We couldn't verify your Google account. Please log out and try again."
+                    );
+                }
             } else {
                 Alert.alert("Error", error.message);
             }
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const showSuccessAlert = () => {
+        Alert.alert(
+            "Success", 
+            "Password created successfully! You can now log in with your email and password.", 
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+        );
     };
 
     return (
