@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Platform, ActionSheetIOS, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Iconify } from 'react-native-iconify';
@@ -56,6 +56,9 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const sellerName = UsersService.getDisplayName(seller);
     const sellerAvatar = UsersService.getAvatarUrl(seller);
 
+    const sellerPhoneNumber = seller?.phoneNumber;
+    const canContactDirectly = !!seller?.shareContactDetails && !!sellerPhoneNumber;
+
     const { startOffer } = useOffer();
 
     const handleMakeOffer = () => {
@@ -68,6 +71,38 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         startOffer(perfectlyCleanBook, seller);
 
         navigation.navigate(ROUTES.STEP_ONE_OFFER);
+    };
+
+    const handleCallOrSms = () => {
+        if (!sellerPhoneNumber) return;
+
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    title: 'Contacto telefónico',
+                    message: sellerPhoneNumber,
+                    options: ['Ligar', 'Enviar SMS', 'Cancelar'],
+                    cancelButtonIndex: 2,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 0) {
+                        Linking.openURL(`tel:${sellerPhoneNumber}`);
+                    } else if (buttonIndex === 1) {
+                        Linking.openURL(`sms:${sellerPhoneNumber}`);
+                    }
+                }
+            );
+        } else {
+            Alert.alert(
+                'Contacto telefónico',
+                sellerPhoneNumber,
+                [
+                    { text: 'Ligar', onPress: () => Linking.openURL(`tel:${sellerPhoneNumber}`) },
+                    { text: 'Enviar SMS', onPress: () => Linking.openURL(`sms:${sellerPhoneNumber}`) },
+                    { text: 'Cancelar', style: 'cancel' },
+                ]
+            );
+        }
     };
 
     // --- Compose UI Parts ---
@@ -127,10 +162,22 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         if (hideOfferButton) return null;
         return (
             <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-                <TouchableOpacity style={styles.offerButton} onPress={handleMakeOffer} activeOpacity={0.85}>
-                    <Iconify icon="lucide:handshake" size={22} color="#FFFFFF" />
-                    <Text style={styles.offerButtonText}>Make an Offer</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonRow}>
+                    {canContactDirectly && (
+                        <TouchableOpacity style={styles.chatButton} onPress={handleCallOrSms} activeOpacity={0.85}>
+                            <Iconify icon="lucide:phone-call" size={20} color={theme.primary} />
+                            <Text style={styles.chatButtonText}>Ligar / SMS</Text>
+                        </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                        style={[styles.offerButton, canContactDirectly && { width: undefined, flex: 1 }]}
+                        onPress={handleMakeOffer}
+                        activeOpacity={0.85}
+                    >
+                        <Iconify icon="lucide:handshake" size={22} color="#FFFFFF" />
+                        <Text style={styles.offerButtonText}>Make an Offer</Text>
+                    </TouchableOpacity>
+                </View>
             </SafeAreaView>
         );
     };

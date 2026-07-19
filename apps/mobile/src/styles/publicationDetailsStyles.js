@@ -190,12 +190,13 @@ export const buildBookDetailsStyles = (theme) => {
         },
         buttonRow: {
             flexDirection: 'row',
-            paddingHorizontal: 20,
             justifyContent: 'space-between',
             alignItems: 'center',
         },
         chatButton: {
             flex: 1,
+            flexDirection: 'row',
+            gap: 8,
             borderWidth: 1,
             borderColor: theme.primary,
             borderRadius: 12,
@@ -203,8 +204,7 @@ export const buildBookDetailsStyles = (theme) => {
             marginRight: 12,
             justifyContent: 'center',
             alignItems: 'center',
-        },
-        chatButtonText: {
+        },        chatButtonText: {
             fontFamily: Fonts.inter_semi,
             fontSize: 16,
             color: theme.primary, 
