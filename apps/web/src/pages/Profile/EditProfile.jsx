@@ -4,8 +4,6 @@ import {ArrowLeft} from 'lucide-react';
 import {DB} from '@readme/shared/src/services/DB';
 import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {WEB_ROUTES} from '../../constants/webRoutes';
-import {DEFAULT_COUNTRY, parseStoredPhone} from '../../components/PhoneField/countryCodes.js';
-import PhoneField from '../../components/PhoneField/index.jsx';
 import CountryField from '../../components/CountryField.jsx';
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
@@ -23,7 +21,6 @@ export default function EditProfile() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const [phoneCountry, setPhoneCountry] = useState(location.state?.draftPhoneCountry || DEFAULT_COUNTRY);
     const [form, setForm] = useState(location.state?.draftForm || {
         fullName: '',
         dob: '',
@@ -45,13 +42,11 @@ export default function EditProfile() {
         DB.get('users', currentUser.uid).then(d => {
             if (!d) return;
             const addr = d.institutionalAddress || {};
-            const {country, number} = parseStoredPhone(d.phoneNumber);
-            setPhoneCountry(country);
             setForm({
                 fullName: d.fullName || '',
                 dob: d.dob || '',
                 username: d.username || '',
-                phoneNumber: number,
+                phoneNumber: d.phoneNumber || '', // Agora lê o número diretamente
                 country: addr.country || '',
                 city: addr.city || '',
                 district: addr.district || '',
@@ -73,14 +68,11 @@ export default function EditProfile() {
         setSuccess(false);
         setSaving(true);
         try {
-            const fullPhone = form.phoneNumber.trim()
-                ? `${phoneCountry.dial} ${form.phoneNumber.trim()}`
-                : '';
             await DB.update('users', currentUser.uid, {
                 fullName: form.fullName.trim(),
                 dob: form.dob,
                 username: form.username.trim(),
-                phoneNumber: fullPhone,
+                phoneNumber: form.phoneNumber.trim(), // Guarda o número diretamente
                 institutionalAddress: {
                     country: form.country.trim(),
                     city: form.city.trim(),
@@ -119,14 +111,15 @@ export default function EditProfile() {
                         <Field label="Date of birth" type="date" value={form.dob} onChange={v => set('dob', v)}
                                max={new Date().toISOString().split('T')[0]}/>
                         <Field label="Username" value={form.username} onChange={v => set('username', v)} required/>
-                        <PhoneField
-                            country={phoneCountry}
-                            onCountryChange={c => {
-                                setPhoneCountry(c);
-                                setSuccess(false);
+                        {/* Input simples substituindo o PhoneField */}
+                        <Field 
+                            label="Phone number" 
+                            type="tel" 
+                            value={form.phoneNumber} 
+                            onChange={v => {
+                                const sanitizedValue = v.replace(/[^0-9+\-() ]/g, '');
+                                set('phoneNumber', sanitizedValue);
                             }}
-                            value={form.phoneNumber}
-                            onChange={v => set('phoneNumber', v)}
                         />
                     </div>
                 </section>
@@ -147,7 +140,7 @@ export default function EditProfile() {
                     </div>
                 </section>
 
-<ErrorAlert>{error}</ErrorAlert>
+                <ErrorAlert>{error}</ErrorAlert>
                 {success && <p className={styles.successMsg}>Saved!</p>}
 
                 <div className={styles.actions}>
