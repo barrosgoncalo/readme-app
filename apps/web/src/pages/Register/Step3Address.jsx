@@ -1,4 +1,5 @@
 import Field from '../../components/Field.jsx';
+import CountryField from '../../components/CountryField.jsx';
 import Button from '../../components/Button.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
 
@@ -17,7 +18,7 @@ export default function Step3Address({ data, set, onSubmit, onBack, submitting, 
             <Field label="City" value={data.city} onChange={(v) => set('city', v)} required />
             <Field label="District" value={data.district} onChange={(v) => set('district', v)} />
             <Field label="ZIP / postal code" value={data.zipCode} onChange={(v) => set('zipCode', v)} />
-            <Field label="Country" value={data.country} onChange={(v) => set('country', v)} required />
+            <CountryField value={data.country} onChange={(v) => set('country', v)} />
             <ErrorAlert>{error}</ErrorAlert>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                 <Button variant="ghost" onClick={onBack} disabled={submitting}>Back</Button>
