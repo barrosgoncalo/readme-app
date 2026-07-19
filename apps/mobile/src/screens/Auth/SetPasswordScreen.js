@@ -89,13 +89,15 @@ export default function SetPasswordScreen({ navigation }) {
                 try {
                     // 1. Force a fresh Google Sign-In to get a real token!
                     await GoogleSignin.hasPlayServices();
-                    const userInfo = await GoogleSignin.signIn();
+                    const response = await GoogleSignin.signIn();
 
-                    // The token lives inside the returned userInfo object
-                    const idToken = userInfo.idToken;
+                    // 2. Safely extract the token (handles both newer v11+ and older library versions)
+                    const idToken = response?.data?.idToken || response?.idToken;
 
                     if (!idToken) {
-                        throw new Error("No ID token found from Google Sign-In");
+                        // Adding a console.log here helps debug if Google is returning something unexpected
+                        console.log("Full Google Sign-In Response:", JSON.stringify(response));
+                        throw new Error("No ID token found. Check your console to see what Google returned.");
                     }
 
                     // 2. Build the Firebase credential using the REAL token
