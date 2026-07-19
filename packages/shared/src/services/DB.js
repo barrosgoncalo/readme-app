@@ -65,6 +65,10 @@ export const DB = {
                 return snap.docs.map(d => ({ id: d.id, ...d.data() }));
             }
         } catch (error) {
+
+            if (error.code === 'permission-denied') {
+                return []; 
+            }
             console.error(`DB.get Error on path "${collectionPath}":`, error);
             throw error;
         }

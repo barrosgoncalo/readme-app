@@ -12,6 +12,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
 
+// IMPORT STATUS CODES FOR GOOGLE SIGN IN
+import { statusCodes } from '@react-native-google-signin/google-signin';
+
 import { 
     doSignInWithEmailAndPassword, 
     doGetGoogleTokenAndProfile, 
@@ -53,15 +56,46 @@ export default function LoginScreen({ navigation }) {
         }
     };
 
+    // Handle Google Login
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
         try {
             const { idToken, profile } = await doGetGoogleTokenAndProfile();
             await doSignInWithGoogleCredential(idToken, profile);
             console.log("Google Login Successful");
+            
         } catch (error) {
-            console.error(error);
-            Alert.alert("Google Login Failed", error.message);
+            // 1. CATCH SPECIFIC GOOGLE ERRORS
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                console.log("User cancelled the login flow.");
+                // Fail silently, do not show an alert to the user
+                return;
+            } 
+            else if (error.code === statusCodes.IN_PROGRESS) {
+                console.log("Sign in is already in progress.");
+                return;
+            } 
+            else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                Alert.alert("Error", "Google Play Services are not available on this device.");
+            }
+            
+            // 2. CATCH UNREGISTERED USER ERRORS
+            // (Adjust this check based on exactly what error your backend/Firebase throws)
+            else if (
+                error.message?.includes('user-not-found') || 
+                error.code === 'auth/user-not-found'
+            ) {
+                Alert.alert(
+                    "Account Not Found", 
+                    "No account exists for this Google email. Please register first."
+                );
+            } 
+            
+            // 3. FALLBACK FOR ANY OTHER ERRORS
+            else {
+                console.error("Google Auth Error:", error);
+                Alert.alert("Google Login Failed", error.message || "An unexpected error occurred.");
+            }
         } finally {
             setIsLoading(false);
         }

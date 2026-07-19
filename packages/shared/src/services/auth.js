@@ -121,7 +121,12 @@ export const doSignInWithGoogleCredential = async (idToken, profileData) => {
     const userData = await DB.get("users", userCredential.user.uid);
 
     if (!userData) {
-        await saveUserData(userCredential.user.uid, profileData, 'google');
+        await userCredential.user.delete();
+        
+        const error = new Error("No account exists for this Google email. Please register first.");
+        error.code = 'auth/user-not-found';
+        
+        throw error;
     }
 
     return userCredential;
