@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "BookCommunityApp",
-    "slug": "BookCommunityApp",
+    "name": "Readme",
+    "slug": "Readme",
     "splash": {
       "image": "./assets/images/splash.png",
       "backgroundColor": "#F2F0EF"
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "com.anonymous.bookcommunityapp",
-      "googleServicesFile": "./android/app/google-services.json",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png",
