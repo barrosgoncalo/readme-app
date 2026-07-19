@@ -230,6 +230,110 @@ async function markOffersUnavailableForBook(bookId) {
     console.log(`Marked ${docsById.size} offer(s) as unavailable for book ${bookId}.`);
 }
 
+// Helper: delete all docs matching a query, chunked into batches of 500
+async function deleteQueryResultsInBatches(query) {
+    const snapshot = await query.get();
+    if (snapshot.empty) return 0;
+
+    const chunks = [];
+    let currentBatch = db.batch();
+    let count = 0;
+
+    snapshot.forEach((doc) => {
+        currentBatch.delete(doc.ref);
+        count++;
+        if (count % 500 === 0) {
+            chunks.push(currentBatch.commit());
+            currentBatch = db.batch();
+        }
+    });
+
+    if (count % 500 !== 0) {
+        chunks.push(currentBatch.commit());
+    }
+
+    await Promise.all(chunks);
+    return count;
+}
+
+/**
+ * Deletes all `follows` docs matching a query, and decrements the
+ * corresponding counter field on the *other* party's user doc for each one.
+ *
+ * @param {FirebaseFirestore.Query} query
+ * @param {(doc: FirebaseFirestore.QueryDocumentSnapshot) => string} getOtherUid
+ *   Extracts the other user's UID from each follow doc.
+ * @param {string} counterField - which field on the other user's doc to decrement
+ */
+async function deleteFollowsAndDecrementCounters(query, getOtherUid, counterField) {
+    const snapshot = await query.get();
+    if (snapshot.empty) return 0;
+
+    const docs = snapshot.docs;
+    const CHUNK_SIZE = 250; // 2 writes per doc (delete + decrement) — stays under the 500 write/batch cap
+
+    const chunks = [];
+    for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+        chunks.push(docs.slice(i, i + CHUNK_SIZE));
+    }
+
+    for (const chunk of chunks) {
+        const batch = db.batch();
+        chunk.forEach((doc) => {
+            batch.delete(doc.ref);
+            const otherUid = getOtherUid(doc);
+            if (otherUid) {
+                batch.update(db.collection('users').doc(otherUid), {
+                    [counterField]: FieldValue.increment(-1),
+                });
+            }
+        });
+        await batch.commit();
+    }
+
+    return docs.length;
+}
+
+/**
+ * For a batch of publication IDs being deleted, finds every user whose
+ * favoriteBooks array references any of them, and removes those IDs
+ * from each affected user's array via arrayRemove.
+ */
+async function removeDeletedPublicationsFromFavorites(pubIds) {
+    if (pubIds.length === 0) return 0;
+
+    const QUERY_CHUNK_SIZE = 10; // array-contains-any limit
+    let affectedUserCount = 0;
+
+    for (let i = 0; i < pubIds.length; i += QUERY_CHUNK_SIZE) {
+        const idChunk = pubIds.slice(i, i + QUERY_CHUNK_SIZE);
+
+        const affectedUsersSnap = await db.collection('users')
+            .where('favoriteBooks', 'array-contains-any', idChunk)
+            .get();
+
+        if (affectedUsersSnap.empty) continue;
+
+        // arrayRemove accepts multiple values — removes any of idChunk
+        // present in each user's array, regardless of which one matched.
+        const WRITE_CHUNK_SIZE = 500;
+        const docs = affectedUsersSnap.docs;
+        for (let j = 0; j < docs.length; j += WRITE_CHUNK_SIZE) {
+            const writeBatch = db.batch();
+            docs.slice(j, j + WRITE_CHUNK_SIZE).forEach((doc) => {
+                writeBatch.update(doc.ref, {
+                    favoriteBooks: FieldValue.arrayRemove(...idChunk),
+                });
+            });
+            await writeBatch.commit();
+        }
+
+        affectedUserCount += affectedUsersSnap.size;
+    }
+
+    return affectedUserCount;
+}
+
 
 // ==========================================
 // DELETE BOOKS ON SWAP COMPLETED FUNCTION
@@ -839,6 +943,9 @@ exports.onAuthAccountDeleted = functionsV1
 
         let hasWrites = false; 
         try {
+            const userDocSnap = await db.collection('users').doc(userId).get();
+            const userData = userDocSnap.exists ? userDocSnap.data() : null;
+
             const publicationsSnapshot = await db.collection('publications')
                 .where('uid', '==', userId)
                 .get();
@@ -848,6 +955,14 @@ exports.onAuthAccountDeleted = functionsV1
                 });
                 hasWrites = true;
                 console.log(`Queued ${publicationsSnapshot.size} publications for deletion for user ${userId}`);
+
+                try {
+                    const deletedPubIds = publicationsSnapshot.docs.map(doc => doc.id);
+                    const affectedCount = await removeDeletedPublicationsFromFavorites(deletedPubIds);
+                    console.log(`Removed deleted publications from favoriteBooks for ${affectedCount} user(s).`);
+                } catch (favRefCleanupError) {
+                    console.warn(`Failed to clean up stale favoriteBooks references for user ${userId}'s publications:`, favRefCleanupError);
+                }
             }
 
             const chatsSnapshot = await db.collection('chats')
@@ -870,6 +985,54 @@ exports.onAuthAccountDeleted = functionsV1
                 });
                 hasWrites = true;
                 console.log(`Queued status updates for ${chatsSnapshot.size} chats.`);
+            }
+
+            try {
+                const [
+                    followingDeleted,
+                    followersDeleted,
+                    sentRequestsDeleted,
+                    receivedRequestsDeleted,
+                ] = await Promise.all([
+                        deleteFollowsAndDecrementCounters(
+                            db.collection('follows').where('followerUid', '==', userId),
+                            (doc) => doc.data().followingUid,
+                            'followersCount'
+                        ),
+                        deleteFollowsAndDecrementCounters(
+                            db.collection('follows').where('followingUid', '==', userId),
+                            (doc) => doc.data().followerUid,
+                            'followingCount'
+                        ),
+                        deleteQueryResultsInBatches(db.collection('followRequests').where('requesterUid', '==', userId)),
+                        deleteQueryResultsInBatches(db.collection('followRequests').where('targetUid', '==', userId)),
+                    ]);
+                console.log(`Cleaned up follow data for user ${userId}: ${followingDeleted} following, ${followersDeleted} followers, ${sentRequestsDeleted} sent requests, ${receivedRequestsDeleted} received requests.`);
+            } catch (followCleanupError) {
+                console.warn(`Failed to clean up follow relationships for user ${userId}:`, followCleanupError);
+            }
+
+            try {
+                const favoriteBookIds = userData?.favoriteBooks || [];
+                if (favoriteBookIds.length > 0) {
+                    const CHUNK_SIZE = 500;
+                    const chunks = [];
+                    for (let i = 0; i < favoriteBookIds.length; i += CHUNK_SIZE) {
+                        chunks.push(favoriteBookIds.slice(i, i + CHUNK_SIZE));
+                    }
+                    for (const chunk of chunks) {
+                        const favBatch = db.batch();
+                        chunk.forEach((pubId) => {
+                            favBatch.update(db.collection('publications').doc(pubId), {
+                                'stats.likesCount': FieldValue.increment(-1),
+                            });
+                        });
+                        await favBatch.commit();
+                    }
+                    console.log(`Decremented likesCount on ${favoriteBookIds.length} publication(s) previously favorited by user ${userId}.`);
+                }
+            } catch (favoritesCleanupError) {
+                console.warn(`Failed to decrement favorite counts for user ${userId}:`, favoritesCleanupError);
             }
 
             // Delete the user's own profile doc
