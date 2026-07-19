@@ -1,10 +1,10 @@
-import { arrayUnion } from 'firebase/firestore';
-import { createChatModel } from '../models/chat';
-import { createOfferModel, generateVerificationCode } from '../models/offer';
-import { createMessageModel } from '../models/message';
-import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
-import { DB } from './DB';
-import { CloudFunctions } from './cloudFunctions';
+import {arrayUnion} from 'firebase/firestore';
+import {createChatModel} from '../models/chat';
+import {createOfferModel, generateVerificationCode} from '../models/offer';
+import {createMessageModel} from '../models/message';
+import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
+import {DB} from './DB';
+import {CloudFunctions} from './cloudFunctions';
 
 // ==========================================
 // PRIVATE AUXILIARY HELPERS
@@ -15,7 +15,7 @@ import { CloudFunctions } from './cloudFunctions';
  */
 const _findExistingChatId = async (currentUserId, sellerId) => {
     const existingChats = await DB.get('chats', [
-        { field: 'participants', operator: 'array-contains', value: currentUserId }
+        {field: 'participants', operator: 'array-contains', value: currentUserId}
     ]);
 
     const chat = existingChats.find(chatDoc => chatDoc.participants.includes(sellerId));
@@ -50,7 +50,7 @@ const _buildAcceptedOfferPayloads = (proposerId, receiverId, finalBookId, finalB
         chatPayload.targetBookImage = finalBookImage;
     }
 
-    return { msgPayload, chatPayload };
+    return {msgPayload, chatPayload};
 };
 
 /**
@@ -64,6 +64,10 @@ const _mapChatToInboxPreview = (data, currentUserId) => {
         id: data.id,
         imageUrl: data.targetBookImage || 'https://via.placeholder.com/150',
         status: isOutgoing ? 'giving' : 'receiving',
+
+        disabled: data.status === 'disabled',
+        disabledReason: data.disabledReason || null,
+
         targetSeller: {
             uid: otherParticipantUid,
             name: isOutgoing
@@ -117,7 +121,7 @@ const _resolveOtherUser = async (chatData, currentUserId, targetSeller) => {
 
     if (hasPipedData) {
         // User confirmed to exist — trust the piped name/avatar, skip re-setting them
-        return { otherUid, otherUserName: null, otherUserAvatar: null, isChatDisabled: false, disabledReason: null };
+        return {otherUid, otherUserName: null, otherUserAvatar: null, isChatDisabled: false, disabledReason: null};
     }
 
     return {
@@ -144,7 +148,7 @@ export const ChatService = {
 
         await Promise.all([
             DB.create(`chats/${chatId}/messages`, messagePayload),
-            DB.update('chats', chatId, { 
+            DB.update('chats', chatId, {
                 lastMessage: text,
                 hiddenFor: []
             }, true)
@@ -159,8 +163,8 @@ export const ChatService = {
             await DB.update('chats', chatId, {
                 hiddenFor: arrayUnion(currentId)
             }, true);
-            return { success: true };
-        } catch(error) {
+            return {success: true};
+        } catch (error) {
             console.error("Error hiding chat:", error);
             throw error;
         }
@@ -170,25 +174,25 @@ export const ChatService = {
      * Updates the status of an offer and refreshes the parent chat metadata.
      */
     updateOfferStatus: async (
-        chatId, 
-        messageId, 
-        newStatus, 
-        proposerId = null, 
+        chatId,
+        messageId,
+        newStatus,
+        proposerId = null,
         receiverId = null,
         finalSelectedBookId = null,
         finalSelectedBookImage = null,
         cancelledBy = null
     ) => {
-        let messageUpdatePayload = { 'offerDetails.status': newStatus };
-        let chatParentPayload = { hiddenFor: [] };
+        let messageUpdatePayload = {'offerDetails.status': newStatus};
+        let chatParentPayload = {hiddenFor: []};
 
         if (newStatus === NEGOTIATION_STATUS.ACCEPTED) {
-            const { msgPayload, chatPayload } = _buildAcceptedOfferPayloads(
+            const {msgPayload, chatPayload} = _buildAcceptedOfferPayloads(
                 proposerId, receiverId, finalSelectedBookId, finalSelectedBookImage
             );
-            
-            messageUpdatePayload = { ...messageUpdatePayload, ...msgPayload };
-            chatParentPayload = { ...chatParentPayload, ...chatPayload };
+
+            messageUpdatePayload = {...messageUpdatePayload, ...msgPayload};
+            chatParentPayload = {...chatParentPayload, ...chatPayload};
         }
 
         if (newStatus === NEGOTIATION_STATUS.CANCELED && cancelledBy) {
@@ -293,16 +297,16 @@ export const ChatService = {
      */
     subscribeToActiveChats: (currentUserId, onUpdate, onError) => {
         return DB.subscribeQuery(
-            'chats', 
-            [ { field: 'participants', operator: 'array-contains', value: currentUserId } ],
+            'chats',
+            [{field: 'participants', operator: 'array-contains', value: currentUserId}],
             (fetchedDocs) => {
                 const fetchedChats = fetchedDocs
-                    .filter(data => !(data?.hiddenFor || []).includes(currentUserId)) 
+                    .filter(data => !(data?.hiddenFor || []).includes(currentUserId))
                     .map(data => _mapChatToInboxPreview(data, currentUserId));
 
                 fetchedChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
                 onUpdate(fetchedChats);
-            }, 
+            },
             onError
         );
     },
@@ -330,7 +334,7 @@ export const ChatService = {
         const chatData = await DB.get('chats', chatId);
         if (!chatData) return null;
 
-        const { otherUid, otherUserName, otherUserAvatar, isChatDisabled, disabledReason } = await _resolveOtherUser(
+        const {otherUid, otherUserName, otherUserAvatar, isChatDisabled, disabledReason} = await _resolveOtherUser(
             chatData, currentUserId, targetSeller
         );
 
@@ -374,7 +378,7 @@ export const ChatService = {
 
         await Promise.all(
             unreadFromOther.map(msg =>
-                DB.update(`chats/${chatId}/messages`, msg.id, { read: true }, true).catch(error => {
+                DB.update(`chats/${chatId}/messages`, msg.id, {read: true}, true).catch(error => {
                     console.error("Error updating read status:", error);
                 })
             )
@@ -386,7 +390,7 @@ export const ChatService = {
      * and mark the swap as completed.
      */
     verifySwapCode: (chatId, messageId, scannedCode) =>
-        CloudFunctions.call('verifySwapCode', { chatId, messageId, scannedCode }),
+        CloudFunctions.call('verifySwapCode', {chatId, messageId, scannedCode}),
 
     /**
      * Marks an offer message as completed once the verification code checks out.

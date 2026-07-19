@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useNavigate} from 'react-router-dom';
-import {Send, Smile, Flag, Info} from 'lucide-react';
+import {Send, Smile, Flag, Info, Ban} from 'lucide-react';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {ReportsService} from '@readme/shared/src/services/reports';
 import {REPORT_TARGET_TYPE} from '@readme/shared/src/constants/status';
@@ -186,9 +186,9 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                                             <div className={styles.systemMessage}>
                                                 <Info size={16}/>
                                                 <span>
-                                                    The book associated with this trade has been removed.
-                                                    This trade was automatically cancelled.
-                                                </span>
+                                        The book associated with this trade has been removed.
+                                        This trade was automatically cancelled.
+                                    </span>
                                             </div>
                                         )}
                                     </>
@@ -208,56 +208,67 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                 <div ref={messagesEndRef}/>
             </div>
 
-            {/* Composer */}
-            <div className={styles.composer}>
-                <div className={styles.emojiWrap}>
-                    <button
-                        ref={emojiBtnRef}
-                        type="button"
-                        className={styles.emojiBtn}
-                        onClick={() => setShowEmojiPicker(v => !v)}
-                        aria-label="Insert emoji"
-                    >
-                        <Smile size={20}/>
-                    </button>
-                    {showEmojiPicker && emojiPickerPos && createPortal(
-                        <div
-                            ref={emojiPickerRef}
-                            className={styles.emojiPicker}
-                            style={{bottom: emojiPickerPos.bottom, left: emojiPickerPos.left}}
-                        >
-                            {EMOJI_OPTIONS.map((emoji, i) => (
-                                <button
-                                    key={`${emoji}-${i}`}
-                                    type="button"
-                                    className={styles.emojiOption}
-                                    onClick={() => handleEmojiSelect(emoji)}
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </div>,
-                        document.getElementById('modal-root') ?? document.body,
-                    )}
+            {/* Composer ou Aviso de Desativado */}
+            {chat.disabled ? (
+                <div className={styles.systemMessage} style={{ margin: 'var(--space-3) auto', padding: '12px 20px', maxWidth: '80%' }}>
+                    <Ban size={18} color="var(--error)" />
+                    <span style={{ color: 'var(--error)', fontWeight: '500' }}>
+            {chat.disabledReason === 'banned'
+                ? 'This user has been banned.'
+                : 'This user has deleted their account.'}
+        </span>
                 </div>
-                <input
-                    ref={inputRef}
-                    type="text"
-                    className={styles.input}
-                    placeholder="Type a message..."
-                    value={text}
-                    onChange={e => setText(e.target.value)}
-                    onKeyPress={e => e.key === 'Enter' && !sending && handleSend()}
-                    disabled={sending}
-                />
-                <button
-                    className={styles.sendBtn}
-                    onClick={handleSend}
-                    disabled={!text.trim() || sending}
-                >
-                    <Send size={18}/>
-                </button>
-            </div>
+            ) : (
+                <div className={styles.composer}>
+                    <div className={styles.emojiWrap}>
+                        <button
+                            ref={emojiBtnRef}
+                            type="button"
+                            className={styles.emojiBtn}
+                            onClick={() => setShowEmojiPicker(v => !v)}
+                            aria-label="Insert emoji"
+                        >
+                            <Smile size={20}/>
+                        </button>
+                        {showEmojiPicker && emojiPickerPos && createPortal(
+                            <div
+                                ref={emojiPickerRef}
+                                className={styles.emojiPicker}
+                                style={{bottom: emojiPickerPos.bottom, left: emojiPickerPos.left}}
+                            >
+                                {EMOJI_OPTIONS.map((emoji, i) => (
+                                    <button
+                                        key={`${emoji}-${i}`}
+                                        type="button"
+                                        className={styles.emojiOption}
+                                        onClick={() => handleEmojiSelect(emoji)}
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>,
+                            document.getElementById('modal-root') ?? document.body,
+                        )}
+                    </div>
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        className={styles.input}
+                        placeholder="Type a message..."
+                        value={text}
+                        onChange={e => setText(e.target.value)}
+                        onKeyPress={e => e.key === 'Enter' && !sending && handleSend()}
+                        disabled={sending}
+                    />
+                    <button
+                        className={styles.sendBtn}
+                        onClick={handleSend}
+                        disabled={!text.trim() || sending}
+                    >
+                        <Send size={18}/>
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
