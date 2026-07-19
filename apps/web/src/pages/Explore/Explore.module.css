@@ -35,7 +35,7 @@
     gap: var(--space-2);
     background: var(--bg-elem);
     border-radius: var(--radius-lg);
-    padding: 10px 14px;
+    padding: 15px 14px;
     border: 1px solid var(--bg-selected);
 }
 
@@ -194,7 +194,7 @@
     background: transparent;
     border: none;
     color: var(--subtext);
-    padding: 8px;
+    padding: 0;
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all var(--transition-fast);
