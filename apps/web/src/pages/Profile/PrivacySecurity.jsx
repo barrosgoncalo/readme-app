@@ -130,7 +130,7 @@ export default function PrivacySecurity() {
                 <div className={styles.card}>
                     <ToggleRow
                         icon={<Shield size={18} />}
-                        label={isPublic ? 'Private' : 'Public'}
+                        label={'Private'}
                         checked={isPublic}
                         disabled={saving === 'profileVisibility' || deleting}
                         onChange={v => {

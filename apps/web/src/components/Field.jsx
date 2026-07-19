@@ -1,4 +1,3 @@
-// Reusable labeled input.
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import styles from './Field.module.css';
