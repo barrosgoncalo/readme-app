@@ -10,11 +10,11 @@ import {
 // Shared Services & Contexts
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
-import { useUserRole } from '@readme/shared/src/hooks/use-user-role'; // <-- Added hook
+import { useUserRole } from '@readme/shared/src/hooks/use-user-role';
+import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings'; // <-- Imported shared hook
 
 // Local Project Imports
 import { db, auth, storage } from '@readme/shared/src/services/firebase';
-import { DB } from '@readme/shared/src/services/DB';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -39,9 +39,11 @@ export default function ProfileLayout() {
     const location = useLocation();
     const fileInputRef = useRef(null);
 
+    // 👇 Use the same shared hook as mobile for publications count 👇
+    const { myBooks } = useMyPostings(currentUser?.uid);
+
     const [userData, setUserData] = useState(null);
     const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
-    const [shelfCount, setShelfCount] = useState(null);
     const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [photoURL, setPhotoURL] = useState(null);
@@ -56,16 +58,14 @@ export default function ProfileLayout() {
         Promise.all([
             getDoc(doc(db, 'users', currentUser.uid)),
             UsersService.getFollowCounts(currentUser.uid),
-            DB.count(`users/${currentUser.uid}/myBooks`).catch(() => null),
         ])
-        .then(([snap, counts, count]) => {
+        .then(([snap, counts]) => {
             if (snap.exists()) {
                 const data = snap.data();
                 setUserData(data);
                 setPhotoURL(data.photoURL || null);
             }
             setFollowCounts(counts);
-            setShelfCount(count);
         })
         .catch(err => {
             console.error("Error fetching user profile data:", err);
@@ -92,16 +92,10 @@ export default function ProfileLayout() {
         setUploading(true);
         
         try {
-            // 1. Create a reference to the storage location
             const fileRef = ref(storage, `profilePictures/${currentUser.uid}/${file.name}`);
-            
-            // 2. Upload the file
             await uploadBytes(fileRef, file);
-            
-            // 3. Get the downloadable URL
             const url = await getDownloadURL(fileRef);
             
-            // 4. Update the user's document in Firestore with the new URL
             await updateDoc(doc(db, 'users', currentUser.uid), {
                 photoURL: url
             });
@@ -202,17 +196,18 @@ export default function ProfileLayout() {
                             <strong>{followCounts.following}</strong>
                             <span>Following</span>
                         </button>
-                        <Link to={WEB_ROUTES.BOOKS} className={styles.stat}>
-                            <strong>{shelfCount ?? '—'}</strong>
-                            <span>Shelf</span>
-                        </Link>
+                        
+                        {/* 👇 Uses the length from the shared hook 👇 */}
+                        <button type="button" className={styles.stat} onClick={() => navigate(WEB_ROUTES.PROFILE_MY_BOOKS)}>
+                            <strong>{myBooks?.length ?? 0}</strong>
+                            <span>Publications</span>
+                        </button>
                     </div>
 
                     <div className={styles.quickActions}>
                         <Link to={WEB_ROUTES.BOOKS} className={styles.quickBtn}>Shelf</Link>
                         <Link to={WEB_ROUTES.PROFILE_MY_BOOKS} className={styles.quickBtn}>My Books</Link>
                         
-                        {/* Switch Mode Button (Admin Only) */}
                         {role === 'admin' && (
                             <button 
                                 type="button" 
