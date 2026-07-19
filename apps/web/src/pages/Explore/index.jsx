@@ -83,6 +83,7 @@ export default function Explore() {
         items: publications,
         isLoadingInitial: loadingPubs,
         isLoadingMore,
+        hasMore,
         loadMore,
     } = useExploreFeed({
         excludeUid: uid,
@@ -461,7 +462,7 @@ export default function Explore() {
                                     />
                                 ))}
                             </div>
-                            {!isSearchingBooks && (
+                            {!isSearchingBooks && hasMore && (
                                 <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
                                     <Button variant="ghost" onClick={loadMore} disabled={isLoadingMore}>
                                         {isLoadingMore ? 'Loading…' : 'Load more'}
