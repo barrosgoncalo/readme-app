@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Animated, Image, useColorScheme } from 'react-native';
+import { View, Animated, useColorScheme } from 'react-native';
+import { Image } from 'expo-image';
 import * as ExpoSplash from 'expo-splash-screen';
 import { buildStyles } from '../../styles/splashStyles';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
