@@ -19,6 +19,7 @@ import {
     reauthenticateWithCredential, 
     GoogleAuthProvider 
 } from 'firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildPasswordStyles } from '../../styles/passwordStyles';
 import {
@@ -83,14 +84,27 @@ export default function SetPasswordScreen({ navigation }) {
         } catch (error) {
             console.log("Handled password setup error:", error.message);
             
+            // If Firebase demands a recent login, handle it without logging the user out
             if (error.code === 'auth/requires-recent-login') {
                 try {
-                    const idToken = "YOUR_FRESH_GOOGLE_ID_TOKEN"; 
+                    // 1. Force a fresh Google Sign-In to get a real token!
+                    await GoogleSignin.hasPlayServices();
+                    const userInfo = await GoogleSignin.signIn();
 
+                    // The token lives inside the returned userInfo object
+                    const idToken = userInfo.idToken;
+
+                    if (!idToken) {
+                        throw new Error("No ID token found from Google Sign-In");
+                    }
+
+                    // 2. Build the Firebase credential using the REAL token
                     const credential = GoogleAuthProvider.credential(idToken);
 
+                    // 3. Re-authenticate the user behind the scenes
                     await reauthenticateWithCredential(user, credential);
 
+                    // 4. Retry the password update now that the session is fresh
                     await updatePassword(user, newPassword);
                     showSuccessAlert();
                 } catch (reauthError) {
