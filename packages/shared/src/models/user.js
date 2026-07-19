@@ -9,7 +9,7 @@ export const createUserModel = (uid, profileData, provider) => {
         phoneNumber: profileData.phoneNumber || null,
         dob: profileData.dob,
         profileVisibility: profileData.isPublic ? 'public' : 'private',
-        publicContactDetails: false,
+        shareContactDetails: false,
         institutionalAddress: {
             addressLine1: profileData.addressLine1,
             addressLine2: profileData.addressLine2 || null,

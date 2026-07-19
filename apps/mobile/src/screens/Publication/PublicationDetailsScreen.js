@@ -49,15 +49,12 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const hideSellerCard = route?.params?.hideSellerCard || false;
 
     // reportModal and handleReportPublication are already pulled from the hook here
-    const { seller, isFavorited, handleToggleFavorite, handleReportPublication, reportModal, canReport } = usePublicationDetails(book, passedSeller);
+    const { seller, isFavorited, handleToggleFavorite, handleReportPublication, reportModal, canReport, canContactDirectly, sellerPhoneNumber } = usePublicationDetails(book, passedSeller);
 
     const sellerRating = Number(seller?.rating) || 0;
     const sellerReviewCount = Number(seller?.reviewCount ?? seller?.reviews) || 0;
     const sellerName = UsersService.getDisplayName(seller);
     const sellerAvatar = UsersService.getAvatarUrl(seller);
-
-    const sellerPhoneNumber = seller?.phoneNumber;
-    const canContactDirectly = !!seller?.shareContactDetails && !!sellerPhoneNumber;
 
     const { startOffer } = useOffer();
 
@@ -133,28 +130,41 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const renderSellerCard = () => {
         if (hideSellerCard) return null;
         return (
-            <TouchableOpacity
-                style={styles.sellerCard}
-                onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: book?.ownerId })}
-            >
-                <View style={styles.sellerInfoLeft}>
-                    <Image
-                        source={sellerAvatar ? { uri: sellerAvatar } : null}
-                        style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]}
-                        contentFit="cover"
-                    />
-                    <View>
-                        <Text style={styles.sellerName}>{sellerName}</Text>
-                        <View style={styles.ratingContainer}>
-                            <GranularRating rating={sellerRating} theme={theme} />
-                            <Text style={styles.reviewsCount}>
-                                {sellerReviewCount > 0 ? `(${sellerReviewCount})` : 'No reviews yet'}
-                            </Text>
+            <View>
+                <TouchableOpacity
+                    style={styles.sellerCard}
+                    onPress={() => navigation.navigate(ROUTES.PUBLIC_PROFILE, { ownerId: book?.ownerId })}
+                >
+                    <View style={styles.sellerInfoLeft}>
+                        <Image
+                            source={sellerAvatar ? { uri: sellerAvatar } : null}
+                            style={[styles.sellerAvatar, { backgroundColor: '#EACCA5' }]}
+                            contentFit="cover"
+                        />
+                        <View>
+                            <Text style={styles.sellerName}>{sellerName}</Text>
+                            <View style={styles.ratingContainer}>
+                                <GranularRating rating={sellerRating} theme={theme} />
+                                <Text style={styles.reviewsCount}>
+                                    {sellerReviewCount > 0 ? `(${sellerReviewCount})` : 'No reviews yet'}
+                                </Text>
+                            </View>
                         </View>
                     </View>
-                </View>
-                <Iconify icon="lucide:chevron-right" size={20} color="#333333" />
-            </TouchableOpacity>
+                    <Iconify icon="lucide:chevron-right" size={20} color="#333333" />
+                </TouchableOpacity>
+
+                {canContactDirectly && (
+                    <TouchableOpacity
+                        style={styles.contactButton}
+                        onPress={handleCallOrSms}
+                        activeOpacity={0.85}
+                    >
+                        <Iconify icon="lucide:phone-call" size={18} color={theme.primary} />
+                        <Text style={styles.contactButtonText}>Ligar / SMS</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
         );
     };
 
@@ -163,12 +173,6 @@ export default function PublicationDetailsScreen({ route, navigation }) {
         return (
             <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
                 <View style={styles.buttonRow}>
-                    {canContactDirectly && (
-                        <TouchableOpacity style={styles.chatButton} onPress={handleCallOrSms} activeOpacity={0.85}>
-                            <Iconify icon="lucide:phone-call" size={20} color={theme.primary} />
-                            <Text style={styles.chatButtonText}>Ligar / SMS</Text>
-                        </TouchableOpacity>
-                    )}
                     <TouchableOpacity
                         style={[styles.offerButton, canContactDirectly && { width: undefined, flex: 1 }]}
                         onPress={handleMakeOffer}
