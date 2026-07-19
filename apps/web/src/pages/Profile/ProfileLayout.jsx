@@ -11,7 +11,7 @@ import {
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useUserRole } from '@readme/shared/src/hooks/use-user-role';
-import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings'; // <-- Imported shared hook
+import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings';
 
 // Local Project Imports
 import { db, auth, storage } from '@readme/shared/src/services/firebase';
@@ -39,7 +39,6 @@ export default function ProfileLayout() {
     const location = useLocation();
     const fileInputRef = useRef(null);
 
-    // 👇 Use the same shared hook as mobile for publications count 👇
     const { myBooks } = useMyPostings(currentUser?.uid);
 
     const [userData, setUserData] = useState(null);

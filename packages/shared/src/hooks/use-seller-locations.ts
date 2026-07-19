@@ -38,8 +38,6 @@ export function useSellerLocations(sellerUid) {
                 const country = addressData.country || 'Portugal';
                 const cityCountry = `${city}, ${country}`.trim();
 
-                const geocodePromises = [];
-
                 // Helper to geocode strings
                 const getGeocodedPin = async (fullAddressString, pinId, pinTitle) => {
                     try {
@@ -60,28 +58,41 @@ export function useSellerLocations(sellerUid) {
                     return null;
                 };
 
-                // Format Address 1
-                let address1 = (addressData.addressLine1 || '').replace(/n(?:º)?\s*(\d+)/i, 'nº $1');
-                if (address1 && !address1.toLowerCase().includes(city.toLowerCase())) {
-                    address1 = `${address1}, ${cityCountry}`;
-                }
-                if (addressData.addressLine1) {
-                    geocodePromises.push(getGeocodedPin(address1, `primary_loc_${sellerUid}`, 'Primary Location'));
-                }
-
-                // Format Address 2
+                // addressLine2 is a complementary detail of addressLine1 (apartment, floor, building, etc.),
+                // never a separate address — so it's folded into the same string, not geocoded on its own.
+                const street = (addressData.addressLine1 || '').replace(/n(?:º)?\s*(\d+)/i, 'nº $1');
+                let fullAddress = street;
                 if (addressData.addressLine2) {
-                    let address2 = addressData.addressLine2;
-                    if (!address2.toLowerCase().includes('portugal')) {
-                        address2 = /\d{4}-\d{3}/.test(address2) ? `${address2}, Portugal` : `${address2}, ${cityCountry}`;
-                    }
-                    geocodePromises.push(getGeocodedPin(address2, `secondary_loc_${sellerUid}`, 'Alternative Location'));
+                    fullAddress = `${fullAddress}, ${addressData.addressLine2}`;
+                }
+                if (fullAddress && !fullAddress.toLowerCase().includes(city.toLowerCase())) {
+                    fullAddress = `${fullAddress}, ${cityCountry}`;
                 }
 
-                const resolvedPins = await Promise.all(geocodePromises);
-                let mappedLocations = resolvedPins.filter(Boolean);
+                // Try the full address first, then progressively looser versions —
+                // a failed geocode of the most specific string shouldn't mean giving up
+                // entirely and showing an unrelated hardcoded city.
+                const addressAttempts = [fullAddress];
+                if (addressData.addressLine2 && street) {
+                    addressAttempts.push(`${street}, ${cityCountry}`); // drop the complementary detail
+                }
+                if (cityCountry) {
+                    addressAttempts.push(cityCountry);
+                }
+
+                let mappedLocations = [];
+                if (addressData.addressLine1) {
+                    for (const attempt of addressAttempts) {
+                        const pin = await getGeocodedPin(attempt, `loc_${sellerUid}`, 'Location');
+                        if (pin) {
+                            mappedLocations.push(pin);
+                            break;
+                        }
+                    }
+                }
 
                 if (mappedLocations.length === 0) {
+                    console.warn(`All geocode attempts failed for seller ${sellerUid}:`, addressAttempts);
                     mappedLocations = [{ id: 'fallback', title: 'Lisbon Center', address: 'Lisbon, Portugal', latitude: 38.7223, longitude: -9.1393 }];
                 }
 
