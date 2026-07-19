@@ -65,7 +65,7 @@ export default function CreatePublicationScreen({ navigation }) {
     // ==========================================
 
     const handleUpload = async () => {
-        if (!bookName || !authorName || images.length === 0) {
+        if (!bookName.trim() || !authorName.trim() || images.length === 0) {
             Alert.alert("Missing Information", "Please add a title, an author, and at least one photo.");
             return;
         }

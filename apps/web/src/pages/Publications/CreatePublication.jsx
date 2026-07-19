@@ -27,7 +27,7 @@ export default function CreatePublication() {
 
     if (!currentUser) return <Spinner center label="Loading" />;
 
-    const canSubmit = title.trim() && selectedFiles.length > 0 && !loading;
+    const canSubmit = title.trim() && author.trim() && selectedFiles.length > 0 && !loading;
 
     function handleFileChange(e) {
         const files = Array.from(e.target.files || []);
