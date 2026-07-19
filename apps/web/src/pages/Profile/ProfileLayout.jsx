@@ -4,7 +4,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
 import {
-    BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera,
+    BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera, User,
 } from 'lucide-react';
 
 // Shared Services & Contexts
@@ -21,11 +21,6 @@ import Spinner from '../../components/Spinner.jsx';
 import Toggle from '../../components/Toggle.jsx';
 import Card from '../../components/Card.jsx';
 import styles from './Profile.module.css';
-
-function initials(userData) {
-    const name = userData?.fullName || userData?.username || '';
-    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-}
 
 const SUB_ROUTES = new Set([
     WEB_ROUTES.PROFILE_FOLLOWING,
@@ -178,7 +173,9 @@ export default function ProfileLayout() {
                         {photoURL ? (
                             <img src={`${photoURL}?t=${Date.now()}`} alt="Profile" className={styles.avatarImg} />
                         ) : (
-                            <div className={styles.avatar}>{initials(userData)}</div>
+                            <div className={styles.avatar}>
+                                <User className={styles.avatarIcon} />
+                            </div>
                         )}
                         <div className={styles.avatarOverlay}>
                             {uploading ? <span className={styles.uploadingRing} /> : <Camera size={20} color="#fff" />}
