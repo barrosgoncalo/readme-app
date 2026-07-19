@@ -6,6 +6,7 @@ import {useAuth} from '@readme/shared/src/contexts/AuthContext/web';
 import {WEB_ROUTES} from '../../constants/webRoutes';
 import {DEFAULT_COUNTRY, parseStoredPhone} from '../../components/PhoneField/countryCodes.js';
 import PhoneField from '../../components/PhoneField/index.jsx';
+import CountryField from '../../components/CountryField.jsx';
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
 import Spinner from '../../components/Spinner.jsx';
@@ -141,7 +142,7 @@ export default function EditProfile() {
                         </div>
                         <div className={styles.row}>
                             <Field label="Postal code" value={form.postalCode} onChange={v => set('postalCode', v)}/>
-                            <Field label="Country" value={form.country} onChange={v => set('country', v)}/>
+                            <CountryField value={form.country} onChange={v => set('country', v)}/>
                         </div>
                     </div>
                 </section>
