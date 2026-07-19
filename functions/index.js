@@ -24,9 +24,9 @@ initializeApp({
 });
 const db = getFirestore();
 
-setGlobalOptions({ 
-    region: "europe-west1", 
-    maxInstances: 10 
+setGlobalOptions({
+    region: "europe-west1",
+    maxInstances: 10
 });
 
 // ==========================================
@@ -194,15 +194,15 @@ async function updateUserGamification(userId) {
 async function markOffersUnavailableForBook(bookId) {
     // Query 1: offers where this book is the target
     const targetQuery = db.collectionGroup('messages')
-    .where('type', '==', 'offer')
-    .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
-    .where('offerDetails.targetBookId', '==', bookId);
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+        .where('offerDetails.targetBookId', '==', bookId);
 
     // Query 2: offers where this book was one of the offered books
     const offeredQuery = db.collectionGroup('messages')
-    .where('type', '==', 'offer')
-    .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
-    .where('offerDetails.offeredBookIds', 'array-contains', bookId);
+        .where('type', '==', 'offer')
+        .where('offerDetails.status', '==', NEGOTIATION_STATUS.PENDING)
+        .where('offerDetails.offeredBookIds', 'array-contains', bookId);
 
     const [targetSnap, offeredSnap] = await Promise.all([
         targetQuery.get(),
@@ -634,7 +634,7 @@ exports.onFollowRequestDeleted = onDocumentDeleted("followRequests/{requestId}",
     try {
         // Reconstruct the exact custom ID used during creation
         const customId = `req_${requesterUid}_${targetUid}`;
-        
+
         // Point directly to the notification document in the recipient's subcollection
         const notificationRef = db
             .collection("users")
@@ -644,12 +644,12 @@ exports.onFollowRequestDeleted = onDocumentDeleted("followRequests/{requestId}",
 
         // Delete the notification
         await notificationRef.delete();
-        
+
         console.log(`Successfully deleted pending follow request notification ${customId} for user: ${targetUid}`);
     } catch (error) {
         console.error("Error deleting follow request notification:", error);
     }
-    
+
     return null;
 });
 
@@ -1143,77 +1143,148 @@ exports.setAdminStatus = onCall(async (request) => {
     }
 });
 
-exports.banUser = functions.https.onCall(async (data, context) => {
-    // Confirma se o utilizador que está a fazer o pedido está autenticado e é Admin
-    if (!context.auth || context.auth.token.role !== 'admin') {
-        throw new functions.https.HttpsError(
-            'permission-denied',
-            'Apenas administradores podem banir utilizadores.'
-        );
-    }
-
-    const targetUid = data.uid;
-    const banReason = data.reason || 'Without specified motive';
-
-    if (!targetUid)
-        throw new functions.https.HttpsError(
-            'invalid-argument',
-            'The UID of the user to ban is mandatory.'
-        );
-
-    const db = admin.firestore();
-
-    try {
-        // Obter os dados atuais do utilizador na coleção 'users'
-        const userRef = db.collection('users').doc(targetUid);
-        const userSnap = await userRef.get();
-
-        if (!userSnap.exists)
-            throw new functions.https.HttpsError(
-                'not-found',
-                'User not found in users collection.'
+/**
+ * Cloud Function to ban a user.
+ * Requires Admin privileges.
+ * Disables the Auth account, moves data to 'banned' collection, and cleans up
+ * publications, chats, followers, and favorites.
+ */
+exports.banUser = functionsV1
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        // Confirma se o utilizador que está a fazer o pedido está autenticado e é Admin
+        if (!context.auth || context.auth.token.role !== 'admin')
+            throw new functionsV1.https.HttpsError(
+                'permission-denied',
+                'Apenas administradores podem banir utilizadores.'
             );
 
-        const userData = userSnap.data();
+        const { userId, reason } = data;
+        if (!userId)
+            throw new functionsV1.https.HttpsError('invalid-argument', 'O ID do utilizador é obrigatório.');
 
-        // Preparar o documento com a metadata do banimento
-        const bannedData = {
-            ...userData,
-            bannedAt: admin.firestore.FieldValue.serverTimestamp(),
-            bannedBy: context.auth.uid, // Regista qual foi o admin que deu o ban
-            banReason: banReason
-        };
-
-        // Utilizar um Batch para garantir a integridade dos dados
         const batch = db.batch();
-        const bannedRef = db.collection('banned').doc(targetUid);
 
-        // Adiciona à coleção 'banned' com o mesmo UID
-        batch.set(bannedRef, bannedData);
-        // Remove da coleção 'users'
-        batch.delete(userRef);
+        try {
+            // Obter os dados atuais do utilizador
+            const userRef = db.collection('users').doc(userId);
+            const userDocSnap = await userRef.get();
 
-        // Executa as duas operações no Firestore em simultâneo
-        await batch.commit();
+            if (!userDocSnap.exists)
+                throw new functionsV1.https.HttpsError('not-found', 'Utilizador não encontrado na base de dados.');
 
-        // Desativar a conta na Firebase Auth (bloqueia o login real)
-        await admin.auth().updateUser(targetUid, {
-            disabled: true
-        });
+            const userData = userDocSnap.data();
 
-        // Opcional: Aqui podes também chamar a lógica para limpar as publicações/ofertas dele
-        // ou mudar o estado dos reports associados a este utilizador para ACTIONED.
+            // Desativar a conta no Firebase Authentication para impedir login
+            await admin.auth().updateUser(userId, { disabled: true });
+            console.log(`Conta de Auth desativada para o utilizador: ${userId}`);
 
-        return {
-            success: true,
-            message: `Utilizador ${targetUid} foi movido para a coleção banned e desativado.`
-        };
+            // Copiar dados para a coleção 'banned'
+            const bannedRef = db.collection('banned').doc(userId);
+            batch.set(bannedRef, {
+                ...userData,
+                bannedAt: FieldValue.serverTimestamp(),
+                banReason: reason || 'other',
+                bannedBy: context.auth.uid
+            });
 
-    } catch (error) {
-        console.error("Erro ao executar banUser:", error);
-        throw new functions.https.HttpsError(
-            'internal',
-            'Ocorreu um erro interno ao banir o utilizador.'
-        );
-    }
-});
+            // Apagar o documento original da coleção 'users'
+            batch.delete(userRef);
+
+
+            // Apagar Publicações e limpar referências nos favoritos de outros
+            const publicationsSnapshot = await db.collection('publications')
+                .where('uid', '==', userId)
+                .get();
+
+            if (!publicationsSnapshot.empty) {
+                publicationsSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                try {
+                    const deletedPubIds = publicationsSnapshot.docs.map(doc => doc.id);
+                    const affectedCount = await removeDeletedPublicationsFromFavorites(deletedPubIds);
+                    console.log(`Publicações apagadas removidas dos favoritos de ${affectedCount} utilizador(es).`);
+                } catch (favRefError) {
+                    console.warn(`Aviso: Falha ao limpar referências de publicações apagadas:`, favRefError);
+                }
+            }
+
+            // Desativar Chats e injetar mensagem de sistema ('banned')
+            const chatsSnapshot = await db.collection('chats')
+                .where('participants', 'array-contains', userId)
+                .get();
+
+            if (!chatsSnapshot.empty)
+                chatsSnapshot.forEach(doc => {
+                    batch.update(doc.ref, {
+                        status: 'disabled',
+                        disabledReason: 'banned' // Adaptado para ban
+                    });
+                    const messageRef = doc.ref.collection('messages').doc();
+                    batch.set(messageRef, {
+                        id: messageRef.id,
+                        type: 'system',
+                        action: 'banned', // Adaptado para ban
+                        createdAt: FieldValue.serverTimestamp(),
+                        senderId: 'system'
+                    });
+                });
+
+            // Limpar Seguidores, Seguidos e Pedidos Pendentes
+            try {
+                const [ followingDel, followersDel, sentReqDel, receivedReqDel ] = await Promise.all([
+                    deleteFollowsAndDecrementCounters(
+                        db.collection('follows').where('followerUid', '==', userId),
+                        (doc) => doc.data().followingUid,
+                        'followersCount'
+                    ),
+                    deleteFollowsAndDecrementCounters(
+                        db.collection('follows').where('followingUid', '==', userId),
+                        (doc) => doc.data().followerUid,
+                        'followingCount'
+                    ),
+                    deleteQueryResultsInBatches(db.collection('followRequests').where('requesterUid', '==', userId)),
+                    deleteQueryResultsInBatches(db.collection('followRequests').where('targetUid', '==', userId)),
+                ]);
+                console.log(`Follows limpos: ${followingDel} following, ${followersDel} followers.`);
+            } catch (followCleanupError) {
+                console.warn(`Aviso: Falha ao limpar relações de seguidores:`, followCleanupError);
+            }
+
+            // Remover os "likes" que este utilizador deu nas publicações de outros
+            try {
+                const favoriteBookIds = userData?.favoriteBooks || [];
+                if (favoriteBookIds.length > 0) {
+                    const CHUNK_SIZE = 500;
+                    const chunks = [];
+                    for (let i = 0; i < favoriteBookIds.length; i += CHUNK_SIZE) {
+                        chunks.push(favoriteBookIds.slice(i, i + CHUNK_SIZE));
+                    }
+                    for (const chunk of chunks) {
+                        const favBatch = db.batch();
+                        chunk.forEach((pubId) => {
+                            favBatch.update(db.collection('publications').doc(pubId), {
+                                'stats.likesCount': FieldValue.increment(-1),
+                            });
+                        });
+                        await favBatch.commit();
+                    }
+                    console.log(`Contador de likes decrementado em ${favoriteBookIds.length} publicação(ões).`);
+                }
+            } catch (favoritesCleanupError) {
+                console.warn(`Aviso: Falha ao decrementar contadores de likes:`, favoritesCleanupError);
+            }
+
+
+            // Executar todas as operações de escrita do Batch Principal (users, banned, publicações, chats)
+            await batch.commit();
+
+            console.log(`Utilizador ${userId} baned and clear successfully.`);
+            return { success: true, message: `User baned successfully.` };
+
+        } catch (error) {
+            console.error(`Critical error form user ban ${userId}:`, error);
+            throw new functionsV1.https.HttpsError('internal', 'An internal error occurred while processing ban.');
+        }
+    });

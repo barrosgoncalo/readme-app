@@ -18,7 +18,8 @@ export const banUserAccount = async (targetUid, reason) => {
     try {
         const functions = getFunctions(undefined, 'europe-west1');
         const banUserFn = httpsCallable(functions, 'banUser');
-        const result = await banUserFn({ uid: targetUid, reason });
+        const result = await banUserFn({ userId: targetUid, reason });
+
         return result.data;
     } catch (error) {
         console.error("[Admin Service] Failed to ban user:", error);
