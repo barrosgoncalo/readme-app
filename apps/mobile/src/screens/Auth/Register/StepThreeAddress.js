@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image } from 'expo-image';
-import { View, TextInput, Text, TouchableOpacity } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, Modal, Platform, StatusBar } from 'react-native';
+import { Iconify } from 'react-native-iconify';
+import CountryPicker from 'react-native-country-picker-modal';
 
 export default function StepThreeAddress({
-    addressLine1, setAddressLine1,
-    addressLine2, setAddressLine2,
-    city, setCity,
-    district, setDistrict,
-    zipCode, setZipCode,
-    country, setCountry,
-    isRegistering, handleRegister, setStep,
-    styles, theme
-}) {
+                                             addressLine1, setAddressLine1,
+                                             addressLine2, setAddressLine2,
+                                             city, setCity,
+                                             district, setDistrict,
+                                             zipCode, setZipCode,
+                                             country, setCountry,
+                                             isRegistering, handleRegister, setStep,
+                                             styles, theme
+                                         }) {
+    const [countryCode, setCountryCode] = useState('PT');
+    const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+    const handleCountrySelect = (c) => {
+        setCountryCode(c.cca2);
+        setCountry(c.name);
+        setShowCountryPicker(false);
+    };
+
     return (
         <View>
             <Text style={styles.sectionTitle}>Where to?</Text>
@@ -52,13 +63,43 @@ export default function StepThreeAddress({
                 style={styles.input}
                 placeholderTextColor="#aaa"
             />
-            <TextInput
-                placeholder="Country"
-                value={country}
-                onChangeText={setCountry}
-                style={styles.input}
-                placeholderTextColor="#aaa"
-            />
+
+            <TouchableOpacity
+                style={[
+                    styles.input,
+                    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }
+                ]}
+                onPress={() => setShowCountryPicker(true)}
+                activeOpacity={0.7}
+            >
+                <Text style={{ color: country ? undefined : '#aaa', flex: 1 }}>
+                    {country || 'Country'}
+                </Text>
+                <Iconify icon="lucide:chevron-down" size={18} color="#aaa" />
+            </TouchableOpacity>
+            <Modal
+                visible={showCountryPicker}
+                animationType="slide"
+                onRequestClose={() => setShowCountryPicker(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+                    backgroundColor: theme?.background || '#FFFFFF'
+                }}>
+                    <CountryPicker
+                        countryCode={countryCode}
+                        withFlag
+                        withFilter
+                        withEmoji
+                        withCallingCode={false}
+                        onSelect={handleCountrySelect}
+                        onClose={() => setShowCountryPicker(false)}
+                        renderFlagButton={() => null}
+                        withModal={false}
+                    />
+                </View>
+            </Modal>
 
             <Image
                 source={require('../../../../assets/images/WormLayed.png')}

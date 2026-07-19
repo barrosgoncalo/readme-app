@@ -109,7 +109,7 @@ export default function RegisterScreen({ navigation }) {
 
     const handleStep1Next = () => {
         if (!username || !email.trim() || !password || !fullName) {
-            Alert.alert('Error', 'Please fill in all required fields.');
+            Alert.alert('Missing Fields', 'Please fill in all required fields.');
             return;
         }
 
@@ -134,7 +134,7 @@ export default function RegisterScreen({ navigation }) {
 
     const handleStep2Next = () => {
         if (!phoneNumber || !dob) {
-            Alert.alert('Error', 'Please fill in your phone number and date of birth.');
+            Alert.alert('Missing Fields', 'Please fill in your phone number and date of birth.');
             return;
         }
         setStep(3);
