@@ -47,3 +47,18 @@ export function hasMixedCase(password) {
 export function hasValidLength(password) {
     return password.length >= 6;
 }
+
+export function calculateAge(birthDate) {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+
+    const priorToBirthMonth = monthDifference < 0;
+    const hadBirthday = ( monthDifference === 0 && today.getDate() < birthDate.getDate() );
+
+    if( priorToBirthMonth || !hadBirthday ) {
+        age--;
+    }
+
+    return age;
+}

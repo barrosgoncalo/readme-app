@@ -28,6 +28,7 @@ import {
     hasMixedCase,
     hasNumbers,
     hasValidLength,
+    calculateAge
 } from '@readme/shared/src/utils/registerUtils';
 import StepDots from './Components/StepDots';
 import StepOneCredentials from './StepOneCredentials';
@@ -135,10 +136,16 @@ export default function RegisterScreen({ navigation }) {
     };
 
     const handleStep2Next = () => {
-        if (!phoneNumber || !dob) {
-            Alert.alert('Missing Fields', 'Please fill in your phone number and date of birth.');
+        if ( !dob ) {
+            Alert.alert('Missing Fields', 'Please fill in your date of birth.');
             return;
         }
+
+        if (calculateAge(date) < 16) {
+            Alert.alert('Age Requirement', 'You must be at least 16 years old to create an account.');
+            return;
+        }
+
         setStep(3);
     };
 
