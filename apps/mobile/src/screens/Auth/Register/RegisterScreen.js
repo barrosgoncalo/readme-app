@@ -18,6 +18,8 @@ import {
 
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
+import { DB } from '@readme/shared/src/services/DB';
+import { auth } from '@readme/shared/src/services/firebase';
 
 // Separated Components
 import { buildAuthStyles } from '../../../styles/authStyles';
@@ -140,15 +142,36 @@ export default function RegisterScreen({ navigation }) {
         setStep(3);
     };
 
+    // 2. UPDATED GOOGLE SIGN IN LOGIC
     const handleGoogleSignIn = async () => {
         try {
             const result = await doGetGoogleTokenAndProfile();
+
+            await doSignInWithGoogleCredential(result.idToken, result.profile);
+
+            const currentUser = auth.currentUser;
+
+            if (currentUser) {
+                const existingUser = await DB.get('users', currentUser.uid);
+
+                if (existingUser) {
+                    console.log("Account already exists! Skipping registration.");
+                    Alert.alert(
+                        'Welcome Back', 
+                        'An account already exists with this Google email. Logging you in!', 
+                        [{ text: 'OK', onPress: () => navigation.navigate(ROUTES.MAIN) }]
+                    );
+                    return;
+                }
+            }
+
             setGoogleIdToken(result.idToken);
             setEmail(result.profile.email);
             setFullName(result.profile.fullName);
             setUsername(result.profile.username);
             setIsGoogleUser(true);
             setStep(2);
+
         } catch (error) {
             const msg = error.message?.toLowerCase() || '';
             if (msg.includes('cancel') || msg.includes('dismiss')) return;
