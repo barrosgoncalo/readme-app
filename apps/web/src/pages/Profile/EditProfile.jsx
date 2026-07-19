@@ -111,7 +111,6 @@ export default function EditProfile() {
                         <Field label="Date of birth" type="date" value={form.dob} onChange={v => set('dob', v)}
                                max={new Date().toISOString().split('T')[0]}/>
                         <Field label="Username" value={form.username} onChange={v => set('username', v)} required/>
-                        {/* Input simples substituindo o PhoneField */}
                         <Field 
                             label="Phone number" 
                             type="tel" 
