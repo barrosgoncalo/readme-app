@@ -47,7 +47,11 @@ export default function StepOneCredentials({
             {/* Update to use passwordStyles.passwordContainer */}
             <View style={[
                 passwordStyles.passwordContainer, 
-                { borderBottomColor: passwordInfo.color, borderBottomWidth: 2.5 },
+                { 
+                    borderBottomColor: passwordInfo.color, 
+                    borderBottomWidth: 2.5,
+                    marginVertical: 8
+                },
             ]}>
                 <TextInput
                     placeholder="Password"

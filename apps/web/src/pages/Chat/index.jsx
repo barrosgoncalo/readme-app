@@ -19,12 +19,10 @@ export default function Chat() {
     const [loading, setLoading] = useState(true);
     const [messageLoading, setMessageLoading] = useState(false);
 
-    // 1. Fetching Inbox Chats
     useEffect(() => {
         if (!uid) return;
 
         setLoading(true);
-        // Replaced streamUserChats with subscribeToActiveChats
         const unsubChats = ChatService.subscribeToActiveChats(
             uid,
             (fetchedChats) => {
@@ -40,17 +38,13 @@ export default function Chat() {
         return () => unsubChats();
     }, [uid]);
 
-    // 2. Fetching Active Chat Messages
     useEffect(() => {
-        // Ensure we have both the chat ID and the user ID before fetching
         if (!activeChatId || !uid) {
             setMessages([]);
             return;
         }
 
         setMessageLoading(true);
-        // Replaced streamMessages with subscribeToMessagesOrdered
-        // Note: subscribeToMessagesOrdered requires the currentUserId as the second argument
         const unsubMessages = ChatService.subscribeToMessagesOrdered(
             activeChatId,
             uid,
