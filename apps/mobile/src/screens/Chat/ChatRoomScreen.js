@@ -100,6 +100,7 @@ export default function ChatRoomScreen({ route, navigation }) {
                 otherUserName={isChatDisabled ? 'Deleted User' : otherUserName}
                 isChatDisabled={isChatDisabled}
                 handleOpenOptions={handleOpenOptions}
+
             />
 
             {loading ? (
