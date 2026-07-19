@@ -27,27 +27,30 @@ export const doGetBlockedUsers = async (blockerUid) => {
         { field: "blockerUid", operator: "==", value: blockerUid }
     ]);
 
-    return await Promise.all(
+    const results = await Promise.all(
         blocks.map(async (blockData) => {
             const blockedUid = blockData.blockedUid;
-            let username = blockData.blockedUsername ?? null;
-            let fullName = blockData.blockedFullName ?? null;
-            let avatarUrl = blockData.blockedAvatarUrl ?? null;
 
+            let userData = null;
             try {
-                const userData = await DB.get("users", blockedUid);
-                if (userData) {
-                    username = userData.username ?? username;
-                    fullName = userData.fullName ?? fullName;
-                    avatarUrl = userData.photoURL ?? avatarUrl;
-                }
+                userData = await DB.get("users", blockedUid);
             } catch (error) {
                 console.error(`Failed to fetch profile for blocked user ${blockedUid}:`, error);
             }
 
-            return { id: blockedUid, username, fullName, avatarUrl };
+            const exists = userData && !(Array.isArray(userData) && userData.length === 0);
+            if (!exists) return null;
+
+            return {
+                id: blockedUid,
+                username: userData.username ?? blockData.blockedUsername ?? null,
+                fullName: userData.fullName ?? blockData.blockedFullName ?? null,
+                avatarUrl: userData.photoURL ?? blockData.blockedAvatarUrl ?? null,
+            };
         })
     );
+
+    return results.filter(Boolean);
 };
 
 /**
@@ -56,13 +59,27 @@ export const doGetBlockedUsers = async (blockerUid) => {
  */
 export async function doGetBlockedUids(currentUserId) {
     if (!currentUserId) return [];
-    
+
     try {
         const blocks = await DB.get('blocks', [
             { field: 'blockerUid', operator: '==', value: currentUserId }
         ]);
 
-        return blocks.map(block => block.blockedUid).filter(Boolean);
+        const uids = blocks.map(block => block.blockedUid).filter(Boolean);
+
+        const existing = await Promise.all(
+            uids.map(async (uid) => {
+                try {
+                    const userData = await DB.get('users', uid);
+                    const exists = userData && !(Array.isArray(userData) && userData.length === 0);
+                    return exists ? uid : null;
+                } catch {
+                    return null;
+                }
+            })
+        );
+
+        return existing.filter(Boolean);
     } catch (error) {
         console.error("Error fetching blocked UIDs:", error);
         return [];

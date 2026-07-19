@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
+import { DB } from '@readme/shared/src/services/DB';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Spinner from '../../components/Spinner.jsx';
@@ -16,6 +17,7 @@ export default function FollowRequests() {
     const [, showToast] = useToast(3000);
 
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
     const [requests, setRequests] = useState([]);
     const [busy, setBusy] = useState(null);
 
@@ -29,45 +31,68 @@ export default function FollowRequests() {
 
     async function loadRequests(cancelledFlag) {
         setLoading(true);
+        setLoadError(null);
         try {
             const requestDocs = await UsersService.fetchPendingFollowRequests(currentUser.uid);
             const profiles = await Promise.all(
                 requestDocs.map(async (doc) => {
                     const profile = await UsersService.fetchSummaryUserProfile(doc.requesterUid).catch(() => null);
-                    return profile ? { ...profile, id: doc.requesterUid } : null;
+                    // Keep the notification doc's own id separate from the requester's uid,
+                    // so we can delete the correct notification doc on accept/decline.
+                    return profile ? { ...profile, id: doc.requesterUid, notificationId: doc.id } : null;
                 })
             );
             if (cancelledFlag) return;
             setRequests(profiles.filter(Boolean));
         } catch (err) {
             console.error('Error loading follow requests:', err);
+            if (!cancelledFlag) {
+                setLoadError('Could not load follow requests.');
+                showToast('Could not load follow requests. Please try again.');
+            }
         } finally {
             if (!cancelledFlag) setLoading(false);
         }
     }
 
-    async function handleAccept(requesterUid) {
+    // Mirrors the mobile app's deleteNotification behavior, so a request resolved on
+    // web doesn't leave a stale FOLLOW_REQUEST notification sitting in the DB for mobile.
+    async function deleteFollowRequestNotification(notificationId) {
+        if (!notificationId) return;
+        try {
+            await DB.remove(`users/${currentUser.uid}/notifications`, notificationId);
+        } catch (err) {
+            // Non-fatal: the request was still accepted/declined successfully,
+            // just log so we can catch orphaned notifications.
+            console.error('Failed to delete follow request notification:', err);
+        }
+    }
+
+    async function handleAccept(requesterUid, notificationId) {
         setBusy(requesterUid);
         try {
             await UsersService.acceptFollowRequest(currentUser.uid, requesterUid);
+            await deleteFollowRequestNotification(notificationId);
             setRequests(prev => prev.filter(r => r.id !== requesterUid));
             showToast('Follow request accepted.');
         } catch (err) {
             console.error('Error accepting request:', err);
-            showToast('Action failed. Please try again.');
+            showToast(err?.message || 'Could not accept request. Please try again.');
         } finally {
             setBusy(null);
         }
     }
 
-    async function handleDecline(requesterUid) {
+    async function handleDecline(requesterUid, notificationId) {
         setBusy(requesterUid);
         try {
             await UsersService.declineFollowRequest(currentUser.uid, requesterUid);
+            await deleteFollowRequestNotification(notificationId);
             setRequests(prev => prev.filter(r => r.id !== requesterUid));
+            showToast('Follow request declined.');
         } catch (err) {
             console.error('Error declining request:', err);
-            showToast('Action failed. Please try again.');
+            showToast(err?.message || 'Could not decline request. Please try again.');
         } finally {
             setBusy(null);
         }
@@ -90,7 +115,18 @@ export default function FollowRequests() {
                 </span>
             </div>
 
-            {requests.length === 0 ? (
+            {loadError ? (
+                <div className={listStyles.empty}>
+                    {loadError}{' '}
+                    <button
+                        type="button"
+                        className={styles.acceptBtn}
+                        onClick={() => loadRequests(false)}
+                    >
+                        Retry
+                    </button>
+                </div>
+            ) : requests.length === 0 ? (
                 <div className={listStyles.empty}>No pending follow requests.</div>
             ) : (
                 <div className={listStyles.list}>
@@ -107,7 +143,7 @@ export default function FollowRequests() {
                                     <button
                                         type="button"
                                         className={styles.acceptBtn}
-                                        onClick={() => handleAccept(user.id)}
+                                        onClick={() => handleAccept(user.id, user.notificationId)}
                                         disabled={busy === user.id}
                                     >
                                         {busy === user.id ? '…' : 'Accept'}
@@ -115,7 +151,7 @@ export default function FollowRequests() {
                                     <button
                                         type="button"
                                         className={listStyles.actionBtn}
-                                        onClick={() => handleDecline(user.id)}
+                                        onClick={() => handleDecline(user.id, user.notificationId)}
                                         disabled={busy === user.id}
                                     >
                                         Decline
