@@ -13,8 +13,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Iconify } from 'react-native-iconify';
 import { EyeIcon, EyeClosedIcon } from 'phosphor-react-native';
-import { getAuth, updatePassword } from 'firebase/auth';
-
+import { 
+    getAuth, 
+    updatePassword, 
+    reauthenticateWithCredential, 
+    GoogleAuthProvider 
+} from 'firebase/auth';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildPasswordStyles } from '../../styles/passwordStyles';
 import {
