@@ -138,9 +138,6 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                             {displayName.charAt(0).toUpperCase()}
                         </span>
                     )}
-                    {chat.imageUrl && (
-                        <img src={chat.imageUrl} alt="" className={styles.bookImage}/>
-                    )}
                     <div>
                         <h2
                             className={styles.name}
@@ -148,7 +145,6 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                         >
                             {displayName}
                         </h2>
-                        <p className={styles.subtitle}>{chat.lastMessage}</p>
                     </div>
                 </div>
                 <button
