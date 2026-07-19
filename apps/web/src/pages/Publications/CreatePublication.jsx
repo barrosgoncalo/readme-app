@@ -24,6 +24,7 @@ export default function CreatePublication() {
     const [description, setDescription] = useState('');
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false); // New state for drag-and-drop
 
     if (!currentUser) return <Spinner center label="Loading" />;
 
@@ -33,6 +34,34 @@ export default function CreatePublication() {
         const files = Array.from(e.target.files || []);
         setSelectedFiles(prev => [...prev, ...files]);
     }
+
+    // --- Drag and Drop Handlers ---
+    function handleDragOver(e) {
+        e.preventDefault();
+        if (!loading) setIsDragging(true);
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        setIsDragging(false);
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        setIsDragging(false);
+        if (loading) return;
+
+        const files = Array.from(e.dataTransfer.files || []);
+        // Filter out non-image files to respect the accept="image/*" rule
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        
+        if (imageFiles.length !== files.length) {
+            showToast('Some files were ignored because they are not images.');
+        }
+
+        setSelectedFiles(prev => [...prev, ...imageFiles]);
+    }
+    // ------------------------------
 
     function removeFile(index) {
         setSelectedFiles(prev => prev.filter((_, i) => i !== index));
@@ -44,10 +73,6 @@ export default function CreatePublication() {
 
         setLoading(true);
         try {
-            // PublicationService.createPublication reads seller name/avatar off
-            // the passed user object via UsersService.getDisplayName/getAvatarUrl,
-            // which look for .username/.fullName/.photoURL — fields that live on
-            // the Firestore profile, not the raw Firebase Auth user, so merge them in.
             const userProfile = await UsersService.fetchUserProfile(currentUser.uid).catch(() => null);
             const sellerUser = { ...currentUser, ...userProfile };
 
@@ -75,7 +100,6 @@ export default function CreatePublication() {
 
     return (
         <div className={styles.page}>
-
             <PageHeader onBack={() => navigate(-1)} title="New Publication" />
 
             <div className={styles.layout}>
@@ -150,7 +174,13 @@ export default function CreatePublication() {
 
                 <div className={styles.section}>
                     <label className={styles.label}>Images * ({selectedFiles.length})</label>
-                    <div className={styles.uploadBox}>
+                    {/* Added drag events and conditional styles here */}
+                    <div 
+                        className={`${styles.uploadBox} ${isDragging ? styles.dragging : ''}`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
                         <input
                             type="file"
                             accept="image/*"
@@ -162,7 +192,7 @@ export default function CreatePublication() {
                         />
                         <label htmlFor="file-input" className={styles.uploadLabel}>
                             <Upload size={24} />
-                            <span>Click to select images</span>
+                            <span>Click or drag images here</span>
                         </label>
                     </div>
 

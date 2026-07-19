@@ -157,6 +157,11 @@
     margin-top: var(--space-3);
 }
 
+.dragging {
+    border-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
 @media (max-width: 720px) {
     .page {
         padding: var(--space-4) var(--space-2);
