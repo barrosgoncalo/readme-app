@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus, UserCheck, Clock, Ban, Flag, Lock } from 'lucide-react';
+import { ArrowLeft, UserPlus, UserCheck, Clock, Flag, Lock } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { MyBooksService } from '@readme/shared/src/services/books';
@@ -8,11 +8,9 @@ import { PublicationService } from '@readme/shared/src/services/publications';
 import { ReportsService } from '@readme/shared/src/services/reports';
 import { REPORT_TARGET_TYPE } from '@readme/shared/src/constants/status';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
-import { doBlockUser, doIsBlocked } from '@readme/shared/src/services/block';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
-import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import { SkeletonGrid } from '../../components/Skeleton.jsx';
 import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
@@ -79,10 +77,7 @@ export default function PublicProfile() {
     const [isRequestPending, setIsRequestPending] = useState(false);
     const [followers, setFollowers] = useState(0);
     const [following, setFollowing] = useState(0);
-    const [isBlocked, setIsBlocked] = useState(false);
     const [followBusy, setFollowBusy] = useState(false);
-    const [blockBusy, setBlockBusy] = useState(false);
-    const [showBlockConfirm, setShowBlockConfirm] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [, showToast] = useToast(3000);
     const [loading, setLoading] = useState(true);
@@ -105,12 +100,6 @@ export default function PublicProfile() {
                 setIsRequestPending(u.isRequestPending);
                 setFollowers(u.followers);
                 setFollowing(u.following);
-
-                // Load block status and books independently so a permissions error
-                // on one does not prevent the other from rendering.
-                const blocked = await (currentUser ? doIsBlocked(currentUser.uid, uid).catch(() => false) : false);
-                if (cancelled) return;
-                setIsBlocked(blocked);
 
                 const rawMyBooks = await MyBooksService.getBooks(uid).catch(() => []);
                 if (cancelled) return;
@@ -196,28 +185,6 @@ export default function PublicProfile() {
         }
     }
 
-    async function handleBlock() {
-        if (!currentUser || blockBusy) return;
-        setBlockBusy(true);
-        try {
-            // If currently following, unfollow first.
-            if (isFollowing) {
-                await UsersService.toggleFollowUser(uid, false).catch(() => { });
-                setIsFollowing(false);
-                setFollowers(followers - 1);
-            }
-            await doBlockUser(currentUser.uid, uid);
-            setIsBlocked(true);
-            showToast('User blocked.');
-        } catch (e) {
-            showToast('Block failed. Please try again.');
-            console.error(e);
-        } finally {
-            setBlockBusy(false);
-            setShowBlockConfirm(false);
-        }
-    }
-
     if (loading) return <div className={styles.page}><SkeletonGrid count={3} /></div>;
 
     const isLockedPrivateView = user?.profileVisibility === 'private' && !isFollowing;
@@ -238,17 +205,6 @@ export default function PublicProfile() {
 
     return (
         <div className={styles.page}>
-            <ConfirmDialog
-                open={showBlockConfirm}
-                onClose={() => setShowBlockConfirm(false)}
-                onConfirm={handleBlock}
-                title="Block this user?"
-                message={`${user.fullName || user.username || 'This user'} won't be able to see your profile or contact you.`}
-                confirmLabel="Block"
-                danger
-                busy={blockBusy}
-            />
-
             <ReportModal
                 open={showReportModal}
                 onClose={() => setShowReportModal(false)}
@@ -281,37 +237,23 @@ export default function PublicProfile() {
                 </div>
             </div>
 
-            {!isBlocked && (
-                <div className={styles.actions}>
-                    <button
-                        className={`${styles.actionBtn} ${isFollowing || isRequestPending ? styles.actionBtnSecondary : styles.actionBtnPrimary}`}
-                        onClick={handleFollowToggle}
-                        disabled={followBusy || isRequestPending}
-                    >
-                        {isFollowing ? <UserCheck size={16} /> : isRequestPending ? <Clock size={16} /> : <UserPlus size={16} />}
-                        {isFollowing ? 'Following' : isRequestPending ? 'Requested' : 'Follow'}
-                    </button>
-                    <button
-                        className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                        onClick={() => setShowBlockConfirm(true)}
-                        disabled={blockBusy}
-                    >
-                        <Ban size={16} />
-                        Block
-                    </button>
-                    <button
-                        className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                        onClick={() => setShowReportModal(true)}
-                    >
-                        <Flag size={16} />
-                        Report
-                    </button>
-                </div>
-            )}
-
-            {isBlocked && (
-                <p className={styles.blockedNotice}>You have blocked this user.</p>
-            )}
+            <div className={styles.actions}>
+                <button
+                    className={`${styles.actionBtn} ${isFollowing || isRequestPending ? styles.actionBtnSecondary : styles.actionBtnPrimary}`}
+                    onClick={handleFollowToggle}
+                    disabled={followBusy || isRequestPending}
+                >
+                    {isFollowing ? <UserCheck size={16} /> : isRequestPending ? <Clock size={16} /> : <UserPlus size={16} />}
+                    {isFollowing ? 'Following' : isRequestPending ? 'Requested' : 'Follow'}
+                </button>
+                <button
+                    className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
+                    onClick={() => setShowReportModal(true)}
+                >
+                    <Flag size={16} />
+                    Report
+                </button>
+            </div>
 
             {isLockedPrivateView ? (
                 <div className={styles.privateLock}>

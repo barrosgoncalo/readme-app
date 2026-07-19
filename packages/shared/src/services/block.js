@@ -12,10 +12,14 @@ export const doUnblockUser = async (blockerUid, blockedUid) => {
 
 export const doIsBlocked = async (uidA, uidB) => {
     const [aBlockedB, bBlockedA] = await Promise.all([
-        DB.get("blocks", getBlockId(uidA, uidB)),
-        DB.get("blocks", getBlockId(uidB, uidA)),
+        DB.get("blocks", getBlockId(uidA, uidB)).catch(() => null),
+        DB.get("blocks", getBlockId(uidB, uidA)).catch(() => null),
     ]);
-    return !!aBlockedB || !!bBlockedA;
+
+    const isABlockedB = Boolean(aBlockedB && aBlockedB.blockerUid);
+    const isBBlockedA = Boolean(bBlockedA && bBlockedA.blockerUid);
+
+    return isABlockedB || isBBlockedA;
 };
 
 export const doGetBlockedUsers = async (blockerUid) => {

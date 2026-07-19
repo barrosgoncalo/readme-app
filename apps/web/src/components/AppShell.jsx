@@ -110,10 +110,16 @@ export default function AppShell() {
 
         if (to === WEB_ROUTES.EXPLORE) {
             const isExplore = location.pathname.startsWith(WEB_ROUTES.EXPLORE);
-            const isUsersProfile = location.pathname.startsWith('/users');
             const isOtherUserBook = location.pathname.startsWith(WEB_ROUTES.BOOKS) && isVisitingOtherUser;
 
-            return isExplore || isUsersProfile || isOtherUserBook;
+            return isExplore || isOtherUserBook;
+        }
+
+        if (to === WEB_ROUTES.PROFILE) {
+            const isOwnProfile = location.pathname.startsWith(WEB_ROUTES.PROFILE);
+            const isUsersProfile = location.pathname.startsWith('/users'); // <-- Moved here!
+
+            return isOwnProfile || isUsersProfile;
         }
 
         return location.pathname.startsWith(to);

@@ -33,7 +33,7 @@ const SUB_ROUTES = new Set([
 
 export default function ProfileLayout() {
     const { currentUser } = useAuth();
-    const { role } = useUserRole(); // <-- Fetch user role
+    const { role } = useUserRole();
     const { theme, toggle } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
@@ -119,7 +119,6 @@ export default function ProfileLayout() {
     async function handleSignOut() {
         try {
             await signOut(auth);
-            // Optionally navigate to a public route like login here if AuthContext doesn't handle it
         } catch (error) {
             console.error('Error signing out:', error);
         }
