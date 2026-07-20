@@ -140,23 +140,32 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                         </span>
                     )}
                     <div>
+                        {/*bBloqueia o clique e anula o efeito de hover */}
                         <h2
                             className={styles.name}
-                            onClick={() => otherUserId && navigate(WEB_ROUTES.userProfile(otherUserId))}
+                            style={chat.disabled ? { pointerEvents: 'none' } : {}}
+                            onClick={() => {
+                                if (!chat.disabled && otherUserId)
+                                    navigate(WEB_ROUTES.userProfile(otherUserId));
+                            }}
                         >
                             {displayName}
                         </h2>
                     </div>
                 </div>
-                <button
-                    type="button"
-                    className={styles.reportBtn}
-                    onClick={() => setShowReportModal(true)}
-                    aria-label="Report conversation"
-                    title="Report conversation"
-                >
-                    <Flag size={18}/>
-                </button>
+
+                {/* Só renderiza o botão de Report se o chat não estiver disabled */}
+                {!chat.disabled && (
+                    <button
+                        type="button"
+                        className={styles.reportBtn}
+                        onClick={() => setShowReportModal(true)}
+                        aria-label="Report conversation"
+                        title="Report conversation"
+                    >
+                        <Flag size={18}/>
+                    </button>
+                )}
             </div>
 
             {/* Messages */}
