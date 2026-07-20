@@ -82,6 +82,7 @@ export default function (api) {
                         'lucide:key',
                         'lucide:package',
                         'lucide:tag',
+                        'lucide:phone',
                         'mdi:home',
                         'mdi:star',
                         'mdi:star-outline',

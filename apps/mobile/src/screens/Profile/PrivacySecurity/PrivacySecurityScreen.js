@@ -28,6 +28,7 @@ export default function PrivacySecurityScreen({ navigation }) {
     const { currentUser, refreshUser } = useAuth();
 
     const [isPrivate, setIsPrivate] = useState(currentUser?.profileVisibility === 'private');
+    const [shareContact, setShareContact] = useState(currentUser?.publicContactDetails === true);
 
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -48,6 +49,23 @@ export default function PrivacySecurityScreen({ navigation }) {
             console.error("Error updating visibility:", error);
             Alert.alert("Error", "Failed to update privacy settings. Please try again.");
             setIsPrivate(!newValue);
+        }
+    };
+
+    const handleShareContactToggle = async (newValue) => {
+        setShareContact(newValue);
+
+        try {
+            await doUpdateUserProfile(currentUser.uid, {
+                shareContactDetails: newValue
+            });
+
+            await refreshUser();
+
+        } catch (error) {
+            console.error("Error updating contact sharing:", error);
+            Alert.alert("Error", "Failed to update contact settings. Please try again.");
+            setShareContact(!newValue);
         }
     };
 
@@ -151,25 +169,43 @@ export default function PrivacySecurityScreen({ navigation }) {
                 <View style={styles.content}>
 
                     {/* SECTION 1: PRIVACY */}
-                    <Text style={styles.sectionTitle}>Privacy</Text>
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuSwitchItem
                             styles={styles}
                             theme={theme}
-                            icon= "lucide:lock"
-                            label= "Private Account"
+                            icon="lucide:lock"
+                            label="Private Account"
                             value={isPrivate}
                             onValueChange={handlePrivacyToggle}
                             disabled={isDeleting}
                         />
                     </MenuGroup>
                     <Text style={styles.helperText}>
-                        {isPrivate 
-                            ? "Only approved users can see your publications and request book swaps." 
+                        {isPrivate
+                            ? "Only approved users can see your publications and request book swaps."
                             : "Anyone can see your publications and request book swaps with you."}
                     </Text>
 
-                    {/* SECTION 2: SECURITY */}
+                    {/* SECTION 2: CONTACT DETAILS */}
+                    <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Contact Details</Text>
+                    <MenuGroup styles={styles} bgColor={theme.groupShadow}>
+                        <MenuSwitchItem
+                            styles={styles}
+                            theme={theme}
+                            icon="lucide:phone"
+                            label="Share Contact Details"
+                            value={shareContact}
+                            onValueChange={handleShareContactToggle}
+                            disabled={isDeleting}
+                        />
+                    </MenuGroup>
+                    <Text style={styles.helperText}>
+                        {shareContact
+                            ? "Buyers will see a Call / SMS button on your publications."
+                            : "Buyers can only contact you through in-app messages."}
+                    </Text>
+
+                    {/* SECTION 3: SECURITY */}
                     <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Security</Text>
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem
@@ -181,7 +217,7 @@ export default function PrivacySecurityScreen({ navigation }) {
                         />
                     </MenuGroup>
 
-                    {/* SECTION 3: DANGER ZONE */}
+                    {/* SECTION 4: DANGER ZONE */}
                     <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Account Management</Text>
                     <MenuGroup styles={styles} bgColor={theme.groupShadow}>
                         <MenuItem
