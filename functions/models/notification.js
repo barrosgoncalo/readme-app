@@ -5,7 +5,7 @@ class Notification {
         this.type = type;
         this.actorId = actorId;
         this.actorName = actorName; 
-        this.actorPhotoURL = actorPhotoURL || null; // Saved in instance state
+        this.actorPhotoURL = actorPhotoURL || null;
         this.targetId = targetId;
         this.message = message;
         this.isRead = false;
@@ -16,7 +16,7 @@ class Notification {
             type: this.type,
             actorId: this.actorId,
             actorName: this.actorName,
-            actorPhotoURL: this.actorPhotoURL, // Added to the Firestore database payload
+            actorPhotoURL: this.actorPhotoURL,
             targetId: this.targetId,
             message: this.message,
             isRead: this.isRead,

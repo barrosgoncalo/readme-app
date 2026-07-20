@@ -4,7 +4,7 @@
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const { onDocumentWritten, onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onDocumentWritten, onDocumentCreated, onDocumentDeleted, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { algoliasearch } = require("algoliasearch");
 const { initializeApp } = require("firebase-admin/app");
@@ -621,6 +621,36 @@ exports.onFollowRequestCreated = onDocumentCreated("followRequests/{requestId}",
     return null;
 });
 
+// ─── TRIGGER: ON FOLLOW REQUEST DELETED (ACCEPTED OR DECLINED) ───
+exports.onFollowRequestDeleted = onDocumentDeleted("followRequests/{requestId}", async (event) => {
+    const deletedRequestData = event.data.data();
+    if (!deletedRequestData) return null;
+
+    const requesterUid = deletedRequestData.requesterUid;
+    const targetUid = deletedRequestData.targetUid;
+
+    try {
+        // Reconstruct the exact custom ID used during creation
+        const customId = `req_${requesterUid}_${targetUid}`;
+        
+        // Point directly to the notification document in the recipient's subcollection
+        const notificationRef = db
+            .collection("users")
+            .doc(targetUid)
+            .collection("notifications")
+            .doc(customId);
+
+        // Delete the notification
+        await notificationRef.delete();
+        
+        console.log(`Successfully deleted pending follow request notification ${customId} for user: ${targetUid}`);
+    } catch (error) {
+        console.error("Error deleting follow request notification:", error);
+    }
+    
+    return null;
+});
+
 // ─── TRIGGER: ON FOLLOW COMPLETED (ACCEPTED) ───
 exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) => {
     const followData = event.data.data();
@@ -664,9 +694,7 @@ exports.onFollowCreated = onDocumentCreated("follows/{followId}", async (event) 
     return null;
 });
 
-// ==========================================
 // TRIGGER: ON NEW OFFER / COUNTER-OFFER MESSAGE
-// ==========================================
 exports.onOfferMessageCreated = onDocumentCreated("chats/{chatId}/messages/{messageId}", async (event) => {
     const messageData = event.data.data();
     if (!messageData) return null;
@@ -721,9 +749,7 @@ exports.onOfferMessageCreated = onDocumentCreated("chats/{chatId}/messages/{mess
     return null;
 });
 
-// ==========================================
 // TRIGGER: ON OFFER ACCEPTED
-// ==========================================
 exports.onOfferAccepted = onDocumentUpdated("chats/{chatId}/messages/{messageId}", async (event) => {
     const beforeData = event.data.before.data();
     const afterData = event.data.after.data();
