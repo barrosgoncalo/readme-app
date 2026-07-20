@@ -28,7 +28,7 @@ export default function PrivacySecurityScreen({ navigation }) {
     const { currentUser, refreshUser } = useAuth();
 
     const [isPrivate, setIsPrivate] = useState(currentUser?.profileVisibility === 'private');
-    const [shareContact, setShareContact] = useState(currentUser?.publicContactDetails === true);
+    const [shareContact, setShareContact] = useState(currentUser?.shareContactDetails === true);
 
     const [isDeleting, setIsDeleting] = useState(false);
 

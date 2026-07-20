@@ -10,7 +10,7 @@ export const buildBookDetailsStyles = (theme) => {
             backgroundColor: theme.background, 
         },
         scrollContent: {
-            paddingBottom: 100, 
+            paddingBottom: 100,
         },
         imageContainer: {
             width: width,
@@ -142,7 +142,7 @@ export const buildBookDetailsStyles = (theme) => {
             borderColor: theme.borderLight,
             borderRadius: 12,
             padding: 16,
-            marginBottom: 20,
+            marginBottom: 30,
         },
         sellerInfoLeft: {
             flexDirection: 'row',
@@ -231,5 +231,23 @@ export const buildBookDetailsStyles = (theme) => {
             fontWeight: '700',
             letterSpacing: 0.5, // Slight letter spacing looks more refined
         },
+        contactButton: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            borderWidth: 1,
+            borderColor: theme.primary,
+            borderRadius: 12,
+            paddingVertical: 14,
+            marginBottom: 20, // matches sellerCard's old marginBottom
+        },
+        contactButtonText: {
+            fontFamily: Fonts.inter_semi,
+            fontSize: 15,
+            color: theme.primary,
+        },
     });
+
+
 };

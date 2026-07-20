@@ -46,7 +46,7 @@ export function PublicationInfoView({
                 showsVerticalScrollIndicator={false} 
                 contentContainerStyle={[
                     styles.scrollContent,
-                    bottomBar && { paddingBottom: 40 }
+                    bottomBar && { paddingBottom: 10 }
                 ]}
             >                
                 {/* --- HEADER IMAGE CAROUSEL --- */}

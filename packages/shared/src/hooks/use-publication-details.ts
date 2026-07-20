@@ -16,14 +16,15 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
     // Mapeamento defensivo: passamos ambos os formatos para o ecrã não quebrar
     const [seller, setSeller] = useState({
         name: initialSellerData?.username || initialSellerData?.name || 'Loading...',
-        username: initialSellerData?.username || initialSellerData?.name || 'Loading...', // <-- O teu ecrã lê isto
+        username: initialSellerData?.username || initialSellerData?.name || 'Loading...',
         rating: Number(initialSellerData?.rating) || 0,
         reviews: Number(initialSellerData?.reviewCount || initialSellerData?.reviews) || 0,
         reviewCount: Number(initialSellerData?.reviewCount || initialSellerData?.reviews) || 0,
         avatarUrl: initialSellerData?.photoURL || initialSellerData?.avatarUrl || null,
-        photoURL: initialSellerData?.photoURL || initialSellerData?.avatarUrl || null, // <-- O teu ecrã lê isto
+        photoURL: initialSellerData?.photoURL || initialSellerData?.avatarUrl || null,
+        sellerPhoneNumber: initialSellerData?.phoneNumber || null,
+        canContactDirectly: initialSellerData?.shareContactDetails && initialSellerData?.phoneNumber
     });
-
     // 1. Check Favorite Status on Mount
     useEffect(() => {
         const checkFavoriteStatus = async () => {
@@ -54,12 +55,14 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
 
                     setSeller({
                         name: displayName,
-                        username: displayName, // <-- Garante o nome no ecrã
+                        username: displayName,
                         rating: Number(sellerData.rating) || 0,
                         reviewCount: Number(sellerData.reviewCount || sellerData.reviews) || 0,
                         reviews: Number(sellerData.reviewCount || sellerData.reviews) || 0,
                         avatarUrl: fetchedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=EACCA5&color=333`,
                         photoURL: fetchedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=EACCA5&color=333`,
+                        sellerPhoneNumber: sellerData.phoneNumber || null,
+                        canContactDirectly: sellerData?.shareContactDetails && sellerData?.phoneNumber
                     });
                 }
             } catch (error) {
@@ -119,5 +122,6 @@ export function usePublicationDetails(book: any, initialSellerData: any) {
         handleReportPublication,
         canReport,
         reportModal: report,
-    };
-}
+        canContactDirectly: seller?.canContactDirectly,
+        sellerPhoneNumber: seller?.sellerPhoneNumber,
+    };}
