@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, MapPin, Bell, KeyRound, UserX, ChevronRight, Eye, EyeOff } from 'lucide-react';
-import { 
-    doDeleteUserProfile, 
-    doReauthenticateWithPassword, 
-    doReauthenticateWithGoogle
-} from '@readme/shared/src/services/auth';
+import { ArrowLeft, Shield, KeyRound, UserX, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { doDeleteUserProfile, doReauthenticateWithPassword, doReauthenticateWithGoogle } from '@readme/shared/src/services/auth';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import Button from '../../components/Button.jsx';
@@ -22,7 +18,7 @@ export default function PrivacySecurity() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(null);
 
-    const [isPublic, setIsPublic] = useState(false);
+    const [isPrivate, setIsPrivate] = useState(false);
 
     const [deleteStep, setDeleteStep] = useState(0);
     const [deletePassword, setDeletePassword] = useState('');
@@ -43,7 +39,7 @@ export default function PrivacySecurity() {
 
         DB.get('users', currentUser.uid).then(d => {
             if (!d) return;
-            setIsPublic(d.profileVisibility === 'public');
+            setIsPrivate(d.profileVisibility === 'private');
         }).finally(() => setLoading(false));
     }, [currentUser]);
 
@@ -52,7 +48,7 @@ export default function PrivacySecurity() {
         try {
             await DB.update('users', currentUser.uid, { [field]: value });
         } catch {
-            if (field === 'profileVisibility') setIsPublic(v => !v);
+            if (field === 'profileVisibility') setIsPrivate(v => !v);
         } finally {
             setSaving(null);
         }
@@ -131,10 +127,10 @@ export default function PrivacySecurity() {
                     <ToggleRow
                         icon={<Shield size={18} />}
                         label={'Private'}
-                        checked={isPublic}
+                        checked={isPrivate}
                         disabled={saving === 'profileVisibility' || deleting}
                         onChange={v => {
-                            setIsPublic(v);
+                            setIsPrivate(v);
                             saveField('profileVisibility', v ? 'private' : 'public');
                         }}
                     />
