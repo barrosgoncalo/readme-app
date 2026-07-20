@@ -225,7 +225,9 @@ export default function RegisterScreen({ navigation }) {
             }
         } catch (error) {
             setIsRegistering(false);
-            Alert.alert('Registration Failed', error.message);
+            if (error.message === "Firebase: Error (auth/email-already-in-use).")
+                Alert.alert('Registration Failed', "Email already in use.");
+            else Alert.alert('Registration Failed', error.message);
         }
     };
 
