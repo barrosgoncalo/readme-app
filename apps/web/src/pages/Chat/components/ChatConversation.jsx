@@ -178,41 +178,45 @@ export default function ChatConversation({chat, messages, loading, currentUserId
                     messages
                         .slice()
                         .reverse()
-                        .map(msg => (
-                            <div key={msg.id} className={styles.messageRow}>
-                                {msg.type === 'offer' ? (
-                                    <>
-                                        <OfferMessage
-                                            message={msg}
-                                            isOwn={msg.senderId === currentUserId}
-                                            currentUserId={currentUserId}
-                                            chatId={chat.id}
-                                            otherUserId={otherUserId}
-                                        />
+                        .map(msg => {
+                            if (msg.action || msg.type === 'system' || (!msg.text && msg.type !== 'offer'))
+                                return null;
 
-                                        {/* Nova mensagem de sistema injetada logo após a oferta cancelada */}
-                                        {msg.offerDetails?.status === 'unavailable' && (
-                                            <div className={styles.systemMessage}>
-                                                <Info size={16}/>
-                                                <span>
-                                        The book associated with this trade has been removed.
-                                        This trade was automatically cancelled.
-                                    </span>
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <div
-                                        className={`${styles.message} ${msg.senderId === currentUserId ? styles.own : styles.other}`}
-                                    >
-                                        <p className={styles.text}>{msg.text}</p>
-                                        {formatMessageTime(msg.createdAt) && (
-                                            <p className={styles.time}>{formatMessageTime(msg.createdAt)}</p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        ))
+                            return (
+                                <div key={msg.id} className={styles.messageRow}>
+                                    {msg.type === 'offer' ? (
+                                        <>
+                                            <OfferMessage
+                                                message={msg}
+                                                isOwn={msg.senderId === currentUserId}
+                                                currentUserId={currentUserId}
+                                                chatId={chat.id}
+                                                otherUserId={otherUserId}
+                                            />
+
+                                            {msg.offerDetails?.status === 'unavailable' && (
+                                                <div className={styles.systemMessage}>
+                                                    <Info size={16}/>
+                                                    <span>
+                                                        The book associated with this trade has been removed.
+                                                        This trade was automatically cancelled.
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div
+                                            className={`${styles.message} ${msg.senderId === currentUserId ? styles.own : styles.other}`}
+                                        >
+                                            <p className={styles.text}>{msg.text}</p>
+                                            {formatMessageTime(msg.createdAt) && (
+                                                <p className={styles.time}>{formatMessageTime(msg.createdAt)}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
                 )}
                 <div ref={messagesEndRef}/>
             </div>
