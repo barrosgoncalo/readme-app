@@ -141,7 +141,7 @@ export default function RegisterScreen({ navigation }) {
             return;
         }
 
-        if (calculateAge(date) < 16) {
+        if (calculateAge( date ) < 16) {
             Alert.alert('Age Requirement', 'You must be at least 16 years old to create an account.');
             return;
         }

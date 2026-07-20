@@ -24,6 +24,7 @@ import { buildEditProfileStyles } from '../../../styles/editProfileStyles';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useImagePicker } from '@readme/shared/src/hooks/use-image-picker';
 import { UsersService } from '@readme/shared/src/services/users';
+import { calculateAge } from '@readme/shared/src/utils/registerUtils';
 
 // Canonical storage format is ISO (YYYY-MM-DD), matching the web app's
 // <input type="date">. These two helpers are the only place that format
@@ -137,10 +138,19 @@ export default function EditProfileScreen({ navigation, route }) {
     // ─── Form Handlers ────────────────────────────────────────────────────────
     const handleDateChange = (event, selectedDate) => {
         if (Platform.OS === 'android') setShowDatePicker(false);
+
+        if ( !selectedDate ) { return ;}
+
+        if ( calculateAge(date) < 16 ) {
+            Alert.alert('Age Requirement', 'You must be at least 16 years old to create an account.');
+            return;
+        }
+
         if (selectedDate) {
             setDate(selectedDate);
             setDob(dateToIso(selectedDate));
         }
+
     };
 
     const handleCountrySelect = (c) => {
