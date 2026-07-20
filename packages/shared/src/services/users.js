@@ -283,21 +283,6 @@ export const UsersService = {
     },
 
     /**
-     * Accepts a pending follow request: creates the actual follow relationship,
-     * increments counts, and removes the request doc.
-     */
-    acceptFollowRequest: async (targetUserId, requesterUid) => {
-        const relationshipId = getFollowId(requesterUid, targetUserId);
-
-        await Promise.all([
-            DB.create('follows', createFollow(requesterUid, targetUserId), relationshipId),
-            DB.update(USERS_COLLECTION, requesterUid, {followingCount: increment(1)}),
-            DB.update(USERS_COLLECTION, targetUserId, {followersCount: increment(1)}),
-            DB.remove('followRequests', relationshipId),
-        ]);
-    },
-
-    /**
      * Declines a pending follow request: just removes the request doc, no counts change.
      */
     declineFollowRequest: async (targetUserId, requesterUid) => {
