@@ -78,8 +78,7 @@ export default function CounterOfferModal({ open, onClose, offeredBooks, loading
                                                 </p>
 
                                                 <Link
-                                                    to={WEB_ROUTES.publicationDetail(book.id)}
-                                                    className={offerStyles.obDetailsLink}
+                                                    to={`${WEB_ROUTES.publicationDetail(book.id)}?from=chat`}                                                    className={offerStyles.obDetailsLink}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     View details

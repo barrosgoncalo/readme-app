@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Heart, Trash2, Flag } from 'lucide-react';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { UsersService } from '@readme/shared/src/services/users';
@@ -20,8 +20,10 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
     const { pubId: paramPubId } = useParams();
     const pubId = pubIdProp || paramPubId;
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const fromChat = searchParams.get('from') === 'chat';
     const { currentUser } = useAuth();
-    const [toast, showToast] = useToast(3000);
+    const showToast = useToast(3000);
 
     const [pub, setPub] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -226,22 +228,24 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
                                 <Button
                                     onClick={handleToggleFavorite}
                                     disabled={favBusy}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        backgroundColor: isFavorite ? 'var(--error)' : undefined,
-                                    }}
+                                    style={{backgroundColor: isFavorite ? 'var(--error)' : undefined,}}
                                 >
-                                    <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
-                                    {isFavorite ? 'Favorited' : 'Favorite'}
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                                        <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+                                        {isFavorite ? 'Favorited' : 'Favorite'}
+                                    </span>
                                 </Button>
-                                <Button
-                                    className={styles.offerBtn}
-                                    onClick={() => navigate(`${WEB_ROUTES.OFFERS_NEW}?pub=${pubId}`)}
-                                >
-                                    Make an Offer
-                                </Button>
+
+                                {/* ESCONDE O BOTÃO SE VEIO DO CHAT */}
+                                {!fromChat && (
+                                    <Button
+                                        className={styles.offerBtn}
+                                        onClick={() => navigate(`${WEB_ROUTES.OFFERS_NEW}?pub=${pubId}`)}
+                                    >
+                                        Make an Offer
+                                    </Button>
+                                )}
+
                                 <Button
                                     variant="ghost"
                                     fullWidth={false}

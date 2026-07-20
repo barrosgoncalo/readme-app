@@ -216,8 +216,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
 
     function handleTargetBookClick() {
         if (!offer.targetBookId) return;
-
-        navigate(WEB_ROUTES.publicationDetail(offer.targetBookId));
+        navigate(`${WEB_ROUTES.publicationDetail(offer.targetBookId)}?from=chat`);
     }
 
     function handleOfferedBookClick() {
@@ -227,7 +226,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             const targetId = offer.savedRealOfferedId || singleBook?.realBookId || offer.offeredBookIds?.[0] || offer.offeredBooks?.[0]?.id;
             if (!targetId) return;
 
-            navigate(WEB_ROUTES.publicationDetail(targetId));
+            navigate(`${WEB_ROUTES.publicationDetail(targetId)}?from=chat`);
         }
     }
 
@@ -488,7 +487,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                 key={book.id}
                                 className={`${styles.offeredBookItem} ${styles.selectable}`}
                                 onClick={() => {
-                                    navigate(WEB_ROUTES.publicationDetail(book.id));
+                                    navigate(`${WEB_ROUTES.publicationDetail(book.id)}?from=chat`);
                                 }}
                             >
                                 <BookCover
