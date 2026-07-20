@@ -83,8 +83,7 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
             throw new Error("User profile not found.");
         }
     } catch (error) {
-        console.error("Login Error:", error);
-        throw error;
+        console.log("Login Failed: Invalid Credentials");
     }
 };
 

@@ -50,7 +50,7 @@ export default function LoginScreen({ navigation }) {
             const { userData } = await doSignInWithEmailAndPassword(email, password);
             console.log("Logged in successfully as:", userData.role);
         } catch (error) {
-            Alert.alert("Login Failed", error.message);
+            Alert.alert("Login Failed", "Invalid credentials");
         } finally {
             setIsLoading(false);
         }

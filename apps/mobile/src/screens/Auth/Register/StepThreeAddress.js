@@ -72,7 +72,7 @@ export default function StepThreeAddress({
                 onPress={() => setShowCountryPicker(true)}
                 activeOpacity={0.7}
             >
-                <Text style={{ color: country ? undefined : '#aaa', flex: 1 }}>
+                <Text style={{ color: country ? theme.text : '#aaa', flex: 1 }}>
                     {country || 'Country'}
                 </Text>
                 <Iconify icon="lucide:chevron-down" size={18} color="#aaa" />
