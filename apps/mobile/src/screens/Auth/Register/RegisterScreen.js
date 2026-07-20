@@ -9,6 +9,8 @@ import {
     Platform
 } from 'react-native';
 
+import { isValidEmail } from '@readme/shared/src/utils/registerUtils';
+
 import {
     doCreateUserWithEmailAndPassword,
     doGetGoogleTokenAndProfile,
@@ -113,6 +115,11 @@ export default function RegisterScreen({ navigation }) {
     const handleStep1Next = () => {
         if (!username || !email.trim() || !password || !fullName) {
             Alert.alert('Missing Fields', 'Please fill in all required fields.');
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            Alert.alert('Invalid Email', 'Please enter a valid email address.');
             return;
         }
 
