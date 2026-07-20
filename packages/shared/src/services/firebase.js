@@ -15,7 +15,6 @@ import {
     FIREBASE_MEASUREMENT_ID
 } from '@readme/shared/src/constants/env'; 
 
-// 2. USA AS VARIÁVEIS IMPORTADAS AQUI
 const firebaseConfig = {
     apiKey: FIREBASE_API_KEY,
     authDomain: FIREBASE_AUTH_DOMAIN,

@@ -1,8 +1,12 @@
 import { algoliasearch } from "algoliasearch";
+import { createNullCache } from "@algolia/cache-common";
 
 import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY } from '../constants/env';
 
-const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
+const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY, {
+    responsesCache: createNullCache(),
+    requestsCache: createNullCache(),
+});
 
 const USERS_INDEX = "users";
 const DEFAULT_HITS_PER_PAGE = 20;
