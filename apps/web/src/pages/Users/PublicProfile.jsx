@@ -196,7 +196,7 @@ export default function PublicProfile() {
             await doBlockUser(currentUser.uid, uid);
             showToast(`Blocked @${user?.username || 'this user'}.`);
             setShowBlockModal(false);
-            navigate(-1);
+            navigate(WEB_ROUTES.EXPLORE);
         } catch (e) {
             showToast("We couldn't block this user. Please try again.");
             console.error(e);
