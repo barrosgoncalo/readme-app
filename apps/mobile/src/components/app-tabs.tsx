@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { TouchableOpacity, Animated, StyleSheet, View, useColorScheme } from 'react-native';
-import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@readme/shared/src/constants/theme';
 import { Iconify } from 'react-native-iconify';
 
@@ -63,10 +64,12 @@ const TabItem = ({ isFocused, onPress, label, iconName, themeColors }: TabItemPr
 };
 
 function CustomTabBar({ state, navigation, translateY, themeColors }: any) {
+    const insets = useSafeAreaInsets(); // <--- 1. Reads native safe area insets
+
     const getIconName = (routeName: string, isFocused: boolean) => {
         switch (routeName) {
             case 'Explore': return isFocused ? 'fluent:home-24-filled' : 'fluent:home-24-regular';
-            case 'AddPlaceholder': return 'fluent:add-24-filled'; // Ícone do meio
+            case 'AddPlaceholder': return 'fluent:add-24-filled'; 
             case 'Shelf': return isFocused ? 'fluent:library-24-filled' : 'fluent:library-24-regular';
             case 'Profile': return isFocused ? 'fluent:person-24-filled' : 'fluent:person-24-regular';
             default: return 'fluent:circle-24-regular';
@@ -74,15 +77,24 @@ function CustomTabBar({ state, navigation, translateY, themeColors }: any) {
     };
 
     return (
-        <Animated.View style={[styles.floatingBar, { backgroundColor: themeColors.tabBarBackground, transform: [{ translateY }] }]}>
+        <Animated.View 
+            style={[
+                styles.floatingBar, 
+                { 
+                    backgroundColor: themeColors.tabBarBackground, 
+                    // 2. Dynamically pushes the floating bar above Android/iOS system bar
+                    bottom: 16 + insets.bottom, 
+                    transform: [{ translateY }] 
+                }
+            ]}
+        >
             {state.routes.map((route: any, index: number) => {
                 const isFocused = state.index === index;
 
                 const onPress = () => {
                     if (route.name === 'AddPlaceholder') {
-                        // Puxa o ecrã do Root Stack! Adeus ecrã branco.
                         navigation.navigate('Publication'); 
-                        return; // O return impede que a aba mude lá atrás
+                        return;
                     }
 
                     const event = navigation.emit({
@@ -101,7 +113,6 @@ function CustomTabBar({ state, navigation, translateY, themeColors }: any) {
                         key={route.key}
                         isFocused={isFocused}
                         onPress={onPress}
-                        // Não mostra texto para o botão do meio
                         label={route.name === 'AddPlaceholder' ? '' : route.name}
                         iconName={getIconName(route.name, isFocused)}
                         themeColors={themeColors}
@@ -112,7 +123,6 @@ function CustomTabBar({ state, navigation, translateY, themeColors }: any) {
     );
 }
 
-// Um componente simples que nunca vai ser visto, só para o Tab.Navigator não dar erro
 const ViewPlaceholder = () => <View style={{ flex: 1, backgroundColor: 'transparent' }} />;
 
 export default function AppTabs() {
@@ -130,10 +140,7 @@ export default function AppTabs() {
                 screenOptions={{ headerShown: false }} 
             >
                 <Tab.Screen name="Explore" component={ExploreScreen} />
-                
-                {/* Nome alterado para evitar colisões de rotas */}
                 <Tab.Screen name="AddPlaceholder" component={ViewPlaceholder} /> 
-                
                 <Tab.Screen name="Shelf" component={ReadingListScreen} />
                 <Tab.Screen name="Profile" component={ProfileScreen} />
             </Tab.Navigator>
@@ -144,7 +151,7 @@ export default function AppTabs() {
 const styles = StyleSheet.create({
     floatingBar: {
         position: 'absolute',
-        bottom: 30,
+        // 'bottom' is now calculated dynamically in CustomTabBar style
         left: 20,
         right: 20,
         height: 70,
