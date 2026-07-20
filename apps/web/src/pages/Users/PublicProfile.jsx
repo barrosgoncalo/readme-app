@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus, UserCheck, Clock, Flag, Lock } from 'lucide-react';
+import { ArrowLeft, UserPlus, UserCheck, Clock, Flag, Lock, UserX } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { ReviewService } from '@readme/shared/src/services/reviews';
 import { MyBooksService } from '@readme/shared/src/services/books';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { ReportsService } from '@readme/shared/src/services/reports';
+import { doBlockUser } from '@readme/shared/src/services/block';
 import { REPORT_TARGET_TYPE } from '@readme/shared/src/constants/status';
 import { hydrateMyBooks } from '@readme/shared/src/utils/hydrateMyBooks';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
@@ -79,6 +80,7 @@ export default function PublicProfile() {
     const [following, setFollowing] = useState(0);
     const [followBusy, setFollowBusy] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [blocking, setBlocking] = useState(false);
     const [, showToast] = useToast(3000);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
@@ -185,6 +187,27 @@ export default function PublicProfile() {
         }
     }
 
+    async function handleBlockUser() {
+        if (!currentUser || blocking) return;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to block @${user?.username || 'this user'}? You won't see each other's content anymore.`
+        );
+        if (!confirmed) return;
+
+        setBlocking(true);
+        try {
+            await doBlockUser(currentUser.uid, uid);
+            showToast(`Blocked @${user?.username || 'this user'}.`);
+            navigate(-1);
+        } catch (e) {
+            showToast("We couldn't block this user. Please try again.");
+            console.error(e);
+        } finally {
+            setBlocking(false);
+        }
+    }
+
     if (loading) return <div className={styles.page}><SkeletonGrid count={3} /></div>;
 
     const isLockedPrivateView = user?.profileVisibility === 'private' && !isFollowing;
@@ -253,6 +276,16 @@ export default function PublicProfile() {
                     <Flag size={16} />
                     Report
                 </button>
+                {currentUser && (
+                    <button
+                        className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
+                        onClick={handleBlockUser}
+                        disabled={blocking}
+                    >
+                        <UserX size={16} />
+                        Block
+                    </button>
+                )}
             </div>
 
             {isLockedPrivateView ? (
@@ -264,82 +297,82 @@ export default function PublicProfile() {
                     </p>
                 </div>
             ) : (
-            <div className={styles.dashboard}>
-                <div className={styles.booksColumn}>
-                    <div className={styles.tabBar}>
-                        <button
-                            type="button"
-                            className={`${styles.tabBtn} ${activeTab === 'myBooks' ? styles.tabBtnActive : ''}`}
-                            onClick={() => setActiveTab('myBooks')}
-                        >
-                            Books
-                        </button>
-                        <button
-                            type="button"
-                            className={`${styles.tabBtn} ${activeTab === 'shelf' ? styles.tabBtnActive : ''}`}
-                            onClick={() => setActiveTab('shelf')}
-                        >
-                            Shelf
-                        </button>
+                <div className={styles.dashboard}>
+                    <div className={styles.booksColumn}>
+                        <div className={styles.tabBar}>
+                            <button
+                                type="button"
+                                className={`${styles.tabBtn} ${activeTab === 'myBooks' ? styles.tabBtnActive : ''}`}
+                                onClick={() => setActiveTab('myBooks')}
+                            >
+                                Books
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.tabBtn} ${activeTab === 'shelf' ? styles.tabBtnActive : ''}`}
+                                onClick={() => setActiveTab('shelf')}
+                            >
+                                Shelf
+                            </button>
+                        </div>
+
+                        {activeTab === 'myBooks' ? (
+                            publications.length === 0 ? (
+                                <p className={styles.empty}>This user hasn&rsquo;t listed any books for trade yet.</p>
+                            ) : (
+                                <div className={styles.bookGrid}>
+                                    {publications.map(pub => (
+                                        <PublicationCard
+                                            key={pub.id}
+                                            pub={pub}
+                                            isFavorite={favoriteIds.has(pub.id)}
+                                            onToggleFavorite={() => handleToggleFavorite(pub.id)}
+                                            busy={favoriteBusy === pub.id}
+                                        />
+                                    ))}
+                                </div>
+                            )
+                        ) : (
+                            shelfBooks.length === 0 ? (
+                                <p className={styles.empty}>This user hasn&rsquo;t added any books to their shelf yet.</p>
+                            ) : (
+                                <div className={styles.bookGrid}>
+                                    {shelfBooks.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
+                                </div>
+                            )
+                        )}
                     </div>
 
-                    {activeTab === 'myBooks' ? (
-                        publications.length === 0 ? (
-                            <p className={styles.empty}>This user hasn&rsquo;t listed any books for trade yet.</p>
+                    <div className={styles.reviewsColumn}>
+                        <h2 className={styles.section}>Reviews</h2>
+                        {reviews.length === 0 ? (
+                            <p className={styles.empty}>No reviews yet.</p>
                         ) : (
-                            <div className={styles.bookGrid}>
-                                {publications.map(pub => (
-                                    <PublicationCard
-                                        key={pub.id}
-                                        pub={pub}
-                                        isFavorite={favoriteIds.has(pub.id)}
-                                        onToggleFavorite={() => handleToggleFavorite(pub.id)}
-                                        busy={favoriteBusy === pub.id}
-                                    />
-                                ))}
-                            </div>
-                        )
-                    ) : (
-                        shelfBooks.length === 0 ? (
-                            <p className={styles.empty}>This user hasn&rsquo;t added any books to their shelf yet.</p>
-                        ) : (
-                            <div className={styles.bookGrid}>
-                                {shelfBooks.map(b => <BookRow key={b.id} book={b} ownerUid={uid} />)}
-                            </div>
-                        )
-                    )}
-                </div>
-
-                <div className={styles.reviewsColumn}>
-                    <h2 className={styles.section}>Reviews</h2>
-                    {reviews.length === 0 ? (
-                        <p className={styles.empty}>No reviews yet.</p>
-                    ) : (
-                        <div className={styles.reviewList}>
-                            {reviews.map(review => (
-                                <div key={review.id} className={styles.reviewItem}>
-                                    <div className={styles.reviewHeader}>
-                                        <span className={styles.reviewAuthor}>{review.authorName || 'Anonymous'}</span>
-                                        <span className={styles.reviewRating}>
+                            <div className={styles.reviewList}>
+                                {reviews.map(review => (
+                                    <div key={review.id} className={styles.reviewItem}>
+                                        <div className={styles.reviewHeader}>
+                                            <span className={styles.reviewAuthor}>{review.authorName || 'Anonymous'}</span>
+                                            <span className={styles.reviewRating}>
                                             {Array(5).fill(0).map((_, i) => (
                                                 <span key={i} style={{ color: i < review.rating ? 'var(--primary)' : 'var(--bg-elem)' }}>
                                                     ★
                                                 </span>
                                             ))}
                                         </span>
+                                        </div>
+                                        {review.comment && (
+                                            <p className={styles.reviewComment}>{review.comment}</p>
+                                        )}
+                                        <p className={styles.reviewDate}>
+                                            {(review.createdAt?.toDate?.() ?? new Date(review.createdAt)).toLocaleDateString()}
+                                        </p>
                                     </div>
-                                    {review.comment && (
-                                        <p className={styles.reviewComment}>{review.comment}</p>
-                                    )}
-                                    <p className={styles.reviewDate}>
-                                        {(review.createdAt?.toDate?.() ?? new Date(review.createdAt)).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
             )}
         </div>
     );
