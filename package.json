@@ -8,6 +8,7 @@
   "version": "1.0.0",
   "scripts": {},
   "dependencies": {
+    "@algolia/cache-common": "^4.26.0",
     "@readme/shared": "^1.0.0",
     "algoliasearch": "^5.55.0",
     "babel-preset-expo": "~55.0.8",

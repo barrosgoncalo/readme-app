@@ -139,18 +139,15 @@ export default function EditProfileScreen({ navigation, route }) {
     const handleDateChange = (event, selectedDate) => {
         if (Platform.OS === 'android') setShowDatePicker(false);
 
-        if ( !selectedDate ) { return ;}
+        if ( !selectedDate ) { return; }
 
-        if ( calculateAge(date) < 16 ) {
+        if ( calculateAge(selectedDate) < 16 ) {
             Alert.alert('Age Requirement', 'You must be at least 16 years old to create an account.');
             return;
         }
 
-        if (selectedDate) {
-            setDate(selectedDate);
-            setDob(dateToIso(selectedDate));
-        }
-
+        setDate(selectedDate);
+        setDob(dateToIso(selectedDate));
     };
 
     const handleCountrySelect = (c) => {
