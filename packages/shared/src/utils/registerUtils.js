@@ -52,10 +52,11 @@ export function calculateAge(birthDate) {
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDifference = today.getMonth() - birthDate.getMonth();
 
-    const priorToBirthMonth = monthDifference < 0;
-    const hadBirthday = ( monthDifference === 0 && today.getDate() < birthDate.getDate() );
+    const birthdayNotYetOccurredThisYear =
+        monthDifference < 0 ||
+        (monthDifference === 0 && today.getDate() < birthDate.getDate());
 
-    if( priorToBirthMonth || !hadBirthday ) {
+    if (birthdayNotYetOccurredThisYear) {
         age--;
     }
 
