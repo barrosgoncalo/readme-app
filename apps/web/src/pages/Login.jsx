@@ -49,7 +49,7 @@ export default function Login() {
             await doSignInWithEmailAndPassword(email, password);
             navigate(from, {replace: true});
         } catch {
-            setError('Falha ao iniciar sessão. Verifica os teus dados.');
+            setError('Failed to log in. Check your data.');
             setSubmitting(false);
         }
     }
@@ -68,7 +68,7 @@ export default function Login() {
                 navigate(from, { replace: true });
             }
         } catch (err) {
-            setError(err.message || 'Falha na autenticação com o Google.');
+            setError( 'Failed to authenticate with Google.' || err.message);
             setSubmitting(false);
         }
     }

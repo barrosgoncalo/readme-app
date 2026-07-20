@@ -17,6 +17,7 @@ import UserAvatar from '../../components/UserAvatar.jsx';
 import BookCover from '../../components/BookCover.jsx';
 import PublicationCard from '../../components/PublicationCard';
 import ReportModal from '../../components/ReportModal.jsx';
+import BlockConfirmModal from './components/BlockConfirmModal.jsx';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './PublicProfile.module.css';
 
@@ -80,6 +81,7 @@ export default function PublicProfile() {
     const [following, setFollowing] = useState(0);
     const [followBusy, setFollowBusy] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showBlockModal, setShowBlockModal] = useState(false);
     const [blocking, setBlocking] = useState(false);
     const [, showToast] = useToast(3000);
     const [loading, setLoading] = useState(true);
@@ -187,18 +189,13 @@ export default function PublicProfile() {
         }
     }
 
-    async function handleBlockUser() {
+    async function handleConfirmBlock() {
         if (!currentUser || blocking) return;
-
-        const confirmed = window.confirm(
-            `Are you sure you want to block @${user?.username || 'this user'}? You won't see each other's content anymore.`
-        );
-        if (!confirmed) return;
-
         setBlocking(true);
         try {
             await doBlockUser(currentUser.uid, uid);
             showToast(`Blocked @${user?.username || 'this user'}.`);
+            setShowBlockModal(false);
             navigate(-1);
         } catch (e) {
             showToast("We couldn't block this user. Please try again.");
@@ -279,14 +276,21 @@ export default function PublicProfile() {
                 {currentUser && (
                     <button
                         className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                        onClick={handleBlockUser}
-                        disabled={blocking}
+                        onClick={() => setShowBlockModal(true)}
                     >
                         <UserX size={16} />
                         Block
                     </button>
                 )}
             </div>
+
+            <BlockConfirmModal
+                open={showBlockModal}
+                onClose={() => !blocking && setShowBlockModal(false)}
+                onConfirm={handleConfirmBlock}
+                username={user?.username}
+                loading={blocking}
+            />
 
             {isLockedPrivateView ? (
                 <div className={styles.privateLock}>

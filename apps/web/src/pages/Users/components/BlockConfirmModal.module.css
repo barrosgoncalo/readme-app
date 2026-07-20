@@ -1,0 +1,121 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    z-index: 1100;
+}
+
+.dialog {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg-elem);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--bg-selected);
+    padding: var(--space-5) var(--space-4) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.closeBtn {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--subtext);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.closeBtn:hover:not(:disabled) {
+    background: var(--bg-selected);
+}
+
+.closeBtn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.iconWrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(211, 47, 47, 0.1);
+    color: var(--error);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3);
+}
+
+.title {
+    margin: 0 0 var(--space-2);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--font-serif);
+}
+
+.text {
+    margin: 0 0 var(--space-4);
+    font-size: 0.9rem;
+    color: var(--subtext);
+    line-height: 1.5;
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.cancelBtn,
+.confirmBtn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 22px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.12s, background 0.12s;
+}
+
+.cancelBtn:disabled,
+.confirmBtn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.cancelBtn {
+    background: var(--bg-selected);
+    color: var(--text);
+}
+
+.cancelBtn:hover:not(:disabled) {
+    background: var(--bg-selected);
+    filter: brightness(0.97);
+}
+
+.confirmBtn {
+    background: var(--error);
+    color: #fff;
+}
+
+.confirmBtn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
