@@ -58,10 +58,17 @@ export default function Login() {
         setSubmitting(true);
         setError('');
         try {
-            await doSignInWithGoogle();
-            navigate(from, {replace: true});
-        } catch {
-            setError('Falha na autenticação com o Google.');
+            const { user, isNewUser } = await doSignInWithGoogle();
+            if (isNewUser) {
+                navigate('/register', {
+                    replace: true,
+                    state: { googleUser: { uid: user.uid, email: user.email, fullName: user.displayName || '' } },
+                });
+            } else {
+                navigate(from, { replace: true });
+            }
+        } catch (err) {
+            setError(err.message || 'Falha na autenticação com o Google.');
             setSubmitting(false);
         }
     }

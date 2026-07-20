@@ -77,33 +77,32 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
 // Web Google sign-in: popup-based. Caller may pass profileData for the first-time 
 // case (when the users/{uid} doc doesn't exist yet). If not supplied, we derive a 
 // minimal profile from the Google account. 
-export const doSignInWithGoogle = async (profileData) => { 
-    const provider = new GoogleAuthProvider(); 
-    const userCredential = await signInWithPopup(auth, provider); 
-    const user = userCredential.user; 
+export const doSignInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
 
-    const userData = await DB.get('users', user.uid); 
+    const userData = await DB.get('users', user.uid);
 
-    if (!userData) { 
-        const fallback = { 
-            email: user.email || '', 
-            fullName: user.displayName || '', 
-            username: user.email ? user.email.split('@')[0] : '', 
-            phoneNumber: '', 
-            dob: '', 
-            isPublic: true, 
-            addressLine1: '', 
-            addressLine2: '', 
-            city: '', 
-            district: '', 
-            zipCode: '', 
-            country: '', 
-        }; 
-        await saveUserData(user.uid, { ...fallback, ...(profileData || {}) }, 'google'); 
-    } 
+    if (!userData) {
+        // First time we've seen this uid — don't fabricate a profile.
+        // Caller must route the user through profile completion.
+        return { user, isNewUser: true, userData: null };
+    }
 
-    return userCredential; 
-}; 
+    if (userData.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
+        await auth.signOut();
+        throw new Error('Your account has been suspended. Please contact support.');
+    }
+
+    return { user, isNewUser: false, userData };
+};
+
+// Called after a first-time Google user fills in the fields Google can't
+// give us (username, phone, dob, address).
+export const completeGoogleSignUp = async (uid, email, profileData) => {
+    await saveUserData(uid, { ...profileData, email }, 'google');
+};
 
 export const doSignOut = () => auth.signOut(); 
 
