@@ -1,5 +1,3 @@
-// 3-step register flow mirroring apps/mobile/.../RegisterScreen.
-// State lives here; each step is a presentational component.
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../../components/AuthLayout.jsx';

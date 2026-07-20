@@ -3,13 +3,10 @@ import { Eye, EyeOff } from 'lucide-react';
 import styles from './Field.module.css';
 
 export default function Field({ label, type = 'text', value, onChange, autoComplete, required, placeholder, name, max, min }) {
-    // Estado para controlar se a password está visível ou não
     const [showPassword, setShowPassword] = useState(false);
 
-    // Verificamos se este campo é do tipo password
     const isPassword = type === 'password';
 
-    // Se for password e quisermos mostrar, mudamos o input para 'text'
     const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
 
     return (
@@ -29,13 +26,12 @@ export default function Field({ label, type = 'text', value, onChange, autoCompl
                     min={min}
                 />
 
-                {/* Se for um campo de password, desenhamos o nosso botão de visualização */}
                 {isPassword && (
                     <button
                         type="button"
                         className={styles.eyeButton}
                         onClick={() => setShowPassword(!showPassword)}
-                        tabIndex="-1" // Impede que a tecla TAB foque neste botão
+                        tabIndex="-1"
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>

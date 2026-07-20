@@ -1,4 +1,3 @@
-// Password strength colors — fixed values, not theme-dependent.
 const PASSWORD_COLORS = {
     gray:   '#ccc',
     red:    '#D32F2F',
@@ -62,3 +61,9 @@ export function calculateAge(birthDate) {
 
     return age;
 }
+
+export const isValidEmail = (email) => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};

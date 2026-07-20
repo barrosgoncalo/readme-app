@@ -1,12 +1,17 @@
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
 import ErrorAlert from '../../components/ErrorAlert.jsx';
-import { getPasswordDetails } from '@readme/shared/src/utils/registerUtils';
+import { getPasswordDetails, isValidEmail } from '@readme/shared/src/utils/registerUtils';
 
 export default function Step1Credentials({ data, set, onNext, error }) {
     const strength = getPasswordDetails(data.password);
     const passwordsMatch = data.password && data.password === data.confirmPassword;
-    const canContinue = data.email && data.username && passwordsMatch && strength.level !== 'weak' && strength.level !== 'none';
+    
+    // Check email validity
+    const isEmailValid = isValidEmail(data.email);
+    
+    // Include isEmailValid in the continuation check
+    const canContinue = isEmailValid && data.username && passwordsMatch && strength.level !== 'weak' && strength.level !== 'none';
 
     function onSubmit(e) {
         e.preventDefault();
@@ -14,8 +19,21 @@ export default function Step1Credentials({ data, set, onNext, error }) {
     }
 
     return (
-        <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <Field label="Email" type="email" value={data.email} onChange={(v) => set('email', v)} autoComplete="email" required />
+        <form onSubmit={onSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <Field
+                label="Email"
+                type="email"
+                value={data.email}
+                onChange={(v) => set('email', v)}
+                autoComplete="email" 
+                required 
+            />
+            
+            {/* Show an error if they've typed something but it's not a valid format yet */}
+            {data.email && !isEmailValid && (
+                <div style={{ color: '#D32F2F', fontSize: '0.85rem' }}>Please enter a valid email address.</div>
+            )}
+
             <Field
                 label="Username"
                 value={data.username}
