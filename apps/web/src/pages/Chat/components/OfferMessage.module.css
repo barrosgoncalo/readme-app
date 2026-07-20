@@ -1,349 +1,240 @@
-.card {
-    width: 240px;
-    min-width: 240px;
-    border-radius: var(--radius);
-    overflow: hidden;
-    border: 1px solid var(--bg-elem);
+.offerCard {
+    width: 90%;
+    max-width: 380px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    background-color: var(--bg-elem);
+    box-shadow: var(--shadow-md);
+    margin: var(--space-2) 0;
 }
 
-.own {
-    align-self: flex-end;
-    background: var(--bg-selected);
-}
-
-.other {
-    align-self: flex-start;
-    background: var(--bg-elem);
-}
-
-.image {
-    width: 100%;
-    height: 110px;
-    object-fit: cover;
-}
-
-.content {
-    padding: var(--space-2) var(--space-3);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.title {
-    margin: 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.locationBtn {
+.offerHeader {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.8rem;
-    color: var(--subtext);
-    text-align: left;
+    gap: var(--space-2);
+    margin-bottom: 12px;
 }
 
-.locationBtn:hover {
-    color: var(--primary);
+.offerTitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
 }
 
-.locationText {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.footer {
+/* Trade Container (Lado a Lado) */
+.tradeContainer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-2);
-    flex-wrap: wrap;
+    background-color: var(--bg);
+    padding: 12px;
+    border-radius: var(--radius);
+    margin-top: var(--space-1);
 }
 
-.status {
-    padding: 2px 8px;
-    border: 1px solid;
-    border-radius: 999px;
+.bookColumn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.bookMiniLabel {
     font-size: 0.7rem;
     font-weight: 600;
+    margin-bottom: 6px;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--subtext);
+}
+
+.tradeBookImage {
+    width: 48px;
+    height: 68px;
+    border-radius: 6px;
+    object-fit: cover;
+    background-color: var(--bg-selected);
+    transition: var(--transition-base);
+}
+
+/* Adiciona efeito de hover apenas se o livro for clicável (múltiplas opções) */
+.bookColumn > div[style*="cursor: pointer"] .tradeBookImage:hover {
+    transform: scale(1.05);
+}
+
+.placeholderBg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--bg-selected);
     color: var(--text);
 }
 
-.actions {
+/* Location */
+.clickableLocationRow {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1);
-    width: 100%;
+    align-items: flex-start;
+    margin-top: 12px;
+    padding: 2px 0;
 }
 
-.btn {
-    padding: 4px 6px;
-    border: none;
+.offerText {
+    font-size: 0.875rem;
+    margin-bottom: var(--space-2);
+    color: var(--subtext);
+}
+
+.offerText span {
+    color: var(--text);
+}
+
+/* Status Badge */
+.statusBadge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    margin-top: 12px;
+}
+
+.statusBadgeText {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Botões de Ação */
+.offerActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.actionButton {
+    flex: 1;
+    padding: 12px 0;
     border-radius: var(--radius);
-    font-size: 0.7rem;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    white-space: nowrap;
-    transition: all 0.2s;
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.accept {
-    background: var(--success);
-    color: white;
-}
-
-.accept:hover:not(:disabled) {
-    opacity: 0.9;
-}
-
-.decline {
-    background: var(--error);
-    color: white;
-}
-
-.decline:hover:not(:disabled) {
-    opacity: 0.9;
-}
-
-.counter {
-    background: transparent;
-    color: var(--primary);
-    border: 1px solid var(--primary);
-}
-
-.counter:hover:not(:disabled) {
-    background: var(--bg-selected);
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.cancelSwapBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    margin-top: var(--space-2);
-    padding: 8px;
-    background: transparent;
-    border: 1px solid var(--error);
-    border-radius: var(--radius);
-    color: var(--error);
-    font-size: 0.8rem;
+    gap: var(--space-2);
     font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: opacity var(--transition-fast);
 }
 
-.cancelSwapBtn:hover:not(:disabled) {
-    background: var(--error-bg);
+.actionButton:hover:not(:disabled) {
+    opacity: 0.85;
 }
 
-.cancelSwapBtn:disabled {
-    opacity: 0.5;
+.actionButton:disabled {
     cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.declineButton {
+    background-color: var(--bg-selected);
+    color: var(--text);
+}
+
+.counterBackButton {
+    background-color: transparent;
+    border: 1px solid var(--secondary); /* secondary é o teu Laranja */
+    color: var(--secondary);
+}
+
+/* Workflow Aceite / Completo */
+.acceptedWorkflowContainer {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-2);
+    width: 100%;
+    gap: 12px;
+}
+
+.cancelSwapButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    border-radius: var(--radius);
+    border: 1px solid var(--bg-selected);
+    background-color: transparent;
+    color: var(--error);
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color var(--transition-base);
+}
+
+.cancelSwapButton:hover:not(:disabled) {
+    background-color: var(--error-bg);
+}
+
+.completedContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    border-top: 1px solid var(--bg-selected);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+}
+
+.completedHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-2);
+    gap: var(--space-2);
+}
+
+.completedText {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--success);
 }
 
 .mobileNotice {
     margin: 0;
-    font-size: 0.85rem;
+    line-height: 1.4;
     color: var(--subtext);
-    text-align: center;
-}
-
-.canceledNotice {
-    margin: var(--space-2) 0 0;
-    padding: var(--space-2) var(--space-3);
-    background: var(--error-bg);
-    border-radius: var(--radius);
-    color: var(--error);
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-align: center;
-}
-
-.clickableTitle {
-    color: var(--primary);
-    text-decoration: underline;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.clickableTitle:hover {
-    opacity: 0.8;
-}
-
-.modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: var(--space-4);
-    text-align: left;
-}
-
-.modalContent {
-    background: var(--bg);
-    border-radius: var(--radius-lg);
-    width: 100%;
-    max-width: 640px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    align-self: center;
-}
-
-.modalHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-3) var(--space-4);
-    background: var(--bg-elem);
-    border-bottom: 1px solid var(--bg-selected);
-}
-
-.modalTitle {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text);
-    font-family: var(--font-serif);
-}
-
-.closeModal {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--subtext);
-    padding: 4px;
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
-
-.closeModal:hover {
-    background: var(--bg-selected);
-    color: var(--text);
 }
 
 .modalBody {
-    padding: var(--space-3) var(--space-4);
+    max-height: 60vh;
     overflow-y: auto;
-    gap: var(--space-2);
+    padding: 0.5rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
 }
 
 .list {
     display: flex;
     flex-direction: column;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
 }
 
 .offeredBookItem {
     display: flex;
-    gap: var(--space-3);
-    padding: var(--space-2);
-    background: var(--bg-elem);
+    gap: 1rem;
+    padding: 0.75rem;
     border-radius: var(--radius);
-    border: 1px solid var(--bg-selected);
-    text-decoration: none;
-    color: var(--text);
-    transition: border-color 0.2s, transform 0.1s;
+    border: 2px solid transparent;
+    background-color: var(--bg-elem);
+    position: relative;
+    transition: all var(--transition-base);
 }
 
-.offeredBookItem:hover {
-    border-color: var(--primary);
-    transform: translateY(-1px);
-}
-
-.obCover {
-    width: 48px;
-    height: 70px;
-    border-radius: 4px;
-    object-fit: cover;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.obPlaceholder {
-    width: 48px;
-    height: 70px;
-    border-radius: 4px;
-    background: var(--bg-selected);
-    color: var(--subtext);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.obInfo {
-    display: flex;
+.grid .offeredBookItem {
     flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-}
-
-.obTitle {
-    margin: 0;
-    font-weight: 600;
-    font-size: 0.95rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.obAuthor {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--subtext);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.chooseBtn {
-    background: var(--primary);
-    color: white;
-}
-
-.chooseBtn:hover:not(:disabled) {
-    opacity: 0.9;
+    align-items: center;
+    text-align: center;
 }
 
 .selectable {
@@ -351,50 +242,86 @@
 }
 
 .selectable:hover {
-    border-color: var(--primary);
-    transform: translateY(-1px);
+    background-color: var(--bg-selected);
 }
 
 .selectedBook {
-    border-color: var(--success) !important;
-    background: rgba(76, 175, 80, 0.08) !important;
+    border-color: var(--secondary);
+    background-color: var(--bg);
 }
 
-.checkIcon {
-    margin-left: auto;
-    align-self: center;
-    color: var(--success);
-    padding-right: var(--space-2);
+.obCover {
+    width: 60px;
+    height: 90px;
+    border-radius: 4px;
+    object-fit: cover;
+    box-shadow: var(--shadow-sm);
+}
+
+.grid .obCover {
+    width: 100px;
+    height: 150px;
+}
+
+.obPlaceholder {
+    width: 60px;
+    height: 90px;
+    background-color: var(--bg-selected);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: var(--subtext);
+}
+
+.grid .obPlaceholder {
+    width: 100px;
+    height: 150px;
+}
+
+.obInfo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.obTitle {
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.obAuthor {
+    font-size: 0.875rem;
+    color: var(--subtext);
+    margin: 0 0 0.5rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .obDetailsLink {
-    font-size: 0.8rem;
-    color: var(--primary);
+    font-size: 0.875rem;
+    color: var(--tertiary-vivid);
     text-decoration: none;
     margin-top: auto;
-    font-weight: 500;
-    display: inline-block;
 }
 
 .obDetailsLink:hover {
     text-decoration: underline;
 }
 
-.modalFooter {
-    padding: var(--space-3) var(--space-4);
+.checkIcon {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    color: var(--secondary);
     background: var(--bg-elem);
-    border-top: 1px solid var(--bg-selected);
+    border-radius: 50%;
     display: flex;
-    justify-content: flex-end;
-}
-
-@media (max-width: 720px) {
-    .card {
-        width: 220px;
-        min-width: 220px;
-    }
-
-    .image {
-        height: 100px;
-    }
+    box-shadow: var(--shadow-sm);
 }
