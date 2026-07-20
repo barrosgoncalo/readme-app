@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
+import { WEB_ROUTES } from '../../../constants/webRoutes';
 import LocationPicker from '../../../components/LocationPicker.jsx';
 import BookCover from '../../../components/BookCover.jsx';
 import Modal from '../../../components/Modal.jsx';
@@ -74,6 +76,14 @@ export default function CounterOfferModal({ open, onClose, offeredBooks, loading
                                                 <p className={offerStyles.obAuthor}>
                                                     {formatAuthors(book.authors) || 'Unknown author'}
                                                 </p>
+
+                                                <Link
+                                                    to={WEB_ROUTES.publicationDetail(book.id)}
+                                                    className={offerStyles.obDetailsLink}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    View details
+                                                </Link>
                                             </div>
                                             {isSelected && (
                                                 <div className={offerStyles.checkIcon}>

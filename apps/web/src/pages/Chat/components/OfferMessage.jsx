@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Ban, Check, ChevronDown, ChevronUp, List, MapPin, Repeat, X } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ChatService } from '@readme/shared/src/services/chat';
-import { TradeService } from '@readme/shared/src/services/trades';
-import { ReviewService } from '@readme/shared/src/services/reviews';
-import { getBooksByIds } from '@readme/shared/src/services/booksCatalog';
-import { formatAuthors } from '@readme/shared/src/utils/formatAuthors';
-import { NEGOTIATION_STATUS } from '@readme/shared/src/constants/status';
-import { WEB_ROUTES } from '../../../constants/webRoutes';
+import {useEffect, useState} from 'react';
+import {Ban, ArrowLeftRight, Book, PartyPopper, CheckCircle, AlertTriangle} from 'lucide-react';
+import {useNavigate, useSearchParams} from 'react-router-dom';
+import {ChatService} from '@readme/shared/src/services/chat';
+import {TradeService} from '@readme/shared/src/services/trades';
+import {ReviewService} from '@readme/shared/src/services/reviews';
+import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
+import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
+import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
+import {WEB_ROUTES} from '../../../constants/webRoutes';
 import ActionCard from './ActionCard.jsx';
 import ReviewUI from './ReviewUI.jsx';
 import LocationMapPreview from './LocationMapPreview.jsx';
@@ -15,27 +15,15 @@ import CounterOfferModal from './CounterOfferModal.jsx';
 import BookCover from '../../../components/BookCover.jsx';
 import Spinner from '../../../components/Spinner.jsx';
 import Modal from '../../../components/Modal.jsx';
-import Button from '../../../components/Button.jsx';
 import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
 import styles from './OfferMessage.module.css';
 
-const STATUS_COLORS = {
-    pending: 'var(--secondary)',
-    accepted: 'var(--success)',
-    declined: 'var(--error)',
-    canceled: 'var(--error)',
-    unavailable: 'var(--error)',
-    completed: 'var(--primary)',
-    countered: 'var(--bg-elem)',
-};
-
-export default function OfferMessage({ message, isOwn, currentUserId, chatId, otherUserId }) {
+export default function OfferMessage({message, isOwn, currentUserId, chatId, otherUserId}) {
     const navigate = useNavigate();
 
     const [busy, setBusy] = useState(false);
     const [hasReviewed, setHasReviewed] = useState(false);
     const [reviewError, setReviewError] = useState('');
-    const [showMap, setShowMap] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
     const [showCounterModal, setShowCounterModal] = useState(false);
 
@@ -44,23 +32,15 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
     const [fetchedBooks, setFetchedBooks] = useState([]);
     const [loadingBooks, setLoadingBooks] = useState(false);
 
-    const [selectedBookId, setSelectedBookId] = useState(null);
     const [singleBook, setSingleBook] = useState(null);
 
     const offer = message.offerDetails;
     const isCompleted = offer?.status === 'completed';
     const isCanceled = offer?.status === NEGOTIATION_STATUS.CANCELED;
     const isUnavailable = offer?.status === NEGOTIATION_STATUS.UNAVAILABLE;
-    // A cancelled swap can still be reviewed by whichever party didn't cancel.
     const canReview = isCompleted || (isCanceled && offer?.cancelledBy !== currentUserId);
 
-    // The counter-offer book picker uses the snapshot already stored on the
-    // offer (id/title/image, captured when it was sent) rather than
-    // fetchedBooks/getBooksByIds below — that lookup queries the global
-    // books catalog by offer.offeredBookIds, but those ids are actually
-    // publication ids, so it always returns empty and left selectedBookId
-    // (and therefore the Send button) permanently unset.
-    const counterOfferBooks = (offer?.offeredBooks || []).map(b => ({ ...b, coverUrl: b.image }));
+    const counterOfferBooks = (offer?.offeredBooks || []).map(b => ({...b, coverUrl: b.image}));
 
     useEffect(() => {
         if (showBooksModal && fetchedBooks.length === 0) {
@@ -114,7 +94,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
             // lookup here would never match. Use the snapshot directly.
             const snapshot = offer.offeredBooks?.[0];
             if (snapshot?.title) {
-                setSingleBook({ title: snapshot.title, realBookId: snapshot.id });
+                setSingleBook({title: snapshot.title, realBookId: snapshot.id});
                 return;
             }
 
@@ -125,7 +105,7 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
                 try {
                     const globalBooks = await getBooksByIds([originalId]);
                     if (globalBooks && globalBooks.length > 0 && !cancelled)
-                        setSingleBook({ title: globalBooks[0].title, realBookId: globalBooks[0].id });
+                        setSingleBook({title: globalBooks[0].title, realBookId: globalBooks[0].id});
                 } catch (err) {
                     console.error(err);
                 }
@@ -234,179 +214,244 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
         setSelectedBookId(null);
     }
 
-    async function handleProposeSelected() {
-        if (!selectedBookId) return;
+    function handleTargetBookClick() {
+        if (!offer.targetBookId) return;
 
-        const chosenBook = fetchedBooks.find(b => b.id === selectedBookId);
-        if (!chosenBook) return;
+        navigate(WEB_ROUTES.publicationDetail(offer.targetBookId));
+    }
 
-        setBusy(true);
-        try {
-            await ChatService.chooseBookFromOffer(
-                chatId,
-                message,
-                chosenBook,
-                currentUserId,
-                otherUserId,
-                chosenBook.id,
-                chosenBook.title
-            );
+    function handleOfferedBookClick() {
+        if (hasMultipleOptions)
+            handleOpenBooks();
+        else {
+            const targetId = offer.savedRealOfferedId || singleBook?.realBookId || offer.offeredBookIds?.[0] || offer.offeredBooks?.[0]?.id;
+            if (!targetId) return;
 
-            handleCloseBooks();
-        } catch (err) {
-            console.error('Error sending selection:', err);
-        } finally {
-            setBusy(false);
+            navigate(WEB_ROUTES.publicationDetail(targetId));
         }
     }
 
-    const statusLabel = {
-        [NEGOTIATION_STATUS.PENDING]: 'Pending',
-        [NEGOTIATION_STATUS.ACCEPTED]: 'Accepted',
-        [NEGOTIATION_STATUS.DECLINED]: 'Declined',
-        [NEGOTIATION_STATUS.CANCELED]: 'Cancelled',
-        [NEGOTIATION_STATUS.UNAVAILABLE]: 'Unavailable',
-        completed: 'Completed',
-        countered: 'Countered',
-    }[offer.status] || offer.status;
-
-    const isAccepted = offer.status === NEGOTIATION_STATUS.ACCEPTED;
     const isPending = offer.status === NEGOTIATION_STATUS.PENDING;
+    const isAccepted = offer.status === NEGOTIATION_STATUS.ACCEPTED;
+    const isCounterOffer = offer?.isCounter === true;
     const hasMultipleOptions = offer.offeredBookIds?.length > 1;
 
+    let statusBg = 'var(--bg-selected)';
+    let statusTextColor = 'var(--secondary)'; // Pending
+
+    if (offer?.status === 'accepted' || offer?.status === 'completed') {
+        statusBg = 'var(--success-bg)';
+        statusTextColor = 'var(--success)';
+    } else if (offer?.status === 'declined' || offer?.status === 'countered' || offer?.status === 'canceled' || offer?.status === 'unavailable') {
+        statusBg = 'var(--error-bg)';
+        statusTextColor = 'var(--error)';
+    }
+
+    const imageToShow = offer?.finalSelectedBookImage || offer?.selectedBookImage || (offer?.offeredBookIds?.length === 1 ? offer.offeredBooks?.[0]?.image : null);
+
     return (
-        <div className={`${styles.card} ${isOwn ? styles.own : styles.other}`}>
-            {offer.targetBookImage && (
-                <img src={offer.targetBookImage} alt="" className={styles.image} />
-            )}
-
-            <div className={styles.content}>
-
-                {offer.offeredBookIds?.length === 1 ? (
-                    <p
-                        className={`${styles.title} ${styles.clickableTitle}`}
-                        onClick={() => {
-                            const targetId = offer.savedRealOfferedId || singleBook?.realBookId || offer.offeredBookIds[0];
-                            const bookOwnerId = offer.isSelectionFrom
-                                ? (isOwn ? otherUserId : currentUserId)
-                                : message.senderId;
-
-                            navigate(`${WEB_ROUTES.bookDetail(targetId)}?owner=${bookOwnerId}&from=chat`);
-                        }}
-                        title={offer.savedOfferedTitle || singleBook?.title || 'Loading book...'}
-                    >
-                        {offer.isSelectionFrom ? 'Chosen: ' : 'Offered: '}
-                        {offer.savedOfferedTitle || singleBook?.title || 'Loading...'}
-                    </p>
-                ) : (
-                    <p className={`${styles.title} ${styles.clickableTitle}`} onClick={handleOpenBooks}>
-                        Offered {offer.offeredBookIds?.length || 0} books
-                    </p>
-                )}
-
-                {offer.location && (
-                    <button
-                        type="button"
-                        className={styles.locationBtn}
-                        onClick={() => setShowMap(s => !s)}
-                    >
-                        <MapPin size={14} />
-                        <span className={styles.locationText}>{offer.location.title || 'Location TBD'}</span>
-                        {showMap ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
-                )}
-
-                <div className={styles.footer}>
-                    <span
-                        className={styles.status}
-                        style={{ borderColor: STATUS_COLORS[offer.status] || 'var(--bg-elem)' }}
-                    >
-                        {statusLabel}
+        <>
+            <div
+                className={styles.offerCard}
+                style={{
+                    borderColor: isPending && isCounterOffer ? 'var(--secundary)' : 'var(--border-light, #E5E7EB)',
+                    borderWidth: isPending && isCounterOffer ? '2px' : '1px',
+                    marginLeft: isOwn ? 'auto' : '0'
+                }}
+            >
+                {/* HEADER */}
+                <div className={styles.offerHeader}>
+                    <ArrowLeftRight size={18} color="var(--secondary)"/>
+                    <span className={styles.offerTitle}>
+                        {isCounterOffer ? "Counter Proposal" : "Swap Proposal"}
                     </span>
-
-                    {!isOwn && isPending && (
-                        <div className={styles.actions}>
-                            {hasMultipleOptions ? (
-                                <button
-                                    className={`${styles.btn} ${styles.chooseBtn}`}
-                                    onClick={handleOpenBooks}
-                                    disabled={busy}
-                                >
-                                    <List size={14} />
-                                    Choose Book
-                                </button>
-                            ) : (
-                                <button
-                                    className={`${styles.btn} ${styles.accept}`}
-                                    onClick={() => handleStatus(NEGOTIATION_STATUS.ACCEPTED)}
-                                    disabled={busy}
-                                >
-                                    <Check size={14} />
-                                    Accept
-                                </button>
-                            )}
-
-                            <button
-                                className={`${styles.btn} ${styles.counter}`}
-                                onClick={() => setShowCounterModal(true)}
-                                disabled={busy}
-                            >
-                                <Repeat size={14} />
-                                Counter
-                            </button>
-
-                            <button
-                                className={`${styles.btn} ${styles.decline}`}
-                                onClick={() => handleStatus(NEGOTIATION_STATUS.DECLINED)}
-                                disabled={busy}
-                            >
-                                <X size={14} />
-                                Decline
-                            </button>
-                        </div>
-                    )}
                 </div>
+
+                {/* SIDE-BY-SIDE TRADE CONTAINER */}
+                <div className={styles.tradeContainer}>
+                    {/* Left Side: Target Book */}
+                    <div className={styles.bookColumn}>
+                        <span className={styles.bookMiniLabel}>Target Book</span>
+                        <div
+                            role="button"
+                            onClick={handleTargetBookClick}
+                            style={{cursor: 'pointer'}}
+                            title="View book details"
+                        >
+                            {offer.targetBookImage ? (
+                                <img src={offer.targetBookImage} alt="Target Book" className={styles.tradeBookImage}/>
+                            ) : (
+                                <div className={`${styles.tradeBookImage} ${styles.placeholderBg}`}>
+                                    <Book size={20} color="var(--subtext)"/>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <ArrowLeftRight size={20} color="var(--subtext)" style={{margin: '0 8px'}}/>
+
+                    {/* Right Side: Offered Book(s) */}
+                    <div className={styles.bookColumn}>
+                        <span className={styles.bookMiniLabel}>
+                            {(isCounterOffer || offer?.offeredBooks?.length === 1) ? "Offered Book" : "Options"}
+                        </span>
+                        <div
+                            onClick={handleOfferedBookClick}
+                            style={{cursor: 'pointer'}}
+                            title={hasMultipleOptions ? "View options" : "View book details"}
+                        >
+                            {imageToShow ? (
+                                <img src={imageToShow} alt="Offered Book" className={styles.tradeBookImage}/>
+                            ) : (
+                                <div className={`${styles.tradeBookImage} ${styles.placeholderBg}`}>
+                                    <span style={{fontSize: '1rem', fontWeight: '700', color: 'var(--text)'}}>
+                                        {offer?.offeredBooks?.length || offer?.offeredBookIds?.length || 1}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* LOCATION DETAILS */}
+                {offer.location ? (
+                    <div className={styles.clickableLocationRow}>
+                        <span className={styles.offerText}>
+                            Location: <span style={{fontWeight: '600', color: 'var(--text)'}}>
+                                {offer.location.title || offer.location.address || 'Location TBD'}
+                            </span>
+                        </span>
+                    </div>
+                ) : (
+                    <div className={styles.offerText} style={{marginTop: '12px'}}>
+                        Location: <span style={{fontWeight: '600', color: 'var(--text)'}}>Not specified</span>
+                    </div>
+                )}
+
+                {/* MAP PREVIEW NA WEB */}
+                {offer.location && (
+                    <LocationMapPreview location={offer.location}/>
+                )}
+
+                {/* STATUS BADGE */}
+                <div className={styles.statusBadge} style={{backgroundColor: statusBg}}>
+                    <span className={styles.statusBadgeText} style={{color: statusTextColor}}>
+                        {offer.status === NEGOTIATION_STATUS.CANCELED ? 'Canceled' : (offer?.status || 'Pending')}
+                    </span>
+                </div>
+
+                {/* 3-BUTTON ACTION FLOW (Apenas quem recebe pode agir) */}
+                {!isOwn && isPending && (
+                    <div className={styles.offerActions}>
+                        <button
+                            className={`${styles.actionButton} ${styles.declineButton}`}
+                            onClick={() => handleStatus(NEGOTIATION_STATUS.DECLINED)}
+                            disabled={busy}
+                        >
+                            Decline
+                        </button>
+
+                        <button
+                            className={`${styles.actionButton} ${styles.counterBackButton}`}
+                            onClick={() => setShowCounterModal(true)}
+                            disabled={busy}
+                        >
+                            Counter
+                        </button>
+
+                        {!hasMultipleOptions && (
+                            <button
+                                className={styles.actionButton}
+                                style={{backgroundColor: 'var(--secundary)', color: '#FFFFFF'}}
+                                onClick={() => handleStatus(NEGOTIATION_STATUS.ACCEPTED)}
+                                disabled={busy}
+                            >
+                                Accept
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* AVISO DA WEB PARA COMPLETAR TROCA */}
+                {isAccepted && (
+                    <div className={styles.acceptedWorkflowContainer}>
+                        <ActionCard prompt="Swap accepted!">
+                            <p className={styles.mobileNotice} style={{fontSize: '0.85rem', color: 'var(--subtext)'}}>
+                                To complete this trade, open the ReadMe mobile app and use the verification scanner.
+                            </p>
+                        </ActionCard>
+                        <button
+                            className={styles.cancelSwapButton}
+                            onClick={() => setShowCancelConfirm(true)}
+                            disabled={busy}
+                        >
+                            <Ban size={15} style={{marginRight: '6px'}}/>
+                            Cancel Swap Agreement
+                        </button>
+                    </div>
+                )}
+
+                {/* ESTADOS COMPLETOS / CANCELADOS */}
+                {isCompleted && (
+                    <div className={styles.completedContainer}>
+                        <div className={styles.completedHeader}>
+                            <PartyPopper size={24} color="#10B981"/>
+                            <span className={styles.completedText}>Trade completed!</span>
+                        </div>
+                    </div>
+                )}
+
+                {isCanceled && (
+                    <div className={styles.completedContainer}>
+                        <div className={styles.completedHeader}>
+                            <span className={styles.completedText} style={{color: '#EF4444', fontSize: '0.875rem'}}>
+                                {offer.cancelledBy === currentUserId
+                                    ? "You cancelled this swap agreement"
+                                    : "The other user cancelled this swap agreement"}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {isUnavailable && (
+                    <div className={styles.completedContainer}>
+                        <div className={styles.completedHeader}>
+                            <AlertTriangle size={20} color="#EF4444"/>
+                            <span className={styles.completedText} style={{color: '#EF4444', fontSize: '0.875rem'}}>
+                                This trade is no longer available
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* REVIEW UI INLINE DA WEB */}
+                {canReview && !hasReviewed && (
+                    <div style={{
+                        marginTop: '16px',
+                        width: '100%',
+                        borderTop: '1px solid var(--border-light)',
+                        paddingTop: '16px'
+                    }}>
+                        <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError}/>
+                    </div>
+                )}
+                {canReview && hasReviewed && (
+                    <div className={styles.completedContainer} style={{marginTop: 0, borderTop: 'none'}}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: 'var(--subtext)',
+                            fontSize: '0.875rem',
+                            fontWeight: '600'
+                        }}>
+                            <CheckCircle size={18} color="#10B981" style={{marginRight: '8px'}}/>
+                            Review Submitted
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {showMap && offer.location && (
-                <LocationMapPreview location={offer.location} />
-            )}
-
-            {isAccepted && (
-                <>
-                    <ActionCard prompt="Swap accepted!">
-                        <p className={styles.mobileNotice}>
-                            To complete this trade, open the ReadMe mobile app and use the verification code there.
-                        </p>
-                    </ActionCard>
-                    <button
-                        type="button"
-                        className={styles.cancelSwapBtn}
-                        onClick={() => setShowCancelConfirm(true)}
-                        disabled={busy}
-                    >
-                        <Ban size={14} />
-                        Cancel Swap Agreement
-                    </button>
-                </>
-            )}
-
-            {isCanceled && (
-                <p className={styles.canceledNotice}>
-                    {offer.cancelledBy === currentUserId
-                        ? 'You cancelled this swap agreement.'
-                        : 'The other user cancelled this swap agreement.'}
-                </p>
-            )}
-
-            {isUnavailable && (
-                <p className={styles.canceledNotice}>This trade is no longer available.</p>
-            )}
-
-            {canReview && !hasReviewed && (
-                <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError} />
-            )}
-
+            {/* MODAIS DA WEB (Mantidos inalterados!) */}
             <ConfirmDialog
                 open={showCancelConfirm}
                 onClose={() => setShowCancelConfirm(false)}
@@ -432,59 +477,37 @@ export default function OfferMessage({ message, isOwn, currentUserId, chatId, ot
             <Modal
                 open={showBooksModal}
                 onClose={handleCloseBooks}
-                title={(!isOwn && isPending && hasMultipleOptions) ? 'Choose a book to trade' : 'Offered Books'}
-                footer={
-                    !isOwn && isPending && hasMultipleOptions ? (
-                        <Button disabled={!selectedBookId} onClick={handleProposeSelected}>
-                            Choose Book
-                        </Button>
-                    ) : null
-                }
+                title="Offered Books"
             >
-                <div className={`${styles.modalBody} ${fetchedBooks.length > 5 ? styles.grid : styles.list}`}>
-                    {loadingBooks ? (
+                <div className={`${styles.modalBody} ${(counterOfferBooks.length || fetchedBooks.length) > 5 ? styles.grid : styles.list}`}>
+                    {loadingBooks && fetchedBooks.length === 0 && counterOfferBooks.length === 0 ? (
                         <Spinner center label="Loading books..." />
                     ) : (
-                        fetchedBooks.map(book => {
-                            const isSelected = selectedBookId === book.id;
-                            const canSelect = !isOwn && isPending && hasMultipleOptions;
-
-                            return (
-                                <div
-                                    key={book.id}
-                                    className={`${styles.offeredBookItem} ${isSelected ? styles.selectedBook : ''} ${canSelect ? styles.selectable : ''}`}
-                                    onClick={() => canSelect && setSelectedBookId(book.id)}
-                                >
-                                    <BookCover
-                                        coverUrl={book.coverUrl}
-                                        imgClassName={styles.obCover}
-                                        placeholderClassName={styles.obPlaceholder}
-                                        iconSize={20}
-                                    />
-                                    <div className={styles.obInfo}>
-                                        <p className={styles.obTitle}>{book.title || 'Untitled'}</p>
-                                        <p className={styles.obAuthor}>
-                                            {formatAuthors(book.authors) || 'Unknown author'}
-                                        </p>
-                                        <Link
-                                            to={`${WEB_ROUTES.bookDetail(book.id)}?owner=${message.senderId}`}
-                                            className={styles.obDetailsLink}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            View details
-                                        </Link>
-                                    </div>
-                                    {isSelected && (
-                                        <div className={styles.checkIcon}>
-                                            <Check size={20} />
-                                        </div>
-                                    )}
+                        (counterOfferBooks.length > 0 ? counterOfferBooks : fetchedBooks).map(book => (
+                            <div
+                                key={book.id}
+                                className={`${styles.offeredBookItem} ${styles.selectable}`}
+                                onClick={() => {
+                                    navigate(WEB_ROUTES.publicationDetail(book.id));
+                                }}
+                            >
+                                <BookCover
+                                    coverUrl={book.coverUrl}
+                                    imgClassName={styles.obCover}
+                                    placeholderClassName={styles.obPlaceholder}
+                                    iconSize={20}
+                                />
+                                <div className={styles.obInfo}>
+                                    <p className={styles.obTitle}>{book.title || 'Untitled'}</p>
+                                    <p className={styles.obAuthor}>
+                                        {formatAuthors(book.authors) || 'Unknown author'}
+                                    </p>
                                 </div>
-                            )
-                        })
+                            </div>
+                        ))
                     )}
                 </div>
             </Modal>
-        </div>
+        </>
     );
 }
