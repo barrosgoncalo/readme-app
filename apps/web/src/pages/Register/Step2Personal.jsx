@@ -1,15 +1,35 @@
+import { useState } from 'react';
 import Field from '../../components/Field.jsx';
 import Button from '../../components/Button.jsx';
+import Toggle from '../../components/Toggle.jsx';
+import { calculateAge } from '@readme/shared/src/utils/registerUtils';
 
 export default function Step2Personal({ data, set, onNext, onBack }) {
+    const [ageError, setAgeError] = useState('');
+
     const canContinue = data.fullName && data.dob;
 
-    // Calculamos a data de hoje no formato que o HTML espera (AAAA-MM-DD)
     const today = new Date().toISOString().split('T')[0];
+
+    function handleDobChange(v) {
+        set('dob', v);
+        if (v && calculateAge(new Date(v)) < 16) {
+            setAgeError('You must be at least 16 years old to create an account.');
+        } else {
+            setAgeError('');
+        }
+    }
 
     function onSubmit(e) {
         e.preventDefault();
-        if (canContinue) onNext();
+        if (!canContinue) return;
+
+        if (calculateAge(new Date(data.dob)) < 16) {
+            setAgeError('You must be at least 16 years old to create an account.');
+            return;
+        }
+
+        onNext();
     }
 
     return (
@@ -32,21 +52,20 @@ export default function Step2Personal({ data, set, onNext, onBack }) {
                 label="Date of birth"
                 type="date"
                 value={data.dob}
-                onChange={(v) => set('dob', v)}
+                onChange={handleDobChange}
                 required
                 max={today}
             />
-            <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.9rem', color: 'var(--subtext)' }}>
-                <input
-                    type="checkbox"
-                    checked={data.isPublic}
-                    onChange={(e) => set('isPublic', e.target.checked)}
-                />
-                Make my profile public
-            </label>
+            {ageError && (
+                <div style={{ color: '#D32F2F', fontSize: '0.85rem' }}>{ageError}</div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '8px 0' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--subtext)' }}>Make my profile public</span>
+                <Toggle checked={data.isPublic} onChange={(v) => set('isPublic', v)} />
+            </div>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                 <Button variant="ghost" onClick={onBack}>Back</Button>
-                <Button type="submit" disabled={!canContinue}>Continue</Button>
+                <Button type="submit" disabled={!canContinue || !!ageError}>Continue</Button>
             </div>
         </form>
     );
