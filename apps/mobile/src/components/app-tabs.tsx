@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { TouchableOpacity, Animated, StyleSheet, View, useColorScheme } from 'react-native';
+import { TouchableOpacity, Animated, StyleSheet, View, useColorScheme, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@readme/shared/src/constants/theme';
@@ -82,8 +82,12 @@ function CustomTabBar({ state, navigation, translateY, themeColors }: any) {
                 styles.floatingBar, 
                 { 
                     backgroundColor: themeColors.tabBarBackground, 
-                    // 2. Dynamically pushes the floating bar above Android/iOS system bar
-                    bottom: 16 + insets.bottom, 
+                    // 2. Dynamically pushes the floating bar above Android/iOS system bar.
+                    // Only a fraction of the full inset is used — a floating pill
+                    // doesn't need the same clearance as edge-to-edge content.
+                    // Android gets a bit more base clearance since its gesture-nav
+                    // inset tends to read smaller than iOS's home-indicator inset.
+                    bottom: (Platform.OS === 'android' ? 16 : 8) + insets.bottom * 0.5, 
                     transform: [{ translateY }] 
                 }
             ]}
