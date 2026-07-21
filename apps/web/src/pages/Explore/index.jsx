@@ -304,7 +304,8 @@ export default function Explore() {
                             className={`${styles.filterButton} ${hasActiveFilters ? styles.filterButtonActive : ''}`}
                             onClick={() => setFiltersVisible(v => !v)}
                         >
-                            <SlidersHorizontal size={18} />
+                            <SlidersHorizontal size={16} />
+                            <span>Filters</span>
                             {hasActiveFilters && <span className={styles.filterBadgeDot} />}
                         </button>
                     )}
@@ -462,31 +463,6 @@ export default function Explore() {
                                 <Link to={WEB_ROUTES.PUBLICATION_NEW} className={styles.heroCta}>
                                     <Plus size={18} /> New Publication
                                 </Link>
-
-                                {/*TODO: Make the statistics*/}
-                                {/*<div className={styles.heroStats}>*/}
-                                {/*    <div className={styles.statItem}>*/}
-                                {/*        <BookOpen size={18} className={styles.statIcon} />*/}
-                                {/*        <div className={styles.statText}>*/}
-                                {/*            <span className={styles.statNumber}>2.4k+</span>*/}
-                                {/*            <span className={styles.statLabel}>Books available</span>*/}
-                                {/*        </div>*/}
-                                {/*    </div>*/}
-                                {/*    <div className={styles.statItem}>*/}
-                                {/*        <Users size={18} className={styles.statIcon} />*/}
-                                {/*        <div className={styles.statText}>*/}
-                                {/*            <span className={styles.statNumber}>1.1k+</span>*/}
-                                {/*            <span className={styles.statLabel}>Readers</span>*/}
-                                {/*        </div>*/}
-                                {/*    </div>*/}
-                                {/*    <div className={styles.statItem}>*/}
-                                {/*        <ArrowLeftRight size={18} className={styles.statIcon} />*/}
-                                {/*        <div className={styles.statText}>*/}
-                                {/*            <span className={styles.statNumber}>850+</span>*/}
-                                {/*            <span className={styles.statLabel}>Swaps completed</span>*/}
-                                {/*        </div>*/}
-                                {/*    </div>*/}
-                                {/*</div>*/}
                             </div>
 
                             <div className={styles.heroImageWrapper}>
