@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { timeAgo } from '@readme/shared/src/utils/timeAgo';
 import styles from './ChatList.module.css';
 
@@ -5,6 +6,7 @@ import styles from './ChatList.module.css';
 const DEFAULT_BOOK_COVER = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=200';
 
 function ChatRow({chat, activeChatId, onSelectChat}) {
+    const [imageFailed, setImageFailed] = useState(false);
     const displayName = chat.targetSeller?.name || 'User';
     const avatarUrl = chat.targetSeller?.avatarUrl;
 
@@ -24,10 +26,11 @@ function ChatRow({chat, activeChatId, onSelectChat}) {
             onClick={() => onSelectChat(chat.id)}
         >
             <div className={styles.thumbWrap}>
-                <img 
-                    src={chat.imageUrl || DEFAULT_BOOK_COVER} 
-                    alt="Book cover" 
+                <img
+                    src={(!imageFailed && chat.imageUrl) || DEFAULT_BOOK_COVER}
+                    alt="Book cover"
                     className={styles.thumbnail}
+                    onError={() => setImageFailed(true)}
                 />
                 
                 {avatarUrl ? (
