@@ -7,7 +7,6 @@ import styles from './BookCard.module.css';
 
 const STATUS_COLORS = {
     [BOOK_STATUS.READING]: styles.dotReading,
-    [BOOK_STATUS.WANT]: styles.dotWant,
     [BOOK_STATUS.DONE]: styles.dotDone,
 };
 

@@ -80,7 +80,7 @@ export const mapIsbnDbBook = (apiData) => {
 /**
  * DATABASE MODEL: Wraps the standardized API data with user-specific shelf data
  */
-export const createUserBookModel = (userId, bookId, status = 'want_to_read', overrides = {}) => {
+export const createUserBookModel = (userId, bookId, status = 'reading', overrides = {}) => {
     const now = new Date().toISOString();
 
     return {

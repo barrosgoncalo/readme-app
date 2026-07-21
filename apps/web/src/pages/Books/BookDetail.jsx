@@ -288,9 +288,6 @@ export default function BookDetail({ embedded = false, onClose }) {
                             <button type="button"
                                     className={`${styles.statusBtn} ${status === BOOK_STATUS.DONE ? styles.statusBtnActive : ''}`}
                                     onClick={() => handleStatusChange(BOOK_STATUS.DONE)}>{BOOK_STATUS_LABELS[BOOK_STATUS.DONE]}</button>
-                            <button type="button"
-                                    className={`${styles.statusBtn} ${status === BOOK_STATUS.WANT ? styles.statusBtnActive : ''}`}
-                                    onClick={() => handleStatusChange(BOOK_STATUS.WANT)}>{BOOK_STATUS_LABELS[BOOK_STATUS.WANT]}</button>
                         </div>
                     </div>
 

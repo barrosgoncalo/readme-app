@@ -19,7 +19,6 @@
 }
 
 .dotReading { background: var(--tertiary-vivid); }
-.dotWant    { background: var(--secondary); }
 .dotDone    { background: var(--bg-selected); border: 1px solid var(--subtext); }
 
 /* ── Featured card (Currently Reading) ── */
