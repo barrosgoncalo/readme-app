@@ -101,11 +101,6 @@ function CoverFrame({ book, authors, status, isFavorite, onToggleFavorite, onRem
 
             <span className={styles.spine} aria-hidden="true" />
 
-            <span
-                className={`${styles.cornerDot} ${STATUS_COLORS[status]}`}
-                title={BOOK_STATUS_LABELS[status]}
-            />
-
             <div className={styles.hoverActions} onClick={stop}>
                 {/*<button*/}
                 {/*    type="button"*/}
