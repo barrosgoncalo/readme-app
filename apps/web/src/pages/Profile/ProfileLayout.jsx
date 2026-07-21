@@ -3,17 +3,11 @@ import { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
-import {
-    BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera, User,
-} from 'lucide-react';
-
-// Shared Services & Contexts
+import { BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera, User } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useUserRole } from '@readme/shared/src/hooks/use-user-role';
 import { useMyPostings } from '@readme/shared/src/hooks/use-my-postings';
-
-// Local Project Imports
 import { db, auth, storage } from '@readme/shared/src/services/firebase';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -142,12 +136,12 @@ export default function ProfileLayout() {
             items: [
                 { icon: Users, label: 'Following', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWING) },
                 { icon: Users, label: 'Followers', onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOWERS) },
-                {
+                ...(userData?.profileVisibility === 'private' ? [{
                     icon: UserPlus,
                     label: 'Follow Requests',
                     badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
                     onClick: () => navigate(WEB_ROUTES.PROFILE_FOLLOW_REQUESTS),
-                },
+                }] : []),
             ],
         },
     ];
