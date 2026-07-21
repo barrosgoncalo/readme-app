@@ -133,7 +133,15 @@ export default function AppShell() {
                 <aside className={`${styles.sidebar} ${isCollapsed ? styles.sidebarCollapsed : ''}`}>
                     <div className={styles.sidebarTop}>
                         <h1 className={styles.wordmark}>
-                            <Link to={WEB_ROUTES.EXPLORE} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            <Link
+                                to={WEB_ROUTES.EXPLORE}
+                                style={{ color: 'inherit', textDecoration: 'none' }}
+                                onClick={() => {
+                                    if (isExplorePage) {
+                                        window.dispatchEvent(new Event('explore:refresh-request'));
+                                    }
+                                }}
+                            >
                                 {isCollapsed ? 'R' : 'README'}
                             </Link>
                         </h1>
@@ -159,6 +167,11 @@ export default function AppShell() {
                                 className={() =>
                                     checkIsActive(to) ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
                                 }
+                                onClick={() => {
+                                    if (to === WEB_ROUTES.EXPLORE && isExplorePage) {
+                                        window.dispatchEvent(new Event('explore:refresh-request'));
+                                    }
+                                }}
                             >
                                 <Icon size={18} aria-hidden />
                                 {!isCollapsed && <span>{label}</span>}

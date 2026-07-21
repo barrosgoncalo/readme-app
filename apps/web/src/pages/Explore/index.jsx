@@ -85,6 +85,7 @@ export default function Explore() {
         isLoadingMore,
         hasMore,
         loadMore,
+        refetch,
     } = useExploreFeed({
         excludeUid: uid,
         sortBy,
@@ -92,6 +93,12 @@ export default function Explore() {
         genres: genreFilters,
         includeAllStatuses: false,
         hitsPerPage: WEB_HITS_PER_PAGE,
+        // A Back-button arrival (POP) should restore exactly what was
+        // cached, scroll and all. Any other arrival - clicking the
+        // Explore icon from elsewhere, landing here after blocking a
+        // user, a fresh tab - should ignore the cache and pull a fresh
+        // page 1, so a just-blocked user's stuff actually disappears.
+        forceRefreshOnMount: navigationType !== 'POP',
     });
 
     useEffect(() => {
@@ -141,6 +148,20 @@ export default function Explore() {
             }
         }
     }, [loadingPubs, publications.length, navigationType]);
+    // ==========================================
+
+    // ==========================================
+    // "CLICK OFF AND ON" WHILE ALREADY ON EXPLORE
+    // ==========================================
+    useEffect(() => {
+        function handleExploreRefreshRequest() {
+            sessionStorage.removeItem('exploreScrollPos');
+            window.scrollTo(0, 0);
+            refetch();
+        }
+        window.addEventListener('explore:refresh-request', handleExploreRefreshRequest);
+        return () => window.removeEventListener('explore:refresh-request', handleExploreRefreshRequest);
+    }, [refetch]);
     // ==========================================
 
     const [bookSearchResults, setBookSearchResults] = useState(null);
@@ -318,9 +339,9 @@ export default function Explore() {
 
                         <div className={styles.filterGroup}>
                             <span className={styles.filterLabel}>Sort by</span>
-                            <select 
-                                className={styles.filterSelect} 
-                                value={sortBy} 
+                            <select
+                                className={styles.filterSelect}
+                                value={sortBy}
                                 onChange={e => setSortBy(e.target.value)}
                             >
                                 {SORT_CHOICES.map((choice) => (
