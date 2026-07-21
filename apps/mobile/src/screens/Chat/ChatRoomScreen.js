@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
+import { View, FlatList, ActivityIndicator, Platform, useColorScheme, Keyboard } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { buildChatRoomStyles } from '../../styles/chatRoomStyles';
@@ -15,6 +17,7 @@ export default function ChatRoomScreen({ route, navigation }) {
     const colorScheme = useColorScheme();
     const theme = useTheme();
     const styles = useMemo(() => buildChatRoomStyles(theme), [theme]);
+    const insets = useSafeAreaInsets();
 
     const { chatId, targetSeller } = route.params;
     const { currentUser } = useAuth();
@@ -24,6 +27,18 @@ export default function ChatRoomScreen({ route, navigation }) {
     const prevNewestIdRef = useRef(null);
     const [inputText, setInputText] = useState('');
     const [inputBarHeight, setInputBarHeight] = useState(72);
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+    useEffect(() => {
+        const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+        const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+        const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+        const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
 
     const {
         messages, loading, otherUserName, otherUserAvatar,
@@ -84,14 +99,21 @@ export default function ChatRoomScreen({ route, navigation }) {
             />
         );
     }, [
-        currentUserId, messages, theme, colorScheme, chatId, targetSeller,
-        bookImage, chatLocation, isFetchingBook, reviewedSwapIds, navigation,
-        handleBookPress, handleOpenNavigation, handleResolveOffer,
-        handleShowQRCode, handleOpenScanner, handleCancelSwap, disabledReason
-    ]);
+            currentUserId, messages, theme, colorScheme, chatId, targetSeller,
+            bookImage, chatLocation, isFetchingBook, reviewedSwapIds, navigation,
+            handleBookPress, handleOpenNavigation, handleResolveOffer,
+            handleShowQRCode, handleOpenScanner, handleCancelSwap, disabledReason
+        ]);
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior="padding"
+            // No extra offset here — the safe-area bottom inset is applied
+            // once, below, as static padding on the input wrapper instead
+            // of being stacked with the keyboard translation.
+            keyboardVerticalOffset={0}
+        >
             <ChatHeader
                 theme={theme}
                 navigation={navigation}
@@ -100,7 +122,6 @@ export default function ChatRoomScreen({ route, navigation }) {
                 otherUserName={isChatDisabled ? 'Deleted User' : otherUserName}
                 isChatDisabled={isChatDisabled}
                 handleOpenOptions={handleOpenOptions}
-
             />
 
             {loading ? (
@@ -125,32 +146,33 @@ export default function ChatRoomScreen({ route, navigation }) {
 
             {/* Hide the input bar completely if the chat is disabled */}
             {!isChatDisabled && (
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-                >
-                    <View onLayout={(e) => {
+                <View
+                    onLayout={(e) => {
                         const h = e.nativeEvent.layout.height;
                         if (h > 0 && Math.abs(h - inputBarHeight) > 1) {
                             setInputBarHeight(h);
                         }
-                    }}>
-                        <ChatInputBar
-                            theme={theme}
-                            inputText={inputText}
-                            setInputText={setInputText}
-                            onSendPress={onSendPress}
-                        />
-                    </View>
-                </KeyboardAvoidingView>
+                    }}
+                    // Bottom safe-area inset applied ONLY when the keyboard
+                    // is closed. Once it's open, the keyboard itself covers
+                    // that area, so this padding is dropped to 0 to avoid
+                    // a residual gap above the keyboard.
+                    style={{ paddingBottom: isKeyboardVisible ? 0 : insets.bottom }}
+                >
+                    <ChatInputBar
+                        theme={theme}
+                        inputText={inputText}
+                        setInputText={setInputText}
+                        onSendPress={onSendPress}
+                    />
+                </View>
             )}
 
-            {/* Report reason picker — replaces the old Alert-based picker
-                that broke past 3 buttons on Android */}
+            {/* Report reason picker */}
             <ReportModal
                 visible={reportModalVisible}
                 {...reportModalProps}
             />
-        </View>
+        </KeyboardAvoidingView>
     );
 }

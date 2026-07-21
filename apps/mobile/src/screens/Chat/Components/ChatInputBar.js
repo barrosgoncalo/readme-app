@@ -1,16 +1,13 @@
 import React, { memo, useMemo } from 'react';
-import { TextInput, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { TextInput, TouchableOpacity, View } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 import { buildChatRoomStyles } from '../../../styles/chatRoomStyles';
-
 const ChatInputBar = memo(({ theme, inputText, setInputText, onSendPress }) => {
     const styles = useMemo(() => buildChatRoomStyles(theme), [theme]);
     
     const hasText = !!inputText.trim();
-
     return (
-        <SafeAreaView edges={['bottom']} style={styles.inputContainer}>
+        <View style={styles.inputContainer}>
             <TextInput
                 style={styles.input}
                 value={inputText}
@@ -26,8 +23,7 @@ const ChatInputBar = memo(({ theme, inputText, setInputText, onSendPress }) => {
             >
                 <Iconify icon="lucide:send" size={18} color={hasText ? '#FFFFFF' : theme.subtext} />
             </TouchableOpacity>
-        </SafeAreaView>
+        </View>
     );
 });
-
 export default ChatInputBar;
