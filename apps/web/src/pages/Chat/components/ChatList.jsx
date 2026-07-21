@@ -1,4 +1,5 @@
-import {timeAgo} from '@readme/shared/src/utils/timeAgo';
+import { Book } from 'lucide-react';
+import { timeAgo } from '@readme/shared/src/utils/timeAgo';
 import styles from './ChatList.module.css';
 
 function ChatRow({chat, activeChatId, onSelectChat}) {
@@ -21,9 +22,14 @@ function ChatRow({chat, activeChatId, onSelectChat}) {
             onClick={() => onSelectChat(chat.id)}
         >
             <div className={styles.thumbWrap}>
-                {chat.imageUrl && (
-                    <img src={chat.imageUrl} alt="" className={styles.thumbnail}/>
+                {chat.imageUrl ? (
+                    <img src={chat.imageUrl} alt="Book cover" className={styles.thumbnail}/>
+                ) : (
+                    <div className={styles.thumbnailFallback}>
+                        <Book size={20} />
+                    </div>
                 )}
+                
                 {avatarUrl ? (
                     <img src={avatarUrl} alt="" className={styles.avatar}/>
                 ) : (
@@ -61,7 +67,7 @@ export default function ChatList({chats, activeChatId, onSelectChat}) {
     return (
         <div className={styles.list}>
             <h2 className={styles.title}>
-                Messages
+                Inbox
             </h2>
             {sortedChats.length === 0 ? (
                 <p className={styles.empty}>No messages yet</p>
