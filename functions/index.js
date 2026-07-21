@@ -1185,12 +1185,14 @@ exports.banUser = functionsV1
                 ...userData,
                 bannedAt: FieldValue.serverTimestamp(),
                 banReason: reason || 'other',
-                bannedBy: context.auth.uid
+                bannedBy: context.auth.uid,
+                followersCount: 0,
+                followingCount: 0,
+                favoriteBooks: []
             });
 
             // Apagar o documento original da coleção 'users'
             batch.delete(userRef);
-
 
             // Apagar Publicações e limpar referências nos favoritos de outros
             const publicationsSnapshot = await db.collection('publications')
@@ -1276,7 +1278,6 @@ exports.banUser = functionsV1
                 console.warn(`Aviso: Falha ao decrementar contadores de likes:`, favoritesCleanupError);
             }
 
-
             // Executar todas as operações de escrita do Batch Principal (users, banned, publicações, chats)
             await batch.commit();
 
@@ -1334,8 +1335,6 @@ exports.unbanUser = functionsV1
             batch.set(userRef, {
                 ...userData,
                 accountStatus: 'active',
-                followersCount: 0,
-                followingCount: 0
             });
 
             // Apagar o documento da coleção 'banned'
