@@ -52,7 +52,7 @@ export default function ProfileScreen({ navigation }) {
         const unsubscribeFocus = navigation.addListener('focus', () => {
             setFocusKey(prev => prev + 1);
             if (refreshUser) refreshUser();
-            fetchMyPostings();   // <-- refetches books + favorites on every return to this screen
+            fetchMyPostings();
         });
 
         let unsubscribeRealTime = () => {};

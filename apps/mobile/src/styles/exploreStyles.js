@@ -106,8 +106,8 @@ export const buildExploreStyles = (theme) => {
             gap: 14,
             padding: 14,
             borderRadius: 18,
-            backgroundColor: theme.headerBackground, // same brown as swapSectionContainer
-            width: 190,
+            backgroundColor: theme.headerBackground,
+            width: 210, // was 190
             marginRight: 14,
         },
         swapCardThumbnail: {

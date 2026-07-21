@@ -43,7 +43,7 @@ export default function ExploreScreen({ navigation }) {
         loadMore,
         refresh,
         updateItem,
-        syncBlockedUsers, // <-- 1. Extract the new sync method
+        syncBlockedUsers,
     } = useExploreFeed({
         excludeUid: currentUser?.uid,
         sortBy,

@@ -17,6 +17,15 @@ const DIRECTION = {
 
 export const SwapCard = ({ imageUrl, status, otherUser, currentUserId, chat, styles, theme, colorScheme }) => {
     const [imageError, setImageError] = useState(false);
+    const [thumbError, setThumbError] = useState(false);
+
+    useEffect(() => {
+        setImageError(false);
+    }, [otherUser?.avatarUrl]);
+
+    useEffect(() => {
+        setThumbError(false);
+    }, [imageUrl]);
 
     // Reset error state if the otherUser or their avatarUrl changes
     useEffect(() => {
@@ -32,6 +41,8 @@ export const SwapCard = ({ imageUrl, status, otherUser, currentUserId, chat, sty
 
     // Only attempt to show the avatar if we have a URL and it hasn't failed to load
     const showAvatar = otherUser?.avatarUrl && !imageError;
+
+    const showThumbImage = imageUrl && !thumbError;
 
     return (
         <View style={{ position: 'relative' }}>
@@ -60,11 +71,20 @@ export const SwapCard = ({ imageUrl, status, otherUser, currentUserId, chat, sty
                 accessibilityLabel={`${dir.actionText} ${name}`}
             >
                 <View style={{ position: 'relative' }}>
-                    <View style={styles.swapCardThumbnail}>
-                        <Image
-                            source={{ uri: imageUrl || 'https://via.placeholder.com/150' }}
-                            style={styles.swapCardImage}
-                        />
+                    <View style={[styles.swapCardThumbnail, !showThumbImage && {
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(150, 150, 150, 0.15)',
+                    }]}>
+                        {showThumbImage ? (
+                            <Image
+                                source={{ uri: imageUrl }}
+                                style={styles.swapCardImage}
+                                onError={() => setThumbError(true)}
+                            />
+                        ) : (
+                            <Iconify icon="lucide:book-open" size={28} color={theme?.subtext || 'rgba(255,255,255,0.6)'} />
+                        )}
                     </View>
 
                     <View style={[styles.statusBadge, { backgroundColor: dir.color, borderColor: theme.headerBackground }]}>
