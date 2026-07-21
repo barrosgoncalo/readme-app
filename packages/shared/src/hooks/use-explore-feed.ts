@@ -98,6 +98,14 @@ export function useExploreFeed({
         return () => { cancelled = true; };
     }, [excludeUid, loadBlockedUids]);
 
+    // 2. Setup the Algolia fetcher (used primarily for loadMore)
+    const fetchPage = useMemo(
+        () => algoliaPageAdapter((params: any) =>
+            browsePublications({ ...params, hitsPerPage, sortBy, conditions, genres, excludeUid, blockedUids, includeAllStatuses })
+        ),
+        [sortBy, conditions, genres, excludeUid, blockedUids, hitsPerPage, includeAllStatuses]
+    );
+
     useEffect(() => {
         const subscription = DeviceEventEmitter.addListener('USER_BLOCKED', (blockedUserId: string) => {
             console.log('🚨 EVENTO RECEBIDO: Utilizador bloqueado ->', blockedUserId);
@@ -110,11 +118,11 @@ export function useExploreFeed({
 
             // 2. Filtrar a cache. Vê se a propriedade é ownerId, userId ou uid!
             const cacheAnterior = feedCache.items.length;
-            
+
             feedCache.items = feedCache.items.filter((item: any) => {
                 // ATENÇÃO: Confirma se o teu backend usa userId, ownerId, etc.
                 const itemOwnerId = item.ownerId || item.userId || item.uid || item.authorId || item.seller?.id;
-                
+
                 return itemOwnerId !== blockedUserId;
             });
 
@@ -128,14 +136,6 @@ export function useExploreFeed({
             subscription.remove();
         };
     }, []);
-
-    // 2. Setup the Algolia fetcher (used primarily for loadMore)
-    const fetchPage = useMemo(
-        () => algoliaPageAdapter((params: any) =>
-            browsePublications({ ...params, hitsPerPage, sortBy, conditions, genres, excludeUid, blockedUids, includeAllStatuses })
-        ),
-        [sortBy, conditions, genres, excludeUid, blockedUids, hitsPerPage, includeAllStatuses]
-    );
 
     const extractItems = (res: any): FeedItem[] => Array.isArray(res) ? res : res?.items || res?.hits || [];
 
