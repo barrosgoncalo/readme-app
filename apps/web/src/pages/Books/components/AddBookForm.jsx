@@ -9,10 +9,17 @@ import styles from './AddBookForm.module.css';
 
 const BOOKS_API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
 
+function friendlySearchError(status) {
+    if (status >= 500) return 'The book catalog is temporarily unavailable. Please try again in a moment.';
+    if (status === 429) return 'Too many searches right now. Please wait a moment and try again.';
+    if (status === 400 || status === 403) return 'This search could not be processed. Try a different search term.';
+    return 'Search failed. Please try again.';
+}
+
 async function searchGoogleBooks(query) {
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=8&printType=books&key=${BOOKS_API_KEY}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Search failed (${res.status}).`);
+    if (!res.ok) throw new Error(friendlySearchError(res.status));
     const data = await res.json();
     return data.items || [];
 }
