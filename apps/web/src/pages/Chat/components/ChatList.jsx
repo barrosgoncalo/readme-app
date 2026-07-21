@@ -1,6 +1,8 @@
-import { Book } from 'lucide-react';
 import { timeAgo } from '@readme/shared/src/utils/timeAgo';
 import styles from './ChatList.module.css';
+
+// Generic fallback book cover URL
+const DEFAULT_BOOK_COVER = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=200';
 
 function ChatRow({chat, activeChatId, onSelectChat}) {
     const displayName = chat.targetSeller?.name || 'User';
@@ -22,13 +24,11 @@ function ChatRow({chat, activeChatId, onSelectChat}) {
             onClick={() => onSelectChat(chat.id)}
         >
             <div className={styles.thumbWrap}>
-                {chat.imageUrl ? (
-                    <img src={chat.imageUrl} alt="Book cover" className={styles.thumbnail}/>
-                ) : (
-                    <div className={styles.thumbnailFallback}>
-                        <Book size={20} />
-                    </div>
-                )}
+                <img 
+                    src={chat.imageUrl || DEFAULT_BOOK_COVER} 
+                    alt="Book cover" 
+                    className={styles.thumbnail}
+                />
                 
                 {avatarUrl ? (
                     <img src={avatarUrl} alt="" className={styles.avatar}/>
@@ -38,6 +38,7 @@ function ChatRow({chat, activeChatId, onSelectChat}) {
                     </span>
                 )}
             </div>
+
             <div className={styles.info}>
                 <p className={styles.name}>{displayName}</p>
                 <p className={styles.preview}>{chat.lastMessage || 'No messages'}</p>
