@@ -259,7 +259,7 @@ export default function Explore() {
                     { title: q },
                     { excludeUid: uid, hitsPerPage: 24 }
                 );
-                if (!cancelled) setBookSearchResults(pubs.map(p => p.publicationData));
+                if (!cancelled) setBookSearchResults(pubs);
             } catch (err) {
                 console.error('Book search failed:', err);
                 if (!cancelled) setBookSearchError('Search failed. Please try again.');
