@@ -5,7 +5,8 @@ import StepDots from './StepDots.jsx';
 import Step1Credentials from './Step1Credentials.jsx';
 import Step2Personal from './Step2Personal.jsx';
 import Step3Address from './Step3Address.jsx';
-import { doCreateUserWithEmailAndPassword, completeGoogleSignUp } from '@readme/shared/src/services/auth';
+import { doCreateUserWithEmailAndPassword, doSignInWithGoogle, completeGoogleSignUp } from '@readme/shared/src/services/auth';
+import { WEB_ROUTES } from '../../constants/webRoutes';
 
 const RegisterBg = '/login-bg.jpeg';
 
@@ -17,8 +18,9 @@ const initialData = {
 
 export default function Register() {
     const location = useLocation();
-    const googleUser = location.state?.googleUser || null;
+    const navigate = useNavigate();
 
+    const [googleUser, setGoogleUser] = useState(location.state?.googleUser || null);
     const [step, setStep] = useState(googleUser ? 2 : 1);
     const [data, setData] = useState(
         googleUser ? { ...initialData, email: googleUser.email, fullName: googleUser.fullName } : initialData
@@ -26,10 +28,27 @@ export default function Register() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [done, setDone] = useState(false);
-    const navigate = useNavigate();
 
     function set(key, value) {
         setData((d) => ({ ...d, [key]: value }));
+    }
+
+    // Triggered from Step1Credentials' "Continue with Google" button.
+    async function onGoogleContinue() {
+        setError(null);
+        try {
+            const { user, isNewUser } = await doSignInWithGoogle();
+            if (!isNewUser) {
+                // Account already exists — just send them into the app.
+                navigate(WEB_ROUTES.BOOKS, { replace: true });
+                return;
+            }
+            setGoogleUser({ uid: user.uid, email: user.email, fullName: user.displayName || '' });
+            setData((d) => ({ ...d, email: user.email, fullName: user.displayName || '' }));
+            setStep(2);
+        } catch (err) {
+            setError(err.message || 'Failed to authenticate with Google.');
+        }
     }
 
     async function onSubmit() {
@@ -73,7 +92,7 @@ export default function Register() {
         >
             <StepDots total={googleUser ? 2 : 3} current={googleUser ? step - 1 : step} />
             {step === 1 && !googleUser && (
-                <Step1Credentials data={data} set={set} onNext={() => setStep(2)} error={error} />
+                <Step1Credentials data={data} set={set} onNext={() => setStep(2)} error={error} onGoogle={onGoogleContinue} />
             )}
             {step === 2 && (
                 <Step2Personal
