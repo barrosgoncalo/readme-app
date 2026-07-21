@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
+    DeviceEventEmitter, // <-- 1. Added DeviceEventEmitter
 } from 'react-native';
 import { Iconify } from 'react-native-iconify';
 
@@ -47,12 +48,18 @@ export default function BlockedUsersScreen({ navigation }) {
                 {
                     text: 'Unblock',
                     style: 'destructive',
+                    // Inside handleUnblock in BlockedUsersScreen.js
                     onPress: async () => {
                         try {
                             if (!currentUid) return;
                             await doUnblockUser(currentUid, blockedUser.id);
 
-                            // Optimistically remove from UI
+                            console.log('📢 EMITING UNBLOCK EVENT FOR:', blockedUser.id);
+
+                            // 🚨 Emit global unblock event instantly
+                            DeviceEventEmitter.emit('USER_UNBLOCKED', blockedUser.id);
+
+                            // Optimistically remove from local list
                             setBlockedUsers((prev) => prev.filter((u) => u.id !== blockedUser.id));
                         } catch (error) {
                             Alert.alert('Error', 'Failed to unblock user.');

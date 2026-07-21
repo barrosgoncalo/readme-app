@@ -43,6 +43,7 @@ export default function ExploreScreen({ navigation }) {
         loadMore,
         refresh,
         updateItem,
+        syncBlockedUsers, // <-- 1. Extract the new sync method
     } = useExploreFeed({
         excludeUid: currentUser?.uid,
         sortBy,
@@ -52,13 +53,11 @@ export default function ExploreScreen({ navigation }) {
 
     const { favoriteIds, toggleFavorite, refreshFavorites } = useFavoriteStatus(currentUser?.uid);
 
-    // Favorites can change on other screens (e.g. publication details),
-    // so re-sync just the favorites set whenever Explore regains focus —
-    // this does NOT re-fetch or reset the books feed/scroll position.
     useFocusEffect(
         useCallback(() => {
             refreshFavorites();
-        }, [refreshFavorites])
+            syncBlockedUsers(); 
+        }, [refreshFavorites, syncBlockedUsers])
     );
 
     // Tapping the home tab while already on Explore scrolls to top,

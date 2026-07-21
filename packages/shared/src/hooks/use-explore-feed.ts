@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { usePaginatedList } from './use-paginated-list';
+import { DeviceEventEmitter } from 'react-native';
 import { algoliaPageAdapter } from './pagination-adapters';
 import { browsePublications, clearSearchCache, SORT_OPTIONS } from '../services/searchBook';
 import { doGetBlockedUids } from '../services/block';
 import { DEFAULT_HITS_PER_PAGE } from '../constants/feedConstants';
 
-// Define the shape of our items (assuming they have at least an 'id')
 export interface FeedItem {
     id: string;
     [key: string]: any;
 }
 
-// Define the shape of our module-level cache
 interface ExploreFeedCache {
     filterKey: string;
     items: FeedItem[];
@@ -27,19 +25,10 @@ interface UseExploreFeedProps {
     genres?: string[];
     includeAllStatuses?: boolean;
     hitsPerPage?: number;
-    // When true, the very first load performed by this hook instance
-    // ignores the module-level cache and fetches a fresh page 1, even if
-    // a previous instance left items sitting in the cache. Pass this as
-    // true for a "fresh" arrival at Explore (sidebar click, post-block
-    // redirect, etc.) and false/omitted when restoring via the Back
-    // button so scroll restoration can keep using the cached items.
     forceRefreshOnMount?: boolean;
 }
 
-// ==========================================
 // MODULE-LEVEL CACHE
-// Survives component unmounting so the Back button restores instantly
-// ==========================================
 let feedCache: ExploreFeedCache = {
     filterKey: '',
     items: [],
@@ -49,18 +38,16 @@ let feedCache: ExploreFeedCache = {
 };
 
 export function useExploreFeed({
-                                   excludeUid = null,
-                                   sortBy = SORT_OPTIONS.DATE_DESC,
-                                   conditions = [],
-                                   genres = [],
-                                   includeAllStatuses = false,
-                                   hitsPerPage = DEFAULT_HITS_PER_PAGE,
-                                   forceRefreshOnMount = false,
-                               }: UseExploreFeedProps = {}) {
-    // Generate a unique string for the current active filters
+    excludeUid = null,
+    sortBy = SORT_OPTIONS.DATE_DESC,
+    conditions = [],
+    genres = [],
+    includeAllStatuses = false,
+    hitsPerPage = DEFAULT_HITS_PER_PAGE,
+    forceRefreshOnMount = false,
+}: UseExploreFeedProps = {}) {
     const currentFilterKey = JSON.stringify({ excludeUid, sortBy, conditions, genres, includeAllStatuses });
 
-    // If filters change (e.g. changing SORT or Genres), bust the cache synchronously
     if (feedCache.filterKey !== currentFilterKey) {
         feedCache = {
             filterKey: currentFilterKey,
@@ -82,7 +69,18 @@ export function useExploreFeed({
     const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
     const [hasMore, setHasMore] = useState<boolean>(feedCache.hasMore);
 
-    // 1. Fetch Blocked UIDs
+    // --- REUSABLE BLOCK FETCHER ---
+    const loadBlockedUids = useCallback(async () => {
+        if (!excludeUid) return [];
+        try {
+            return await doGetBlockedUids(excludeUid);
+        } catch (e) {
+            console.error('Failed to load blocked users:', e);
+            return [];
+        }
+    }, [excludeUid]);
+
+    // 1. Fetch Blocked UIDs Initial Mount
     useEffect(() => {
         let cancelled = false;
         if (!excludeUid) {
@@ -91,14 +89,16 @@ export function useExploreFeed({
             return;
         }
         setBlockedLoaded(false);
-        doGetBlockedUids(excludeUid)
-            .then((ids: string[]) => { if (!cancelled) setBlockedUids(ids); })
-            .catch((e: Error) => console.error('Failed to load blocked users:', e))
-            .finally(() => { if (!cancelled) setBlockedLoaded(true); });
+        loadBlockedUids().then((ids) => {
+            if (!cancelled) {
+                setBlockedUids(ids);
+                setBlockedLoaded(true);
+            }
+        });
         return () => { cancelled = true; };
-    }, [excludeUid]);
+    }, [excludeUid, loadBlockedUids]);
 
-    // 2. Setup the Algolia fetcher
+    // 2. Setup the Algolia fetcher (used primarily for loadMore)
     const fetchPage = useMemo(
         () => algoliaPageAdapter((params: any) =>
             browsePublications({ ...params, hitsPerPage, sortBy, conditions, genres, excludeUid, blockedUids, includeAllStatuses })
@@ -106,17 +106,49 @@ export function useExploreFeed({
         [sortBy, conditions, genres, excludeUid, blockedUids, hitsPerPage, includeAllStatuses]
     );
 
-    // Helper to safely extract items
+    useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener('USER_BLOCKED', (blockedUserId: string) => {
+            console.log('🚨 EVENTO RECEBIDO: Utilizador bloqueado ->', blockedUserId);
+
+            // 1. Atualizar o state local de bloqueados
+            setBlockedUids((prev) => {
+                if (prev.includes(blockedUserId)) return prev;
+                return [...prev, blockedUserId];
+            });
+
+            // 2. Filtrar a cache. Vê se a propriedade é ownerId, userId ou uid!
+            const cacheAnterior = feedCache.items.length;
+
+            feedCache.items = feedCache.items.filter((item: any) => {
+                // ATENÇÃO: Confirma se o teu backend usa userId, ownerId, etc.
+                const itemOwnerId = item.ownerId || item.userId || item.uid || item.authorId || item.seller?.id;
+
+                return itemOwnerId !== blockedUserId;
+            });
+
+            console.log(`🧹 Livros removidos: ${cacheAnterior - feedCache.items.length}`);
+
+            // 3. Forçar o re-render do ecrã com a cache limpa
+            setItems([...feedCache.items]);
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, []);
+
     const extractItems = (res: any): FeedItem[] => Array.isArray(res) ? res : res?.items || res?.hits || [];
 
-    // Shared logic for fetching page 1 and writing it into cache/state.
-    // `setLoadingState` lets callers drive either the full-screen spinner
-    // (isLoadingInitial) or the pull-to-refresh spinner (isRefreshing)
-    // without duplicating the fetch/cache-write logic.
-    const fetchFirstPage = useCallback(async (setLoadingState: (val: boolean) => void) => {
+    // Helper to fetch page 1 - allows passing specific blockedUids to bypass stale state closures
+    const fetchFirstPage = useCallback(async (
+        setLoadingState: (val: boolean) => void,
+        currentBlockedUids: string[] = blockedUids
+    ) => {
         setLoadingState(true);
         try {
-            const response: any = await fetchPage(undefined);
+            const response: any = await algoliaPageAdapter((params: any) =>
+                browsePublications({ ...params, hitsPerPage, sortBy, conditions, genres, excludeUid, blockedUids: currentBlockedUids, includeAllStatuses })
+            )(undefined);
 
             const fetchedItems = extractItems(response);
 
@@ -132,7 +164,7 @@ export function useExploreFeed({
         } finally {
             setLoadingState(false);
         }
-    }, [fetchPage]);
+    }, [sortBy, conditions, genres, excludeUid, blockedUids, hitsPerPage, includeAllStatuses]);
 
     // 3. Load Initial
     const loadInitial = useCallback(async (forceRefresh = false) => {
@@ -141,22 +173,20 @@ export function useExploreFeed({
             setIsLoadingInitial(false);
             return;
         }
-        await fetchFirstPage(setIsLoadingInitial);
-    }, [fetchFirstPage]);
+        await fetchFirstPage(setIsLoadingInitial, blockedUids);
+    }, [fetchFirstPage, blockedUids]);
 
-    // Pull-to-refresh: always force a fresh page 1, but drive the
-    // RefreshControl's spinner (isRefreshing) instead of the
-    // full-screen loader (isLoadingInitial). Clearing the Algolia
-    // client cache first is essential here — the refresh query is
-    // identical to the one already loaded, so without this the
-    // client would just hand back the cached response and nothing
-    // would visibly change.
+    // 4. Pull-to-refresh: Update blocks FIRST
     const refresh = useCallback(async () => {
+        setIsRefreshing(true); // Manually set to prevent flicker while blocks fetch
+        const freshBlocks = await loadBlockedUids();
+        setBlockedUids(freshBlocks);
+        
         await clearSearchCache();
-        await fetchFirstPage(setIsRefreshing);
-    }, [fetchFirstPage]);
+        await fetchFirstPage(setIsRefreshing, freshBlocks);
+    }, [fetchFirstPage, loadBlockedUids]);
 
-    // 4. Load More Pages
+    // 5. Load More Pages
     const loadMore = useCallback(async () => {
         if (isLoadingMore || !hasMore) return;
         setIsLoadingMore(true);
@@ -183,8 +213,25 @@ export function useExploreFeed({
         }
     }, [fetchPage, hasMore, isLoadingMore]);
 
-    // 5. Update a single item in place (e.g. after toggling favorite),
-    // without re-fetching or disturbing scroll position.
+    // 6. Background sync for blocks (called when returning to screen)
+    const syncBlockedUsers = useCallback(async () => {
+        if (!excludeUid) return;
+        const latestBlocked = await loadBlockedUids();
+        
+        // If the block list length changed (someone was blocked/unblocked)
+        if (latestBlocked.length !== blockedUids.length) {
+            setBlockedUids(latestBlocked);
+            
+            // Silently filter out the blocked user from the current view so we don't snap to page 1
+            const blockedSet = new Set(latestBlocked);
+            feedCache.items = feedCache.items.filter((item: any) => {
+                const ownerId = item.ownerId || item.seller?.id || item.seller?.uid || item.userId;
+                return ownerId ? !blockedSet.has(ownerId) : true;
+            });
+            setItems([...feedCache.items]);
+        }
+    }, [excludeUid, blockedUids.length, loadBlockedUids]);
+
     const updateItem = useCallback((id: string, updates: Partial<FeedItem> | ((item: FeedItem) => Partial<FeedItem>)) => {
         feedCache.items = feedCache.items.map((item) => {
             if (item.id !== id) return item;
@@ -210,6 +257,7 @@ export function useExploreFeed({
         loadInitial,
         refresh,
         updateItem,
+        syncBlockedUsers,
         refetch: () => loadInitial(true)
     };
 }
