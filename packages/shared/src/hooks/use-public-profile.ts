@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, DeviceEventEmitter } from 'react-native'; // <-- 1. Import DeviceEventEmitter
 import { auth } from '@readme/shared/src/services/firebase';
 import { doBlockUser } from '@readme/shared/src/services/block';
 import { UsersService } from '@readme/shared/src/services/users';
@@ -94,6 +94,9 @@ export function usePublicProfile(userId, navigation) {
 
         try {
             await doBlockUser(currentUserUid, userId);
+
+            // 2. Instantly notify the app (like ExploreScreen) to purge this user's items
+            DeviceEventEmitter.emit('USER_BLOCKED', userId);
 
             Alert.alert(
                 "User Blocked",
