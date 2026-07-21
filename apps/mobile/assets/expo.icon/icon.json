@@ -1,13 +1,22 @@
 {
   "fill" : {
-    "automatic-gradient" : "extended-srgb:0.00000,0.47843,1.00000,1.00000"
+    "automatic-gradient" : "srgb:0.92157,0.88627,0.83529,1.00000"
   },
   "groups" : [
     {
       "layers" : [
         {
-          "image-name" : "icon.png",
-          "name" : "icon"
+          "blend-mode" : "darken",
+          "glass" : false,
+          "image-name" : "WormCurledBook.png",
+          "name" : "WormCurledBook",
+          "position" : {
+            "scale" : 1.8,
+            "translation-in-points" : [
+              31.2971526429111,
+              23.96361518046035
+            ]
+          }
         }
       ],
       "shadow" : {
