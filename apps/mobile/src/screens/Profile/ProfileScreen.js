@@ -28,7 +28,7 @@ export default function ProfileScreen({ navigation }) {
     const handleScroll = useScrollTabBarControl();
 
     // Fetch the user's publications count cleanly using your existing hook
-    const { myBooks } = useMyPostings(currentUser?.uid);
+    const { myBooks, fetchMyPostings } = useMyPostings(currentUser?.uid);
 
     const currentSwapsCompleted = currentUser?.gamification?.completedSwapsCount ?? 0;
     const currentBadge = getHighestUnlockedBadge(currentSwapsCompleted);
@@ -52,14 +52,14 @@ export default function ProfileScreen({ navigation }) {
         const unsubscribeFocus = navigation.addListener('focus', () => {
             setFocusKey(prev => prev + 1);
             if (refreshUser) refreshUser();
+            fetchMyPostings();   // <-- refetches books + favorites on every return to this screen
         });
 
-        let unsubscribeRealTime = () => {}; 
+        let unsubscribeRealTime = () => {};
         if (currentUser?.uid) {
             const { UsersService } = require('@readme/shared/src/services/users');
-
             unsubscribeRealTime = UsersService.subscribeToUnreadNotificationsCount(
-                currentUser.uid, 
+                currentUser.uid,
                 (newCount) => setUnreadNotificationsCount(newCount)
             );
         }
@@ -68,7 +68,7 @@ export default function ProfileScreen({ navigation }) {
             unsubscribeFocus();
             unsubscribeRealTime();
         };
-    }, [navigation, refreshUser, currentUser?.uid]);
+    }, [navigation, refreshUser, currentUser?.uid, fetchMyPostings]);
 
     return (
         <View style={styles.container}>
