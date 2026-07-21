@@ -463,29 +463,30 @@ export default function Explore() {
                                     <Plus size={18} /> New Publication
                                 </Link>
 
-                                <div className={styles.heroStats}>
-                                    <div className={styles.statItem}>
-                                        <BookOpen size={18} className={styles.statIcon} />
-                                        <div className={styles.statText}>
-                                            <span className={styles.statNumber}>2.4k+</span>
-                                            <span className={styles.statLabel}>Books available</span>
-                                        </div>
-                                    </div>
-                                    <div className={styles.statItem}>
-                                        <Users size={18} className={styles.statIcon} />
-                                        <div className={styles.statText}>
-                                            <span className={styles.statNumber}>1.1k+</span>
-                                            <span className={styles.statLabel}>Readers</span>
-                                        </div>
-                                    </div>
-                                    <div className={styles.statItem}>
-                                        <ArrowLeftRight size={18} className={styles.statIcon} />
-                                        <div className={styles.statText}>
-                                            <span className={styles.statNumber}>850+</span>
-                                            <span className={styles.statLabel}>Swaps completed</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                {/*TODO: Make the statistics*/}
+                                {/*<div className={styles.heroStats}>*/}
+                                {/*    <div className={styles.statItem}>*/}
+                                {/*        <BookOpen size={18} className={styles.statIcon} />*/}
+                                {/*        <div className={styles.statText}>*/}
+                                {/*            <span className={styles.statNumber}>2.4k+</span>*/}
+                                {/*            <span className={styles.statLabel}>Books available</span>*/}
+                                {/*        </div>*/}
+                                {/*    </div>*/}
+                                {/*    <div className={styles.statItem}>*/}
+                                {/*        <Users size={18} className={styles.statIcon} />*/}
+                                {/*        <div className={styles.statText}>*/}
+                                {/*            <span className={styles.statNumber}>1.1k+</span>*/}
+                                {/*            <span className={styles.statLabel}>Readers</span>*/}
+                                {/*        </div>*/}
+                                {/*    </div>*/}
+                                {/*    <div className={styles.statItem}>*/}
+                                {/*        <ArrowLeftRight size={18} className={styles.statIcon} />*/}
+                                {/*        <div className={styles.statText}>*/}
+                                {/*            <span className={styles.statNumber}>850+</span>*/}
+                                {/*            <span className={styles.statLabel}>Swaps completed</span>*/}
+                                {/*        </div>*/}
+                                {/*    </div>*/}
+                                {/*</div>*/}
                             </div>
 
                             <div className={styles.heroImageWrapper}>
