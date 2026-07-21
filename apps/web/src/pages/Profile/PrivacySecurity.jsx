@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, KeyRound, UserX, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Shield, KeyRound, UserX, ChevronRight, Eye, EyeOff, Phone } from 'lucide-react';
 import { doDeleteUserProfile, doReauthenticateWithPassword, doReauthenticateWithGoogle } from '@readme/shared/src/services/auth';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { WEB_ROUTES } from '../../constants/webRoutes';
@@ -19,6 +19,7 @@ export default function PrivacySecurity() {
     const [saving, setSaving] = useState(null);
 
     const [isPrivate, setIsPrivate] = useState(false);
+    const [shareContact, setShareContact] = useState(false);
 
     const [deleteStep, setDeleteStep] = useState(0);
     const [deletePassword, setDeletePassword] = useState('');
@@ -40,6 +41,7 @@ export default function PrivacySecurity() {
         DB.get('users', currentUser.uid).then(d => {
             if (!d) return;
             setIsPrivate(d.profileVisibility === 'private');
+            setShareContact(d.shareContactDetails === true);
         }).finally(() => setLoading(false));
     }, [currentUser]);
 
@@ -49,6 +51,7 @@ export default function PrivacySecurity() {
             await DB.update('users', currentUser.uid, { [field]: value });
         } catch {
             if (field === 'profileVisibility') setIsPrivate(v => !v);
+            if (field === 'shareContactDetails') setShareContact(v => !v);
         } finally {
             setSaving(null);
         }
@@ -126,7 +129,7 @@ export default function PrivacySecurity() {
                 <div className={styles.card}>
                     <ToggleRow
                         icon={<Shield size={18} />}
-                        label={'Private'}
+                        label={'Private Account'}
                         checked={isPrivate}
                         disabled={saving === 'profileVisibility' || deleting}
                         onChange={v => {
@@ -135,6 +138,33 @@ export default function PrivacySecurity() {
                         }}
                     />
                 </div>
+                <p className={styles.helperText} style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #666)', marginTop: '6px', paddingLeft: '4px' }}>
+                    {isPrivate
+                        ? "Only approved users can see your publications and request book swaps."
+                        : "Anyone can see your publications and request book swaps with you."}
+                </p>
+            </section>
+
+            {/* ── Contact Details ── */}
+            <section className={styles.section}>
+                <p className={styles.sectionLabel}>Contact Details</p>
+                <div className={styles.card}>
+                    <ToggleRow
+                        icon={<Phone size={18} />}
+                        label={'Share Contact Details'}
+                        checked={shareContact}
+                        disabled={saving === 'shareContactDetails' || deleting}
+                        onChange={v => {
+                            setShareContact(v);
+                            saveField('shareContactDetails', v);
+                        }}
+                    />
+                </div>
+                <p className={styles.helperText} style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #666)', marginTop: '6px', paddingLeft: '4px' }}>
+                    {shareContact
+                        ? "Buyers will see a Call / SMS button on your publications."
+                        : "Buyers can only contact you through in-app messages."}
+                </p>
             </section>
 
             {/* ── Security ── */}
@@ -143,8 +173,8 @@ export default function PrivacySecurity() {
                 <div className={styles.card}>
                     {hasPasswordAuth && (
                         <>
-                            <button 
-                                className={styles.navRow} 
+                            <button
+                                className={styles.navRow}
                                 disabled={deleting}
                                 onClick={() => navigate(WEB_ROUTES.PROFILE_CHANGE_PASSWORD, { state: { from: WEB_ROUTES.PROFILE_PRIVACY_SECURITY } })}
                             >
@@ -171,9 +201,9 @@ export default function PrivacySecurity() {
                     {deleteStep === 1 && (
                         <div className={styles.deleteBox}>
                             <p className={styles.deleteWarning}>Are you absolutely sure you want to delete your account? This action cannot be undone and you will lose all your data.</p>
-                            
+
                             {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}
-                            
+
                             <div className={styles.deleteActions}>
                                 <Button variant="ghost" disabled={deleting} onClick={() => setDeleteStep(0)}>Cancel</Button>
                                 <Button onClick={handleInitialDelete} disabled={deleting} style={{ background: 'var(--error)', color: '#fff' }}>
