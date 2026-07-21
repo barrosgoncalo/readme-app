@@ -127,7 +127,7 @@ export default function ChatRoomScreen({ route, navigation }) {
             {!isChatDisabled && (
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? -30 : 0}
                 >
                     <View onLayout={(e) => {
                         const h = e.nativeEvent.layout.height;
