@@ -32,22 +32,18 @@ export default function PublicationDetailsScreen({ route, navigation }) {
     const theme = useTheme();
     const styles = buildBookDetailsStyles(theme);
 
-    // 2. GET LOGGED-IN USER ID
-    const { currentUser } = useAuth(); // or whatever gives you the current logged-in user
+    const { currentUser } = useAuth();
     const currentUserId = currentUser?.uid;
 
     const passedData = route?.params?.publication;
     const book = extractBookDetails(passedData);
     const passedSeller = route?.params?.seller;
 
-    // 3. CHECK IF THIS IS YOUR OWN BOOK
     const isMyBook = Boolean(currentUserId && book?.ownerId === currentUserId);
 
-    // 4. DEFINE FLAGS (Guarantees hideOwnerProfile exists so no ReferenceError occurs)
     const hideOwnerProfile = route?.params?.hideOwnerProfile || false;
     const hideOfferButton = route?.params?.hideOfferButton || isMyBook;
     
-    // HIDE SELLER CARD IF EXPLICITLY requested OR IF IT'S YOUR OWN BOOK
     const hideSellerCard = route?.params?.hideSellerCard || isMyBook;
 
     const { seller, isFavorited, handleToggleFavorite, handleReportPublication, reportModal, canReport, canContactDirectly, sellerPhoneNumber } = usePublicationDetails(book, passedSeller);
