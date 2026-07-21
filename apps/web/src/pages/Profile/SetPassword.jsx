@@ -19,7 +19,7 @@ export default function SetPassword() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const backPath = location.state?.from || WEB_ROUTES.PROFILE_PRIVACY_SECURITY;
+    const backPath = location.state?.from || WEB_ROUTES.PROFILE;
 
     const back = () => navigate(backPath);
 

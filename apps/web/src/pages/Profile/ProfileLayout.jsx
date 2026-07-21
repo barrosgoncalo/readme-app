@@ -133,7 +133,7 @@ export default function ProfileLayout() {
                 ...(needsPasswordSetup ? [{
                     icon: Key,
                     label: 'Create Password',
-                    onClick: () => navigate(WEB_ROUTES.PROFILE_SET_PASSWORD),
+                    onClick: () => navigate(WEB_ROUTES.PROFILE_SET_PASSWORD, { state: { from: WEB_ROUTES.PROFILE } }),
                 }] : []),
                 { icon: Ban, label: 'View Blocked Users', onClick: () => navigate(WEB_ROUTES.PROFILE_BLOCKED_USERS) },
                 { icon: Lock, label: 'Privacy & Security', onClick: () => navigate(WEB_ROUTES.PROFILE_PRIVACY_SECURITY) },
