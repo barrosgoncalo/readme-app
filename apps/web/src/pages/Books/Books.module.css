@@ -1,8 +1,9 @@
+/* ── Page & Layout ── */
 .page {
     padding: var(--space-5) var(--space-4);
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-5);
 }
 
 .compact {
@@ -10,37 +11,53 @@
     gap: var(--space-3);
 }
 
+/* ── Header ── */
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--bg-selected);
 }
 
 .headerActions {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
 }
 
+/* Title: Solid color, no gradient, uses your theme's primary color */
+.title {
+    font-family: var(--font-serif, "Georgia", serif); 
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--primary); 
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+/* ── Controls & Actions ── */
 .viewToggle {
     display: flex;
     background: var(--bg-elem);
     border: 1px solid var(--bg-selected);
-    border-radius: var(--radius);
-    padding: 2px;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: var(--shadow-sm);
 }
 
 .viewBtn {
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 6px 8px;
-    border-radius: calc(var(--radius) - 2px);
+    padding: 6px 10px;
+    border-radius: 6px;
     color: var(--subtext);
     display: flex;
     align-items: center;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition: all var(--transition-fast, 0.2s ease);
 }
 
 .viewBtn:hover {
@@ -52,41 +69,35 @@
     color: var(--primary);
 }
 
-.title {
-    font-family: var(--font-serif);
-    font-size: 2rem;
-    color: var(--primary);
-    margin: 0;
-    line-height: 1.15;
-}
-
 .addBtn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
-    color: var(--subtext);
+    gap: 8px;
+    background: var(--bg-elem);
+    border: 1px solid var(--bg-selected);
+    color: var(--text);
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    padding: 6px 10px;
-    border-radius: var(--radius);
-    transition: background var(--transition-fast), color var(--transition-fast);
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all var(--transition-fast, 0.2s ease);
     white-space: nowrap;
-    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
 }
 
 .addBtn:hover {
     background: var(--bg-selected);
-    color: var(--text);
+    border-color: var(--subtext);
 }
 
+/* ── Filter Bar ── */
 .filterBar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
+    margin-top: -10px;
 }
 
 .filterPill {
@@ -96,67 +107,71 @@
     background: var(--bg-elem);
     border: 1px solid var(--bg-selected);
     color: var(--subtext);
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 20px;
+    padding: 8px 16px;
+    border-radius: 24px;
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+    transition: all var(--transition-fast, 0.2s ease);
 }
 
 .filterPill:hover {
     color: var(--text);
     border-color: var(--subtext);
+    transform: translateY(-1px);
 }
 
 .filterPillActive {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--primary-text);
+    background: #D9824B; /* Restored the premium orange */
+    border-color: #D9824B;
+    color: #FFFFFF; /* White text for contrast */
+    box-shadow: 0 4px 12px rgba(217, 130, 75, 0.25); /* Subtle orange glow */
 }
 
 .filterPillActive:hover {
-    color: var(--primary-text);
+    color: #FFFFFF;
+    transform: translateY(0);
 }
 
-/* ── Grid view: spotlight + shelf ── */
+/* ── Grid View & Layout ── */
 .gridView {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    gap: var(--space-6);
 }
 
 .spotlightGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-4);
 }
 
 .bookGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-4);
 }
 
+/* ── Typography & Sections ── */
 .sectionLabel {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.1em;
     color: var(--subtext);
-    margin: 0 0 var(--space-2) 0;
+    margin: 0 0 var(--space-3) 0;
     padding-left: 2px;
 }
 
 .currentList {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
 }
 
 .groupList {
     background: var(--bg-elem);
-    border-radius: var(--radius-lg);
+    border-radius: 12px;
     box-shadow: var(--shadow-sm);
     overflow: hidden;
     border: 1px solid var(--bg-selected);
@@ -166,6 +181,7 @@
     border-bottom: 1px solid var(--bg-selected);
 }
 
+/* ── Responsive ── */
 @media (max-width: 720px) {
     .viewToggle {
         display: none;
@@ -177,5 +193,10 @@
 
     .bookGrid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: var(--space-3);
+    }
+    
+    .title {
+        font-size: 1.875rem;
     }
 }

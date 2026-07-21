@@ -29,9 +29,6 @@ const FILTERS = [
     // { key: FILTER_FAVORITES, label: 'Liked Books' },
 ];
 
-// MyBooksService.getBooks() returns { ...trackingDoc, bookDetails } (title/
-// authors/coverUrl live in the global `books` cache, joined in by the
-// service). Flatten to the shape BookCard/hydrateMyBooks already expect.
 function flattenShelfDoc(doc) {
     const details = doc.bookDetails || {};
     return {
