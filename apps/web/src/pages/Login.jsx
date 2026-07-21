@@ -6,6 +6,7 @@ import Button from '../components/Button.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';
 import GoogleIcon from '../components/GoogleIcon.jsx';
 import {doSignInWithEmailAndPassword, doSignInWithGoogle,} from '@readme/shared/src/services/auth';
+import { useAuth } from '@readme/shared/src/contexts/AuthContext/web.jsx';
 import {WEB_ROUTES} from '../constants/webRoutes';
 
 const loginBg = '/login-bg.jpeg';
@@ -17,6 +18,7 @@ export default function Login() {
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const { checkAuthState } = useAuth();
 
     const from = location.state?.from?.pathname || WEB_ROUTES.EXPLORE;
 
@@ -26,6 +28,7 @@ export default function Login() {
         setError('');
         try {
             await doSignInWithEmailAndPassword(email, password);
+            await checkAuthState();
             navigate(from, {replace: true});
         } catch {
             setError('Failed to log in. Check your data.');
