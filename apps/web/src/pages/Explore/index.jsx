@@ -455,8 +455,14 @@ export default function Explore() {
             {/* TAB: BOOKS */}
             {activeTab === EXPLORE_TAB.BOOKS && (
                 <div className={styles.section}>
-                    <Link to={WEB_ROUTES.PUBLICATION_NEW}>
-                        <Button style={{ marginBottom: 'var(--space-3)' }}>
+                    <Link
+                        to={WEB_ROUTES.PUBLICATION_NEW}
+                        style={{
+                            display: 'block',
+                            marginBottom: '26px',
+                        }}
+                    >
+                        <Button>
                             <Plus size={16} /> New Publication
                         </Button>
                     </Link>
