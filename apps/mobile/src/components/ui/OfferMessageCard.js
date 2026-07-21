@@ -71,6 +71,7 @@ export default function OfferMessageCard({
 
             {/* SIDE-BY-SIDE TRADE CONTAINER */}
             <View style={styles.tradeContainer}>
+                
                 {/* Left Side: Target Book */}
                 <View style={styles.bookColumn}>
                     <Text style={[styles.bookMiniLabel, { color: theme.subtext }]} numberOfLines={1}>
@@ -80,7 +81,7 @@ export default function OfferMessageCard({
                     <TouchableOpacity
                         activeOpacity={0.7}
                         disabled={isFetchingBook}
-                        onPress={() => onBookPress({ id: offer.targetBookId })}
+                        onPress={() => onBookPress(offer.targetBookId)}
                     >
                         {bubbleTargetImage ? (
                             <Image source={{ uri: bubbleTargetImage }} style={styles.tradeBookImage} />
@@ -106,7 +107,7 @@ export default function OfferMessageCard({
                         onPress={() => {
                             const books = item.offeredBooks || offer?.offeredBooks;
                             const bookId = offer?.selectedBookId || (books?.length === 1 ? books[0]?.id : null);
-                            if (bookId) onBookPress({ id: bookId });
+                            if (bookId) onBookPress(bookId);
                         }}
                     >
                         {imageToShow ? (
@@ -357,9 +358,8 @@ export default function OfferMessageCard({
                         </TouchableOpacity>
                     )}
                 </View>
-
-
             )}
+
             {/* UNAVAILABLE TRADE */}
             {offer?.status === 'unavailable' && (
                 <View style={styles.completedContainer}>

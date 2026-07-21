@@ -205,17 +205,25 @@ export function useChatActions({
         );
     };
 
-    const handleBookPress = async (bookSummary) => {
-        if (!bookSummary?.id) return;
+    const handleBookPress = async (bookParam) => {
+        // 1. Safely extract ID and navigation flags whether bookParam is an object or a string
+        const bookId = typeof bookParam === 'object' ? bookParam?.id : bookParam;
+        const hideOwnerProfile = typeof bookParam === 'object' ? bookParam?.hideOwnerProfile : false;
+        const hideSellerCard = typeof bookParam === 'object' ? bookParam?.hideSellerCard : false;
+
+        if (!bookId) return;
 
         try {
             setIsFetchingBook(true);
-            const fullPublicationData = await PublicationService.fetchPublication(bookSummary.id);
+            // Uses your actual service method: fetchPublication
+            const fullPublicationData = await PublicationService.fetchPublication(bookId);
 
             if (fullPublicationData) {
                 navigation.navigate(ROUTES.PUBLICATION_DETAILS, {
                     publication: fullPublicationData,
-                    hideOfferButton: true
+                    hideOfferButton: true,
+                    hideOwnerProfile,
+                    hideSellerCard,
                 });
             } else {
                 Alert.alert("Unavailable", "This book details are no longer available.");
