@@ -1,17 +1,18 @@
 .actions {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    flex-shrink: 0;
+    gap: var(--space-2, 8px);
+    margin-top: 12px; /* Increased top margin to push buttons lower */
 }
 
+/* Smaller Accept Button */
 .acceptBtn {
     background: var(--primary);
     color: var(--primary-text);
     border: none;
-    border-radius: 20px;
-    padding: 7px 16px;
-    font-size: 0.88rem;
+    border-radius: 14px;
+    padding: 4px 12px;     /* Compact padding */
+    font-size: 0.78rem;    /* Smaller font size */
     font-weight: 600;
     cursor: pointer;
     transition: opacity 0.12s;
@@ -24,4 +25,16 @@
 .acceptBtn:disabled {
     opacity: 0.5;
     cursor: default;
+}
+
+/* Optional: If you want the Decline button to match this smaller size */
+.declineBtn {
+    background: transparent;
+    color: var(--text, #666);
+    border: 1px solid var(--border, #ccc);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
 }
