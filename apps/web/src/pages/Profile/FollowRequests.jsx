@@ -37,8 +37,6 @@ export default function FollowRequests() {
             const profiles = await Promise.all(
                 requestDocs.map(async (doc) => {
                     const profile = await UsersService.fetchSummaryUserProfile(doc.requesterUid).catch(() => null);
-                    // Keep the notification doc's own id separate from the requester's uid,
-                    // so we can delete the correct notification doc on accept/decline.
                     return profile ? { ...profile, id: doc.requesterUid, notificationId: doc.id } : null;
                 })
             );
@@ -55,15 +53,11 @@ export default function FollowRequests() {
         }
     }
 
-    // Mirrors the mobile app's deleteNotification behavior, so a request resolved on
-    // web doesn't leave a stale FOLLOW_REQUEST notification sitting in the DB for mobile.
     async function deleteFollowRequestNotification(notificationId) {
         if (!notificationId) return;
         try {
             await DB.remove(`users/${currentUser.uid}/notifications`, notificationId);
         } catch (err) {
-            // Non-fatal: the request was still accepted/declined successfully,
-            // just log so we can catch orphaned notifications.
             console.error('Failed to delete follow request notification:', err);
         }
     }
@@ -136,26 +130,29 @@ export default function FollowRequests() {
                             <div className={listStyles.row}>
                                 <UserAvatar user={user} />
                                 <div className={listStyles.info}>
-                                    <span className={listStyles.name}>{user.fullName || user.username || 'Unknown'}</span>
-                                    {user.username && <span className={listStyles.username}>@{user.username}</span>}
-                                </div>
-                                <div className={styles.actions}>
-                                    <button
-                                        type="button"
-                                        className={styles.acceptBtn}
-                                        onClick={() => handleAccept(user.id, user.notificationId)}
-                                        disabled={busy === user.id}
-                                    >
-                                        {busy === user.id ? '…' : 'Accept'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={listStyles.actionBtn}
-                                        onClick={() => handleDecline(user.id, user.notificationId)}
-                                        disabled={busy === user.id}
-                                    >
-                                        Decline
-                                    </button>
+                                    <span className={listStyles.name}>
+                                        {user.fullName || user.username || 'Unknown'}
+                                    </span>
+                                    
+                                    {/* Action buttons placed on a new line below the username */}
+                                            <div className={styles.actions}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.acceptBtn}
+                                                    onClick={() => handleAccept(user.id, user.notificationId)}
+                                                    disabled={busy === user.id}
+                                                >
+                                                    {busy === user.id ? '…' : 'Accept'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.declineBtn} /* Uses matching smaller size */
+                                                    onClick={() => handleDecline(user.id, user.notificationId)}
+                                                    disabled={busy === user.id}
+                                                >
+                                                    Decline
+                                                </button>
+                                            </div>
                                 </div>
                             </div>
                         </div>
