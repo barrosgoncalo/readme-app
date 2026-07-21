@@ -61,7 +61,7 @@
     width: 48px;
     height: 72px;
     border-radius: var(--radius);
-    background: var(--bg-selected); /* Gives it a nice subtle gray box */
+    background: var(--bg-elem); /* Distinct from .active's bg-selected so it doesn't blend when a row is selected */
     color: var(--subtext);
     display: flex;
     align-items: center;
