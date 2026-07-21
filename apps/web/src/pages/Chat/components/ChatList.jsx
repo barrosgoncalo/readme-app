@@ -1,9 +1,7 @@
 import { useState } from 'react';
+import { BookOpen } from 'lucide-react';
 import { timeAgo } from '@readme/shared/src/utils/timeAgo';
 import styles from './ChatList.module.css';
-
-// Generic fallback book cover URL
-const DEFAULT_BOOK_COVER = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=200';
 
 function ChatRow({chat, activeChatId, onSelectChat}) {
     const [imageFailed, setImageFailed] = useState(false);
@@ -26,13 +24,19 @@ function ChatRow({chat, activeChatId, onSelectChat}) {
             onClick={() => onSelectChat(chat.id)}
         >
             <div className={styles.thumbWrap}>
-                <img
-                    src={(!imageFailed && chat.imageUrl) || DEFAULT_BOOK_COVER}
-                    alt="Book cover"
-                    className={styles.thumbnail}
-                    onError={() => setImageFailed(true)}
-                />
-                
+                {chat.imageUrl && !imageFailed ? (
+                    <img
+                        src={chat.imageUrl}
+                        alt="Book cover"
+                        className={styles.thumbnail}
+                        onError={() => setImageFailed(true)}
+                    />
+                ) : (
+                    <div className={styles.thumbnailFallback} aria-hidden>
+                        <BookOpen size={20} />
+                    </div>
+                )}
+
                 {avatarUrl ? (
                     <img src={avatarUrl} alt="" className={styles.avatar}/>
                 ) : (
