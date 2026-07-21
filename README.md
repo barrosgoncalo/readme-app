@@ -1,56 +1,55 @@
-# Welcome to your Expo app 👋
+# 📚 ReadMe
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A book-swapping mobile app built with React Native / Expo.
 
-## Get started
+---
 
-1. Install dependencies
+## 📥 Download
 
-   ```bash
-   npm install
-   ```
+**Android APK (always latest build):**
+[https://github.com/barrosgoncalo/readme-app/releases/latest/download/readme-app.apk](https://github.com/barrosgoncalo/readme-app/releases/latest/download/readme-app.apk)
 
-2. Start the app
+**Website:**
+[https://readme---bookworms.web.app/](https://readme---bookworms.web.app/)
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🧪 Test Accounts
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+The following accounts are pre-seeded for testing purposes. Institutional addresses are spread across the Lisbon metropolitan area.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+| # | Email | Username | Password | Phone | Date of Birth |
+|---|-------|----------|----------|-------|----------------|
+| 1 | b.lobao@campus.fct.unl.pt | bernardo_lobao | Livro2Ler | +351 912 345 678 | 14/03/2001 |
+| 2 | bernardocortezdelobao@gmail.com | bernardo.cortez | Pagina7X | +351 923 456 789 | 14/03/2001 |
+| 3 | fo.campos@campus.fct.unl.pt | francisco_campos | Capitulo9 | +351 934 567 890 | 22/07/2000 |
+| 4 | barrosgoncalobarros@gmail.com | goncalo_barros | Estante3B | +351 962 345 678 | 09/11/2001 |
+| 5 | gp.barros@campus.fct.unl.pt | goncalo.p.barros | Romance5K | +351 913 456 789 | 09/11/2001 |
+| 6 | anaomanuel5@gmail.com | ana_manuel | Poesia8M | +351 924 567 890 | 30/05/2002 |
 
-## Get a fresh project
+### 👑 Admin Account
 
-When you're ready, run:
+| Email | Username | Password | Phone | Date of Birth |
+|-------|----------|----------|-------|----------------|
+| a3698@cbdias.com | admin_readme | Biblio4A | +351 961 234 567 | 01/01/1995 |
 
-```bash
-npm run reset-project
-```
+---
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🏠 Institutional Addresses
 
-### Other setup steps
+| # | Address Line 1 | Address Line 2 | City | District | Postal Code | Country |
+|---|-----------------|----------------|------|----------|-------------|---------|
+| 1 | Rua das Flores, 12 | 2º Esq. | Almada | Setúbal | 2800-123 | Portugal |
+| 2 | Avenida da Liberdade, 245 | — | Lisboa | Lisboa | 1250-096 | Portugal |
+| 3 | Rua do Comércio, 58 | 1º Dto. | Setúbal | Setúbal | 2900-456 | Portugal |
+| 4 | Praceta das Oliveiras, 9 | — | Loures | Lisboa | 2670-789 | Portugal |
+| 5 | Rua Nova de São Mamede, 33 | 3º Esq. | Cascais | Lisboa | 2750-321 | Portugal |
+| 6 | Alameda dos Oceanos, 77 | R/C | Oeiras | Lisboa | 2780-654 | Portugal |
+| Admin | Rua Central, 1 | — | Sintra | Lisboa | 2710-100 | Portugal |
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+---
 
-## Learn more
+## ⚠️ Notes
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- All data above is synthetic/test data generated for development and QA purposes only.
+- Update the APK download link automatically resolves to the most recently published GitHub release — no need to update this README when a new version is uploaded, as long as the asset filename stays `readme-app.apk`.
