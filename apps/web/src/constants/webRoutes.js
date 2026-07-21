@@ -24,5 +24,6 @@ export const WEB_ROUTES = {
     OFFERS_NEW: '/offers/new',
     bookDetail: (bookId) => `/books/${bookId}`,
     publicationDetail: (pubId) => `/publications/${pubId}`,
+    publicationEdit: (pubId) => `/publications/${pubId}/edit`,
     userProfile: (uid) => `/users/${uid}`,
 };

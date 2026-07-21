@@ -37,6 +37,7 @@ import { PublicationDetailRoute } from '../pages/DetailRoutes.jsx';
 import CreatePublication from '../pages/Publications/CreatePublication.jsx';
 import NewOffer from '../pages/Offers/NewOffer.jsx';
 import AppShell from '../components/AppShell.jsx';
+import EditPublication from '../pages/Publications/EditPublication.jsx';
 
 // --- admin-app pages ---
 import AdminUsersPage from '../pages/Admin/Users/UsersPage.jsx';
@@ -166,6 +167,7 @@ export default function AppRouter() {
                     <Route path={WEB_ROUTES.PROFILE_SET_PASSWORD} element={<SetPassword />} />
                     <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
                     <Route path={WEB_ROUTES.PUBLICATION_NEW} element={<CreatePublication />} />
+                    <Route path="/publications/:pubId/edit" element={<EditPublication />} />
                     <Route path="/publications/:pubId" element={<PublicationDetailRoute />} />
                     <Route path={WEB_ROUTES.OFFERS_NEW} element={<NewOffer />} />
                     <Route path="/users/:uid" element={<PublicProfile />} />
