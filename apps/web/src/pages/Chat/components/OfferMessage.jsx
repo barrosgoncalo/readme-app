@@ -26,6 +26,8 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     const [reviewError, setReviewError] = useState('');
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
     const [showCounterModal, setShowCounterModal] = useState(false);
+    const [targetImageFailed, setTargetImageFailed] = useState(false);
+    const [offeredImageFailed, setOfferedImageFailed] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const showBooksModal = searchParams.get('offer') === message.id;
@@ -277,8 +279,13 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                             style={{cursor: 'pointer'}}
                             title="View book details"
                         >
-                            {offer.targetBookImage ? (
-                                <img src={offer.targetBookImage} alt="Target Book" className={styles.tradeBookImage}/>
+                            {offer.targetBookImage && !targetImageFailed ? (
+                                <img
+                                    src={offer.targetBookImage}
+                                    alt="Target Book"
+                                    className={styles.tradeBookImage}
+                                    onError={() => setTargetImageFailed(true)}
+                                />
                             ) : (
                                 <div className={`${styles.tradeBookImage} ${styles.placeholderBg}`}>
                                     <Book size={20} color="var(--subtext)"/>
@@ -299,8 +306,13 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                             style={{cursor: 'pointer'}}
                             title={hasMultipleOptions ? "View options" : "View book details"}
                         >
-                            {imageToShow ? (
-                                <img src={imageToShow} alt="Offered Book" className={styles.tradeBookImage}/>
+                            {imageToShow && !offeredImageFailed ? (
+                                <img
+                                    src={imageToShow}
+                                    alt="Offered Book"
+                                    className={styles.tradeBookImage}
+                                    onError={() => setOfferedImageFailed(true)}
+                                />
                             ) : (
                                 <div className={`${styles.tradeBookImage} ${styles.placeholderBg}`}>
                                     <span style={{fontSize: '1rem', fontWeight: '700', color: 'var(--text)'}}>
