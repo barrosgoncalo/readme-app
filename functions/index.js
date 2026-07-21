@@ -1288,3 +1288,65 @@ exports.banUser = functionsV1
             throw new functionsV1.https.HttpsError('internal', 'An internal error occurred while processing ban.');
         }
     });
+
+/**
+ * Cloud Function to unban a user.
+ * Requires Admin privileges.
+ * Enables the Auth account and moves data back from 'banned' to 'users'.
+ */
+exports.unbanUser = functionsV1
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        // Confirma se o utilizador está autenticado e é Admin
+        if (!context.auth || context.auth.token.role !== 'admin')
+            throw new functionsV1.https.HttpsError(
+                'permission-denied',
+                'Only admins can unban users.'
+            );
+
+        const {userId} = data;
+        if (!userId)
+            throw new functionsV1.https.HttpsError('invalid-argument', 'User ID is mandatory.');
+
+        const batch = db.batch();
+
+        try {
+            // Obter os dados atuais do utilizador na coleção 'banned'
+            const bannedRef = db.collection('banned').doc(userId);
+            const bannedDocSnap = await bannedRef.get();
+
+            if (!bannedDocSnap.exists)
+                throw new functionsV1.https.HttpsError('not-found', 'Utilizador não encontrado na lista de banidos.');
+
+            const userData = bannedDocSnap.data();
+
+            // Limpar os campos de auditoria do banimento antes de restaurar
+            delete userData.bannedAt;
+            delete userData.banReason;
+            delete userData.bannedBy;
+
+            // Reativar a conta no Firebase Authentication para permitir login
+            await admin.auth().updateUser(userId, { disabled: false });
+            console.log(`Auth account reactivated for user: ${userId}`);
+
+            // Restaurar dados na coleção 'users'
+            const userRef = db.collection('users').doc(userId);
+            batch.set(userRef, {
+                ...userData,
+                accountStatus: 'active',
+                followersCount: 0,
+                followingCount: 0
+            });
+
+            // Apagar o documento da coleção 'banned'
+            batch.delete(bannedRef);
+            await batch.commit();
+
+            console.log(`User ${userId} unbanned successfully.`);
+            return { success: true, message: `User unbanned successfully.` };
+
+        } catch (error) {
+            console.error(`Critical error on user unban ${userId}:`, error);
+            throw new functionsV1.https.HttpsError('internal', 'An internal error occurred while processing unban.');
+        }
+    });

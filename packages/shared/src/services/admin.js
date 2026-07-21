@@ -26,3 +26,16 @@ export const banUserAccount = async (targetUid, reason) => {
         throw error;
     }
 };
+
+export const unbanUserAccount = async (targetUid) => {
+    try {
+        const functions = getFunctions(undefined, 'europe-west1');
+        const unbanUserFn = httpsCallable(functions, 'unbanUser');
+        const result = await unbanUserFn({ userId: targetUid });
+
+        return result.data;
+    } catch (error) {
+        console.error("[Admin Service] Failed to unban user:", error);
+        throw error;
+    }
+};

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getFirestore, collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
+import { User } from 'lucide-react';
+import { DB } from '@readme/shared/src/services/DB';
+import { unbanUserAccount } from '@readme/shared/src/services/admin';
 import QuickActionModal from './QuickActionModal.jsx';
 import styles from './QuickActionModal.module.css';
 
@@ -10,20 +12,31 @@ export default function BannedUsersModal({ onClose }) {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const db = getFirestore();
-        getDocs(query(collection(db, 'users'), where('accountStatus', '==', 'banned')))
-            .then(snap => setBannedUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() }))))
-            .catch(console.error)
-            .finally(() => setLoading(false));
+        let isMounted = true;
+
+        DB.get('banned', [])
+            .then(users => {
+                if (isMounted) setBannedUsers(users);
+            })
+            .catch(err => {
+                console.error("Erro a carregar banidos:", err);
+                if (isMounted) setError("Não foi possível carregar os utilizadores. Verifica as regras do Firestore.");
+            })
+            .finally(() => {
+                if (isMounted) setLoading(false);
+            });
+
+        return () => isMounted = false;
     }, []);
 
     const handleUnban = async (user) => {
-        setUnbanning(user.uid);
+        const targetUid = user.id || user.uid;
+        setUnbanning(targetUid);
         setError('');
+
         try {
-            const db = getFirestore();
-            await updateDoc(doc(db, 'users', user.uid), { accountStatus: 'active' });
-            setBannedUsers(prev => prev.filter(u => u.uid !== user.uid));
+            await unbanUserAccount(targetUid);
+            setBannedUsers(prev => prev.filter(u => (u.id || u.uid) !== targetUid));
         } catch (err) {
             setError(err.message || 'Failed to unban user.');
         } finally {
@@ -35,16 +48,16 @@ export default function BannedUsersModal({ onClose }) {
         <QuickActionModal onClose={onClose} title="Banned Users">
             <div className={styles.body}>
                 {loading ? (
-                    <p className={styles.empty}>Loading…</p>
+                    <p className={styles.empty}>Loading...</p>
                 ) : bannedUsers.length === 0 ? (
                     <p className={styles.empty}>No banned users.</p>
                 ) : (
                     bannedUsers.map(user => (
-                        <div key={user.uid} className={styles.userRow} style={{ cursor: 'default' }}>
+                        <div key={user.id || user.uid} className={styles.userRow} style={{ cursor: 'default' }}>
                             <div className={styles.avatar}>
                                 {user.photoURL
                                     ? <img src={user.photoURL} alt="" className={styles.avatarImg} />
-                                    : <IconLucideUser size={16} />
+                                    : <User size={16} />
                                 }
                             </div>
                             <div className={styles.userInfo}>
@@ -58,9 +71,9 @@ export default function BannedUsersModal({ onClose }) {
                                 className={styles.btnGhost}
                                 style={{ fontSize: 12, padding: '5px 12px', flexShrink: 0 }}
                                 onClick={() => handleUnban(user)}
-                                disabled={unbanning === user.uid}
+                                disabled={unbanning === (user.id || user.uid)}
                             >
-                                {unbanning === user.uid ? 'Unbanning…' : 'Unban'}
+                                {unbanning === (user.id || user.uid) ? 'Unbanning...' : 'Unban'}
                             </button>
                         </div>
                     ))

@@ -232,5 +232,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /banned/{userId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

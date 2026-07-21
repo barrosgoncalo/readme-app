@@ -1,17 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
-import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { FileText, User, AlertTriangle } from 'lucide-react';
+import { REPORT_REASON_LABELS, REPORT_STATUS } from '@readme/shared/src/constants/status';
+import { DB } from '@readme/shared/src/services/DB';
+import { banUserAccount } from '@readme/shared/src/services/admin';
 import QuickActionModal from './QuickActionModal.jsx';
 import styles from './QuickActionModal.module.css';
+import localStyles from '../../pages/Admin/Users/BanUserModal.module.css';
 
 export default function BanUserModal({ onClose }) {
     const [allUsers, setAllUsers] = useState([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
+    const inputRef = useRef(null);
+
+    const defaultReason = Object.keys(REPORT_REASON_LABELS)[0] || 'other';
+    const [reason, setReason] = useState(defaultReason);
     const [banning, setBanning] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
-    const inputRef = useRef(null);
+
+    const [reportSummary, setReportSummary] = useState(null);
+    const [loadingReports, setLoadingReports] = useState(false);
 
     useEffect(() => {
         const db = getFirestore();
@@ -23,6 +34,42 @@ export default function BanUserModal({ onClose }) {
                 setTimeout(() => inputRef.current?.focus(), 50);
             });
     }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if (!selected) {
+            setReportSummary(null);
+            return;
+        }
+
+        const fetchUserReports = async () => {
+            setLoadingReports(true);
+            try {
+                const pendingReports = await DB.get('reports', [
+                    { field: 'reportedUserId', operator: '==', value: selected.uid },
+                    { field: 'status', operator: '==', value: REPORT_STATUS?.PENDING || 'pending' }
+                ]);
+
+                if (isMounted) {
+                    const summary = {};
+                    pendingReports.forEach(report => {
+                        const r = report.reason || 'other';
+                        summary[r] = (summary[r] || 0) + (report.reportCount || 1);
+                    });
+                    setReportSummary(summary);
+                }
+            } catch (err) {
+                console.error("Erro ao carregar denúncias:", err);
+                if (isMounted) setReportSummary({});
+            } finally {
+                if (isMounted) setLoadingReports(false);
+            }
+        };
+
+        fetchUserReports();
+        return () => isMounted = false;
+    }, [selected]);
 
     const filtered = search.trim()
         ? allUsers.filter(u => {
@@ -40,36 +87,45 @@ export default function BanUserModal({ onClose }) {
         setBanning(true);
         setError('');
         try {
-            const db = getFirestore();
-            await updateDoc(doc(db, 'users', selected.uid), { accountStatus: 'banned' });
-            setAllUsers(prev => prev.map(u => u.uid === selected.uid ? { ...u, accountStatus: 'banned' } : u));
-            setSuccess(`${selected.fullName || selected.username || 'User'} has been banned.`);
+            await banUserAccount(selected.uid, reason);
+
+            setAllUsers(prev => prev.filter(u => u.uid !== selected.uid));
+            setSuccess(`${selected.fullName || selected.username || 'User'} foi banido com sucesso.`);
             setSelected(null);
             setSearch('');
-            setTimeout(onClose, 2000);
+            setReason(defaultReason);
+            setTimeout(onClose, 2500);
         } catch (err) {
-            setError(err.message || 'Failed to ban user.');
+            setError(err.message || 'Falha ao banir o utilizador.');
         } finally {
             setBanning(false);
         }
     };
 
+    const hasReports = reportSummary && Object.keys(reportSummary).length > 0;
+    const modalTitle = selected ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={20} color="#dc2626" />
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>Ban User</span>
+        </div>
+    ) : "Ban User";
+
     return (
-        <QuickActionModal onClose={onClose} title="Ban User">
+        <QuickActionModal onClose={onClose} title={modalTitle}>
             {!selected ? (
                 <>
                     <div className={styles.searchBox}>
                         <input
                             ref={inputRef}
                             className={styles.searchInput}
-                            placeholder="Search user by name, username, or email…"
+                            placeholder="Search user by name, username, or email..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
                     </div>
                     <div className={styles.body}>
                         {loading ? (
-                            <p className={styles.empty}>Loading…</p>
+                            <p className={styles.empty}>Loading...</p>
                         ) : !search.trim() ? (
                             <p className={styles.empty}>Type to search for a user.</p>
                         ) : filtered.length === 0 ? (
@@ -79,13 +135,12 @@ export default function BanUserModal({ onClose }) {
                                 <div
                                     key={user.uid}
                                     className={styles.userRow}
-                                    onClick={() => user.accountStatus !== 'banned' && setSelected(user)}
-                                    style={user.accountStatus === 'banned' ? { opacity: 0.5, cursor: 'default' } : {}}
+                                    onClick={() => setSelected(user)}
                                 >
                                     <div className={styles.avatar}>
                                         {user.photoURL
                                             ? <img src={user.photoURL} alt="" className={styles.avatarImg} />
-                                            : <IconLucideUser size={16} />
+                                            : <User size={16} />
                                         }
                                     </div>
                                     <div className={styles.userInfo}>
@@ -94,48 +149,68 @@ export default function BanUserModal({ onClose }) {
                                         </div>
                                         <div className={styles.userMeta}>
                                             {user.userId || user.email || '—'}
-                                            {user.accountStatus === 'banned' && ' · Already banned'}
                                         </div>
                                     </div>
                                 </div>
                             ))
                         )}
                     </div>
-                    {success && <p className={styles.successMsg}>{success}</p>}
+                    {success && <p className={styles.successMsg} style={{margin: '0 20px 20px'}}>{success}</p>}
                 </>
             ) : (
                 <>
-                    <div className={styles.body}>
-                        <div className={styles.userRow} style={{ cursor: 'default', padding: '20px' }}>
-                            <div className={styles.avatar} style={{ width: 48, height: 48 }}>
-                                {selected.photoURL
-                                    ? <img src={selected.photoURL} alt="" className={styles.avatarImg} />
-                                    : <IconLucideUser size={20} />
-                                }
-                            </div>
-                            <div className={styles.userInfo}>
-                                <div className={styles.userName} style={{ fontSize: 15 }}>
-                                    {selected.fullName || selected.username || 'Unnamed User'}
-                                </div>
-                                <div className={styles.userMeta}>
-                                    {selected.userId || selected.email || '—'}
-                                </div>
-                                <div className={styles.userMeta} style={{ marginTop: 4, color: '#374151' }}>
-                                    Role: {selected.role || 'user'} · UID: {selected.uid}
-                                </div>
-                            </div>
-                        </div>
-                        <p style={{ margin: '0 20px 16px', fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
-                            Banning this account will set their status to <strong>banned</strong>. They will still be able to log in but their access can be restricted at the app level.
+                    <div className={localStyles.body}>
+                        <p className={localStyles.description}>
+                            You're about to ban <strong>{selected.fullName || selected.username}</strong> (@{selected.username}).
+                            The account will be deactivated and moved to banned arquive.
                         </p>
-                        {error && <p className={styles.errorMsg}>{error}</p>}
+
+                        <div className={localStyles.contextBox}>
+                            <div className={localStyles.contextHeader}>
+                                <FileText size={16}/>
+                                <span>Reports Context</span>
+                            </div>
+                            {loadingReports ? (
+                                <p className={localStyles.contextText}>Looking for pending reports...</p>
+                            ) : hasReports ? (
+                                <ul className={localStyles.reportList}>
+                                    {Object.entries(reportSummary).map(([rKey, count]) => (
+                                        <li key={rKey}>
+                                            <span className={localStyles.reportCount}>{count}x</span>
+                                            {REPORT_REASON_LABELS[rKey] || rKey}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className={localStyles.contextText}>This user doesn't have any pending reports.</p>
+                            )}
+                        </div>
+
+                        <div className={localStyles.field}>
+                            <label className={localStyles.label} htmlFor="banReason">Motive of Ban</label>
+                            <select
+                                id="banReason"
+                                className={localStyles.select}
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                            >
+                                {Object.entries(REPORT_REASON_LABELS).map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {error && <p className={styles.errorMsg} style={{marginTop: 16}}>{error}</p>}
                     </div>
-                    <div className={styles.footer}>
-                        <button type="button" className={styles.btnGhost} onClick={() => setSelected(null)}>
-                            Back
+
+                    <div className={localStyles.footer}>
+                        <button type="button" className={localStyles.cancelBtn} onClick={() => setSelected(null)} disabled={banning}>
+                            Cancelar
                         </button>
-                        <button type="button" className={styles.btnDanger} onClick={handleBan} disabled={banning}>
-                            {banning ? 'Banning…' : 'Ban Account'}
+                        <button type="button" className={localStyles.confirmBtn} onClick={handleBan} disabled={banning}>
+                            {banning ? 'Banning...' : 'Confirm Ban'}
                         </button>
                     </div>
                 </>

@@ -1,31 +1,32 @@
-import { NavLink } from 'react-router-dom';
-import { ADMIN_ROUTES } from '../constants/adminRoutes';
-import { useQuickActions } from '../contexts/QuickActionsContext.jsx';
+import {NavLink} from 'react-router-dom';
+import {LayoutDashboard, Users, Library, Flag, Settings, FileText, Search, Ban, UserX, BookOpen} from 'lucide-react'
+import {ADMIN_ROUTES} from '../constants/adminRoutes';
+import {useQuickActions} from '../contexts/QuickActionsContext.jsx';
 import styles from './AdminSidebar.module.css';
 
 const NAV_ITEMS = [
-    { label: 'Dashboard', path: ADMIN_ROUTES.DASHBOARD, icon: <IconLucideLayoutDashboard size={18} />, enabled: true },
-    { label: 'Users', path: ADMIN_ROUTES.USERS, icon: <IconLucideUsers size={18} />, enabled: true },
-    { label: 'Publications', path: ADMIN_ROUTES.PUBLICATIONS, icon: <IconLucideLibrary size={18} />, enabled: true },
-    { label: 'Reports', path: ADMIN_ROUTES.REPORTS, icon: <IconLucideFlag size={18} />, enabled: true },
-    { label: 'Settings', path: ADMIN_ROUTES.SETTINGS, icon: <IconLucideSettings size={18} />, enabled: true },
-    { label: 'Logs', path: ADMIN_ROUTES.LOGS, icon: <IconLucideFileText size={18} />, enabled: false },
+    {label: 'Dashboard', path: ADMIN_ROUTES.DASHBOARD, icon: <LayoutDashboard size={18}/>, enabled: true},
+    {label: 'Users', path: ADMIN_ROUTES.USERS, icon: <Users size={18}/>, enabled: true},
+    {label: 'Publications', path: ADMIN_ROUTES.PUBLICATIONS, icon: <Library size={18}/>, enabled: true},
+    {label: 'Reports', path: ADMIN_ROUTES.REPORTS, icon: <Flag size={18}/>, enabled: true},
+    {label: 'Settings', path: ADMIN_ROUTES.SETTINGS, icon: <Settings size={18}/>, enabled: true},
+    {label: 'Logs', path: ADMIN_ROUTES.LOGS, icon: <FileText size={18}/>, enabled: false},
 ];
 
 const QUICK_ACTIONS = [
-    { label: 'Search Users',      icon: <IconLucideSearch size={16} />,  action: 'searchUsers' },
-    { label: 'Ban User',          icon: <IconLucideBan size={16} />,     action: 'banUser' },
-    { label: 'View Banned Users', icon: <IconLucideUserX size={16} />,   action: 'bannedUsers' },
-    { label: 'Report Reasons',    icon: <IconLucideFlag size={16} />,    action: 'reportReasons' },
+    {label: 'Search Users', icon: <Search size={16}/>, action: 'searchUsers'},
+    {label: 'Ban User', icon: <Ban size={16}/>, action: 'banUser'},
+    {label: 'View Banned Users', icon: <UserX size={16}/>, action: 'bannedUsers'},
+    {label: 'Report Reasons', icon: <Flag size={16}/>, action: 'reportReasons'},
 ];
 
 export default function AdminSidebar() {
-    const { openAction } = useQuickActions();
+    const {openAction} = useQuickActions();
 
     return (
         <aside className={styles.sidebar}>
             <div className={styles.logo}>
-                <IconLucideBookOpen size={22} />
+                <BookOpen size={22}/>
                 <span>SwapBooks Admin</span>
             </div>
 
@@ -35,7 +36,7 @@ export default function AdminSidebar() {
                         <NavLink
                             key={item.path}
                             to={item.path}
-                            className={({ isActive }) =>
+                            className={({isActive}) =>
                                 isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem
                             }
                         >
