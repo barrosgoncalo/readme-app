@@ -17,6 +17,7 @@
     --tertiary-vivid: #2689d1;
     --tertiary-inactive: #C8DFF0;
     --quaternary: #3B3561;
+    --toggle-bg: #c2c2c2;
 
     --font-sans: 'Inter', system-ui, sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;
@@ -68,6 +69,7 @@
     --tertiary-vivid: #409EE0;
     --tertiary-inactive: #2C4459;
     --quaternary: #5E5496;
+    --toggle-bg: #4b4747;
 
     --error: #F28B82;
     --error-bg: rgba(242, 139, 130, 0.14);
