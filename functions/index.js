@@ -1340,6 +1340,20 @@ exports.unbanUser = functionsV1
 
             // Apagar o documento da coleção 'banned'
             batch.delete(bannedRef);
+
+            // Limpar o histórico de chats
+            const chatsSnapshot = await db.collection('chats')
+                .where('participants', 'array-contains', userId)
+                .get();
+
+            if (!chatsSnapshot.empty)
+                chatsSnapshot.forEach(doc => {
+                    // O chat deixa de aparecer para este user.
+                    batch.update(doc.ref, {
+                        participants: FieldValue.arrayRemove(userId)
+                    });
+                });
+
             await batch.commit();
 
             console.log(`User ${userId} unbanned successfully.`);
