@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
-import { BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera, User } from 'lucide-react';
+import { BookOpen, Pencil, Ban, Lock, Moon, Users, UserPlus, Award, Heart, LogOut, ChevronRight, Camera, User, Key } from 'lucide-react';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useUserRole } from '@readme/shared/src/hooks/use-user-role';
@@ -44,6 +44,10 @@ export default function ProfileLayout() {
     const [uploadError, setUploadError] = useState('');
 
     const showSubPanel = SUB_ROUTES.has(location.pathname);
+
+    const needsPasswordSetup =
+        currentUser?.providerData?.some(p => p.providerId === 'google.com') &&
+        !currentUser?.providerData?.some(p => p.providerId === 'password');
 
     useEffect(() => {
         if (!currentUser) return;
@@ -126,6 +130,11 @@ export default function ProfileLayout() {
             title: 'Account',
             items: [
                 { icon: Pencil, label: 'Edit Profile', onClick: () => navigate(WEB_ROUTES.PROFILE_EDIT) },
+                ...(needsPasswordSetup ? [{
+                    icon: Key,
+                    label: 'Create Password',
+                    onClick: () => navigate(WEB_ROUTES.PROFILE_SET_PASSWORD),
+                }] : []),
                 { icon: Ban, label: 'View Blocked Users', onClick: () => navigate(WEB_ROUTES.PROFILE_BLOCKED_USERS) },
                 { icon: Lock, label: 'Privacy & Security', onClick: () => navigate(WEB_ROUTES.PROFILE_PRIVACY_SECURITY) },
                 { icon: Moon, label: 'Dark Mode', toggle: true },

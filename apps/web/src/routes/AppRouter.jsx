@@ -23,6 +23,7 @@ import Chat from '../pages/Chat/index.jsx';
 import ProfileLayout from '../pages/Profile/ProfileLayout.jsx';
 import EditProfile from '../pages/Profile/EditProfile.jsx';
 import ChangePassword from '../pages/Profile/ChangePassword.jsx';
+import SetPassword from '../pages/Profile/SetPassword.jsx';
 import PrivacySecurity from '../pages/Profile/PrivacySecurity.jsx';
 import BlockedUsers from '../pages/Profile/BlockedUsers.jsx';
 import Following from '../pages/Profile/Following.jsx';
@@ -162,6 +163,7 @@ export default function AppRouter() {
                     <Route path={WEB_ROUTES.PROFILE_MY_BOOKS} element={<MyBooks />} />
                     <Route path={WEB_ROUTES.PROFILE_EDIT} element={<EditProfile />} />
                     <Route path={WEB_ROUTES.PROFILE_CHANGE_PASSWORD} element={<ChangePassword />} />
+                    <Route path={WEB_ROUTES.PROFILE_SET_PASSWORD} element={<SetPassword />} />
                     <Route path={WEB_ROUTES.PROFILE_PRIVACY_SECURITY} element={<PrivacySecurity />} />
                     <Route path={WEB_ROUTES.PUBLICATION_NEW} element={<CreatePublication />} />
                     <Route path="/publications/:pubId" element={<PublicationDetailRoute />} />
