@@ -54,14 +54,26 @@
     border-radius: var(--radius);
     object-fit: cover;
     display: block;
+    background: var(--bg-selected); /* Subtle background while loading */
+}
+
+.thumbnailFallback {
+    width: 48px;
+    height: 72px;
+    border-radius: var(--radius);
+    background: var(--bg-selected); /* Gives it a nice subtle gray box */
+    color: var(--subtext);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .avatar {
     position: absolute;
-    bottom: -6px;
-    right: -6px;
-    width: 24px;
-    height: 24px;
+    bottom: -8px;
+    right: -8px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--bg);
@@ -69,18 +81,18 @@
 
 .avatarPlaceholder {
     position: absolute;
-    bottom: -6px;
-    right: -6px;
-    width: 24px;
-    height: 24px;
+    bottom: -8px;
+    right: -8px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: var(--bg-selected);
-    color: var(--subtext);
+    background: var(--bg-elem);
+    color: var(--text);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 0.7rem;
+    font-size: 0.9rem;
     border: 2px solid var(--bg);
 }
 

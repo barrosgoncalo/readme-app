@@ -7,7 +7,6 @@ import styles from './BookCard.module.css';
 
 const STATUS_COLORS = {
     [BOOK_STATUS.READING]: styles.dotReading,
-    [BOOK_STATUS.WANT]: styles.dotWant,
     [BOOK_STATUS.DONE]: styles.dotDone,
 };
 
@@ -101,11 +100,6 @@ function CoverFrame({ book, authors, status, isFavorite, onToggleFavorite, onRem
             />
 
             <span className={styles.spine} aria-hidden="true" />
-
-            <span
-                className={`${styles.cornerDot} ${STATUS_COLORS[status]}`}
-                title={BOOK_STATUS_LABELS[status]}
-            />
 
             <div className={styles.hoverActions} onClick={stop}>
                 {/*<button*/}

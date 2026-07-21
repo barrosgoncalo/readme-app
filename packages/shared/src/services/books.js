@@ -13,10 +13,10 @@ class BookCollectionService {
      * Orchestrates the global cache validation and lightweight link creation.
      * @param {string} uid - The authenticated user's ID
      * @param {Object} globalBookData - The full book payload returned from your adapters
-     * @param {string} status - Initial reading status ('reading', 'want_to_read', etc.)
+     * @param {string} status - Initial reading status ('reading' or 'done')
      * @param {Object} overrides - Any optional page modifications or custom values
      */
-    async saveBookToShelf(uid, globalBookData, status = 'want_to_read', overrides = {}) {
+    async saveBookToShelf(uid, globalBookData, status = 'reading', overrides = {}) {
         let finalOverrides = { ...overrides };
 
         if (!finalOverrides.color && globalBookData.coverUrl) {

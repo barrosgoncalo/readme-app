@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Heart, Trash2, Flag } from 'lucide-react';
+import { Heart, Trash2, Flag, Pencil } from 'lucide-react';
 import { PublicationService } from '@readme/shared/src/services/publications';
 import { UsersService } from '@readme/shared/src/services/users';
 import { ReportsService } from '@readme/shared/src/services/reports';
@@ -265,14 +265,30 @@ export default function PublicationDetails({ embedded = false, pubId: pubIdProp,
                         )}
 
                         {isOwner && (
-                            <Button
-                                onClick={() => setShowDeleteConfirm(true)}
-                                disabled={deleting}
-                                style={{ backgroundColor: 'var(--error)' }}
-                            >
-                                <Trash2 size={16} />
-                                {deleting ? 'Deleting...' : 'Delete'}
-                            </Button>
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => navigate(WEB_ROUTES.publicationEdit(pub.id))}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <Pencil size={16} />
+                                    Edit
+                                </Button>
+
+                                <Button
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    disabled={deleting}
+                                    style={{ backgroundColor: 'var(--error)' }}
+                                >
+                                    <Trash2 size={16} />
+                                    {deleting ? 'Deleting...' : 'Delete'}
+                                </Button>
+                            </>
                         )}
                     </div>
                 </div>

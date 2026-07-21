@@ -18,6 +18,10 @@
     --tertiary-inactive: #C8DFF0;
     --quaternary: #3B3561;
     --toggle-bg: #c2c2c2;
+    --accent-terracotta: #D9824B;
+    --hero-bg: #221E1B;
+    --hero-btn-bg: #8C593B;
+    --hero-btn-hover: #A06745;
 
     --font-sans: 'Inter', system-ui, sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;

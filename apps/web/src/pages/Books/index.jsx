@@ -25,14 +25,10 @@ const FILTER_FAVORITES = 'favorites';
 const FILTERS = [
     { key: FILTER_ALL, label: 'All' },
     { key: BOOK_STATUS.READING, label: BOOK_STATUS_LABELS[BOOK_STATUS.READING] },
-    { key: BOOK_STATUS.WANT, label: BOOK_STATUS_LABELS[BOOK_STATUS.WANT] },
     { key: BOOK_STATUS.DONE, label: BOOK_STATUS_LABELS[BOOK_STATUS.DONE] },
     // { key: FILTER_FAVORITES, label: 'Liked Books' },
 ];
 
-// MyBooksService.getBooks() returns { ...trackingDoc, bookDetails } (title/
-// authors/coverUrl live in the global `books` cache, joined in by the
-// service). Flatten to the shape BookCard/hydrateMyBooks already expect.
 function flattenShelfDoc(doc) {
     const details = doc.bookDetails || {};
     return {
