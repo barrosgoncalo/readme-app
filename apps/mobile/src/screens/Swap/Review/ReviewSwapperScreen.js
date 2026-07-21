@@ -144,13 +144,13 @@ export default function ReviewSwapperScreen({ route, navigation }) {
                         ))}
                     </View>
                     
-                    <Text style={[styles.ratingLabel, { color: theme.primary }]}>
-                        {rating === 1 && "Very Poor 😞"}
-                        {rating === 2 && "Below Expectations 😕"}
-                        {rating === 3 && "Fair 😐"}
-                        {rating === 4 && "Very Good 🙂"}
-                        {rating === 5 && "Excellent! 🤩"}
-                    </Text>
+                    {/*<Text style={[styles.ratingLabel, { color: theme.primary }]}>*/}
+                    {/*    {rating === 1 && "Very Poor 😞"}*/}
+                    {/*    {rating === 2 && "Below Expectations 😕"}*/}
+                    {/*    {rating === 3 && "Fair 😐"}*/}
+                    {/*    {rating === 4 && "Very Good 🙂"}*/}
+                    {/*    {rating === 5 && "Excellent! 🤩"}*/}
+                    {/*</Text>*/}
 
                     {/* --- COMMENT INPUT BOX --- */}
                     <View style={styles.inputContainer}>
