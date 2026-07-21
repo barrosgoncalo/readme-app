@@ -25,7 +25,6 @@ const FILTER_FAVORITES = 'favorites';
 const FILTERS = [
     { key: FILTER_ALL, label: 'All' },
     { key: BOOK_STATUS.READING, label: BOOK_STATUS_LABELS[BOOK_STATUS.READING] },
-    { key: BOOK_STATUS.WANT, label: BOOK_STATUS_LABELS[BOOK_STATUS.WANT] },
     { key: BOOK_STATUS.DONE, label: BOOK_STATUS_LABELS[BOOK_STATUS.DONE] },
     // { key: FILTER_FAVORITES, label: 'Liked Books' },
 ];

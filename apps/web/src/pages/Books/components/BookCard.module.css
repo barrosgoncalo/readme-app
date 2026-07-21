@@ -19,7 +19,6 @@
 }
 
 .dotReading { background: var(--tertiary-vivid); }
-.dotWant    { background: var(--secondary); }
 .dotDone    { background: var(--bg-selected); border: 1px solid var(--subtext); }
 
 /* ── Featured card (Currently Reading) ── */
@@ -425,17 +424,6 @@
 /* Tiny generated cover for the row thumbnail — a color swatch, no text. */
 .generatedCoverTiny {
     display: block;
-}
-
-/* Status dot in a cover corner. */
-.cornerDot {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* Hover-revealed actions, top-left of the cover. */
