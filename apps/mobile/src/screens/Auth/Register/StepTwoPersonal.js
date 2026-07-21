@@ -68,7 +68,7 @@ export default function StepTwoPersonal({
                         style={[styles.primaryButton, styles.backButton]}
                         onPress={() => navigation.navigate(ROUTES.LOGIN)}
                     >
-                        <Text style={[styles.buttonText, { color: '#208AEF' }]}>Cancel</Text>
+                        <Text style={[styles.buttonText, { color: theme.primary }]}>Cancel</Text>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity

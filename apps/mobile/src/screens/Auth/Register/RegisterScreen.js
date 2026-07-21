@@ -11,17 +11,18 @@ import {
 
 import { isValidEmail } from '@readme/shared/src/utils/registerUtils';
 
+import { dateToIso } from '@readme/shared/src/utils/dateUtils';
+
 import {
     doCreateUserWithEmailAndPassword,
     doGetGoogleTokenAndProfile,
     doSignInWithGoogleCredential,
+    doCompleteGoogleRegistration,
     doSignOut,
 } from '@readme/shared/src/services/auth';
 
 import { ROUTES } from '@readme/shared/src/constants/routes';
 import { useTheme } from '@readme/shared/src/hooks/use-theme';
-import { DB } from '@readme/shared/src/services/DB';
-import { auth } from '@readme/shared/src/services/firebase';
 
 // Separated Components
 import { buildAuthStyles } from '../../../styles/authStyles';
@@ -125,13 +126,13 @@ export default function RegisterScreen({ navigation }) {
 
         if (passwordInfo.level !== 'strong') {
             const missing = [];
-            if ( !hasValidLength(password) ) {
+            if (!hasValidLength(password)) {
                 missing.push('At least 6 characters');
             }
-            if ( !hasNumbers(password) ) {
+            if (!hasNumbers(password)) {
                 missing.push('At least one number');
             }
-            if ( !hasMixedCase(password) ) {
+            if (!hasMixedCase(password)) {
                 missing.push('uppercase and lowercase letters');
             }
 
@@ -143,12 +144,12 @@ export default function RegisterScreen({ navigation }) {
     };
 
     const handleStep2Next = () => {
-        if ( !dob ) {
+        if (!dob) {
             Alert.alert('Missing Fields', 'Please fill in your date of birth.');
             return;
         }
 
-        if (calculateAge( date ) < 16) {
+        if (calculateAge(date) < 16) {
             Alert.alert('Age Requirement', 'You must be at least 16 years old to create an account.');
             return;
         }
@@ -156,33 +157,35 @@ export default function RegisterScreen({ navigation }) {
         setStep(3);
     };
 
-    // 2. UPDATED GOOGLE SIGN IN LOGIC
+    // ─── SMART GOOGLE SIGN-IN & REGISTRATION ──────────────────────────────────
     const handleGoogleSignIn = async () => {
         try {
+            // 1. Fetch Google ID token and profile
             const result = await doGetGoogleTokenAndProfile();
+            if (!result?.idToken) return;
 
-            await doSignInWithGoogleCredential(result.idToken, result.profile);
-
-            const currentUser = auth.currentUser;
-
-            if (currentUser) {
-                const existingUser = await DB.get('users', currentUser.uid);
-
-                if (existingUser) {
-                    console.log("Account already exists! Skipping registration.");
-                    Alert.alert(
-                        'Welcome Back', 
-                        'An account already exists with this Google email. Logging you in!', 
-                        [{ text: 'OK', onPress: () => navigation.navigate(ROUTES.MAIN) }]
-                    );
-                    return;
+            // 2. Attempt sign-in. doSignInWithGoogleCredential throws 'auth/user-not-found'
+            //    if no Firestore profile exists for this Google account.
+            try {
+                await doSignInWithGoogleCredential(result.idToken, result.profile);
+                Alert.alert(
+                    'Welcome Back',
+                    'An account already exists with this Google email. Logging you in!',
+                    [{ text: 'OK', onPress: () => navigation.navigate(ROUTES.MAIN) }]
+                );
+                return;
+            } catch (signInError) {
+                if (signInError.code !== 'auth/user-not-found') {
+                    throw signInError;
                 }
+                // No profile exists yet — fall through to registration flow below.
             }
 
+            // 3. NEW USER: save their info and advance them to Step 2.
             setGoogleIdToken(result.idToken);
-            setEmail(result.profile.email);
-            setFullName(result.profile.fullName);
-            setUsername(result.profile.username);
+            setEmail(result.profile?.email || '');
+            setFullName(result.profile?.fullName || result.profile?.name || '');
+            setUsername(result.profile?.username || result.profile?.email?.split('@')[0] || '');
             setIsGoogleUser(true);
             setStep(2);
 
@@ -209,12 +212,15 @@ export default function RegisterScreen({ navigation }) {
         try {
             if (isGoogleUser) {
                 if (!googleIdToken) throw new Error('Missing Google Token.');
-                await doSignInWithGoogleCredential(googleIdToken, profileData);
+
+                await doCompleteGoogleRegistration(googleIdToken, profileData);
+
                 setIsRegistering(false);
                 Alert.alert('Success', 'Account created successfully!', [
                     { text: 'OK', onPress: () => navigation.navigate(ROUTES.MAIN) },
                 ]);
             } else {
+                // Standard Email/Password flow
                 await doCreateUserWithEmailAndPassword(email.trim(), password, profileData);
                 await doSignOut();
                 Alert.alert(
@@ -225,9 +231,11 @@ export default function RegisterScreen({ navigation }) {
             }
         } catch (error) {
             setIsRegistering(false);
-            if (error.message === "Firebase: Error (auth/email-already-in-use).")
+            if (error.code === "auth/email-already-in-use" || error.message === "Firebase: Error (auth/email-already-in-use).") {
                 Alert.alert('Registration Failed', "Email already in use.");
-            else Alert.alert('Registration Failed', error.message);
+            } else {
+                Alert.alert('Registration Failed', error.message);
+            }
         }
     };
 
@@ -235,10 +243,7 @@ export default function RegisterScreen({ navigation }) {
         if (Platform.OS === 'android') setShowDatePicker(false);
         if (selectedDate) {
             setDate(selectedDate);
-            const day = String(selectedDate.getDate()).padStart(2, '0');
-            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-            const year = selectedDate.getFullYear();
-            setDob(`${day}/${month}/${year}`);
+            setDob(dateToIso(selectedDate));
         }
     };
 

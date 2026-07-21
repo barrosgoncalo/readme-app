@@ -23,7 +23,6 @@ export function AuthProvider({ children }) {
     async function initializeUser(user) {
         if (user) {
             const isEmailUser = user.providerData.some(p => p.providerId === 'password');
-
             if (isEmailUser && !user.emailVerified) {
                 setCurrentUser(null);
                 setUserLoggedIn(false);
@@ -31,10 +30,8 @@ export function AuthProvider({ children }) {
                 try {
                     const tokenResult = await user.getIdTokenResult(true);
                     const tokenRole = tokenResult.claims.role || 'user';
-
                     const docRef = doc(db, "users", user.uid);
                     const docSnap = await getDoc(docRef);
-
                     if (docSnap.exists()) {
                         const firestoreData = docSnap.data();
                         setCurrentUser({ 
@@ -42,27 +39,26 @@ export function AuthProvider({ children }) {
                             ...firestoreData,
                             role: tokenRole,
                             photoURL: firestoreData.photoURL || user.photoURL || null 
-                        }); 
-                    } else {
-                        setCurrentUser({ 
-                            ...user, 
-                            role: tokenRole 
                         });
+                        setUserLoggedIn(true);
+                    } else {
+                        // No Firestore profile yet — e.g. a Google account-existence check
+                        // mid-registration, where the auth user is momentarily created then
+                        // deleted. Don't treat this as a real logged-in session.
+                        setCurrentUser(null);
+                        setUserLoggedIn(false);
                     }
-                    setUserLoggedIn(true);
                 } catch (error) {
                     console.error("Erro a buscar dados do Firestore ou Claims:", error);
-                    setCurrentUser({ ...user, role: 'user' });
-                    setUserLoggedIn(true);
+                    setCurrentUser(null);
+                    setUserLoggedIn(false);
                 }
             }
         } else {
             setCurrentUser(null);
             setUserLoggedIn(false);
         }
-
         setLoading(false);
-
         try {
             await SplashScreen.hideAsync();
         } catch (error) {

@@ -229,3 +229,15 @@ export const getUserProviderId = () => {
 
     return user.providerData[0].providerId;
 };
+
+export const doCompleteGoogleRegistration = async (idToken, profileData) => {
+    const credential = GoogleAuthProvider.credential(idToken);
+    const userCredential = await signInWithCredential(auth, credential);
+    const currentUser = userCredential.user;
+
+    if (!currentUser) throw new Error("Firebase failed to create the user account.");
+
+    await saveUserData(currentUser.uid, profileData, 'google');
+
+    return userCredential;
+};

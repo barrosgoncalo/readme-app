@@ -46,7 +46,7 @@ export default function EditProfile() {
                 fullName: d.fullName || '',
                 dob: d.dob || '',
                 username: d.username || '',
-                phoneNumber: d.phoneNumber || '', // Agora lê o número diretamente
+                phoneNumber: d.phoneNumber || '',
                 country: addr.country || '',
                 city: addr.city || '',
                 district: addr.district || '',
@@ -72,7 +72,7 @@ export default function EditProfile() {
                 fullName: form.fullName.trim(),
                 dob: form.dob,
                 username: form.username.trim(),
-                phoneNumber: form.phoneNumber.trim(), // Guarda o número diretamente
+                phoneNumber: form.phoneNumber.trim(),
                 institutionalAddress: {
                     country: form.country.trim(),
                     city: form.city.trim(),

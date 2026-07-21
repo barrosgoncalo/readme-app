@@ -25,30 +25,8 @@ import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useImagePicker } from '@readme/shared/src/hooks/use-image-picker';
 import { UsersService } from '@readme/shared/src/services/users';
 import { calculateAge } from '@readme/shared/src/utils/registerUtils';
+import { isoToDate, dateToIso, formatDisplayDob } from '@readme/shared/src/utils/dateUtils';
 
-// Canonical storage format is ISO (YYYY-MM-DD), matching the web app's
-// <input type="date">. These two helpers are the only place that format
-// is parsed/produced, so both platforms stay in sync.
-const isoToDate = (isoStr) => {
-    if (!isoStr) return new Date(2000, 0, 1);
-    const [y, m, d] = isoStr.split('-');
-    return new Date(Number(y), Number(m) - 1, Number(d));
-};
-
-const dateToIso = (date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-};
-
-// Display-only formatting (DD/MM/YYYY), never sent to Firestore.
-const formatDisplayDob = (isoStr) => {
-    if (!isoStr) return '';
-    const [y, m, d] = isoStr.split('-');
-    if (!y || !m || !d) return '';
-    return `${d}/${m}/${y}`;
-};
 
 export default function EditProfileScreen({ navigation, route }) {
     const existing = route?.params?.userData ?? {};
