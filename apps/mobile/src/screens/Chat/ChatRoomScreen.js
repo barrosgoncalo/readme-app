@@ -126,8 +126,8 @@ export default function ChatRoomScreen({ route, navigation }) {
             {/* Hide the input bar completely if the chat is disabled */}
             {!isChatDisabled && (
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    keyboardVerticalOffset={8}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
                 >
                     <View onLayout={(e) => {
                         const h = e.nativeEvent.layout.height;
