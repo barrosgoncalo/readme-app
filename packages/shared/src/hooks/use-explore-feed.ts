@@ -27,6 +27,13 @@ interface UseExploreFeedProps {
     genres?: string[];
     includeAllStatuses?: boolean;
     hitsPerPage?: number;
+    // When true, the very first load performed by this hook instance
+    // ignores the module-level cache and fetches a fresh page 1, even if
+    // a previous instance left items sitting in the cache. Pass this as
+    // true for a "fresh" arrival at Explore (sidebar click, post-block
+    // redirect, etc.) and false/omitted when restoring via the Back
+    // button so scroll restoration can keep using the cached items.
+    forceRefreshOnMount?: boolean;
 }
 
 // ==========================================
@@ -48,6 +55,7 @@ export function useExploreFeed({
                                    genres = [],
                                    includeAllStatuses = false,
                                    hitsPerPage = DEFAULT_HITS_PER_PAGE,
+                                   forceRefreshOnMount = false,
                                }: UseExploreFeedProps = {}) {
     // Generate a unique string for the current active filters
     const currentFilterKey = JSON.stringify({ excludeUid, sortBy, conditions, genres, includeAllStatuses });
@@ -67,7 +75,9 @@ export function useExploreFeed({
     const [blockedLoaded, setBlockedLoaded] = useState<boolean>(!excludeUid);
 
     const [items, setItems] = useState<FeedItem[]>(feedCache.items);
-    const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(feedCache.items.length === 0);
+    const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(
+        feedCache.items.length === 0 || forceRefreshOnMount
+    );
     const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
     const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
     const [hasMore, setHasMore] = useState<boolean>(feedCache.hasMore);
@@ -186,7 +196,7 @@ export function useExploreFeed({
 
     useEffect(() => {
         if (blockedLoaded) {
-            loadInitial();
+            loadInitial(forceRefreshOnMount);
         }
     }, [blockedLoaded, loadInitial]);
 
