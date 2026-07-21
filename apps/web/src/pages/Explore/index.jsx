@@ -1,23 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigationType } from 'react-router-dom';
-import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Search, Users, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { useNavigationType, Link, useSearchParams } from 'react-router-dom';
+import {
+    BookOpen,
+    Search,
+    Users,
+    Plus,
+    SlidersHorizontal,
+    ArrowLeftRight
+} from 'lucide-react';
+
 import { searchUsers } from '@readme/shared/src/services/searchUser';
-import { searchPublicationsByBook } from '@readme/shared/src/services/searchBook';
+import { searchPublicationsByBook, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
 import { BOOK_CONDITIONS, BOOK_GENRES } from '@readme/shared/src/constants/bookOptions';
-import { SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
 import { doGetBlockedUsers } from '@readme/shared/src/services/block';
 import { UsersService } from '@readme/shared/src/services/users';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext/web';
 import { useExploreFeed } from '@readme/shared/src/hooks/use-explore-feed';
+import { WEB_HITS_PER_PAGE } from "@readme/shared/src/constants/feedConstants.ts";
+
 import PublicationCard from '../../components/PublicationCard';
 import { WEB_ROUTES } from '../../constants/webRoutes';
 import UserAvatar from '../../components/UserAvatar';
 import Button from '../../components/Button';
 import { SkeletonGrid } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
+
+import exploreHeroImg from '../../assets/exploreDesign.png';
 import styles from './Explore.module.css';
-import {WEB_HITS_PER_PAGE} from "@readme/shared/src/constants/feedConstants.ts";
 
 const SORT_CHOICES = [
     { key: SORT_OPTIONS.DATE_DESC, label: 'Newest first' },
@@ -34,7 +43,6 @@ const EXPLORE_TAB = {
 };
 
 const BOOK_SEARCH_DEBOUNCE_MS = 250;
-
 
 export default function Explore() {
     const { currentUser } = useAuth();
@@ -57,7 +65,7 @@ export default function Explore() {
 
     const [filtersVisible, setFiltersVisible] = useState(false);
 
-    // 1. Initialize state directly from sessionStorage (with fallbacks)
+    // Initialize state directly from sessionStorage
     const [sortBy, setSortBy] = useState(() =>
         sessionStorage.getItem('exp_sort') || SORT_OPTIONS.DATE_DESC
     );
@@ -68,7 +76,7 @@ export default function Explore() {
         JSON.parse(sessionStorage.getItem('exp_gen')) || []
     );
 
-    // 2. Save filters to sessionStorage whenever they change
+    // Save filters to sessionStorage whenever they change
     useEffect(() => {
         sessionStorage.setItem('exp_sort', sortBy);
         sessionStorage.setItem('exp_cond', JSON.stringify(conditionFilters));
@@ -93,11 +101,6 @@ export default function Explore() {
         genres: genreFilters,
         includeAllStatuses: false,
         hitsPerPage: WEB_HITS_PER_PAGE,
-        // A Back-button arrival (POP) should restore exactly what was
-        // cached, scroll and all. Any other arrival - clicking the
-        // Explore icon from elsewhere, landing here after blocking a
-        // user, a fresh tab - should ignore the cache and pull a fresh
-        // page 1, so a just-blocked user's stuff actually disappears.
         forceRefreshOnMount: navigationType !== 'POP',
     });
 
@@ -108,11 +111,7 @@ export default function Explore() {
             .catch(() => {});
     }, [uid]);
 
-    // ==========================================
-    // SCROLL RESTORATION LOGIC
-    // ==========================================
-
-    // 1. Quietly save the scroll position as the user scrolls (throttled for performance)
+    // Scroll restoration logic
     useEffect(() => {
         let throttleTimer;
         const handleScroll = () => {
@@ -120,7 +119,7 @@ export default function Explore() {
             throttleTimer = setTimeout(() => {
                 sessionStorage.setItem('exploreScrollPos', window.scrollY);
                 throttleTimer = null;
-            }, 150); // Write to storage max once every 150ms
+            }, 150);
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -131,7 +130,6 @@ export default function Explore() {
         };
     }, []);
 
-    // 2. When the initial books finish loading, jump back to the saved position
     useEffect(() => {
         if (!loadingPubs && publications.length > 0) {
             if (navigationType === 'POP') {
@@ -142,17 +140,12 @@ export default function Explore() {
                     });
                 }
             } else {
-                // Fresh navigation into Explore (nav bar, tab click, etc.) — start clean
                 sessionStorage.removeItem('exploreScrollPos');
                 window.scrollTo(0, 0);
             }
         }
     }, [loadingPubs, publications.length, navigationType]);
-    // ==========================================
 
-    // ==========================================
-    // "CLICK OFF AND ON" WHILE ALREADY ON EXPLORE
-    // ==========================================
     useEffect(() => {
         function handleExploreRefreshRequest() {
             sessionStorage.removeItem('exploreScrollPos');
@@ -162,7 +155,6 @@ export default function Explore() {
         window.addEventListener('explore:refresh-request', handleExploreRefreshRequest);
         return () => window.removeEventListener('explore:refresh-request', handleExploreRefreshRequest);
     }, [refetch]);
-    // ==========================================
 
     const [bookSearchResults, setBookSearchResults] = useState(null);
     const [searchingBooks, setSearchingBooks] = useState(false);
@@ -259,7 +251,7 @@ export default function Explore() {
                     { title: q },
                     { excludeUid: uid, hitsPerPage: 24 }
                 );
-                if (!cancelled) setBookSearchResults(pubs.map(p => p.publicationData));
+                if (!cancelled) setBookSearchResults(pubs);
             } catch (err) {
                 console.error('Book search failed:', err);
                 if (!cancelled) setBookSearchError('Search failed. Please try again.');
@@ -455,17 +447,57 @@ export default function Explore() {
             {/* TAB: BOOKS */}
             {activeTab === EXPLORE_TAB.BOOKS && (
                 <div className={styles.section}>
-                    <Link
-                        to={WEB_ROUTES.PUBLICATION_NEW}
-                        style={{
-                            display: 'block',
-                            marginBottom: '26px',
-                        }}
-                    >
-                        <Button>
-                            <Plus size={16} /> New Publication
-                        </Button>
-                    </Link>
+                    {!isSearchingBooks && (
+                        <div className={styles.heroCard}>
+                            <div className={styles.heroContent}>
+                                <h2 className={styles.heroTitle}>
+                                    Good books.<br />
+                                    New stories.<br />
+                                    <span className={styles.heroHighlight}>Shared together.</span>
+                                </h2>
+                                <p className={styles.heroSubtitle}>
+                                    Swap books you&apos;ve loved, discover new favorites and connect with readers like you.
+                                </p>
+
+                                <Link to={WEB_ROUTES.PUBLICATION_NEW} className={styles.heroCta}>
+                                    <Plus size={18} /> New Publication
+                                </Link>
+
+                                {/*TODO: Make the statistics*/}
+                                {/*<div className={styles.heroStats}>*/}
+                                {/*    <div className={styles.statItem}>*/}
+                                {/*        <BookOpen size={18} className={styles.statIcon} />*/}
+                                {/*        <div className={styles.statText}>*/}
+                                {/*            <span className={styles.statNumber}>2.4k+</span>*/}
+                                {/*            <span className={styles.statLabel}>Books available</span>*/}
+                                {/*        </div>*/}
+                                {/*    </div>*/}
+                                {/*    <div className={styles.statItem}>*/}
+                                {/*        <Users size={18} className={styles.statIcon} />*/}
+                                {/*        <div className={styles.statText}>*/}
+                                {/*            <span className={styles.statNumber}>1.1k+</span>*/}
+                                {/*            <span className={styles.statLabel}>Readers</span>*/}
+                                {/*        </div>*/}
+                                {/*    </div>*/}
+                                {/*    <div className={styles.statItem}>*/}
+                                {/*        <ArrowLeftRight size={18} className={styles.statIcon} />*/}
+                                {/*        <div className={styles.statText}>*/}
+                                {/*            <span className={styles.statNumber}>850+</span>*/}
+                                {/*            <span className={styles.statLabel}>Swaps completed</span>*/}
+                                {/*        </div>*/}
+                                {/*    </div>*/}
+                                {/*</div>*/}
+                            </div>
+
+                            <div className={styles.heroImageWrapper}>
+                                <img
+                                    src={exploreHeroImg}
+                                    alt="Explore books"
+                                    className={styles.heroImage}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {(isSearchingBooks ? searchingBooks : loadingPubs) ? (
                         <SkeletonGrid count={6} />
