@@ -5,14 +5,14 @@ import bgBackImage from '../assets/welcome-bg-back-layer.png';
 import bgFrontImage from '../assets/welcome-bg-front-layer.png';
 import explorePhoto from '../assets/explore-preview.png';
 
-import reactLogo from '../assets/logos/React-logo.png';
-import expoLogo from '../assets/logos/Expo-logo.png';
-import firebaseLogo from '../assets/logos/Firebase-logo.png';
-import algoliaLogo from '../assets/logos/Algolia-logo.png';
-import gbooksLogo from '../assets/logos/Google-Books-logo.png';
-import gmapsLogo from '../assets/logos/Google-Maps-logo.png';
-import osmLogo from '../assets/logos/OpenStreetMap-logo.png';
-import openLogo from '../assets/logos/Open-Library-logo.png';
+import reactLogo from '../assets/logos/React_logo.png';
+import expoLogo from '../assets/logos/Expo_logo.png';
+import firebaseLogo from '../assets/logos/Firebase_logo.png';
+import algoliaLogo from '../assets/logos/Algolia_logo.png';
+import gbooksLogo from '../assets/logos/Google_Books_logo.png';
+import gmapsLogo from '../assets/logos/Google_Maps_logo.png';
+import osmLogo from '../assets/logos/OpenStreetMap_logo.png';
+import openLogo from '../assets/logos/Open_Library_logo.png';
 
 const TOTAL_SECTIONS = 3;
 const TRANSITION_DURATION = 900;
