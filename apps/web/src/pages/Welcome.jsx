@@ -108,9 +108,9 @@ export default function Welcome() {
           top: 0;
           left: 0;
           width: 100%;
-          height: 200vh;
+          height: 200dvh;
           background-size: cover;
-          background-position: top center;
+          background-position: center top;
           background-repeat: no-repeat;
           pointer-events: none;
         }
@@ -130,16 +130,16 @@ export default function Welcome() {
           flex-direction: column;
           align-items: flex-start;
           z-index: 5;
-          max-width: 90%;
+          width: min(90%, 800px);
         }
 
         .hero-title {
           font-family: var(--heading, Georgia, serif);
-          font-size: clamp(36px, 5vw, 75px);
-          letter-spacing: 5px;
+          font-size: clamp(2rem, 5vw, 4.5rem);
+          letter-spacing: clamp(2px, 0.4vw, 5px);
           text-transform: uppercase;
           font-weight: 200;
-          margin: 0 0 16px 0;
+          margin: 0 0 clamp(0.5rem, 1.5vh, 1rem) 0;
           background: linear-gradient(160deg, #d6a462 0%, #5a381f 50%, #2b1c11 100%);
           -webkit-background-clip: text;
           background-clip: text;
@@ -148,11 +148,11 @@ export default function Welcome() {
 
         .hero-motto {
           font-family: 'Playfair Display', 'Bodoni MT', 'Didot', 'Times New Roman', serif;
-          font-size: clamp(40px, 6vw, 80px);
+          font-size: clamp(2.2rem, 6.5vw, 5rem);
           font-weight: 500;
           line-height: 1.15;
-          letter-spacing: 2px;
-          margin: 0 0 32px 0;
+          letter-spacing: clamp(1px, 0.2vw, 2px);
+          margin: 0 0 clamp(1rem, 3vh, 2rem) 0;
           background: linear-gradient(160deg, #e5b36a 0%, #7d5229 45%, #4e3422 90%);
           -webkit-background-clip: text;
           background-clip: text;
@@ -162,21 +162,21 @@ export default function Welcome() {
         .hero-divider-container {
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: clamp(8px, 1.5vw, 14px);
           width: 100%;
-          max-width: 320px;
+          max-width: clamp(180px, 40vw, 320px);
         }
 
         .hero-divider-line {
           flex: 1;
-          height: 4px;
+          height: clamp(2px, 0.3vh, 4px);
           background: #cda066;
         }
 
         .hero-divider-diamond {
-          width: 20px;
-          height: 20px;
-          border: 3px solid #cda066;
+          width: clamp(12px, 2vw, 20px);
+          height: clamp(12px, 2vw, 20px);
+          border: clamp(2px, 0.3vw, 3px) solid #cda066;
           background: transparent;
           transform: rotate(45deg);
         }
@@ -190,7 +190,7 @@ export default function Welcome() {
           }
           50% {
             background: rgba(230, 200, 148, 0.85);
-            transform: translateY(-12px) rotate(45deg) scale(1.1);
+            transform: translateY(-0.75rem) rotate(45deg) scale(1.1);
             box-shadow: 0 0 12px rgba(230, 200, 148, 0.6);
           }
         }
@@ -199,13 +199,13 @@ export default function Welcome() {
           display: flex;
           justify-content: center;
           align-items: center;
-          padding: 14px;
+          padding: clamp(8px, 1.5vh, 14px);
           filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2));
         }
 
         .diamond-gold {
-          width: 16px;
-          height: 16px;
+          width: clamp(12px, 1.8vw, 16px);
+          height: clamp(12px, 1.8vw, 16px);
           border-radius: 1.8px;
           background: rgba(230, 200, 148, 0.15);
           backdrop-filter: blur(4px);
@@ -218,7 +218,19 @@ export default function Welcome() {
           transition: transform ${TRANSITION_DURATION}ms cubic-bezier(0.65, 0, 0.35, 1);
         }
 
-        /* --- OVERRIDE SHADOW FOR TEAM SECTION COMPONENTS --- */
+        /* --- TEAM SECTION OVERRIDE --- */
+        .team-wrapper-override {
+     z-index: 5;
+          width: 100%;
+          max-width: 1200px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          box-sizing: border-box;
+          /* Removes bottom padding push so it stays elevated */
+          padding-bottom: 0; 
+        }
+
         .team-wrapper-override .team-card,
         .team-wrapper-override [class*="card"] {
           box-shadow: none !important;
@@ -230,41 +242,41 @@ export default function Welcome() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          width: 90%;
-          max-width: 440px;
-          padding: clamp(24px, 5vh, 48px) 32px;
-          border-radius: 20px;
+          width: min(90%, 440px);
+          padding: clamp(1.5rem, 4vh, 3rem) clamp(1.25rem, 4vw, 2rem);
+          border-radius: clamp(12px, 2vw, 20px);
           background: #ffffff;
           border: 1px solid rgba(90, 67, 41, 0.12);
           box-shadow: 0 8px 24px rgba(58, 42, 22, 0.08);
+          box-sizing: border-box;
         }
 
         .brand-subtitle {
           font-family: var(--heading, Georgia, serif);
-          font-size: 13px;
-          letter-spacing: 4px;
+          font-size: clamp(11px, 1.2vw, 13px);
+          letter-spacing: clamp(2px, 0.3vw, 4px);
           text-transform: uppercase;
           color: #5a4329;
           font-weight: 600;
-          margin-bottom: 8px;
+          margin-bottom: clamp(4px, 1vh, 8px);
         }
 
         .brand-title {
           font-family: var(--heading, Georgia, serif);
-          font-size: clamp(24px, 3vw, 32px);
+          font-size: clamp(1.3rem, 3vw, 2rem);
           color: #5a4329;
           font-weight: 700;
           line-height: 1.25;
-          margin: 0 0 16px 0;
+          margin: 0 0 clamp(0.75rem, 2vh, 1rem) 0;
         }
 
         .action-divider-container {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: clamp(8px, 1vw, 12px);
           width: 100%;
-          max-width: 180px;
-          margin-bottom: 32px;
+          max-width: clamp(120px, 30vw, 180px);
+          margin-bottom: clamp(1.25rem, 3.5vh, 2rem);
         }
 
         .action-divider-line {
@@ -283,19 +295,19 @@ export default function Welcome() {
         .btn-group {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: clamp(10px, 1.5vh, 14px);
           width: 100%;
         }
 
         .btn-primary {
           width: 100%;
-          padding: 16px 24px;
+          padding: clamp(12px, 2vh, 16px) clamp(16px, 3vw, 24px);
           background-color: #5a4329;
           color: #fcfaf7;
           border: none;
           border-radius: 8px;
           font-family: var(--heading, Georgia, serif);
-          font-size: 15px;
+          font-size: clamp(13px, 1.5vw, 15px);
           font-weight: 600;
           letter-spacing: 0.5px;
           cursor: pointer;
@@ -317,13 +329,13 @@ export default function Welcome() {
 
         .btn-secondary {
           width: 100%;
-          padding: 15px 24px;
+          padding: clamp(11px, 1.8vh, 15px) clamp(16px, 3vw, 24px);
           background-color: transparent;
           color: #5a4329;
           border: 2px solid #5a4329;
           border-radius: 8px;
           font-family: var(--heading, Georgia, serif);
-          font-size: 15px;
+          font-size: clamp(13px, 1.5vw, 15px);
           font-weight: 600;
           letter-spacing: 0.5px;
           cursor: pointer;
@@ -346,11 +358,11 @@ export default function Welcome() {
         className="sections-track"
         style={{
           width: '100%',
-          height: `${TOTAL_SECTIONS * 100}vh`,
-          transform: `translateY(-${currentSection * 100}vh)`,
+          height: `${TOTAL_SECTIONS * 100}dvh`,
+          transform: `translateY(-${currentSection * 100}dvh)`,
         }}
       >
-        {/* --- 200VH TRACK FOR THE 2-PAGE ARTWORK (SCREENS 1 & 2) --- */}
+        {/* --- 200DVH TRACK FOR THE 2-PAGE ARTWORK (SCREENS 1 & 2) --- */}
         <div style={artworkTrackStyle}>
 
           {/* 1. BACK LAYER */}
@@ -384,7 +396,7 @@ export default function Welcome() {
 
           {/* SCREEN 2 CONTENT */}
           <section style={screen2Style}>
-            <div className="team-wrapper-override" style={teamWrapperStyle}>
+            <div className="team-wrapper-override">
               <TeamSection />
             </div>
 
@@ -442,19 +454,19 @@ export default function Welcome() {
 // --- INLINE STYLES ---
 const containerStyle = {
   width: '100%',
-  height: '100vh',
+  height: '100dvh',
   overflow: 'hidden',
   position: 'relative',
 };
 
 const artworkTrackStyle = {
   width: '100%',
-  height: '200vh',
+  height: '200dvh',
   position: 'relative',
 };
 
 const baseScreenStyle = {
-  height: '100vh',
+  height: '100dvh',
   width: '100%',
   position: 'relative',
   overflow: 'hidden',
@@ -465,18 +477,21 @@ const screen1Style = {
   ...baseScreenStyle,
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'flex-start',
-  paddingTop: '12vh',
-  paddingLeft: '8%',
-  paddingRight: '8%',
+  justifyContent: 'flex-start', // Changed from 'center' to top-align
+  paddingTop: 'clamp(3rem, 10vh, 8rem)', // Controls how high up content sits dynamically
+  paddingLeft: 'clamp(5%, 8vw, 12%)',
+  paddingRight: 'clamp(5%, 8vw, 12%)',
 };
 
 const screen2Style = {
   ...baseScreenStyle,
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'center',
+  justifyContent: 'flex-start', // Changed from 'center' to top-align
   alignItems: 'center',
+  paddingTop: 'clamp(2rem, 6vh, 5rem)', // Pulls the team section closer to the top
+  paddingLeft: 'clamp(1rem, 4vw, 3rem)',
+  paddingRight: 'clamp(1rem, 4vw, 3rem)',
 };
 
 const screen3Style = {
@@ -491,22 +506,9 @@ const screen3Style = {
 
 const indicatorWrapperStyle = {
   position: 'absolute',
-  bottom: '24px',
+  bottom: 'clamp(12px, 3vh, 28px)',
   left: '50%',
   transform: 'translateX(-50%)',
   zIndex: 15,
   cursor: 'pointer',
-};
-
-const teamWrapperStyle = {
-  zIndex: 5,
-  width: '100%',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  maxHeight: 'calc(100vh - 100px)',
-  
-  /* 👇 Shrinks the whole component to 85% and pulls it up 30px */
-  transform: 'translateY(-90px) scale(0.95)',
-  transformOrigin: 'center center',
 };
