@@ -109,10 +109,11 @@ export default function Welcome() {
           left: 0;
           width: 100%;
           height: 200dvh;
-          background-size: cover;
-          background-position: center top;
           background-repeat: no-repeat;
           pointer-events: none;
+          /* Forces the image to be exactly 1 screen wide and 2 screens tall */
+          background-size: 100vw 200dvh; 
+          background-position: center top;
         }
 
         .bg-layer-back {
