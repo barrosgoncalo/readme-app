@@ -1,0 +1,144 @@
+.section {
+    background: #f7f4ee;
+    border-radius: 40px;
+    padding: 36px 32px 40px;
+    width: 90%;
+    max-width: none;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.header {
+    text-align: center;
+    max-width: 260px;
+    margin: 0 auto 28px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.line {
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(
+            to right,
+            rgba(201, 154, 75, 0),
+            rgba(201, 154, 75, 1),
+            rgba(201, 154, 75, 0)
+    );
+}
+.diamond {
+    width: 15px;
+    height: 15px;
+    background: transparent;
+    border: 2px solid #c99a4b;
+    transform: rotate(45deg);
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.title {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-size: 2.6rem;
+    font-weight: 500;
+    color: #2e2115;
+    margin: 0 0 8px;
+}
+
+.subtitle {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #6b6459;
+    margin: 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.card {
+    background: #fbfaf7;
+    border-radius: 16px;
+    padding: 24px 18px 26px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(46, 33, 21, 0.06);
+}
+
+.photoWrap {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.name {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #2e2115;
+    margin: 0 0 4px;
+}
+
+.role {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #c9963c;
+    margin: 0 0 10px;
+}
+
+.roleLine {
+    display: block;
+    width: 26px;
+    height: 2px;
+    background: #c99a4b;
+    margin: 0 auto 12px;
+    border-radius: 1px;
+}
+
+.bio {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #6b6459;
+    margin: 0;
+}
+
+@media (max-width: 960px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .section {
+        padding: 24px 18px 26px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .title {
+        font-size: 1.6rem;
+    }
+}
