@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
 import TeamSection from '../components/TeamSection.jsx';
 import DownloadSection from '../components/DownloadSection.jsx';
 import bgBackImage from '../assets/welcome-bg-back-layer.png';
@@ -34,7 +34,7 @@ export default function Welcome() {
 
     const recomputeBgSize = useCallback(() => {
         if (!refImgDims.current) return;
-        const { w: imgW, h: imgH } = refImgDims.current;
+        const {w: imgW, h: imgH} = refImgDims.current;
         const vw = window.innerWidth;
         const vh = (window.visualViewport?.height || window.innerHeight) * 2;
         const scale = Math.max(vw / imgW, vh / imgH);
@@ -53,7 +53,7 @@ export default function Welcome() {
     useEffect(() => {
         const img = new Image();
         img.onload = () => {
-            refImgDims.current = { w: img.naturalWidth, h: img.naturalHeight };
+            refImgDims.current = {w: img.naturalWidth, h: img.naturalHeight};
             recomputeBgSize();
         };
         img.src = bgBackImage;
@@ -72,14 +72,14 @@ export default function Welcome() {
 
     // Array com a lista de tecnologias para a barra
     const techStack = [
-        { src: reactLogo, name: 'React Native' },
-        { src: expoLogo, name: 'Expo' },
-        { src: firebaseLogo, name: 'Firebase' },
-        { src: algoliaLogo, name: 'Algolia' },
-        { src: gbooksLogo, name: 'Google Books' },
-        { src: gmapsLogo, name: 'Google Maps' },
-        { src: osmLogo, name: 'OpenStreetMap' },
-        { src: openLogo, name: 'Open Library' },
+        {src: reactLogo, name: 'React Native'},
+        {src: expoLogo, name: 'Expo'},
+        {src: firebaseLogo, name: 'Firebase'},
+        {src: algoliaLogo, name: 'Algolia'},
+        {src: gbooksLogo, name: 'Google Books'},
+        {src: gmapsLogo, name: 'Google Maps'},
+        {src: osmLogo, name: 'OpenStreetMap'},
+        {src: openLogo, name: 'Open Library'},
     ];
 
     const goToSection = useCallback((index) => {
@@ -124,7 +124,7 @@ export default function Welcome() {
         };
 
         const node = containerRef.current;
-        if (node) node.addEventListener('wheel', handleWheel, { passive: false });
+        if (node) node.addEventListener('wheel', handleWheel, {passive: false});
         return () => {
             if (node) node.removeEventListener('wheel', handleWheel);
         };
@@ -148,8 +148,8 @@ export default function Welcome() {
 
         const node = containerRef.current;
         if (node) {
-            node.addEventListener('touchstart', handleTouchStart, { passive: true });
-            node.addEventListener('touchend', handleTouchEnd, { passive: true });
+            node.addEventListener('touchstart', handleTouchStart, {passive: true});
+            node.addEventListener('touchend', handleTouchEnd, {passive: true});
         }
         return () => {
             if (node) {
@@ -182,7 +182,7 @@ export default function Welcome() {
     }, []);
 
     return (
-        <div ref={containerRef} style={{ ...containerStyle, '--bg-scale': bgScale }}>
+        <div ref={containerRef} style={{...containerStyle, '--bg-scale': bgScale}}>
             <style>{`
             /* --- LAYERED BACKGROUNDS --- */
             .bg-layer {
@@ -356,185 +356,184 @@ export default function Welcome() {
             .team-wrapper-override [class*="card"] {
             box-shadow: none !important;
             }
+
+            /* --- TECH STACK BAR (ICONS + LABELS) --- */
+            .tech-stack-container {
+              z-index: 10;
+              margin-top: auto;
+              margin-bottom: clamp(4rem, 10vh, 6rem);
+              width: 90%; 
+              max-width: 75%;
+              background: #f7f4ee;
+              border-radius: 40px;
+              padding: clamp(1.5rem, 3.5vh, 2.5rem) 2rem;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              gap: clamp(1rem, 3vw, 4rem);
+              flex-wrap: wrap;
+              box-sizing: border-box;
             }
 
-        /* --- TECH STACK BAR (ICONS + LABELS) --- */
-        .tech-stack-container {
-          z-index: 5;
-          margin-top: auto;
-          margin-bottom: clamp(4rem, 10vh, 6rem);
-          width: 90%; /* Largura idêntica à da TeamSection */
-          max-width: 75%; /* Alinhado com o máximo definido na override da equipa */
-          background: #f7f4ee; /* Cor de fundo correspondente à TeamSection */
-          border-radius: 40px; /* Borda arredondada extraída do TeamSection.module.css */
-          padding: clamp(1.5rem, 3.5vh, 2.5rem) 2rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: clamp(1rem, 3vw, 4rem);
-          flex-wrap: wrap;
-          box-sizing: border-box;
-        }
+            .tech-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 12px;
+              transition: all 0.3s ease;
+              cursor: default;
+            }
 
-        .tech-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-          transition: all 0.3s ease;
-          cursor: default;
-        }
+            .tech-item:hover {
+              transform: translateY(-4px);
+            }
 
-        .tech-item:hover {
-          transform: translateY(-4px);
-        }
+            .tech-stack-logo {
+              height: clamp(28px, 4vh, 45px);
+              width: auto;
+              object-fit: contain;
+              opacity: 0.65;
+              mix-blend-mode: multiply; /* Remove o fundo branco do JPG */
+              transition: opacity 0.3s ease;
+              user-select: none;
+            }
 
-        .tech-stack-logo {
-          height: clamp(28px, 4vh, 45px);
-          width: auto;
-          object-fit: contain;
-          opacity: 0.65;
-          mix-blend-mode: multiply; /* Remove o fundo branco do JPG */
-          transition: opacity 0.3s ease;
-          user-select: none;
-        }
+            .tech-item:hover .tech-stack-logo {
+              opacity: 1;
+            }
 
-        .tech-item:hover .tech-stack-logo {
-          opacity: 1;
-        }
+            .tech-label {
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(0.65rem, 1vw, 0.8rem);
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              color: #7d5229;
+              opacity: 0.8;
+              transition: all 0.3s ease;
+            }
 
-        .tech-label {
-          font-family: var(--heading, Georgia, serif);
-          font-size: clamp(0.65rem, 1vw, 0.8rem);
-          letter-spacing: 2px;
-          text-transform: uppercase;
-          color: #7d5229;
-          opacity: 0.8;
-          transition: all 0.3s ease;
-        }
+            .tech-item:hover .tech-label {
+              opacity: 1;
+              color: #4e3422;
+            }
 
-        .tech-item:hover .tech-label {
-          opacity: 1;
-          color: #4e3422;
-        }
+            /* --- THIRD SCREEN UI --- */
+            .action-card {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
+              width: min(90%, 440px);
+              padding: clamp(1.5rem, 4vh, 3rem) clamp(1.25rem, 4vw, 2rem);
+              border-radius: clamp(12px, 2vw, 20px);
+              background: #ffffff;
+              border: 1px solid rgba(90, 67, 41, 0.12);
+              box-shadow: 0 8px 24px rgba(58, 42, 22, 0.08);
+              box-sizing: border-box;
+            }
 
-        /* --- THIRD SCREEN UI --- */
-        .action-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          width: min(90%, 440px);
-          padding: clamp(1.5rem, 4vh, 3rem) clamp(1.25rem, 4vw, 2rem);
-          border-radius: clamp(12px, 2vw, 20px);
-          background: #ffffff;
-          border: 1px solid rgba(90, 67, 41, 0.12);
-          box-shadow: 0 8px 24px rgba(58, 42, 22, 0.08);
-          box-sizing: border-box;
-        }
+            .brand-subtitle {
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(11px, 1.2vw, 13px);
+              letter-spacing: clamp(2px, 0.3vw, 4px);
+              text-transform: uppercase;
+              color: #5a4329;
+              font-weight: 600;
+              margin-bottom: clamp(4px, 1vh, 8px);
+            }
 
-        .brand-subtitle {
-          font-family: var(--heading, Georgia, serif);
-          font-size: clamp(11px, 1.2vw, 13px);
-          letter-spacing: clamp(2px, 0.3vw, 4px);
-          text-transform: uppercase;
-          color: #5a4329;
-          font-weight: 600;
-          margin-bottom: clamp(4px, 1vh, 8px);
-        }
+            .brand-title {
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(1.3rem, 3vw, 2rem);
+              color: #5a4329;
+              font-weight: 700;
+              line-height: 1.25;
+              margin: 0 0 clamp(0.75rem, 2vh, 1rem) 0;
+            }
 
-        .brand-title {
-          font-family: var(--heading, Georgia, serif);
-          font-size: clamp(1.3rem, 3vw, 2rem);
-          color: #5a4329;
-          font-weight: 700;
-          line-height: 1.25;
-          margin: 0 0 clamp(0.75rem, 2vh, 1rem) 0;
-        }
+            .action-divider-container {
+              display: flex;
+              align-items: center;
+              gap: clamp(8px, 1vw, 12px);
+              width: 100%;
+              max-width: clamp(120px, 30vw, 180px);
+              margin-bottom: clamp(1.25rem, 3.5vh, 2rem);
+            }
 
-        .action-divider-container {
-          display: flex;
-          align-items: center;
-          gap: clamp(8px, 1vw, 12px);
-          width: 100%;
-          max-width: clamp(120px, 30vw, 180px);
-          margin-bottom: clamp(1.25rem, 3.5vh, 2rem);
-        }
+            .action-divider-line {
+              flex: 1;
+              height: 1px;
+              background: #cda066;
+            }
 
-        .action-divider-line {
-          flex: 1;
-          height: 1px;
-          background: #cda066;
-        }
+            .action-divider-diamond {
+              width: 7px;
+              height: 7px;
+              background: #cda066;
+              transform: rotate(45deg);
+            }
 
-        .action-divider-diamond {
-          width: 7px;
-          height: 7px;
-          background: #cda066;
-          transform: rotate(45deg);
-        }
+            .btn-group {
+              display: flex;
+              flex-direction: column;
+              gap: clamp(10px, 1.5vh, 14px);
+              width: 100%;
+            }
 
-        .btn-group {
-          display: flex;
-          flex-direction: column;
-          gap: clamp(10px, 1.5vh, 14px);
-          width: 100%;
-        }
+            .btn-primary {
+              width: 100%;
+              padding: clamp(12px, 2vh, 16px) clamp(16px, 3vw, 24px);
+              background-color: #5a4329;
+              color: #fcfaf7;
+              border: none;
+              border-radius: 8px;
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(13px, 1.5vw, 15px);
+              font-weight: 600;
+              letter-spacing: 0.5px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0 4px 12px rgba(90, 67, 41, 0.22);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              text-decoration: none;
+              box-sizing: border-box;
+            }
 
-        .btn-primary {
-          width: 100%;
-          padding: clamp(12px, 2vh, 16px) clamp(16px, 3vw, 24px);
-          background-color: #5a4329;
-          color: #fcfaf7;
-          border: none;
-          border-radius: 8px;
-          font-family: var(--heading, Georgia, serif);
-          font-size: clamp(13px, 1.5vw, 15px);
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(90, 67, 41, 0.22);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          text-decoration: none;
-          box-sizing: border-box;
-        }
+            .btn-primary:hover {
+              background-color: #42301c;
+              transform: translateY(-2px);
+              box-shadow: 0 6px 18px rgba(90, 67, 41, 0.32);
+            }
 
-        .btn-primary:hover {
-          background-color: #42301c;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 18px rgba(90, 67, 41, 0.32);
-        }
+            .btn-secondary {
+              width: 100%;
+              padding: clamp(11px, 1.8vh, 15px) clamp(16px, 3vw, 24px);
+              background-color: transparent;
+              color: #5a4329;
+              border: 2px solid #5a4329;
+              border-radius: 8px;
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(13px, 1.5vw, 15px);
+              font-weight: 600;
+              letter-spacing: 0.5px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              text-decoration: none;
+              box-sizing: border-box;
+            }
 
-        .btn-secondary {
-          width: 100%;
-          padding: clamp(11px, 1.8vh, 15px) clamp(16px, 3vw, 24px);
-          background-color: transparent;
-          color: #5a4329;
-          border: 2px solid #5a4329;
-          border-radius: 8px;
-          font-family: var(--heading, Georgia, serif);
-          font-size: clamp(13px, 1.5vw, 15px);
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          text-decoration: none;
-          box-sizing: border-box;
-        }
-
-        .btn-secondary:hover {
-          background-color: rgba(90, 67, 41, 0.08);
-          transform: translateY(-2px);
-        }
-      `}</style>
+            .btn-secondary:hover {
+              background-color: rgba(90, 67, 41, 0.08);
+              transform: translateY(-2px);
+            }
+          `}</style>
 
             <div
                 className="sections-track"
@@ -561,8 +560,8 @@ export default function Welcome() {
                         <div className="hero-text-container">
                             <h1 className="hero-title">README</h1>
                             <h2 className="hero-motto">
-                                Read.<br />
-                                Connect.<br />
+                                Read.<br/>
+                                Connect.<br/>
                                 Trade.
                             </h2>
                             <div className="hero-divider-container">
@@ -582,18 +581,18 @@ export default function Welcome() {
                     {/* SCREEN 2 CONTENT */}
                     <section style={screen2Style}>
                         <div className="team-wrapper-override">
-                            <TeamSection />
+                            <TeamSection/>
                         </div>
 
-                    {/* --- TECH STACK BAR (ICONS + TEXT) --- */}
-                    <div className="tech-stack-container">
-                      {techStack.map((tech, index) => (
-                          <div key={index} className="tech-item">
-                            <img src={tech.src} alt={tech.name} className="tech-stack-logo" />
-                            <span className="tech-label">{tech.name}</span>
-                          </div>
-                      ))}
-                    </div>
+                        {/* --- TECH STACK BAR (ICONS + TEXT) --- */}
+                        <div className="tech-stack-container">
+                            {techStack.map((tech, index) => (
+                                <div key={index} className="tech-item">
+                                    <img src={tech.src} alt={tech.name} className="tech-stack-logo"/>
+                                    <span className="tech-label">{tech.name}</span>
+                                </div>
+                            ))}
+                        </div>
 
                         <div style={indicatorWrapperStyle} onClick={() => goToSection(2)}>
                             <div className="single-diamond-wrapper">
