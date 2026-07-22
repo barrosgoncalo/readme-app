@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import bgImage from '../assets/welcome-bg-variance.png';
+import bgBackImage from '../assets/welcome-bg-back-layer.png';
+import bgFrontImage from '../assets/welcome-bg-front-layer.png';
+
 import bernardoPhoto from '../assets/team/bernardo-lobao.png';
-// import omarPhoto from '../assets/team/omar-hassan.jpg';
-// import zaraPhoto from '../assets/team/zara-malik.jpg';
-// import bilalPhoto from '../assets/team/bilal-ahmed.jpg';
 
 const TOTAL_SECTIONS = 3;
 const TRANSITION_DURATION = 900; 
@@ -22,19 +21,16 @@ const TEAM = [
         name: 'Gonçalo Barros',
         role: 'Head of Operations',
         bio: 'Ensures smooth operations and helps our community grow every day.',
-        // photo: omarPhoto,
     },
     {
         name: 'Francisco Campos',
         role: 'Curation Lead',
         bio: 'Curates quality books and brings stories that inspire our readers.',
-        // photo: zaraPhoto,
     },
     {
         name: 'Manuel Anão',
         role: 'Tech Lead',
         bio: 'Builds and maintains the platform to deliver a seamless experience.',
-        // photo: bilalPhoto,
     },
 ];
 
@@ -126,6 +122,27 @@ export default function Welcome() {
   return (
     <div ref={containerRef} style={containerStyle}>
       <style>{`
+        /* --- LAYERED BACKGROUNDS --- */
+        .bg-layer {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 200vh;
+          background-size: cover;
+          background-position: top center;
+          background-repeat: no-repeat;
+          pointer-events: none; /* Prevents layers from blocking clicks/scrolls */
+        }
+
+        .bg-layer-back {
+          z-index: 1; /* Behind content */
+        }
+
+        .bg-layer-front {
+          z-index: 10; /* In front of content */
+        }
+
         /* --- HERO TEXT (SCREEN 1) --- */
         .hero-text-container {
           position: absolute;
@@ -311,7 +328,7 @@ export default function Welcome() {
           margin: 0 auto 14px;
           border-radius: 50%;
           overflow: hidden;
-          background-color: #eaddcf; /* Fallback for missing images */
+          background-color: #eaddcf;
         }
 
         .team-photo {
@@ -505,9 +522,14 @@ export default function Welcome() {
         {/* --- 200VH TRACK FOR THE 2-PAGE ARTWORK (SCREENS 1 & 2) --- */}
         <div style={artworkTrackStyle}>
           
-          {/* SCREEN 1 */}
+          {/* 1. BACK LAYER (Behind everything) */}
+          <div 
+            className="bg-layer bg-layer-back" 
+            style={{ backgroundImage: `url(${bgBackImage})` }} 
+          />
+
+          {/* SCREEN 1 CONTENT */}
           <section style={screenStyle}>
-            
             <div className="hero-text-container">
               <h1 className="hero-title">README</h1>
               <h2 className="hero-motto">
@@ -529,10 +551,8 @@ export default function Welcome() {
             </div>
           </section>
 
-          {/* SCREEN 2 (Now containing the Team Section) */}
+          {/* SCREEN 2 CONTENT */}
           <section style={screenStyle}>
-            
-            {/* The imported Team Section */}
             <div className="team-section">
               <div className="team-header">
                 <div className="team-divider">
@@ -568,9 +588,15 @@ export default function Welcome() {
             </div>
           </section>
 
+          {/* 2. FRONT LAYER (In front of everything) */}
+          <div 
+            className="bg-layer bg-layer-front" 
+            style={{ backgroundImage: `url(${bgFrontImage})` }} 
+          />
+
         </div>
 
-        {/* --- SCREEN 3: COMPLETE CUT TO CLEAN LIGHT BACKGROUND --- */}
+        {/* --- SCREEN 3: CLEAN LIGHT BACKGROUND --- */}
         <section style={screen3Style}>
           <div className="action-card">
             <span className="brand-subtitle">README</span>
@@ -606,7 +632,7 @@ export default function Welcome() {
   );
 }
 
-// --- Inline Styles ---
+// --- INLINE STYLES ---
 const containerStyle = {
   width: '100%',
   height: '100vh',
@@ -614,23 +640,19 @@ const containerStyle = {
   position: 'relative',
 };
 
-// Locks the 2-page artwork strictly to 200vh (Screens 1 and 2)
 const artworkTrackStyle = {
   width: '100%',
   height: '200vh', 
-  backgroundImage: `url(${bgImage})`,
-  backgroundSize: 'cover',       
-  backgroundPosition: 'top center',
-  backgroundRepeat: 'no-repeat',
+  position: 'relative',
 };
 
 const screenStyle = {
   height: '100vh',
   width: '100%',
   position: 'relative',
+  zIndex: 5, /* Content sits between back (z:1) and front (z:10) */
 };
 
-// Screen 3: Complete cut off the image into a clean off-white screen
 const screen3Style = {
   height: '100vh',
   width: '100%',
@@ -639,6 +661,8 @@ const screen3Style = {
   flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
+  position: 'relative',
+  zIndex: 20,
 };
 
 const indicatorWrapperStyle = {
@@ -646,6 +670,6 @@ const indicatorWrapperStyle = {
   bottom: '40px',
   left: '50%',
   transform: 'translateX(-50%)',
-  zIndex: 10,
+  zIndex: 15, /* Placed above the front layer so navigation clicks work seamlessly */
   cursor: 'pointer',
 };
