@@ -360,8 +360,7 @@ export default function Welcome() {
             .tech-stack-container {
               z-index: 10;
               margin-top: auto;
-              margin-bottom: clamp(4rem, 10vh, 6rem);
-              width: 90%; 
+              margin-bottom: clamp(1.5rem, 4vh, 3rem); /* Margem inferior reduzida para a barra descer */              width: 90%; 
               max-width: 1200px;
               background: #f7f4ee;
               border-radius: 40px;
