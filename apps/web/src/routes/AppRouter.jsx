@@ -83,7 +83,7 @@ export default function AppRouter() {
     const roleIsAdmin = userLoggedIn && role === 'admin';
 
     // Determine the target fallback route upon login/redirect
-    let loggedInHome = WEB_ROUTES.BOOKS;
+    let loggedInHome = WEB_ROUTES.EXPLORE;
     if (roleIsAdmin) {
         if (adminPreference === 'admin') {
             loggedInHome = ADMIN_ROUTES.USERS;
