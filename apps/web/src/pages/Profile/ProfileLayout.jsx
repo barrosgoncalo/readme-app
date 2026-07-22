@@ -89,7 +89,7 @@ export default function ProfileLayout() {
         setUploading(true);
         
         try {
-            const fileRef = ref(storage, `profilePictures/${currentUser.uid}/${file.name}`);
+            const fileRef = ref(storage, `profile_pictures/${currentUser.uid}`);
             await uploadBytes(fileRef, file);
             const url = await getDownloadURL(fileRef);
             
