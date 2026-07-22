@@ -486,9 +486,10 @@ const indicatorWrapperStyle = {
     cursor: 'pointer',
 };
 
+// --- INLINE STYLES ---
 const teamWrapperStyle = {
     position: 'absolute',
-    top: '50%',
+    top: '32%', /* Changed from 50% to pull the card higher up */
     left: '50%',
     transform: 'translate(-50%, -50%)',
     zIndex: 5,

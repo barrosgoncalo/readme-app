@@ -6,6 +6,8 @@
     max-width: none;
     margin: 0 auto;
     box-sizing: border-box;
+    /* Explicitly remove shadow from the main container */
+    box-shadow: none;
 }
 
 .header {
