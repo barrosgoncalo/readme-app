@@ -656,7 +656,7 @@ const screen2Style = {
     flexDirection: 'column',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    gap: 'clamp(1rem, 3vh, 2.5rem)',
+    gap: 'clamp(1.25rem, 4vh, 3.5rem)',
     paddingTop: 'clamp(1.5rem, 5vh, 4rem)',
     paddingLeft: 'clamp(1rem, 4vw, 3rem)',
     paddingRight: 'clamp(1rem, 4vw, 3rem)',
