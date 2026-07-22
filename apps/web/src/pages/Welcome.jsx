@@ -214,17 +214,21 @@ export default function Welcome() {
                 }
             }
 
+            /* --- WINDOWS / 16:9 ASPECT RATIO FIX --- */
             @media (min-aspect-ratio: 16/9) {
-              .bg-layer-back,
-              .bg-layer-front {
-                background-position: center 30% !important; 
-              }
+                .bg-layer-back,
+                .bg-layer-front {
+                    /* 
+                       Increasing this percentage pulls the BOTTOM shelf UP.
+                       Try 30%, 35%, or 40% if you need it even higher.
+                    */
+                    background-position: center 30% !important; 
+                }
 
-              .team-wrapper-override {
-                /* 👇 CHANGE THIS: Less negative means it sits lower down the screen */
-                margin-top: -2vh; 
-                transform: scale(var(--bg-scale, 1));
-              }
+                .team-wrapper-override {
+                    /* Pulls the team section up noticeably */
+                    transform: translateY(-10vh) scale(var(--bg-scale, 1));
+                }
             }
 
             /* --- HERO TEXT (SCREEN 1) --- */
@@ -324,21 +328,17 @@ export default function Welcome() {
 
             /* --- TEAM SECTION OVERRIDE --- */
             .team-wrapper-override {
-              z-index: 7; 
-              width: 100%;
-              max-width: min(1200px, 92vw);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              box-sizing: border-box;
-              
-              /* 👇 ADD THIS: Pushes the team section down */
-              margin-top: 4vh; 
-
-              transform: scale(var(--bg-scale, 1));
-              transform-origin: center center;
-              position: relative;
-              margin-bottom: calc(2vh + (var(--bg-scale, 1) * 20px));
+            z-index: 7; /* Sits naturally with front layer overlay */
+            width: 100%;
+            max-width: min(1200px, 92vw);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            padding-bottom: 0; 
+            transform: scale(var(--bg-scale, 1));
+            transform-origin: top center;
+            position: relative;
             }
 
             /* Ensures inner team card content stays above front foliage */
@@ -659,15 +659,14 @@ const screen1Style = {
 };
 
 const screen2Style = {
-  ...baseScreenStyle,
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'flex-start',
-  alignItems: 'center',
-  paddingTop: 'clamp(3rem, 8vh, 6rem)',
-  paddingLeft: 'clamp(1rem, 4vw, 3rem)',
-  paddingRight: 'clamp(1rem, 4vw, 3rem)',
-  gap: 'clamp(2rem, 6vh, 4rem)', // 👈 ADD THIS: Guarantees flex spacing
+    ...baseScreenStyle,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 'clamp(3rem, 8vh, 6rem)',
+    paddingLeft: 'clamp(1rem, 4vw, 3rem)',
+    paddingRight: 'clamp(1rem, 4vw, 3rem)',
 };
 
 const screen3Style = {
