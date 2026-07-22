@@ -1,0 +1,246 @@
+.section {
+    background: #f7f4ee;
+    border-radius: 40px;
+    padding: 48px 40px;
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    box-shadow: none;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    align-items: center;
+    gap: 64px;
+}
+
+/* ---------- PHONE MOCKUP ---------- */
+
+.phone {
+    justify-self: center;
+    width: 300px;
+    height: 620px;
+    background: #000000;
+    border-radius: 40px;
+    padding: 8px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 60px rgba(58, 42, 22, 0.44);
+    border: 1px solid rgba(90, 67, 41, 0.08);
+    position: relative;
+}
+
+.phoneScreen {
+    width: 100%;
+    height: 100%;
+    border-radius: 32px;
+    overflow: hidden;
+    background: #fbfaf7;
+    position: relative;
+}
+
+.phoneScreenImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.phoneScreenPlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    color: #a89f8f;
+    border: 1.5px dashed rgba(90, 67, 41, 0.2);
+    border-radius: 26px;
+    margin: 8px;
+}
+
+/* ---------- DOWNLOAD CARD ---------- */
+
+.card {
+    max-width: 520px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.line {
+    width: 90px;
+    height: 1px;
+    background: linear-gradient(
+            to right,
+            rgba(201, 154, 75, 0),
+            rgba(201, 154, 75, 1),
+            rgba(201, 154, 75, 0)
+    );
+}
+
+.diamond {
+    width: 15px;
+    height: 15px;
+    background: transparent;
+    border: 2px solid #c99a4b;
+    transform: rotate(45deg);
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.title {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-size: 2.6rem;
+    line-height: 1.15;
+    font-weight: 500;
+    color: #2e2115;
+    margin: 0 0 18px;
+}
+
+.subtitle {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #6b6459;
+    margin: 0 0 32px;
+    max-width: 420px;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #fbfaf7;
+    border: 1px solid rgba(90, 67, 41, 0.1);
+    border-radius: 16px;
+    padding: 20px 22px;
+    box-shadow: none;
+}
+
+.optionIcon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #f3e6d3;
+    color: #8a6a3a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.optionBody {
+    flex: 1;
+    min-width: 0;
+}
+
+.optionTitle {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #2e2115;
+    margin: 0 0 4px;
+}
+
+.optionDescription {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: #6b6459;
+    margin: 0;
+}
+
+.optionButton {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 22px;
+    border-radius: 100px;
+    background-color: #c68a4e;
+    color: #fcfaf7;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.25s ease;
+    box-shadow: 0 6px 16px rgba(198, 138, 78, 0.28);
+}
+
+.optionButton:hover {
+    background-color: #ad7440;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(198, 138, 78, 0.36);
+}
+
+.secureNote {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b6459;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.82rem;
+}
+
+/* ---------- RESPONSIVE ---------- */
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+        gap: 40px;
+    }
+
+    .subtitle {
+        max-width: none;
+    }
+
+    .divider {
+        justify-content: center;
+    }
+
+    .option {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .optionButton {
+        width: 100%;
+    }
+}
+
+@media (max-width: 560px) {
+    .section {
+        padding: 32px 20px;
+        border-radius: 28px;
+    }
+
+    .phone {
+        width: 250px;
+        height: 520px;
+    }
+
+    .title {
+        font-size: 1.9rem;
+    }
+}
