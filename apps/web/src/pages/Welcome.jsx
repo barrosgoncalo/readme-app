@@ -363,14 +363,14 @@ export default function Welcome() {
               margin-top: auto;
               margin-bottom: clamp(4rem, 10vh, 6rem);
               width: 90%; 
-              max-width: 75%;
+              max-width: 1200px;
               background: #f7f4ee;
               border-radius: 40px;
-              padding: clamp(1.5rem, 3.5vh, 2.5rem) 2rem;
+              padding: clamp(1rem, 3vh, 2rem) 1rem;
               display: flex;
-              justify-content: center;
+              justify-content: space-evenly;
               align-items: center;
-              gap: clamp(1rem, 3vw, 4rem);
+              gap: clamp(0.5rem, 1.5vw, 2rem);
               flex-wrap: wrap;
               box-sizing: border-box;
             }
@@ -379,7 +379,7 @@ export default function Welcome() {
               display: flex;
               flex-direction: column;
               align-items: center;
-              gap: 12px;
+              gap: 8px;
               transition: all 0.3s ease;
               cursor: default;
             }
@@ -389,11 +389,11 @@ export default function Welcome() {
             }
 
             .tech-stack-logo {
-              height: clamp(28px, 4vh, 45px);
+              height: clamp(22px, 3vh, 36px);
               width: auto;
               object-fit: contain;
               opacity: 0.65;
-              mix-blend-mode: multiply; /* Remove o fundo branco do JPG */
+              mix-blend-mode: multiply;
               transition: opacity 0.3s ease;
               user-select: none;
             }
@@ -404,12 +404,13 @@ export default function Welcome() {
 
             .tech-label {
               font-family: var(--heading, Georgia, serif);
-              font-size: clamp(0.65rem, 1vw, 0.8rem);
-              letter-spacing: 2px;
+              font-size: clamp(0.55rem, 0.8vw, 0.75rem);
+              letter-spacing: 1px;
               text-transform: uppercase;
               color: #7d5229;
               opacity: 0.8;
               transition: all 0.3s ease;
+              white-space: nowrap;
             }
 
             .tech-item:hover .tech-label {
