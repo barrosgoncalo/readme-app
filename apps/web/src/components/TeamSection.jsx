@@ -2,7 +2,7 @@ import styles from './TeamSection.module.css';
 import bernardoPhoto from '../assets/team/bernardo-lobao.png';
 import goncaloPhoto from '../assets/team/goncalo-barros.png';
 import franciscoPhoto from '../assets/team/francisco-campos.png';
-// import manuelPhoto from '../assets/team/manuel-anao.jpg';
+import manuelPhoto from '../assets/team/manuel-anao.png';
 
 const TEAM = [
     {
@@ -27,7 +27,7 @@ const TEAM = [
         name: 'Manuel Anão',
         role: 'Web Developer',
         bio: 'Works across the web app, delivering a seamless experience for readers and sellers alike.',
-        // photo: manuelPhoto,
+        photo: manuelPhoto,
     },
 ];
 
