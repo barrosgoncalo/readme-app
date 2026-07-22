@@ -1,9 +1,18 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
 import TeamSection from '../components/TeamSection.jsx';
 import DownloadSection from '../components/DownloadSection.jsx';
 import bgBackImage from '../assets/welcome-bg-back-layer.png';
 import bgFrontImage from '../assets/welcome-bg-front-layer.png';
 import explorePhoto from '../assets/explore-preview.png';
+
+import reactLogo from '../assets/logos/React_logo.png';
+import expoLogo from '../assets/logos/Expo_logo.png';
+import firebaseLogo from '../assets/logos/Firebase_logo.png';
+import algoliaLogo from '../assets/logos/Algolia_logo.png';
+import gbooksLogo from '../assets/logos/Google_Books_logo.png';
+import gmapsLogo from '../assets/logos/Google_Maps_logo.png';
+import osmLogo from '../assets/logos/OpenStreetMap_logo.png';
+import openLogo from '../assets/logos/Open_Library_logo.png';
 
 const TOTAL_SECTIONS = 3;
 const TRANSITION_DURATION = 900;
@@ -25,18 +34,18 @@ export default function Welcome() {
 
     const recomputeBgSize = useCallback(() => {
         if (!refImgDims.current) return;
-        const { w: imgW, h: imgH } = refImgDims.current;
+        const {w: imgW, h: imgH} = refImgDims.current;
         const vw = window.innerWidth;
         const vh = (window.visualViewport?.height || window.innerHeight) * 2;
         const scale = Math.max(vw / imgW, vh / imgH);
         const baseScale = Math.max(BASE_VW / imgW, BASE_VH_x2 / imgH);
         const normalized = scale / baseScale;
-        
+
         setBgSize({
             width: Math.ceil(imgW * scale),
             height: Math.ceil(imgH * scale),
         });
-        
+
         // Clamped scale to keep team section balanced
         setBgScale(Math.min(1.25, Math.max(0.7, normalized)));
     }, []);
@@ -44,7 +53,7 @@ export default function Welcome() {
     useEffect(() => {
         const img = new Image();
         img.onload = () => {
-            refImgDims.current = { w: img.naturalWidth, h: img.naturalHeight };
+            refImgDims.current = {w: img.naturalWidth, h: img.naturalHeight};
             recomputeBgSize();
         };
         img.src = bgBackImage;
@@ -60,6 +69,18 @@ export default function Welcome() {
             clearTimeout(resizeTimer);
         };
     }, [recomputeBgSize]);
+
+    // Array com a lista de tecnologias para a barra
+    const techStack = [
+        {src: reactLogo, name: 'React Native'},
+        {src: expoLogo, name: 'Expo'},
+        {src: firebaseLogo, name: 'Firebase'},
+        {src: algoliaLogo, name: 'Algolia'},
+        {src: gbooksLogo, name: 'Google Books'},
+        {src: gmapsLogo, name: 'Google Maps'},
+        {src: osmLogo, name: 'OpenStreetMap'},
+        {src: openLogo, name: 'Open Library'},
+    ];
 
     const goToSection = useCallback((index) => {
         if (isAnimating.current) return;
@@ -86,12 +107,12 @@ export default function Welcome() {
             let normalizedDelta = e.deltaY;
 
             // 2. Adjust for Windows mice scrolling by lines or pages
-            if (e.deltaMode === 1) { 
+            if (e.deltaMode === 1) {
                 // DOM_DELTA_LINE: Multiply by a reasonable pixel height per line
-                normalizedDelta *= 25; 
-            } else if (e.deltaMode === 2) { 
+                normalizedDelta *= 25;
+            } else if (e.deltaMode === 2) {
                 // DOM_DELTA_PAGE: Multiply by a larger pixel height
-                normalizedDelta *= 100; 
+                normalizedDelta *= 100;
             }
 
             // 3. Now check against the threshold safely
@@ -103,7 +124,7 @@ export default function Welcome() {
         };
 
         const node = containerRef.current;
-        if (node) node.addEventListener('wheel', handleWheel, { passive: false });
+        if (node) node.addEventListener('wheel', handleWheel, {passive: false});
         return () => {
             if (node) node.removeEventListener('wheel', handleWheel);
         };
@@ -127,8 +148,8 @@ export default function Welcome() {
 
         const node = containerRef.current;
         if (node) {
-            node.addEventListener('touchstart', handleTouchStart, { passive: true });
-            node.addEventListener('touchend', handleTouchEnd, { passive: true });
+            node.addEventListener('touchstart', handleTouchStart, {passive: true});
+            node.addEventListener('touchend', handleTouchEnd, {passive: true});
         }
         return () => {
             if (node) {
@@ -161,7 +182,7 @@ export default function Welcome() {
     }, []);
 
     return (
-        <div ref={containerRef} style={{ ...containerStyle, '--bg-scale': bgScale }}>
+        <div ref={containerRef} style={{...containerStyle, '--bg-scale': bgScale}}>
             <style>{`
             /* --- LAYERED BACKGROUNDS --- */
             .bg-layer {
@@ -334,7 +355,185 @@ export default function Welcome() {
             .team-wrapper-override [class*="card"] {
             box-shadow: none !important;
             }
-            `}</style>
+
+            /* --- TECH STACK BAR (ICONS + LABELS) --- */
+            .tech-stack-container {
+              z-index: 10;
+              margin-top: auto;
+              margin-bottom: clamp(4rem, 10vh, 6rem);
+              width: 90%; 
+              max-width: 1200px;
+              background: #f7f4ee;
+              border-radius: 40px;
+              padding: clamp(1rem, 3vh, 2rem) 1rem;
+              display: flex;
+              justify-content: space-evenly;
+              align-items: center;
+              gap: clamp(0.5rem, 1.5vw, 2rem);
+              flex-wrap: wrap;
+              box-sizing: border-box;
+            }
+
+            .tech-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 8px;
+              transition: all 0.3s ease;
+              cursor: default;
+            }
+
+            .tech-item:hover {
+              transform: translateY(-4px);
+            }
+
+            .tech-stack-logo {
+              height: clamp(22px, 3vh, 36px);
+              width: auto;
+              object-fit: contain;
+              opacity: 0.65;
+              mix-blend-mode: multiply;
+              transition: opacity 0.3s ease;
+              user-select: none;
+            }
+
+            .tech-item:hover .tech-stack-logo {
+              opacity: 1;
+            }
+
+            .tech-label {
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(0.55rem, 0.8vw, 0.75rem);
+              letter-spacing: 1px;
+              text-transform: uppercase;
+              color: #7d5229;
+              opacity: 0.8;
+              transition: all 0.3s ease;
+              white-space: nowrap;
+            }
+
+            .tech-item:hover .tech-label {
+              opacity: 1;
+              color: #4e3422;
+            }
+
+            /* --- THIRD SCREEN UI --- */
+            .action-card {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
+              width: min(90%, 440px);
+              padding: clamp(1.5rem, 4vh, 3rem) clamp(1.25rem, 4vw, 2rem);
+              border-radius: clamp(12px, 2vw, 20px);
+              background: #ffffff;
+              border: 1px solid rgba(90, 67, 41, 0.12);
+              box-shadow: 0 8px 24px rgba(58, 42, 22, 0.08);
+              box-sizing: border-box;
+            }
+
+            .brand-subtitle {
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(11px, 1.2vw, 13px);
+              letter-spacing: clamp(2px, 0.3vw, 4px);
+              text-transform: uppercase;
+              color: #5a4329;
+              font-weight: 600;
+              margin-bottom: clamp(4px, 1vh, 8px);
+            }
+
+            .brand-title {
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(1.3rem, 3vw, 2rem);
+              color: #5a4329;
+              font-weight: 700;
+              line-height: 1.25;
+              margin: 0 0 clamp(0.75rem, 2vh, 1rem) 0;
+            }
+
+            .action-divider-container {
+              display: flex;
+              align-items: center;
+              gap: clamp(8px, 1vw, 12px);
+              width: 100%;
+              max-width: clamp(120px, 30vw, 180px);
+              margin-bottom: clamp(1.25rem, 3.5vh, 2rem);
+            }
+
+            .action-divider-line {
+              flex: 1;
+              height: 1px;
+              background: #cda066;
+            }
+
+            .action-divider-diamond {
+              width: 7px;
+              height: 7px;
+              background: #cda066;
+              transform: rotate(45deg);
+            }
+
+            .btn-group {
+              display: flex;
+              flex-direction: column;
+              gap: clamp(10px, 1.5vh, 14px);
+              width: 100%;
+            }
+
+            .btn-primary {
+              width: 100%;
+              padding: clamp(12px, 2vh, 16px) clamp(16px, 3vw, 24px);
+              background-color: #5a4329;
+              color: #fcfaf7;
+              border: none;
+              border-radius: 8px;
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(13px, 1.5vw, 15px);
+              font-weight: 600;
+              letter-spacing: 0.5px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0 4px 12px rgba(90, 67, 41, 0.22);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              text-decoration: none;
+              box-sizing: border-box;
+            }
+
+            .btn-primary:hover {
+              background-color: #42301c;
+              transform: translateY(-2px);
+              box-shadow: 0 6px 18px rgba(90, 67, 41, 0.32);
+            }
+
+            .btn-secondary {
+              width: 100%;
+              padding: clamp(11px, 1.8vh, 15px) clamp(16px, 3vw, 24px);
+              background-color: transparent;
+              color: #5a4329;
+              border: 2px solid #5a4329;
+              border-radius: 8px;
+              font-family: var(--heading, Georgia, serif);
+              font-size: clamp(13px, 1.5vw, 15px);
+              font-weight: 600;
+              letter-spacing: 0.5px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              text-decoration: none;
+              box-sizing: border-box;
+            }
+
+            .btn-secondary:hover {
+              background-color: rgba(90, 67, 41, 0.08);
+              transform: translateY(-2px);
+            }
+          `}</style>
 
             <div
                 className="sections-track"
@@ -361,8 +560,8 @@ export default function Welcome() {
                         <div className="hero-text-container">
                             <h1 className="hero-title">README</h1>
                             <h2 className="hero-motto">
-                                Read.<br />
-                                Connect.<br />
+                                Read.<br/>
+                                Connect.<br/>
                                 Trade.
                             </h2>
                             <div className="hero-divider-container">
@@ -382,7 +581,17 @@ export default function Welcome() {
                     {/* SCREEN 2 CONTENT */}
                     <section style={screen2Style}>
                         <div className="team-wrapper-override">
-                            <TeamSection />
+                            <TeamSection/>
+                        </div>
+
+                        {/* --- TECH STACK BAR (ICONS + TEXT) --- */}
+                        <div className="tech-stack-container">
+                            {techStack.map((tech, index) => (
+                                <div key={index} className="tech-item">
+                                    <img src={tech.src} alt={tech.name} className="tech-stack-logo"/>
+                                    <span className="tech-label">{tech.name}</span>
+                                </div>
+                            ))}
                         </div>
 
                         <div style={indicatorWrapperStyle} onClick={() => goToSection(2)}>
@@ -405,10 +614,10 @@ export default function Welcome() {
 
                 {/* --- SCREEN 3: CLEAN LIGHT BACKGROUND --- */}
                 <section style={screen3Style}>
-                    <DownloadSection 
-                        screenImage={explorePhoto} 
-                        screenAlt="App explore page preview" 
-                    /> 
+                    <DownloadSection
+                        screenImage={explorePhoto}
+                        screenAlt="App explore page preview"
+                    />
                 </section>
 
             </div>
