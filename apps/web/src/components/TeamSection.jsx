@@ -1,33 +1,33 @@
 import styles from './TeamSection.module.css';
 import bernardoPhoto from '../assets/team/bernardo-lobao.png';
-// import omarPhoto from '../assets/team/omar-hassan.jpg';
-// import zaraPhoto from '../assets/team/zara-malik.jpg';
-// import bilalPhoto from '../assets/team/bilal-ahmed.jpg';
+// import goncaloPhoto from '../assets/team/goncalo-barros.jpg';
+// import franciscoPhoto from '../assets/team/francisco-campos.jpg';
+// import manuelPhoto from '../assets/team/manuel-anao.jpg';
 
 const TEAM = [
     {
         name: 'Bernardo Lobão',
-        role: 'Founder & CEO',
-        bio: 'Book lover and entrepreneur passionate about creating meaningful reader experiences.',
+        role: 'Mobile Lead',
+        bio: 'Builds and maintains the mobile app, focused on a smooth experience for readers on the go.',
         photo: bernardoPhoto,
     },
     {
         name: 'Gonçalo Barros',
-        role: 'Head of Operations',
-        bio: 'Ensures smooth operations and helps our community grow every day.',
-        // photo: omarPhoto,
+        role: 'Mobile Developer',
+        bio: 'Works across the mobile app, shipping features that keep the community connected.',
+        // photo: goncaloPhoto,
     },
     {
         name: 'Francisco Campos',
-        role: 'Curation Lead',
-        bio: 'Curates quality books and brings stories that inspire our readers.',
-        // photo: zaraPhoto,
+        role: 'Web Developer',
+        bio: 'Builds and maintains the web platform, bringing the readme experience to the browser.',
+        // photo: franciscoPhoto,
     },
     {
         name: 'Manuel Anão',
-        role: 'Tech Lead',
-        bio: 'Builds and maintains the platform to deliver a seamless experience.',
-        // photo: bilalPhoto,
+        role: 'Web Developer',
+        bio: 'Works across the web app, delivering a seamless experience for readers and sellers alike.',
+        // photo: manuelPhoto,
     },
 ];
 

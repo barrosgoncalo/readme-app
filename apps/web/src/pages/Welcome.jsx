@@ -1,123 +1,100 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import bgImage from '../assets/welcome-bg-variance.png';
+import TeamSection from '../components/TeamSection.jsx';
 import bgBackImage from '../assets/welcome-bg-back-layer.png';
 import bgFrontImage from '../assets/welcome-bg-front-layer.png';
 
 import bernardoPhoto from '../assets/team/bernardo-lobao.png';
 
 const TOTAL_SECTIONS = 3;
-const TRANSITION_DURATION = 900; 
-const WHEEL_THRESHOLD = 15; 
-const TOUCH_THRESHOLD = 50; 
-
-// --- TEAM DATA ---
-const TEAM = [
-    {
-        name: 'Bernardo Lobão',
-        role: 'Founder & CEO',
-        bio: 'Book lover and entrepreneur passionate about creating meaningful reader experiences.',
-        photo: bernardoPhoto,
-    },
-    {
-        name: 'Gonçalo Barros',
-        role: 'Head of Operations',
-        bio: 'Ensures smooth operations and helps our community grow every day.',
-    },
-    {
-        name: 'Francisco Campos',
-        role: 'Curation Lead',
-        bio: 'Curates quality books and brings stories that inspire our readers.',
-    },
-    {
-        name: 'Manuel Anão',
-        role: 'Tech Lead',
-        bio: 'Builds and maintains the platform to deliver a seamless experience.',
-    },
-];
+const TRANSITION_DURATION = 900;
+const WHEEL_THRESHOLD = 15;
+const TOUCH_THRESHOLD = 50;
 
 export default function Welcome() {
     const [currentSection, setCurrentSection] = useState(0);
     const isAnimating = useRef(false);
     const touchStartY = useRef(0);
     const containerRef = useRef(null);
-    const timerRef = useRef(null); 
+    const timerRef = useRef(null);
 
-    const goToSection = useCallback((index) => {
-        if (isAnimating.current) return;
+  const goToSection = useCallback((index) => {
+    if (isAnimating.current) return;
 
-        const target = Math.max(0, Math.min(index, TOTAL_SECTIONS - 1));
-        if (target === currentSection) return;
+    const target = Math.max(0, Math.min(index, TOTAL_SECTIONS - 1));
+    if (target === currentSection) return;
 
-        isAnimating.current = true;
-        setCurrentSection(target);
+    isAnimating.current = true;
+    setCurrentSection(target);
 
-        if (timerRef.current) window.clearTimeout(timerRef.current);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    
+    timerRef.current = window.setTimeout(() => {
+      isAnimating.current = false;
+    }, TRANSITION_DURATION);
+  }, [currentSection]);
 
-        timerRef.current = window.setTimeout(() => {
-            isAnimating.current = false;
-        }, TRANSITION_DURATION);
-    }, [currentSection]);
+  useEffect(() => {
+    const handleWheel = (e) => {
+      e.preventDefault();
+      if (isAnimating.current) return;
+      if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
 
-    useEffect(() => {
-        const handleWheel = (e) => {
-            e.preventDefault();
-            if (isAnimating.current) return;
-            if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
+      const direction = e.deltaY > 0 ? 1 : -1;
+      goToSection(currentSection + direction);
+    };
 
-            const direction = e.deltaY > 0 ? 1 : -1;
-            goToSection(currentSection + direction);
-        };
+    const node = containerRef.current;
+    node.addEventListener('wheel', handleWheel, { passive: false });
+    return () => node.removeEventListener('wheel', handleWheel);
+  }, [currentSection, goToSection]);
 
-        const node = containerRef.current;
-        node.addEventListener('wheel', handleWheel, { passive: false });
-        return () => node.removeEventListener('wheel', handleWheel);
-    }, [currentSection, goToSection]);
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
 
-    useEffect(() => {
-        const handleTouchStart = (e) => {
-            touchStartY.current = e.touches[0].clientY;
-        };
+    const handleTouchEnd = (e) => {
+      if (isAnimating.current) return;
+      const touchEndY = e.changedTouches[0].clientY;
+      const delta = touchStartY.current - touchEndY;
 
-        const handleTouchEnd = (e) => {
-            if (isAnimating.current) return;
-            const touchEndY = e.changedTouches[0].clientY;
-            const delta = touchStartY.current - touchEndY;
+      if (Math.abs(delta) > TOUCH_THRESHOLD) {
+        const direction = delta > 0 ? 1 : -1;
+        goToSection(currentSection + direction);
+      }
+    };
 
-            if (Math.abs(delta) > TOUCH_THRESHOLD) {
-                const direction = delta > 0 ? 1 : -1;
-                goToSection(currentSection + direction);
-            }
-        };
+    const node = containerRef.current;
+    node.addEventListener('touchstart', handleTouchStart, { passive: true });
+    node.addEventListener('touchend', handleTouchEnd, { passive: true });
+    return () => {
+      node.removeEventListener('touchstart', handleTouchStart);
+      node.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [currentSection, goToSection]);
 
-        const node = containerRef.current;
-        node.addEventListener('touchstart', handleTouchStart, { passive: true });
-        node.addEventListener('touchend', handleTouchEnd, { passive: true });
-        return () => {
-            node.removeEventListener('touchstart', handleTouchStart);
-            node.removeEventListener('touchend', handleTouchEnd);
-        };
-    }, [currentSection, goToSection]);
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isAnimating.current) return;
+      if (['ArrowDown', 'PageDown'].includes(e.key)) {
+        e.preventDefault();
+        goToSection(currentSection + 1);
+      } else if (['ArrowUp', 'PageUp'].includes(e.key)) {
+        e.preventDefault();
+        goToSection(currentSection - 1);
+      }
+    };
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (isAnimating.current) return;
-            if (['ArrowDown', 'PageDown'].includes(e.key)) {
-                e.preventDefault();
-                goToSection(currentSection + 1);
-            } else if (['ArrowUp', 'PageUp'].includes(e.key)) {
-                e.preventDefault();
-                goToSection(currentSection - 1);
-            }
-        };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentSection, goToSection]);
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentSection, goToSection]);
-
-    useEffect(() => {
-        return () => {
-            if (timerRef.current) window.clearTimeout(timerRef.current);
-        };
-    }, []);
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
 
     return (
         <div ref={containerRef} style={containerStyle}>
@@ -241,172 +218,21 @@ animation: diamondDipGold 3s infinite ease-in-out;
 transition: transform ${TRANSITION_DURATION}ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* --- TEAM SECTION STYLES (SCREEN 2) --- */
-.team-section {
-background: #f7f4ee;
-border-radius: 40px;
-padding: 36px 32px 40px;
-width: 90%;
-max-width: none;
-margin: 0 auto;
-box-sizing: border-box;
-position: absolute;
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
-z-index: 5;
-}
-
-.team-header {
-text-align: center;
-max-width: 260px;
-margin: 0 auto 28px;
-}
-
-.team-divider {
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 10px;
-margin-bottom: 22px;
-}
-
-.team-line {
-width: 200px;
-height: 1px;
-background: linear-gradient(
-to right,
-rgba(201, 154, 75, 0),
-rgba(201, 154, 75, 1),
-rgba(201, 154, 75, 0)
-);
-}
-
-.team-diamond {
-width: 15px;
-height: 15px;
-background: transparent;
-border: 2px solid #c99a4b;
-transform: rotate(45deg);
-flex-shrink: 0;
-box-sizing: border-box;
-}
-
-.team-title {
-font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-font-size: 2.6rem;
-font-weight: 500;
-color: #2e2115;
-margin: 0 0 8px;
-}
-
-.team-subtitle {
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-font-size: 0.92rem;
-line-height: 1.5;
-color: #6b6459;
-margin: 0;
-}
-
-.team-grid {
-display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 20px;
-}
-
-.team-card {
-background: #fbfaf7;
-border-radius: 16px;
-padding: 24px 18px 26px;
-text-align: center;
-box-shadow: 0 1px 3px rgba(46, 33, 21, 0.06);
-}
-
-.team-photoWrap {
-width: 96px;
-height: 96px;
-margin: 0 auto 14px;
-border-radius: 50%;
-overflow: hidden;
-background-color: #eaddcf;
-}
-
-.team-photo {
-width: 100%;
-height: 100%;
-object-fit: cover;
-display: block;
-}
-
-.team-name {
-font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-font-size: 1.15rem;
-font-weight: 600;
-color: #2e2115;
-margin: 0 0 4px;
-}
-
-.team-role {
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-font-size: 0.68rem;
-font-weight: 700;
-letter-spacing: 0.07em;
-text-transform: uppercase;
-color: #c9963c;
-margin: 0 0 10px;
-}
-
-.team-roleLine {
-display: block;
-width: 26px;
-height: 2px;
-background: #c99a4b;
-margin: 0 auto 12px;
-border-radius: 1px;
-}
-
-.team-bio {
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-font-size: 0.82rem;
-line-height: 1.45;
-color: #6b6459;
-margin: 0;
-}
-
-/* Responsive Media Queries */
-@media (max-width: 960px) {
-.team-grid {
-grid-template-columns: repeat(2, 1fr);
-}
-}
-
-@media (max-width: 560px) {
-.team-section {
-padding: 24px 18px 26px;
-}
-.team-grid {
-grid-template-columns: 1fr;
-gap: 14px;
-}
-.team-title {
-font-size: 1.6rem;
-}
-}
-
-/* --- THIRD SCREEN UI --- */
-.action-card {
-display: flex;
-flex-direction: column;
-align-items: center;
-text-align: center;
-width: 90%;
-max-width: 440px;
-padding: 48px 32px;
-border-radius: 20px;
-background: #ffffff;
-border: 1px solid rgba(90, 67, 41, 0.12);
-box-shadow: 0 16px 36px rgba(90, 67, 41, 0.08);
-}
+        /* --- THIRD SCREEN UI --- */
+        .action-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          width: 90%;
+          max-width: 440px;
+          padding: 48px 32px;
+          border-radius: 20px;
+          background: #ffffff;
+          border: 1px solid rgba(90, 67, 41, 0.12);
+          box-shadow: 18px 18px 40px rgba(58, 42, 22, 0.35),
+                      6px 6px 14px rgba(58, 42, 22, 0.22);
+        }
 
 .brand-subtitle {
 font-family: var(--heading, Georgia, serif);
@@ -523,9 +349,9 @@ transform: translateY(-2px);
                 <div style={artworkTrackStyle}>
 
                     {/* 1. BACK LAYER (Behind everything) */}
-                    <div 
-                        className="bg-layer bg-layer-back" 
-                        style={{ backgroundImage: `url(${bgBackImage})` }} 
+                    <div
+                        className="bg-layer bg-layer-back"
+                        style={{ backgroundImage: `url(${bgBackImage})` }}
                     />
 
                     {/* SCREEN 1 CONTENT */}
@@ -551,34 +377,11 @@ transform: translateY(-2px);
                         </div>
                     </section>
 
-                    {/* SCREEN 2 CONTENT */}
+                    {/* SCREEN 2 (now rendering the shared TeamSection component) */}
                     <section style={screenStyle}>
-                        <div className="team-section">
-                            <div className="team-header">
-                                <div className="team-divider">
-                                    <span className="team-line" />
-                                    <span className="team-diamond" />
-                                    <span className="team-line" />
-                                </div>
-                                <h2 className="team-title">Our Team</h2>
-                                <p className="team-subtitle">
-                                    A passionate group of book lovers building a trusted space for readers and collectors.
-                                </p>
-                            </div>
 
-                            <div className="team-grid">
-                                {TEAM.map(member => (
-                                    <div className="team-card" key={member.name}>
-                                        <div className="team-photoWrap">
-                                            {member.photo && <img src={member.photo} alt={member.name} className="team-photo" />}
-                                        </div>
-                                        <h3 className="team-name">{member.name}</h3>
-                                        <p className="team-role">{member.role}</p>
-                                        <span className="team-roleLine" />
-                                        <p className="team-bio">{member.bio}</p>
-                                    </div>
-                                ))}
-                            </div>
+                        <div style={teamWrapperStyle}>
+                            <TeamSection />
                         </div>
 
                         <div style={indicatorWrapperStyle} onClick={() => goToSection(2)}>
@@ -589,9 +392,9 @@ transform: translateY(-2px);
                     </section>
 
                     {/* 2. FRONT LAYER (In front of everything) */}
-                    <div 
-                        className="bg-layer bg-layer-front" 
-                        style={{ backgroundImage: `url(${bgFrontImage})` }} 
+                    <div
+                        className="bg-layer bg-layer-front"
+                        style={{ backgroundImage: `url(${bgFrontImage})` }}
                     />
 
                 </div>
@@ -636,13 +439,14 @@ transform: translateY(-2px);
 const containerStyle = {
     width: '100%',
     height: '100vh',
-    overflow: 'hidden', 
+    overflow: 'hidden',
     position: 'relative',
 };
 
+// Locks the 2-page artwork strictly to 200vh (Screens 1 and 2)
 const artworkTrackStyle = {
     width: '100%',
-    height: '200vh', 
+    height: '200vh',
     position: 'relative',
 };
 
@@ -653,10 +457,11 @@ const screenStyle = {
     zIndex: 5, /* Content sits between back (z:1) and front (z:10) */
 };
 
+// Screen 3: Complete cut off the image into a clean off-white screen
 const screen3Style = {
     height: '100vh',
     width: '100%',
-    backgroundColor: '#fcfaf7', 
+    backgroundColor: '#fcfaf7',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -672,4 +477,15 @@ const indicatorWrapperStyle = {
     transform: 'translateX(-50%)',
     zIndex: 15, /* Placed above the front layer so navigation clicks work seamlessly */
     cursor: 'pointer',
+};
+
+// Positions the shared TeamSection component centered within Screen 2,
+// matching the layout that was previously baked into the duplicated markup
+const teamWrapperStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 5,
+    width: '100%',
 };

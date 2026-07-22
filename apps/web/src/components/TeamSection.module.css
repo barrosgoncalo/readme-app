@@ -69,7 +69,7 @@
     border-radius: 16px;
     padding: 24px 18px 26px;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(46, 33, 21, 0.06);
+    box-shadow: none;
 }
 
 .photoWrap {
