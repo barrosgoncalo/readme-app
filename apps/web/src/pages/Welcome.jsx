@@ -197,16 +197,15 @@ export default function Welcome() {
             @media (min-aspect-ratio: 16/9) {
                 .bg-layer-back,
                 .bg-layer-front {
-                    /* 
-                       Increasing this percentage pulls the BOTTOM shelf UP.
-                       Try 30%, 35%, or 40% if you need it even higher.
-                    */
-                    background-position: center 25% !important; 
+                    background-position: center 35% !important; 
                 }
 
                 .team-wrapper-override {
-                    /* Pulls the team section up noticeably */
-                    transform: translateY(-10vh) scale(var(--bg-scale, 1));
+                    /* 
+                       Multiplies the background scale by 0.85 to shrink the cards. 
+                       Try 0.8 for smaller, or 0.9 for slightly larger. 
+                    */
+                    transform: translateY(-10vh) scale(calc(var(--bg-scale, 1) * 0.85));
                 }
             }
 
