@@ -81,9 +81,24 @@ export default function Welcome() {
         const handleWheel = (e) => {
             e.preventDefault();
             if (isAnimating.current) return;
-            if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
 
-            const direction = e.deltaY > 0 ? 1 : -1;
+            // 1. Capture the raw scroll value
+            let normalizedDelta = e.deltaY;
+
+            // 2. Adjust for Windows mice scrolling by lines or pages
+            if (e.deltaMode === 1) { 
+                // DOM_DELTA_LINE: Multiply by a reasonable pixel height per line
+                normalizedDelta *= 25; 
+            } else if (e.deltaMode === 2) { 
+                // DOM_DELTA_PAGE: Multiply by a larger pixel height
+                normalizedDelta *= 100; 
+            }
+
+            // 3. Now check against the threshold safely
+            if (Math.abs(normalizedDelta) < WHEEL_THRESHOLD) return;
+
+            // 4. Determine direction and transition
+            const direction = normalizedDelta > 0 ? 1 : -1;
             goToSection(currentSection + direction);
         };
 
@@ -171,11 +186,28 @@ export default function Welcome() {
             background-position: center top;
             }
 
-            /* Prevents front overlay from exploding inwards on wide screens */
+            /* Prevents front overlay from exploding inwards on wide screens (Macs - 16:10) */
             @media (min-aspect-ratio: 16/10) {
-            .bg-layer-front {
-                background-position: center 10%; 
+                .bg-layer-front {
+                    background-position: center 10%; 
+                }
             }
+
+            /* --- WINDOWS / 16:9 ASPECT RATIO FIX --- */
+            @media (min-aspect-ratio: 16/9) {
+                .bg-layer-back,
+                .bg-layer-front {
+                    /* 
+                       Increasing this percentage pulls the BOTTOM shelf UP.
+                       Try 30%, 35%, or 40% if you need it even higher.
+                    */
+                    background-position: center 25% !important; 
+                }
+
+                .team-wrapper-override {
+                    /* Pulls the team section up noticeably */
+                    transform: translateY(-10vh) scale(var(--bg-scale, 1));
+                }
             }
 
             /* --- HERO TEXT (SCREEN 1) --- */
