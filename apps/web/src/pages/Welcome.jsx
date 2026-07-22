@@ -147,16 +147,16 @@ export default function Welcome() {
             <style>{`
 /* --- LAYERED BACKGROUNDS --- */
 .bg-layer {
-   position: absolute;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 200dvh;
-   background-size: cover;
-   background-position: center top;
-   background-repeat: no-repeat;
-   pointer-events: none;
- }
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 200dvh;
+background-size: cover;
+background-position: center top;
+background-repeat: no-repeat;
+pointer-events: none;
+}
 
 .bg-layer-back {
 z-index: 1;
