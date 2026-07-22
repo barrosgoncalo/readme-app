@@ -1,7 +1,7 @@
 import styles from './TeamSection.module.css';
 import bernardoPhoto from '../assets/team/bernardo-lobao.png';
-// import goncaloPhoto from '../assets/team/goncalo-barros.jpg';
-// import franciscoPhoto from '../assets/team/francisco-campos.jpg';
+import goncaloPhoto from '../assets/team/goncalo-barros.png';
+import franciscoPhoto from '../assets/team/francisco-campos.png';
 // import manuelPhoto from '../assets/team/manuel-anao.jpg';
 
 const TEAM = [
@@ -15,13 +15,13 @@ const TEAM = [
         name: 'Gonçalo Barros',
         role: 'Mobile & Backend Developer',
         bio: 'Works across the mobile app, shipping features that keep the community connected.',
-        // photo: goncaloPhoto,
+        photo: goncaloPhoto,
     },
     {
         name: 'Francisco Campos',
         role: 'Web Developer',
         bio: 'Builds and maintains the web platform, bringing the readme experience to the browser.',
-        // photo: franciscoPhoto,
+        photo: franciscoPhoto,
     },
     {
         name: 'Manuel Anão',
