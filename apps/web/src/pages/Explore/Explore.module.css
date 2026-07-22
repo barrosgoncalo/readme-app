@@ -340,6 +340,7 @@
     border: 1px solid var(--bg-selected);
     color: var(--text);
     padding: 8px 18px;
+    margin: -8px;
     border-radius: 9999px;
     font-size: 0.9rem;
     font-weight: 600;
