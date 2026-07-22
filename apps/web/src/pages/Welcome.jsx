@@ -218,16 +218,11 @@ export default function Welcome() {
             @media (min-aspect-ratio: 16/9) {
                 .bg-layer-back,
                 .bg-layer-front {
-                    /* 
+                    /*
                        Increasing this percentage pulls the BOTTOM shelf UP.
                        Try 30%, 35%, or 40% if you need it even higher.
                     */
-                    background-position: center 30% !important; 
-                }
-
-                .team-wrapper-override {
-                    /* Pulls the team section up noticeably */
-                    transform: translateY(-10vh) scale(var(--bg-scale, 1));
+                    background-position: center 30% !important;
                 }
             }
 
@@ -333,11 +328,8 @@ export default function Welcome() {
             max-width: min(1200px, 92vw);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             box-sizing: border-box;
-            padding-bottom: 0; 
-            transform: scale(var(--bg-scale, 1));
-            transform-origin: top center;
             position: relative;
             }
 
@@ -360,13 +352,13 @@ export default function Welcome() {
             /* --- TECH STACK BAR (ICONS + LABELS) --- */
             .tech-stack-container {
               z-index: 10;
-              margin-top: auto;
-              margin-bottom: clamp(4rem, 10vh, 6rem);
-              width: 90%; 
+              flex-shrink: 0;
+              margin-bottom: clamp(1rem, 4vh, 2.5rem);
+              width: 90%;
               max-width: 1200px;
               background: #f7f4ee;
               border-radius: 40px;
-              padding: clamp(1rem, 3vh, 2rem) 1rem;
+              padding: clamp(0.75rem, 2.5vh, 2rem) 1rem;
               display: flex;
               justify-content: space-evenly;
               align-items: center;
@@ -664,7 +656,8 @@ const screen2Style = {
     flexDirection: 'column',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 'clamp(3rem, 8vh, 6rem)',
+    gap: 'clamp(1rem, 3vh, 2.5rem)',
+    paddingTop: 'clamp(1.5rem, 5vh, 4rem)',
     paddingLeft: 'clamp(1rem, 4vw, 3rem)',
     paddingRight: 'clamp(1rem, 4vw, 3rem)',
 };
