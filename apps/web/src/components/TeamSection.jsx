@@ -7,13 +7,13 @@ import bernardoPhoto from '../assets/team/bernardo-lobao.png';
 const TEAM = [
     {
         name: 'Bernardo Lobão',
-        role: 'Mobile Lead',
+        role: 'Mobile Developer',
         bio: 'Builds and maintains the mobile app, focused on a smooth experience for readers on the go.',
         photo: bernardoPhoto,
     },
     {
         name: 'Gonçalo Barros',
-        role: 'Mobile Developer',
+        role: 'Mobile & Backend Developer',
         bio: 'Works across the mobile app, shipping features that keep the community connected.',
         // photo: goncaloPhoto,
     },

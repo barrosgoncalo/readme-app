@@ -218,6 +218,12 @@ animation: diamondDipGold 3s infinite ease-in-out;
 transition: transform ${TRANSITION_DURATION}ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+        /* --- OVERRIDE SHADOW FOR TEAM SECTION COMPONENTS --- */
+        .team-wrapper-override .team-card,
+        .team-wrapper-override [class*="card"] {
+          box-shadow: none !important;
+        }
+
         /* --- THIRD SCREEN UI --- */
         .action-card {
           display: flex;
@@ -230,8 +236,10 @@ transition: transform ${TRANSITION_DURATION}ms cubic-bezier(0.65, 0, 0.35, 1);
           border-radius: 20px;
           background: #ffffff;
           border: 1px solid rgba(90, 67, 41, 0.12);
-          box-shadow: 18px 18px 40px rgba(58, 42, 22, 0.35),
-                      6px 6px 14px rgba(58, 42, 22, 0.22);
+          
+          /* SOLUTION: Changed from the heavy/dark shadow to a subtle, clean shadow */
+          box-shadow: 0 8px 24px rgba(58, 42, 22, 0.08); 
+          /* Tip: To remove it completely, just use: box-shadow: none; */
         }
 
 .brand-subtitle {
@@ -380,7 +388,8 @@ transform: translateY(-2px);
                     {/* SCREEN 2 (now rendering the shared TeamSection component) */}
                     <section style={screenStyle}>
 
-                        <div style={teamWrapperStyle}>
+                        {/* Added the team-wrapper-override class here to try catching nested shadows */}
+                        <div className="team-wrapper-override" style={teamWrapperStyle}>
                             <TeamSection />
                         </div>
 
@@ -443,7 +452,6 @@ const containerStyle = {
     position: 'relative',
 };
 
-// Locks the 2-page artwork strictly to 200vh (Screens 1 and 2)
 const artworkTrackStyle = {
     width: '100%',
     height: '200vh',
@@ -457,7 +465,6 @@ const screenStyle = {
     zIndex: 5, /* Content sits between back (z:1) and front (z:10) */
 };
 
-// Screen 3: Complete cut off the image into a clean off-white screen
 const screen3Style = {
     height: '100vh',
     width: '100%',
@@ -479,8 +486,6 @@ const indicatorWrapperStyle = {
     cursor: 'pointer',
 };
 
-// Positions the shared TeamSection component centered within Screen 2,
-// matching the layout that was previously baked into the duplicated markup
 const teamWrapperStyle = {
     position: 'absolute',
     top: '50%',
