@@ -31,11 +31,14 @@ export default function Welcome() {
         const scale = Math.max(vw / imgW, vh / imgH);
         const baseScale = Math.max(BASE_VW / imgW, BASE_VH_x2 / imgH);
         const normalized = scale / baseScale;
+        
         setBgSize({
             width: Math.ceil(imgW * scale),
             height: Math.ceil(imgH * scale),
         });
-        setBgScale(Math.min(1.5, Math.max(0.6, normalized)));
+        
+        // Clamped scale to keep team section balanced
+        setBgScale(Math.min(1.25, Math.max(0.7, normalized)));
     }, []);
 
     useEffect(() => {
@@ -162,8 +165,17 @@ export default function Welcome() {
             z-index: 1;
             }
 
+            /* Front layer overlay control */
             .bg-layer-front {
-            z-index: 10;
+            z-index: 8; /* Positioned just around screen 2 elements */
+            background-position: center top;
+            }
+
+            /* Prevents front overlay from exploding inwards on wide screens */
+            @media (min-aspect-ratio: 16/10) {
+            .bg-layer-front {
+                background-position: center 10%; 
+            }
             }
 
             /* --- HERO TEXT (SCREEN 1) --- */
@@ -172,7 +184,7 @@ export default function Welcome() {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            z-index: 5;
+            z-index: 10;
             width: min(90%, 800px);
             }
 
@@ -263,10 +275,9 @@ export default function Welcome() {
 
             /* --- TEAM SECTION OVERRIDE --- */
             .team-wrapper-override {
-            z-index: 5;
+            z-index: 7; /* Sits naturally with front layer overlay */
             width: 100%;
-            width: fit-content;
-            max-width: 1200px;
+            max-width: min(1200px, 92vw);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -274,6 +285,18 @@ export default function Welcome() {
             padding-bottom: 0; 
             transform: scale(var(--bg-scale, 1));
             transform-origin: top center;
+            position: relative;
+            }
+
+            /* Ensures inner team card content stays above front foliage */
+            .team-wrapper-override p,
+            .team-wrapper-override h2,
+            .team-wrapper-override h3,
+            .team-wrapper-override img,
+            .team-wrapper-override button,
+            .team-wrapper-override a {
+            position: relative;
+            z-index: 9; 
             }
 
             .team-wrapper-override .team-card,
@@ -400,7 +423,7 @@ const screen2Style = {
     flexDirection: 'column',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 'clamp(2rem, 6vh, 5rem)',
+    paddingTop: 'clamp(3rem, 8vh, 6rem)',
     paddingLeft: 'clamp(1rem, 4vw, 3rem)',
     paddingRight: 'clamp(1rem, 4vw, 3rem)',
 };
