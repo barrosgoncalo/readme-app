@@ -206,16 +206,16 @@ transform: rotate(45deg);
 
 /* --- SUBTLE FROSTED GOLD DIAMOND INDICATOR --- */
 @keyframes diamondDipGold {
-0%, 100% {
-background: rgba(230, 200, 148, 0.15);
-transform: translateY(0) rotate(45deg) scale(1);
-box-shadow: 0 0 0 rgba(230, 200, 148, 0);
-}
-50% {
-background: rgba(230, 200, 148, 0.85);
-transform: translateY(8px) rotate(45deg) scale(1.05);
-box-shadow: 0 0 8px rgba(230, 200, 148, 0.4);
-}
+  0%, 100% {
+    background: rgba(230, 200, 148, 0.15);
+    transform: translateY(0) rotate(45deg) scale(1);
+    box-shadow: 0 0 0 rgba(230, 200, 148, 0);
+  }
+  50% {
+    background: rgba(230, 200, 148, 0.85);
+    transform: translateY(-12px) rotate(45deg) scale(1.1); /* Jumps upward by 12px with a glow */
+    box-shadow: 0 0 12px rgba(230, 200, 148, 0.6);
+  }
 }
 
 .single-diamond-wrapper {
@@ -647,10 +647,9 @@ const artworkTrackStyle = {
 };
 
 const screenStyle = {
-    height: '100vh',
-    width: '100%',
-    position: 'relative',
-    zIndex: 5, /* Content sits between back (z:1) and front (z:10) */
+  height: '100vh',
+  width: '100%',
+  position: 'relative',
 };
 
 const screen3Style = {
