@@ -358,25 +358,23 @@ export default function Welcome() {
             }
             }
 
-            /* --- TECH STACK BAR (ICONS + LABELS) --- */
-            .tech-stack-container {
-              z-index: 5;
-              margin-top: auto;
-              margin-bottom: clamp(4rem, 10vh, 6rem);
-              width: 100vw;
-              position: relative;
-              left: 50%;
-              transform: translateX(-50%);
-              background: rgba(230, 200, 148, 0.12);
-              border-top: 1px solid rgba(205, 160, 102, 0.2);
-              border-bottom: 1px solid rgba(205, 160, 102, 0.2);
-              padding: clamp(1.5rem, 3.5vh, 2.5rem) 0;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              gap: clamp(1rem, 3vw, 4rem);
-              flex-wrap: wrap;
-            }
+        /* --- TECH STACK BAR (ICONS + LABELS) --- */
+        .tech-stack-container {
+          z-index: 5;
+          margin-top: auto;
+          margin-bottom: clamp(4rem, 10vh, 6rem);
+          width: 90%; /* Largura idêntica à da TeamSection */
+          max-width: 75%; /* Alinhado com o máximo definido na override da equipa */
+          background: #f7f4ee; /* Cor de fundo correspondente à TeamSection */
+          border-radius: 40px; /* Borda arredondada extraída do TeamSection.module.css */
+          padding: clamp(1.5rem, 3.5vh, 2.5rem) 2rem;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: clamp(1rem, 3vw, 4rem);
+          flex-wrap: wrap;
+          box-sizing: border-box;
+        }
 
         .tech-item {
           display: flex;
