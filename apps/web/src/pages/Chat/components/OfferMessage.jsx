@@ -373,7 +373,6 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                         {!hasMultipleOptions && (
                             <button
                                 className={`${styles.actionButton} ${styles.acceptButton}`}
-                                style={{backgroundColor: 'var(--secundary)', color: '#FFFFFF'}}
                                 onClick={() => handleStatus(NEGOTIATION_STATUS.ACCEPTED)}
                                 disabled={busy}
                             >
