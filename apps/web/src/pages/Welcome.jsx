@@ -13,6 +13,7 @@ import gbooksLogo from '../assets/logos/Google_Books_logo.png';
 import gmapsLogo from '../assets/logos/Google_Maps_logo.png';
 import osmLogo from '../assets/logos/OpenStreetMap_logo.png';
 import openLogo from '../assets/logos/Open_Library_logo.png';
+import viteLogo from '../assets/logos/Vite_logo.png'
 
 const TOTAL_SECTIONS = 3;
 const TRANSITION_DURATION = 900;
@@ -74,12 +75,13 @@ export default function Welcome() {
     const techStack = [
         {src: reactLogo, name: 'React Native'},
         {src: expoLogo, name: 'Expo'},
+        {src: viteLogo, name: 'Vite'},
         {src: firebaseLogo, name: 'Firebase'},
         {src: algoliaLogo, name: 'Algolia'},
         {src: gbooksLogo, name: 'Google Books'},
         {src: gmapsLogo, name: 'Google Maps'},
         {src: osmLogo, name: 'OpenStreetMap'},
-        {src: openLogo, name: 'Open Library'},
+        {src: openLogo, name: 'Open Library'}
     ];
 
     const goToSection = useCallback((index) => {
