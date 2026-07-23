@@ -1,86 +1,64 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, BookOpen, X, Sparkles, ChevronRight, PenLine } from 'lucide-react';
 import { mapGoogleBook } from '@readme/shared/src/models/book';
 import Field from '../../../components/Field.jsx';
 import Button from '../../../components/Button.jsx';
 import ErrorAlert from '../../../components/ErrorAlert.jsx';
 import Spinner from '../../../components/Spinner.jsx';
+import { useBookSearch } from '@readme/shared/src/hooks/use-book-search.js';
 import styles from './AddBookForm.module.css';
 
-const BOOKS_API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+// Safely normalize the book data whether it comes raw from Google (with volumeInfo) 
+// or pre-flattened from your custom hook.
+function normalizeBook(item) {
+    if (!item) return {};
 
-function friendlySearchError(status) {
-    if (status >= 500) return 'The book catalog is temporarily unavailable. Please try again in a moment.';
-    if (status === 429) return 'Too many searches right now. Please wait a moment and try again.';
-    if (status === 400 || status === 403) return 'This search could not be processed. Try a different search term.';
-    return 'Search failed. Please try again.';
-}
+    // 1. If it's a raw Google Book object
+    if (item.volumeInfo) {
+        const mapped = mapGoogleBook(item);
+        return {
+            ...mapped,
+            isbn: mapped.isbn13 || mapped.isbn10 || null,
+            publishedYear: mapped.publishedDate ? String(mapped.publishedDate).slice(0, 4) : null,
+        };
+    }
 
-async function searchGoogleBooks(query) {
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=8&printType=books&key=${BOOKS_API_KEY}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(friendlySearchError(res.status));
-    const data = await res.json();
-    return data.items || [];
-}
-
-// Bridge mapGoogleBook (isbn13/isbn10) to handleAdd's expected shape (single isbn + publishedYear).
-function extractBookData(item) {
-    const mapped = mapGoogleBook(item);
+    // 2. If the hook already flattened the data
     return {
-        ...mapped,
-        isbn: mapped.isbn13 || mapped.isbn10 || null,
-        publishedYear: mapped.publishedDate ? String(mapped.publishedDate).slice(0, 4) : null,
+        ...item,
+        isbn: item.isbn13 || item.isbn10 || item.isbn || null,
+        publishedYear: item.publishedYear || (item.publishedDate ? String(item.publishedDate).slice(0, 4) : null),
+        coverUrl: item.coverUrl || item.thumbnail || null,
+        authors: item.authors || [],
+        title: item.title || 'Untitled',
     };
 }
 
-export default function AddBookForm({onSubmit, onCancel, submitting, error}) {
-    const [mode, setMode] = useState('search'); // 'search' | 'manual'
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
-    const [searching, setSearching] = useState(false);
-    const [searchError, setSearchError] = useState(null);
+export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
+    const {
+        searchQuery: query,
+        setSearchQuery: setQuery,
+        searchResults: results,
+        isLoading: searching,
+        error: searchError
+    } = useBookSearch();
+
+    const [mode, setMode] = useState('search');
     const [selected, setSelected] = useState(null);
 
-    // Manual mode fields
     const [isbn, setIsbn] = useState('');
     const [title, setTitle] = useState('');
     const [authors, setAuthors] = useState('');
     const [coverUrl, setCoverUrl] = useState('');
     const [pageCount, setPageCount] = useState('');
 
-    useEffect(() => {
-        if (mode !== 'search') return;
-
-        const q = query.trim();
-        if (!q) {
-            setResults([]);
-            return;
-        }
-
-        const timer = setTimeout(async () => {
-            setSearching(true);
-            setSearchError(null);
-            try {
-                setResults(await searchGoogleBooks(q));
-            } catch (err) {
-                setSearchError(err.message || 'Search failed. Check your connection.');
-            } finally {
-                setSearching(false);
-            }
-        }, 350);
-        return () => clearTimeout(timer);
-    }, [query, mode]);
-
     function handleSelect(item) {
-        setSelected(extractBookData(item));
-        setResults([]);
-        setQuery('');
+        setSelected(normalizeBook(item));
+        setQuery(''); 
     }
 
     function handleConfirm() {
         if (!selected) return;
-
         onSubmit(selected);
     }
 
@@ -100,12 +78,10 @@ export default function AddBookForm({onSubmit, onCancel, submitting, error}) {
     function switchMode(next) {
         setMode(next);
         setSelected(null);
-        setSearchError(null);
     }
 
     return (
         <div className={styles.form}>
-            {/* Header with title + close */}
             <div className={styles.formHeader}>
                 <div className={styles.formHeading}>
                     <span className={styles.formHeadingIcon}><BookOpen size={18}/></span>
@@ -119,7 +95,6 @@ export default function AddBookForm({onSubmit, onCancel, submitting, error}) {
                 </button>
             </div>
 
-            {/* Segmented mode toggle */}
             <div className={styles.tabs} role="tablist">
                 <button
                     type="button"
@@ -167,11 +142,13 @@ export default function AddBookForm({onSubmit, onCancel, submitting, error}) {
                     {results.length > 0 && (
                         <ul className={styles.results}>
                             {results.map((item) => {
-                                const info = item.volumeInfo || {};
-                                const thumb = info.imageLinks?.thumbnail?.replace('http://', 'https://');
-                                const year = info.publishedDate ? info.publishedDate.slice(0, 4) : null;
+                                // Use our new normalizer so the UI always gets the data it expects
+                                const info = normalizeBook(item);
+                                const thumb = info.coverUrl?.replace('http://', 'https://');
+                                const year = info.publishedYear;
+                                
                                 return (
-                                    <li key={item.id}>
+                                    <li key={item.id || info.isbn || Math.random()}>
                                         <button
                                             type="button"
                                             className={styles.resultItem}
@@ -186,9 +163,9 @@ export default function AddBookForm({onSubmit, onCancel, submitting, error}) {
                                                 </div>
                                             )}
                                             <div className={styles.resultInfo}>
-                                                <span className={styles.resultTitle}>{info.title || 'Untitled'}</span>
+                                                <span className={styles.resultTitle}>{info.title}</span>
                                                 <span className={styles.resultAuthors}>
-                                                    {info.authors?.join(', ') || 'Unknown author'}
+                                                    {info.authors?.length > 0 ? info.authors.join(', ') : 'Unknown author'}
                                                 </span>
                                                 {year && <span className={styles.resultYear}>{year}</span>}
                                             </div>
@@ -241,7 +218,7 @@ export default function AddBookForm({onSubmit, onCancel, submitting, error}) {
                         <div className={styles.selectedInfo}>
                             <span className={styles.selectedBadge}>Selected</span>
                             <p className={styles.selectedTitle}>{selected.title}</p>
-                            <p className={styles.selectedAuthors}>{selected.authors.join(', ') || 'Unknown author'}</p>
+                            <p className={styles.selectedAuthors}>{selected.authors?.join(', ') || 'Unknown author'}</p>
                             {selected.publishedYear &&
                                 <p className={styles.selectedMeta}>Published {selected.publishedYear}</p>}
                         </div>

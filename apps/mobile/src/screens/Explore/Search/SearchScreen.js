@@ -7,7 +7,7 @@ import { ROUTES } from '@readme/shared/src/constants/routes';
 import { searchBookTitles, SORT_OPTIONS } from '@readme/shared/src/services/searchBook';
 import { usePublicationSearchFeed } from '@readme/shared/src/hooks/use-publication-search-feed';
 import { useUserSearchFeed } from '@readme/shared/src/hooks/use-user-search-feed';
-import {useRecentSearches} from "@readme/shared/src/hooks/use-recent-searches";
+import { useRecentSearches } from "@readme/shared/src/hooks/use-recent-searches";
 import { RECENT_SEARCH_TYPES } from '@readme/shared/src/services/recentSearches';
 import { buildStyles } from '../../../styles/searchStyles';
 import PublicationFilterModal from '../../../components/ui/PublicationFilterModal';

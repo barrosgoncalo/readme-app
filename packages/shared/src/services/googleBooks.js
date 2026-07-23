@@ -101,6 +101,13 @@ export const GoogleBooksService = {
 
         const attemptFetch = async () => {
             const response = await fetch(url);
+
+            if (!response.ok) {
+                if (response.status === 429) throw new Error("429_RATE_LIMIT");
+                if (response.status === 503) throw new Error("503_SERVICE_UNAVAILABLE");
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+
             const data = await response.json();
 
             if (data.error) {
@@ -113,9 +120,13 @@ export const GoogleBooksService = {
         try {
             return await attemptFetch();
         } catch (firstError) {
-            console.warn("[GoogleBooks searchBooks] First attempt failed, retrying once:", firstError.message);
+            console.warn("[GoogleBooks searchBooks] First attempt failed:", firstError.message);
+
+            if (firstError.message.includes("429") || firstError.message.includes("503")) {
+                throw firstError; 
+            }
+
             try {
-                // Brief delay before retry — transient backend failures often clear within ~1s
                 await new Promise(resolve => setTimeout(resolve, 800));
                 return await attemptFetch();
             } catch (secondError) {
