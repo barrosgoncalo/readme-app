@@ -4,7 +4,7 @@ import {useNavigate, useSearchParams} from 'react-router-dom';
 import {ChatService} from '@readme/shared/src/services/chat';
 import {TradeService} from '@readme/shared/src/services/trades';
 import {ReviewService} from '@readme/shared/src/services/reviews';
-import {getBooksByIds} from '@readme/shared/src/services/booksCatalog';
+import {PublicationService} from '@readme/shared/src/services/publications';
 import {formatAuthors} from '@readme/shared/src/utils/formatAuthors';
 import {NEGOTIATION_STATUS} from '@readme/shared/src/constants/status';
 import {WEB_ROUTES} from '../../../constants/webRoutes';
@@ -45,14 +45,21 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     const counterOfferBooks = (offer?.offeredBooks || []).map(b => ({...b, coverUrl: b.image}));
 
     useEffect(() => {
-        if (showBooksModal && fetchedBooks.length === 0) {
+        if ((showBooksModal || showCounterModal) && fetchedBooks.length === 0) {
             let cancelled = false;
             setLoadingBooks(true);
 
-            getBooksByIds(offer.offeredBookIds || [])
+            // Buscar publicações reais em vez do catálogo global!
+            Promise.all((offer.offeredBookIds || []).map(id => PublicationService.fetchPublication(id).catch(() => null)))
                 .then(docs => {
                     if (!cancelled) {
-                        setFetchedBooks(docs);
+                        const validDocs = docs.filter(Boolean).map(pub => ({
+                            id: pub.id,
+                            title: pub.book?.title,
+                            author: pub.book?.author,
+                            coverUrl: pub.book?.images?.[0]
+                        }));
+                        setFetchedBooks(validDocs);
                         setLoadingBooks(false);
                     }
                 })
@@ -63,9 +70,8 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
 
             return () => cancelled = true;
         }
-    }, [showBooksModal, fetchedBooks.length, offer.offeredBookIds]);
+    }, [showBooksModal, showCounterModal, fetchedBooks.length, offer.offeredBookIds]);
 
-    // 1. UPDATED: Using the actual subscription method for real-time review status
     useEffect(() => {
         if (!canReview) return;
 
@@ -90,10 +96,6 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                 return;
             }
 
-            // The offer already carries a snapshot of the offered book
-            // (title/id) taken when it was sent — offeredBookIds points at
-            // the publication, not the global books catalog, so a catalog
-            // lookup here would never match. Use the snapshot directly.
             const snapshot = offer.offeredBooks?.[0];
             if (snapshot?.title) {
                 setSingleBook({title: snapshot.title, realBookId: snapshot.id});
@@ -105,9 +107,9 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
 
             async function fetchNormalBook() {
                 try {
-                    const globalBooks = await getBooksByIds([originalId]);
-                    if (globalBooks && globalBooks.length > 0 && !cancelled)
-                        setSingleBook({title: globalBooks[0].title, realBookId: globalBooks[0].id});
+                    const pubDoc = await PublicationService.fetchPublication(originalId);
+                    if (pubDoc && !cancelled)
+                        setSingleBook({title: pubDoc.book?.title, realBookId: pubDoc.id});
                 } catch (err) {
                     console.error(err);
                 }
@@ -185,7 +187,6 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         setBusy(true);
         setReviewError('');
         try {
-            // Note: Make sure submitReview is exported from your ReviewService!
             await ReviewService.submitReview(message.id, chatId, currentUserId, otherUserId, rating, comment);
             setHasReviewed(true);
         } catch (err) {
@@ -213,7 +214,6 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             prev.delete('offer');
             return prev;
         });
-        setSelectedBookId(null);
     }
 
     function handleTargetBookClick() {
@@ -225,7 +225,14 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         if (hasMultipleOptions)
             handleOpenBooks();
         else {
-            const targetId = offer.savedRealOfferedId || singleBook?.realBookId || offer.offeredBookIds?.[0] || offer.offeredBooks?.[0]?.id;
+            // Agora damos prioridade ao ID do livro que foi explicitamente selecionado no Counter Offer
+            const targetId = offer.selectedBookId
+                || offer.finalSelectedBookId
+                || offer.savedRealOfferedId
+                || singleBook?.realBookId
+                || offer.offeredBookIds?.[0]
+                || offer.offeredBooks?.[0]?.id;
+
             if (!targetId) return;
 
             navigate(`${WEB_ROUTES.publicationDetail(targetId)}?from=chat`);
@@ -235,7 +242,9 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     const isPending = offer.status === NEGOTIATION_STATUS.PENDING;
     const isAccepted = offer.status === NEGOTIATION_STATUS.ACCEPTED;
     const isCounterOffer = offer?.isCounter === true;
-    const hasMultipleOptions = offer.offeredBookIds?.length > 1;
+    const hasMultipleOptions = (offer.offeredBookIds?.length > 1 || offer.offeredBooks?.length > 1)
+        && !offer.selectedBookId
+        && !offer.finalSelectedBookId;
 
     let statusBg = 'var(--bg-selected)';
     let statusTextColor = 'var(--secondary)'; // Pending
@@ -351,7 +360,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                     </span>
                 </div>
 
-                {/* 3-BUTTON ACTION FLOW (Apenas quem recebe pode agir) */}
+                {/* 3-BUTTON ACTION FLOW */}
                 {!isOwn && isPending && (
                     <div className={styles.offerActions}>
                         <button
@@ -445,6 +454,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                         <ReviewUI onSubmit={handleSubmitReview} busy={busy} error={reviewError}/>
                     </div>
                 )}
+
                 {canReview && hasReviewed && (
                     <div className={styles.completedContainer} style={{marginTop: 0, borderTop: 'none'}}>
                         <div style={{
@@ -476,8 +486,8 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
             <CounterOfferModal
                 open={showCounterModal}
                 onClose={() => setShowCounterModal(false)}
-                offeredBooks={counterOfferBooks}
-                loadingBooks={false}
+                offeredBooks={fetchedBooks.length > 0 ? fetchedBooks : counterOfferBooks}
+                loadingBooks={loadingBooks && fetchedBooks.length === 0}
                 onSubmit={handleSendCounter}
                 busy={busy}
                 sellerUid={otherUserId}
@@ -493,7 +503,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                     {loadingBooks && fetchedBooks.length === 0 && counterOfferBooks.length === 0 ? (
                         <Spinner center label="Loading books..." />
                     ) : (
-                        (counterOfferBooks.length > 0 ? counterOfferBooks : fetchedBooks).map(book => (
+                        (fetchedBooks.length > 0 ? fetchedBooks : counterOfferBooks).map(book => (
                             <div
                                 key={book.id}
                                 className={`${styles.offeredBookItem} ${styles.selectable}`}
@@ -510,7 +520,7 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
                                 <div className={styles.obInfo}>
                                     <p className={styles.obTitle}>{book.title || 'Untitled'}</p>
                                     <p className={styles.obAuthor}>
-                                        {formatAuthors(book.authors) || 'Unknown author'}
+                                        {book.author || formatAuthors(book.authors) || 'Unknown author'}
                                     </p>
                                 </div>
                             </div>

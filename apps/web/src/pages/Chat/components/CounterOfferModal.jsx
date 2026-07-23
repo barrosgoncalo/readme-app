@@ -74,11 +74,12 @@ export default function CounterOfferModal({ open, onClose, offeredBooks, loading
                                             <div className={offerStyles.obInfo}>
                                                 <p className={offerStyles.obTitle}>{book.title || 'Untitled'}</p>
                                                 <p className={offerStyles.obAuthor}>
-                                                    {formatAuthors(book.authors) || 'Unknown author'}
+                                                    {formatAuthors(book.authors) || book.author || 'Unknown author'}
                                                 </p>
 
                                                 <Link
-                                                    to={`${WEB_ROUTES.publicationDetail(book.id)}?from=chat`}                                                    className={offerStyles.obDetailsLink}
+                                                    to={`${WEB_ROUTES.publicationDetail(book.id)}?from=chat`}
+                                                    className={offerStyles.obDetailsLink}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     View details
