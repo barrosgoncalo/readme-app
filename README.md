@@ -14,6 +14,55 @@ A book-swapping mobile app built with React Native / Expo.
 
 ---
 
+## 🌐 Endpoints
+
+### Web Endpoints
+
+* `https://readme---bookworms.web.app/` (Root / Redirect)
+* `https://readme---bookworms.web.app/welcome`
+* `https://readme---bookworms.web.app/login`
+* `https://readme---bookworms.web.app/register`
+* `https://readme---bookworms.web.app/forgot-password`
+* `https://readme---bookworms.web.app/explore`
+* `https://readme---bookworms.web.app/chat`
+
+#### Books & Publications
+* `https://readme---bookworms.web.app/books`
+* `https://readme---bookworms.web.app/books/:bookId`
+* `https://readme---bookworms.web.app/books/scan`
+* `https://readme---bookworms.web.app/publications/new`
+* `https://readme---bookworms.web.app/publications/:pubId`
+* `https://readme---bookworms.web.app/publications/:pubId/edit`
+* `https://readme---bookworms.web.app/offers/new`
+
+#### User Profiles
+* `https://readme---bookworms.web.app/users/:uid`
+* `https://readme---bookworms.web.app/profile`
+* `https://readme---bookworms.web.app/profile/edit`
+* `https://readme---bookworms.web.app/profile/change-password`
+* `https://readme---bookworms.web.app/profile/set-password`
+* `https://readme---bookworms.web.app/profile/privacy-security`
+* `https://readme---bookworms.web.app/profile/blocked-users`
+* `https://readme---bookworms.web.app/profile/following`
+* `https://readme---bookworms.web.app/profile/followers`
+* `https://readme---bookworms.web.app/profile/follow-requests`
+* `https://readme---bookworms.web.app/profile/favorites`
+* `https://readme---bookworms.web.app/profile/my-books`
+* `https://readme---bookworms.web.app/profile/level`
+* `https://readme---bookworms.web.app/profile/publications`
+
+### Admin Endpoints
+
+* `https://readme---bookworms.web.app/admin-choice` (Admin Mode Selector)
+* `https://readme---bookworms.web.app/admin/dashboard`
+* `https://readme---bookworms.web.app/admin/users`
+* `https://readme---bookworms.web.app/admin/reports`
+* `https://readme---bookworms.web.app/admin/publications`
+* `https://readme---bookworms.web.app/admin/settings`
+* `https://readme---bookworms.web.app/admin/logs`
+
+---
+
 ## 🧪 Test Accounts
 
 The following accounts are pre-seeded for testing purposes. Institutional addresses are spread across the Lisbon metropolitan area.
