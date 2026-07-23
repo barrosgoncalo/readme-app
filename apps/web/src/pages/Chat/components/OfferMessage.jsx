@@ -225,7 +225,14 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
         if (hasMultipleOptions)
             handleOpenBooks();
         else {
-            const targetId = offer.savedRealOfferedId || singleBook?.realBookId || offer.offeredBookIds?.[0] || offer.offeredBooks?.[0]?.id;
+            // Agora damos prioridade ao ID do livro que foi explicitamente selecionado no Counter Offer
+            const targetId = offer.selectedBookId
+                || offer.finalSelectedBookId
+                || offer.savedRealOfferedId
+                || singleBook?.realBookId
+                || offer.offeredBookIds?.[0]
+                || offer.offeredBooks?.[0]?.id;
+
             if (!targetId) return;
 
             navigate(`${WEB_ROUTES.publicationDetail(targetId)}?from=chat`);
@@ -235,7 +242,9 @@ export default function OfferMessage({message, isOwn, currentUserId, chatId, oth
     const isPending = offer.status === NEGOTIATION_STATUS.PENDING;
     const isAccepted = offer.status === NEGOTIATION_STATUS.ACCEPTED;
     const isCounterOffer = offer?.isCounter === true;
-    const hasMultipleOptions = offer.offeredBookIds?.length > 1;
+    const hasMultipleOptions = (offer.offeredBookIds?.length > 1 || offer.offeredBooks?.length > 1)
+        && !offer.selectedBookId
+        && !offer.finalSelectedBookId;
 
     let statusBg = 'var(--bg-selected)';
     let statusTextColor = 'var(--secondary)'; // Pending
