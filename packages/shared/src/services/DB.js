@@ -18,7 +18,8 @@ export const DB = {
         try {
             // Fetching a single document by ID (String)
             if (typeof queryArgs === 'string') {
-                const snap = await getDoc(doc(db, collectionPath, queryArgs));
+                const cleanId = queryArgs.replace(/^\//, '').replace(/\//g, '_');
+                const snap = await getDoc(doc(db, collectionPath, cleanId));
                 return snap.exists() ? { id: snap.id, ...snap.data() } : null;
             }
 

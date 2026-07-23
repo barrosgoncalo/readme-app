@@ -106,21 +106,22 @@ export const normalizeAnyBook = (item) => {
     if (!item) return {};
 
     if (item.volumeInfo) {
-        const mapped = mapGoogleBook(item);
-        console.log(`[PAGE TRACKER 2 - Normalizer] Google mapped pages: ${mapped.pageCount}`);
-        return mapped;
+        return mapGoogleBook(item);
     }
 
-    const pages = item.pageCount || item.number_of_pages || 0;
-    console.log(`[PAGE TRACKER 2 - Normalizer] Fallback pages: ${pages}`);
+    // OpenLibrary doc keys start with "/works/..." -> Clean it to "works_..." or strip the slash
+    const rawId = item.bookId || item.id || item.key || `ol_${Date.now()}`;
+    const cleanBookId = String(rawId).replace(/^\//, '').replace(/\//g, '_');
+
+    const pages = item.pageCount || item.number_of_pages || item.number_of_pages_median || 0;
 
     return {
         ...item,
-        bookId: item.bookId || item.id, 
+        bookId: cleanBookId, 
         title: item.title || 'Untitled',
-        authors: item.authors || [],
+        authors: item.authors || item.author_name || [],
         coverUrl: item.coverUrl || item.thumbnail || null,
         pageCount: pages,
-        isbn13: item.isbn13 || item.isbn || null,
+        isbn13: item.isbn13 || item.isbn?.[0] || null,
     };
 };
