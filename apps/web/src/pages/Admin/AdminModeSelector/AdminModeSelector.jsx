@@ -12,9 +12,9 @@ export default function AdminModeSelector({ onSelect }) {
     const handleSelection = (preference) => {
         onSelect(preference);
         if (preference === 'admin') {
-            navigate(ADMIN_ROUTES.USERS);
+            navigate(ADMIN_ROUTES.DASHBOARD);
         } else {
-            navigate(WEB_ROUTES.BOOKS);
+            navigate(WEB_ROUTES.EXPLORE);
         }
     };
 
