@@ -83,7 +83,8 @@ export default function PublicationCard({ pub, isFavorite, onToggleFavorite, onS
                         <div className={styles.seller}>
                             {pub.sellerAvatar && !avatarFailed ? (
                                 <img
-                                    src={pub.sellerAvatar}
+                                    // Cache bust the avatar URL
+                                    src={`${pub.sellerAvatar}?t=${Date.now()}`}
                                     alt=""
                                     className={styles.avatar}
                                     onError={() => setAvatarFailed(true)}

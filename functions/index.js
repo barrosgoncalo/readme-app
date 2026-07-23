@@ -1363,3 +1363,67 @@ exports.unbanUser = functionsV1
             throw new functionsV1.https.HttpsError('internal', 'An internal error occurred while processing unban.');
         }
     });
+
+// ==========================================
+// SYNC USER AVATAR TO PUBLICATIONS (FAN-OUT)
+// ==========================================
+exports.syncUserAvatarToPublications = onDocumentUpdated("users/{userId}", async (event) => {
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    if (!beforeData || !afterData) return null;
+
+    // Check both avatarUrl and photoURL depending on what your app uses
+    const oldAvatar = beforeData.avatarUrl || beforeData.photoURL;
+    const newAvatar = afterData.avatarUrl || afterData.photoURL;
+
+    // If the avatar hasn't changed, exit early to save reads/writes
+    if (oldAvatar === newAvatar) return null;
+
+    const userId = event.params.userId;
+    const publicationsRef = db.collection('publications');
+
+    try {
+        // Find all publications owned by this user
+        const snapshot = await publicationsRef.where('uid', '==', userId).get();
+
+        if (snapshot.empty) {
+            console.log(`No publications found for user ${userId}. Skipping avatar sync.`);
+            return null;
+        }
+
+        console.log(`Found ${snapshot.size} publications for user ${userId}. Syncing new avatar...`);
+
+        const CHUNK_SIZE = 500;
+        const batches = [];
+        let currentBatch = db.batch();
+        let count = 0;
+
+        snapshot.forEach((doc) => {
+            currentBatch.update(doc.ref, {
+                sellerAvatar: newAvatar
+            });
+            count++;
+
+            // Commit the batch when it hits 500 operations
+            if (count % CHUNK_SIZE === 0) {
+                batches.push(currentBatch.commit());
+                currentBatch = db.batch(); // Start a fresh batch
+            }
+        });
+
+        // Commit any remaining updates that didn't perfectly divide by 500
+        if (count % CHUNK_SIZE !== 0) {
+            batches.push(currentBatch.commit());
+        }
+
+        // Wait for all batches to complete concurrently
+        await Promise.all(batches);
+
+        console.log(`Successfully updated avatar for ${snapshot.size} publications (User: ${userId}).`);
+    } catch (error) {
+        console.error(`Error syncing avatar for user ${userId} to publications:`, error);
+    }
+
+    return null;
+});
