@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import styles from './DownloadSection.module.css';
+import { WEB_ROUTES } from '../constants/webRoutes';
 
 /**
  * PhoneMockup
@@ -31,7 +33,8 @@ const OPTIONS = [
         title: 'Continue on Website',
         description: 'Explore our collection, read stories, and connect with fellow book lovers.',
         cta: 'Continue',
-        href: 'https://readme---bookworms.web.app/login/',
+        href: WEB_ROUTES.LOGIN,
+        isInternal: true,
         download: false,
     },
     {
@@ -41,6 +44,7 @@ const OPTIONS = [
         description: 'Get the full experience on the go. Download our Android app.',
         cta: 'Download APK',
         href: 'https://github.com/barrosgoncalo/readme-app/releases/latest/download/readme-app.apk',
+        isInternal: false,
         download: true,
     },
 ];
@@ -123,14 +127,21 @@ function DownloadCard() {
                             <h3 className={styles.optionTitle}>{option.title}</h3>
                             <p className={styles.optionDescription}>{option.description}</p>
                         </div>
-
-                        <a
-                            href={option.href}
-                            {...(option.download ? { download: true } : {})}
-                            className={styles.optionButton}
-                        >
-                            {option.cta}
-                        </a>
+                        
+                        {/* ✅ Condition rendering: Link for React SPA routing, <a> for external downloads */}
+                        {option.isInternal ? (
+                            <Link to={option.href} className={styles.optionButton}>
+                                {option.cta}
+                            </Link>
+                        ) : (
+                            <a
+                                href={option.href}
+                                {...(option.download ? { download: true } : {})}
+                                className={styles.optionButton}
+                            >
+                                {option.cta}
+                            </a>
+                        )}
                     </div>
                 ))}
             </div>

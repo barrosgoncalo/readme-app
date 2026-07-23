@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
                 try {
                     const userData = await DB.get('users', user.uid);
                     if (userData) {
-                        setCurrentUser({ ...user });
+                        setCurrentUser(user);
                         setUserLoggedIn(true);
                     } else {
                         // No Firestore profile yet — e.g. mid-registration Google
