@@ -87,6 +87,7 @@ function flattenMyBook(doc) {
         authors: details.authors || [],
         coverUrl: details.coverUrl || null,
         progress: doc.progressPercentage ?? 0,
+        customPageCount: doc.customPageCount || null, // Added to capture premium manual page overrides
     };
 }
 
@@ -136,6 +137,9 @@ export default function BookDetail({ embedded = false, onClose }) {
     const [currentPage, setCurrentPage] = useState('');
     const [savingProgress, setSavingProgress] = useState(false);
     const progressTimer = useRef(null);
+    
+    // Premium Minimalist Add-on States
+    const [editingTotalPages, setEditingTotalPages] = useState(false);
 
     useEffect(() => {
         if (!uid || !bookId) return;
@@ -197,6 +201,9 @@ export default function BookDetail({ embedded = false, onClose }) {
         }, 800);
     }
 
+    // Use custom total pages if the user set them, otherwise fallback to catalog
+    const effectivePageCount = myBook?.customPageCount || catalog?.pageCount || 0;
+
     function handleProgressChange(val) {
         let newPage = val;
 
@@ -204,8 +211,7 @@ export default function BookDetail({ embedded = false, onClose }) {
             newPage = parseInt(val, 10);
             if (isNaN(newPage)) return;
 
-            const pageCount = catalog?.pageCount || 0;
-            if (pageCount > 0 && newPage > pageCount) newPage = pageCount;
+            if (effectivePageCount > 0 && newPage > effectivePageCount) newPage = effectivePageCount;
             if (newPage < 0) newPage = 0;
         }
 
@@ -217,16 +223,15 @@ export default function BookDetail({ embedded = false, onClose }) {
             setSavingProgress(true);
 
             try {
-                const pageCount = catalog?.pageCount || 0;
-                const pct = pageCount > 0 ? Math.round((finalPage / pageCount) * 100) : Math.min(finalPage, 100);
+                const pct = effectivePageCount > 0 ? Math.round((finalPage / effectivePageCount) * 100) : Math.min(finalPage, 100);
 
                 const updates = {currentPage: finalPage, progressPercentage: pct};
                 let newStatus = status;
 
-                if (pageCount > 0 && finalPage >= pageCount && status !== BOOK_STATUS.DONE) {
+                if (effectivePageCount > 0 && finalPage >= effectivePageCount && status !== BOOK_STATUS.DONE) {
                     updates.status = BOOK_STATUS.DONE;
                     newStatus = BOOK_STATUS.DONE;
-                } else if (pageCount === 0 && finalPage >= 100 && status !== BOOK_STATUS.DONE) {
+                } else if (effectivePageCount === 0 && finalPage >= 100 && status !== BOOK_STATUS.DONE) {
                     updates.status = BOOK_STATUS.DONE;
                     newStatus = BOOK_STATUS.DONE;
                 }
@@ -237,6 +242,22 @@ export default function BookDetail({ embedded = false, onClose }) {
                 setSavingProgress(false);
             }
         }, 600);
+    }
+
+    async function handleUpdateTotalPages(val) {
+        const total = parseInt(val, 10);
+        setEditingTotalPages(false);
+        if (isNaN(total) || total <= 0) return;
+
+        try {
+            // Optimistically update
+            setMyBook(prev => ({ ...prev, customPageCount: total }));
+            await MyBooksService.updateBook(uid, bookId, { customPageCount: total });
+        } catch (err) {
+            console.error("Failed to update custom total pages", err);
+            // Revert on fail
+            setMyBook(prev => ({ ...prev, customPageCount: myBook?.customPageCount }));
+        }
     }
 
     const status = myBook?.status || BOOK_STATUS.READING;
@@ -301,7 +322,7 @@ export default function BookDetail({ embedded = false, onClose }) {
                                 <input
                                     type="range"
                                     min="0"
-                                    max={catalog?.pageCount || 100}
+                                    max={effectivePageCount || 100}
                                     value={currentPage === '' ? 0 : currentPage}
                                     onChange={(e) => handleProgressChange(e.target.value)}
                                     className={styles.slider}
@@ -310,13 +331,41 @@ export default function BookDetail({ embedded = false, onClose }) {
                                     <input
                                         type="number"
                                         min="0"
-                                        max={catalog?.pageCount || undefined}
+                                        max={effectivePageCount || undefined}
                                         value={currentPage}
                                         onChange={(e) => handleProgressChange(e.target.value)}
                                         className={styles.pageInput}
                                     />
+                                    
                                     <span className={styles.pageTotal}>
-                                        / {catalog?.pageCount ? `${catalog.pageCount} pages` : (catalog?.pageCount === 0 ? '% (Estimated)' : '? pages')}
+                                        {effectivePageCount ? (
+                                            `/ ${effectivePageCount} pages`
+                                        ) : editingTotalPages ? (
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                / <input
+                                                    type="number"
+                                                    min="1"
+                                                    className={styles.pageInput}
+                                                    autoFocus
+                                                    placeholder="Total"
+                                                    onBlur={(e) => handleUpdateTotalPages(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateTotalPages(e.target.value)}
+                                                    style={{ width: '60px', padding: '2px 4px', fontSize: 'inherit' }}
+                                                />
+                                            </span>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingTotalPages(true)}
+                                                style={{ 
+                                                    background: 'none', border: 'none', color: 'inherit',
+                                                    opacity: 0.6, cursor: 'pointer', textDecoration: 'underline', 
+                                                    padding: 0, marginLeft: '4px', font: 'inherit'
+                                                }}
+                                            >
+                                                / set total pages
+                                            </button>
+                                        )}
                                     </span>
                                 </div>
                             </div>

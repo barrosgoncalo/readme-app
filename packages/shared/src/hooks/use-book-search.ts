@@ -78,7 +78,7 @@ export function useBookSearch(apiKey: string = '') {
             } finally {
                 setIsLoading(false);
             }
-        }, 600);
+        }, 300);
 
         return () => clearTimeout(delayDebounceFn);
 
