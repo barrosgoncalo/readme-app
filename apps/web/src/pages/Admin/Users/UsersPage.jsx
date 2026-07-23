@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
                     <h1 className={styles.title}>Users</h1>
                     <p className={styles.subtitle}>Manage user accounts and roles.</p>
                 </div>
-                <button type="button" className={styles.exportBtn} onClick={() => exportUsersToCsv(totalUsers)}>
+                <button type="button" className={styles.exportBtn} onClick={() => exportUsersToCsv(displayedUsers)}>
                     <Download size={16}/>
                     Export Users
                 </button>
