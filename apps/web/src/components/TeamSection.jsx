@@ -26,7 +26,7 @@ const TEAM = [
     {
         name: 'Manuel Anão',
         role: 'Web Developer & Creative Lead',
-        bio: 'Leads the app’s creative vision and web development, creating a seamless experience for readers and sellers alike.',
+        bio: 'Leads the app’s creative vision and web development, crafting a seamless experience for every user.',
         photo: manuelPhoto,
     },
 ];
