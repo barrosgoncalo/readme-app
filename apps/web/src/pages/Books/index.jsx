@@ -107,15 +107,26 @@ export default function Books({ compact = false, selectedBookId = null }) {
         if (!uid) return;
         setAdding(true);
         setAddError(null);
+
         try {
-            const bookId = sanitizeIsbn(data.isbn) || crypto.randomUUID();
-            await MyBooksService.saveBookToShelf(uid, {
+            // Use the existing bookId from the normalizer, OR fallback to ISBN/UUID for manual entries
+            const bookId = data.bookId || sanitizeIsbn(data.isbn) || crypto.randomUUID();
+
+            // Merge the complete data object with our confirmed bookId
+            const bookPayload = {
+                ...data,
                 bookId,
-                title: data.title || null,
-                authors: data.authors || [],
-                coverUrl: data.coverUrl || null,
-                isbn: sanitizeIsbn(data.isbn) || null,
-            }, BOOK_STATUS.READING, { progressPercentage: 0 });
+                isbn: sanitizeIsbn(data.isbn) || data.isbn || null,
+            };
+
+            // Pass the whole thing through!
+            await MyBooksService.saveBookToShelf(
+                uid, 
+                bookPayload, 
+                BOOK_STATUS.READING, 
+                { progressPercentage: 0 }
+            );
+
             setShowAddForm(false);
             await load();
         } catch (err) {

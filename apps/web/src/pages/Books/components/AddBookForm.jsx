@@ -1,38 +1,13 @@
 import { useState } from 'react';
 import { Search, BookOpen, X, Sparkles, ChevronRight, PenLine } from 'lucide-react';
-import { mapGoogleBook } from '@readme/shared/src/models/book';
 import Field from '../../../components/Field.jsx';
 import Button from '../../../components/Button.jsx';
 import ErrorAlert from '../../../components/ErrorAlert.jsx';
 import Spinner from '../../../components/Spinner.jsx';
 import { useBookSearch } from '@readme/shared/src/hooks/use-book-search.js';
 import styles from './AddBookForm.module.css';
-
-// Safely normalize the book data whether it comes raw from Google (with volumeInfo) 
-// or pre-flattened from your custom hook.
-function normalizeBook(item) {
-    if (!item) return {};
-
-    // 1. If it's a raw Google Book object
-    if (item.volumeInfo) {
-        const mapped = mapGoogleBook(item);
-        return {
-            ...mapped,
-            isbn: mapped.isbn13 || mapped.isbn10 || null,
-            publishedYear: mapped.publishedDate ? String(mapped.publishedDate).slice(0, 4) : null,
-        };
-    }
-
-    // 2. If the hook already flattened the data
-    return {
-        ...item,
-        isbn: item.isbn13 || item.isbn10 || item.isbn || null,
-        publishedYear: item.publishedYear || (item.publishedDate ? String(item.publishedDate).slice(0, 4) : null),
-        coverUrl: item.coverUrl || item.thumbnail || null,
-        authors: item.authors || [],
-        title: item.title || 'Untitled',
-    };
-}
+import { GOOGLE_BOOKS_API_KEY } from '@readme/shared/src/constants/env';
+import { normalizeAnyBook } from '@readme/shared/src/models/book'
 
 export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
     const {
@@ -41,7 +16,7 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
         searchResults: results,
         isLoading: searching,
         error: searchError
-    } = useBookSearch();
+    } = useBookSearch(GOOGLE_BOOKS_API_KEY);
 
     const [mode, setMode] = useState('search');
     const [selected, setSelected] = useState(null);
@@ -53,7 +28,7 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
     const [pageCount, setPageCount] = useState('');
 
     function handleSelect(item) {
-        setSelected(normalizeBook(item));
+        setSelected(normalizeAnyBook(item));
         setQuery(''); 
     }
 
@@ -143,7 +118,7 @@ export default function AddBookForm({ onSubmit, onCancel, submitting, error }) {
                         <ul className={styles.results}>
                             {results.map((item) => {
                                 // Use our new normalizer so the UI always gets the data it expects
-                                const info = normalizeBook(item);
+                                const info = normalizeAnyBook(item);
                                 const thumb = info.coverUrl?.replace('http://', 'https://');
                                 const year = info.publishedYear;
                                 

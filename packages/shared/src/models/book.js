@@ -1,23 +1,22 @@
 import { serverTimestamp } from 'firebase/firestore';
+
 /**
  * ADAPTER 1: Maps Google Books JSON into our standard app model
  */
 export const mapGoogleBook = (apiData) => {
     const info = apiData.volumeInfo || {};
+    const pages = info.pageCount || info.printedPageCount || 0;
     
+    console.log(`[PAGE TRACKER 1 - Adapter] Found ${pages} pages for "${info.title || 'Unknown'}"`);
+
     const isbn13Obj = info.industryIdentifiers?.find(id => id.type === 'ISBN_13');
     const isbn10Obj = info.industryIdentifiers?.find(id => id.type === 'ISBN_10');
 
     let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || null;
-    
-    if (coverUrl) {
-        coverUrl = coverUrl.replace('http:', 'https:').replace('&zoom=1', '&zoom=3');
-    }
+    if (coverUrl) coverUrl = coverUrl.replace('http:', 'https:').replace('&zoom=1', '&zoom=3');
 
     const fallbackIsbn = isbn13Obj ? isbn13Obj.identifier : (isbn10Obj ? isbn10Obj.identifier : null);
-    if (!coverUrl && fallbackIsbn) {
-        coverUrl = `https://covers.openlibrary.org/b/isbn/${fallbackIsbn}-L.jpg`;
-    }
+    if (!coverUrl && fallbackIsbn) coverUrl = `https://covers.openlibrary.org/b/isbn/${fallbackIsbn}-L.jpg`;
 
     return {
         bookId: apiData.id || `google_${Date.now()}`,
@@ -26,7 +25,7 @@ export const mapGoogleBook = (apiData) => {
         isbn13: isbn13Obj ? isbn13Obj.identifier : null,
         isbn10: isbn10Obj ? isbn10Obj.identifier : null,
         coverUrl: coverUrl,
-        pageCount: info.pageCount || 0,
+        pageCount: pages, // 🔥 explicitly mapped
         description: info.description || null,
         categories: info.categories || [],
         publishedDate: info.publishedDate || null,
@@ -96,5 +95,32 @@ export const createUserBookModel = (userId, bookId, status = 'reading', override
         color: overrides.color || '#E58F24',
         rating: overrides.rating || null,
         notes: overrides.notes || null
+    };
+};
+
+/**
+ * UNIVERSAL NORMALIZER: Ensures Web and Mobile always send the exact same object shape.
+ * Pass this any item from your search hooks.
+ */
+export const normalizeAnyBook = (item) => {
+    if (!item) return {};
+
+    if (item.volumeInfo) {
+        const mapped = mapGoogleBook(item);
+        console.log(`[PAGE TRACKER 2 - Normalizer] Google mapped pages: ${mapped.pageCount}`);
+        return mapped;
+    }
+
+    const pages = item.pageCount || item.number_of_pages || 0;
+    console.log(`[PAGE TRACKER 2 - Normalizer] Fallback pages: ${pages}`);
+
+    return {
+        ...item,
+        bookId: item.bookId || item.id, 
+        title: item.title || 'Untitled',
+        authors: item.authors || [],
+        coverUrl: item.coverUrl || item.thumbnail || null,
+        pageCount: pages,
+        isbn13: item.isbn13 || item.isbn || null,
     };
 };

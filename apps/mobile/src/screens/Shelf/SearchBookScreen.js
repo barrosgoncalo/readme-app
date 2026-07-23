@@ -16,6 +16,8 @@ import { useTheme } from '@readme/shared/src/hooks/use-theme';
 import { useAuth } from '@readme/shared/src/contexts/AuthContext';
 import { useBookSearch } from '@readme/shared/src/hooks/use-book-search';
 import { useSaveBookToShelf } from '@readme/shared/src/hooks/use-save-book-to-shelf';
+import { GOOGLE_BOOKS_API_KEY } from '@readme/shared/src/constants/env';
+import { normalizeAnyBook } from '@readme/shared/src/models/book'
 
 export default function SearchBookScreen() {
     const navigation = useNavigation();
@@ -25,49 +27,55 @@ export default function SearchBookScreen() {
 
     const {
         searchQuery, setSearchQuery, searchResults, isLoading, hasSearched, handleSearch
-    } = useBookSearch();
+    } = useBookSearch(GOOGLE_BOOKS_API_KEY);
 
     const { savingBookId, saveBook } = useSaveBookToShelf(currentUser?.uid, navigation);
 
     // Rendered Items
-    const renderBookItem = ({ item }) => (
-        <View style={[styles.bookCard, { backgroundColor: theme.backgroundElement }]}>
-            {item.coverUrl ? (
-                <Image source={{ uri: item.coverUrl }} style={styles.bookCover} />
-            ) : (
+    const renderBookItem = ({ item }) => {
+        // --- NORMALIZE THE ITEM HERE ---
+        const book = normalizeAnyBook(item);
+
+        return (
+            <View style={[styles.bookCard, { backgroundColor: theme.backgroundElement }]}>
+                {book.coverUrl ? (
+                    <Image source={{ uri: book.coverUrl }} style={styles.bookCover} />
+                ) : (
                     <View style={[styles.bookCover, styles.placeholderCover]}>
                         <Iconify icon="lucide:book" size={28} color="#999" />
                     </View>
                 )}
 
-            <View style={styles.bookDetails}>
-                <Text style={[styles.bookTitle, { color: theme.text }]} numberOfLines={2}>
-                    {item.title}
-                </Text>
-                <Text style={styles.bookAuthor} numberOfLines={1}>
-                    {item.authors && item.authors.length > 0 ? item.authors.join(', ') : 'Unknown Author'}
-                </Text>
-
-                <View style={styles.actionRow}>
-                    <Text style={styles.bookPages}>
-                        {item.pageCount > 0 ? `${item.pageCount} pages` : 'Pages unknown'}
+                <View style={styles.bookDetails}>
+                    <Text style={[styles.bookTitle, { color: theme.text }]} numberOfLines={2}>
+                        {book.title}
+                    </Text>
+                    <Text style={styles.bookAuthor} numberOfLines={1}>
+                        {book.authors && book.authors.length > 0 ? book.authors.join(', ') : 'Unknown Author'}
                     </Text>
 
-                    <TouchableOpacity 
-                        style={[styles.addButton, savingBookId === item.bookId && styles.addingButton]}
-                        onPress={() => saveBook(item, 'reading')}
-                        disabled={savingBookId === item.bookId}
-                    >
-                        {savingBookId === item.bookId ? (
-                            <ActivityIndicator size="small" color="#FFF" />
-                        ) : (
+                    <View style={styles.actionRow}>
+                        <Text style={styles.bookPages}>
+                            {book.pageCount > 0 ? `${book.pageCount} pages` : 'Pages unknown'}
+                        </Text>
+
+                        <TouchableOpacity 
+                            style={[styles.addButton, savingBookId === book.bookId && styles.addingButton]}
+                            // Make sure to pass the 'book' (normalized) to saveBook, not 'item'
+                            onPress={() => saveBook(book, 'reading')}
+                            disabled={savingBookId === book.bookId}
+                        >
+                            {savingBookId === book.bookId ? (
+                                <ActivityIndicator size="small" color="#FFF" />
+                            ) : (
                                 <Text style={styles.addButtonText}>Add</Text>
                             )}
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -104,23 +112,25 @@ export default function SearchBookScreen() {
                     <Text style={[styles.loadingText, { color: theme.textMuted || '#888' }]}>Searching books...</Text>
                 </View>
             ) : hasSearched && searchResults.length === 0 ? (
-                    <View style={styles.centerContent}>
-                        <Iconify icon="lucide:search-x" size={48} color={theme.textMuted || '#888'} />
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No results found</Text>
-                        <Text style={[styles.emptySubtext, { color: theme.textMuted || '#888' }]}>
-                            We couldn't find any books matching "{searchQuery}".
-                        </Text>
-                    </View>
-                ) : (
-                        <FlatList
-                            data={searchResults}
-                            keyExtractor={(item, index) => `${item.bookId}-${index}`}
-                            renderItem={renderBookItem}
-                            contentContainerStyle={styles.listContainer}
-                            keyboardShouldPersistTaps="handled"
-                            showsVerticalScrollIndicator={false}
-                        />
-                    )}
+                <View style={styles.centerContent}>
+                    <Iconify icon="lucide:search-x" size={48} color={theme.textMuted || '#888'} />
+                    <Text style={[styles.emptyTitle, { color: theme.text }]}>No results found</Text>
+                    <Text style={[styles.emptySubtext, { color: theme.textMuted || '#888' }]}>
+                        We couldn't find any books matching "{searchQuery}".
+                    </Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={searchResults}
+                    // --- FIXED KEY EXTRACTOR --- 
+                    // Google books have `item.id`, OpenLibrary fallback uses `item.id` or `item.bookId`
+                    keyExtractor={(item, index) => `${item.id || item.bookId || index}`}
+                    renderItem={renderBookItem}
+                    contentContainerStyle={styles.listContainer}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
         </View>
     );
 }

@@ -16,61 +16,49 @@ class BookCollectionService {
      * @param {string} status - Initial reading status ('reading' or 'done')
      * @param {Object} overrides - Any optional page modifications or custom values
      */
+    // Inside your BookCollectionService class...
     async saveBookToShelf(uid, globalBookData, status = 'reading', overrides = {}) {
+        console.log("[PAGE TRACKER 3 - Database Entry] Data received by DB:", JSON.stringify(globalBookData).substring(0, 200));
+
         let finalOverrides = { ...overrides };
 
-        if (!finalOverrides.color && globalBookData.coverUrl) {
-            try {
-                const colors = await ImageColors.getColors(globalBookData.coverUrl, {
-                    fallback: '#F58B2E', 
-                    cache: true,
-                    key: globalBookData.coverUrl,
-                });
-
-                console.log("Extracted Color Palette:", colors);
-
-                if (colors.platform === 'android') {
-                    finalOverrides.color = colors.vibrant || colors.average || colors.dominant || '#F58B2E';
-                } else if (colors.platform === 'ios') {
-                    finalOverrides.color = colors.background || colors.detail || colors.primary || '#F58B2E'; 
-                }
-
-                if (finalOverrides.color === '#000000' || finalOverrides.color === '#FFFFFF') {
-                    finalOverrides.color = '#F58B2E';
-                }
-
-            } catch (error) {
-                console.log("Service: Could not extract image color, skipping...", error);
-                finalOverrides.color = '#F58B2E';
-            }
-        }
-
-        const bookId = String(globalBookData.bookId);
+        // Safely grab the bookId
+        const bookId = String(globalBookData.bookId || globalBookData.id);
         const cleanGlobalBook = JSON.parse(JSON.stringify(globalBookData));
 
+        // Force extraction
+        const extractedPages = 
+            globalBookData.pageCount || 
+                globalBookData.volumeInfo?.pageCount || 
+                globalBookData.volumeInfo?.printedPageCount || 
+                0;
+
+        console.log(`[PAGE TRACKER 4 - Extraction] Extracted exactly: ${extractedPages} pages`);
+
+        // Force clean fields onto the Global Book object
         cleanGlobalBook.bookId = bookId;
         cleanGlobalBook.addedBy = uid;
         cleanGlobalBook.createdAt = new Date().toISOString();
+        cleanGlobalBook.pageCount = extractedPages; 
 
         const existingGlobalBook = await DB.get("books", bookId);
 
         if (!existingGlobalBook) {
-            console.log(`[Step 1] Attempting write to global database: /books/${bookId}`);
             await DB.create("books", cleanGlobalBook, bookId);
-            console.log(`[Step 1] SUCCESS: Saved to global /books collection.`);
-        } else {
-            console.log(`[Step 1] CACHE HIT: "/books/${bookId}" already exists. Skipping global write.`);
         }
+
+        finalOverrides.pageCount = extractedPages;
 
         const userBookLink = createUserBookModel(uid, bookId, status, finalOverrides);
         const { createdAt, ...restOfLink } = userBookLink;
         const cleanUserLink = { ...JSON.parse(JSON.stringify(restOfLink)), createdAt };
 
+        // Force onto the user link document as well
+        cleanUserLink.pageCount = extractedPages;
+        console.log(`[PAGE TRACKER 5 - Final Save] Saving user doc with pages: ${cleanUserLink.pageCount}`);
+
         const subcollectionPath = `users/${uid}/${this.collectionName}`;
-        
-        console.log(`[Step 2] Attempting write to user shelf: /${subcollectionPath}/${bookId}`);
         await DB.create(subcollectionPath, cleanUserLink, bookId);
-        console.log(`[Step 2] SUCCESS: Saved to user shelf subcollection.`);
 
         return cleanUserLink;
     }
